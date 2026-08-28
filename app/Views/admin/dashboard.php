@@ -4,6 +4,7 @@ use App\Core\Util;
 
 $base = $config['app']['base_path'];
 $csrf = Csrf::token();
+$today = date('Y-m-d');
 
 $periodNames = [
     'day' => 'Daily',
@@ -46,21 +47,42 @@ $periodNames = [
         </p>
     </div>
 
-    <form class="filters" method="get" id="dashboardDateForm">
+    <form
+        class="filters dashboard-date-controls"
+        method="get"
+        id="dashboardDateForm"
+    >
         <input
             type="hidden"
             name="period"
             value="<?= Util::e($period) ?>"
             id="dashboardPeriodFormValue"
         >
-        <input
-            type="date"
-            name="date"
-            id="dashboardDateInput"
-            value="<?= Util::e($date) ?>"
-            aria-label="Dashboard date"
-        >
-        <button class="btn">View</button>
+
+        <div class="dashboard-date-control-row">
+            <input
+                type="date"
+                name="date"
+                id="dashboardDateInput"
+                value="<?= Util::e($date) ?>"
+                aria-label="Dashboard date"
+            >
+
+            <button class="btn dashboard-date-view">View</button>
+
+            <?php if ($date !== $today): ?>
+                <a
+                    class="dashboard-back-today"
+                    href="<?= Util::e(
+                        $base
+                        . '/admin?date=' . rawurlencode($today)
+                        . '&period=' . rawurlencode($period)
+                    ) ?>"
+                >
+                    Back to today
+                </a>
+            <?php endif; ?>
+        </div>
     </form>
 </div>
 
@@ -215,11 +237,6 @@ $periodNames = [
                 </div>
 
                 <div class="sales-progress-actions">
-                    <div class="sales-card-expand-hint">
-                        <span>Tap to view posts</span>
-                        <span class="sales-card-chevron" aria-hidden="true">⌄</span>
-                    </div>
-
                     <div
                         class="sales-card-admin-actions"
                         data-card-control
@@ -260,6 +277,19 @@ $periodNames = [
                     data-target-message
                     aria-live="polite"
                 ></div>
+
+                <div
+                    class="sales-card-view-footer"
+                    aria-hidden="true"
+                >
+                    <span class="sales-card-view-label">
+                        View posts
+                    </span>
+                    <span
+                        class="sales-card-chevron"
+                        aria-hidden="true"
+                    ></span>
+                </div>
             </article>
         <?php endforeach; ?>
 

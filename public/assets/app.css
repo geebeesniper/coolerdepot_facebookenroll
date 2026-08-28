@@ -1567,15 +1567,6 @@
 .sales-progress-number strong{
     font-size:32px;
 }
-.sales-card-expand-hint{
-    display:flex;
-    align-items:center;
-    gap:6px;
-    min-height:44px;
-    color:var(--card-accent);
-    font-size:10px;
-    font-weight:900;
-}
 .sales-card-chevron{
     display:inline-flex;
     align-items:center;
@@ -1788,10 +1779,7 @@
         align-items:stretch;
         gap:6px;
     }
-    .sales-card-expand-hint{
-        flex:1;
-    }
-    .sales-target-editor{
+        .sales-target-editor{
         flex:0 0 auto;
     }
 }
@@ -1985,5 +1973,151 @@
     .sales-daily-review,
     .sales-target-editor{
         width:100%;
+    }
+}
+
+/* v0.1.22 Date controls + clean card footer */
+.dashboard-date-controls{
+    margin:0;
+}
+.dashboard-date-control-row{
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:9px;
+    min-height:44px;
+}
+.dashboard-date-control-row input[type="date"],
+.dashboard-date-view{
+    height:44px;
+    min-height:44px;
+    margin:0;
+    box-sizing:border-box;
+}
+.dashboard-date-control-row input[type="date"]{
+    width:160px;
+    padding-top:0;
+    padding-bottom:0;
+}
+.dashboard-date-view{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding-top:0;
+    padding-bottom:0;
+}
+.dashboard-back-today{
+    display:inline-flex;
+    align-items:center;
+    min-height:44px;
+    padding:0 3px;
+    color:#2563eb;
+    font-size:10px;
+    font-weight:900;
+    white-space:nowrap;
+}
+.dashboard-back-today:hover,
+.dashboard-back-today:focus{
+    text-decoration:underline;
+    outline:none;
+}
+.sales-progress-actions{
+    justify-content:flex-end;
+}
+.sales-card-admin-actions{
+    width:100%;
+    justify-content:flex-end;
+}
+.sales-card-view-footer{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    min-height:44px;
+    margin:12px -15px -15px;
+    padding:0 14px 0 15px;
+    border-top:1px solid rgba(148,163,184,.20);
+    border-radius:4px;
+    background:rgba(255,255,255,.64);
+    color:var(--card-accent);
+    font-size:10px;
+    font-weight:900;
+    transition:
+        background .16s ease,
+        color .16s ease;
+}
+.sales-progress-card:hover .sales-card-view-footer,
+.sales-progress-card:focus-visible .sales-card-view-footer,
+.sales-progress-card.expanded .sales-card-view-footer{
+    background:var(--card-soft);
+}
+.sales-card-view-label{
+    display:inline-flex;
+    align-items:center;
+    min-height:44px;
+}
+.sales-card-chevron{
+    position:relative;
+    display:inline-block;
+    width:10px;
+    height:10px;
+    flex:0 0 10px;
+    margin-right:3px;
+    transform:rotate(45deg);
+    transition:transform .2s ease;
+}
+.sales-card-chevron::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    border-right:2px solid currentColor;
+    border-bottom:2px solid currentColor;
+}
+.sales-progress-card.expanded .sales-card-chevron{
+    transform:rotate(225deg);
+}
+@media(pointer:coarse){
+    .dashboard-date-control-row input[type="date"],
+    .dashboard-date-view,
+    .dashboard-back-today,
+    .sales-card-view-footer{
+        min-height:48px;
+    }
+    .sales-card-view-label{
+        min-height:48px;
+    }
+}
+@media(max-width:640px){
+    .admin-page-head{
+        align-items:flex-start;
+    }
+    .dashboard-date-controls{
+        width:100%;
+    }
+    .dashboard-date-control-row{
+        justify-content:flex-start;
+        flex-wrap:wrap;
+        width:100%;
+    }
+    .dashboard-date-control-row input[type="date"]{
+        flex:1 1 170px;
+        width:auto;
+        min-width:160px;
+    }
+    .dashboard-date-view{
+        flex:0 0 auto;
+    }
+    .dashboard-back-today{
+        flex:0 0 100%;
+        min-height:34px;
+        padding-left:0;
+    }
+}
+@media(max-width:420px){
+    .sales-card-view-footer{
+        margin-left:-16px;
+        margin-right:-16px;
+        margin-bottom:-16px;
+        padding-left:16px;
+        padding-right:16px;
     }
 }

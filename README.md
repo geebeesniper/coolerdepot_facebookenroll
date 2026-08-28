@@ -560,3 +560,15 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - Corrected malformed duplicate `<section>` markup left by the prior dashboard revision.
 - No database migration is required.
 - All border radius remains `4px`.
+
+## v0.1.22 — Date-control alignment and card footer cleanup
+
+- Aligned the dashboard date picker and `View` button to the same 44px control height/baseline.
+- When the selected date is not today, a `Back to today` link appears beside the date controls and preserves the current Daily/Weekly/Monthly period.
+- Removed the visually awkward `Tap to view posts` block from the middle of each Sales card.
+- Added a full-width `View posts` footer at the bottom of every Sales card.
+- Replaced the text glyph arrow with a CSS chevron that rotates cleanly when the card is expanded.
+- Touch targets increase to 48px on coarse-pointer devices.
+- Date controls wrap cleanly on mobile and `Back to today` moves to its own line when needed.
+- No database migration is required.
+- All border radius remains `4px`.
