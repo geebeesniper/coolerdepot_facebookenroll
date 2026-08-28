@@ -919,159 +919,392 @@ $(function(){
     })();
 
 
-// v0.1.17 Admin Sales progress grid
+// v0.1.18 Dynamic Sales progress grid
 (function(){
     const $grid = $('#salesProgressGrid');
+    const $live = $('#adminDashboardLive');
 
-    if($grid.length){
-        const targetUrl = $grid.data('target-url');
-        const csrf = $('#adminDashboardCsrf').val();
+    if(!$grid.length || !$live.length){
+        return;
+    }
 
-        function setTargetMessage($card, message, error){
-            const $message = $card.find('[data-target-message]');
-            $message
-                .toggleClass('error', !!error)
-                .text(message || '');
+    const targetUrl = $grid.data('target-url');
+    const progressUrl = $live.data('progress-url');
+    const updatesUrl = $live.data('updates-url');
+    const csrf = $('#adminDashboardCsrf').val();
+    const date = String($live.data('date') || '');
+
+    let currentPeriod = String(
+        $live.attr('data-period') || 'day'
+    );
+    let currentPeriodDays = parseInt(
+        $live.attr('data-period-days'),
+        10
+    ) || 1;
+    let baselineCount = parseInt(
+        $live.attr('data-post-count'),
+        10
+    ) || 0;
+    let baselineMaxId = parseInt(
+        $live.attr('data-max-post-id'),
+        10
+    ) || 0;
+
+    let periodRequest = null;
+    let activityRequest = null;
+    let activityTimer = null;
+    let noticeShown = false;
+
+    const $notice = $('#dashboardRefreshNotice');
+    const $noticeTitle = $('#dashboardRefreshTitle');
+    const $noticeText = $('#dashboardRefreshText');
+
+    function setTargetMessage($card, message, error){
+        $card
+            .find('[data-target-message]')
+            .toggleClass('error', !!error)
+            .text(message || '');
+    }
+
+    function animateNumber($element, from, to){
+        from = parseInt(from, 10) || 0;
+        to = parseInt(to, 10) || 0;
+
+        if(from === to){
+            $element.text(to);
+            return;
         }
 
-        function redrawProgress($card, target){
-            const count = parseInt(
-                $card.attr('data-post-count'),
-                10
-            ) || 0;
+        const start = performance.now();
+        const duration = 360;
 
-            target = Math.max(1, parseInt(target, 10) || 10);
+        function frame(now){
+            const raw = Math.min(1, (now - start) / duration);
+            const eased = 1 - Math.pow(1 - raw, 3);
+            const value = Math.round(from + (to - from) * eased);
 
-            const percent = Math.min(
-                100,
-                Math.round((count / target) * 100)
-            );
+            $element.text(value);
 
-            $card
-                .toggleClass('target-met', count >= target)
-                .find('[data-progress-target]')
-                .text(target);
-
-            $card
-                .find('[data-progress-fill]')
-                .css('width', percent + '%');
-
-            const $track = $card.find('.sales-progress-track');
-            $track
-                .attr('aria-valuemax', target)
-                .attr('aria-valuenow', count);
-
-            if(count >= target){
-                if(!$card.find('.sales-target-badge').length){
-                    $card
-                        .find('.sales-progress-card-head')
-                        .append(
-                            '<span class="sales-target-badge">'+
-                                'Target met'+
-                            '</span>'
-                        );
-                }
-            }else{
-                $card.find('.sales-target-badge').remove();
+            if(raw < 1){
+                requestAnimationFrame(frame);
             }
         }
 
-        $(document).on('click', '[data-target-save]', function(){
-            const $button = $(this);
-            const $card = $button.closest('.sales-progress-card');
-            const $input = $card.find('[data-target-input]');
-            const salesId = parseInt(
-                $card.attr('data-sales-id'),
-                10
-            ) || 0;
-            const target = parseInt($input.val(), 10) || 0;
+        requestAnimationFrame(frame);
+    }
 
-            setTargetMessage($card, '', false);
-            $input.removeClass('field-error');
+    function periodName(period){
+        if(period === 'week') return 'Weekly';
+        if(period === 'month') return 'Monthly';
+        return 'Daily';
+    }
 
-            if(target < 1 || target > 999){
-                $input.addClass('field-error').focus();
+    function updateUrlPeriod(period){
+        if(!window.history || !window.history.replaceState){
+            return;
+        }
+
+        const url = new URL(window.location.href);
+        url.searchParams.set('period', period);
+        window.history.replaceState({}, '', url.toString());
+    }
+
+    function updatePeriodButtons(period){
+        $('#dashboardPeriodSwitch [data-period]').each(function(){
+            const active = $(this).data('period') === period;
+            $(this)
+                .toggleClass('active', active)
+                .attr('aria-pressed', active ? 'true' : 'false');
+        });
+
+        $('#dashboardPeriodFormValue').val(period);
+    }
+
+    function updateCard($card, row, days, period){
+        const oldCount = parseInt(
+            $card.attr('data-post-count'),
+            10
+        ) || 0;
+        const count = parseInt(row.post_count, 10) || 0;
+        const dailyTarget = Math.max(
+            1,
+            parseInt(row.daily_target, 10) || 10
+        );
+        const periodTarget = Math.max(
+            1,
+            parseInt(row.period_target, 10)
+            || dailyTarget * Math.max(1, days)
+        );
+        const percent = Math.min(
+            100,
+            parseInt(row.percent, 10) || 0
+        );
+        const met = !!row.target_met;
+
+        $card
+            .attr('data-post-count', count)
+            .attr('data-daily-target', dailyTarget)
+            .toggleClass('target-met', met);
+
+        animateNumber(
+            $card.find('[data-progress-count]'),
+            oldCount,
+            count
+        );
+
+        $card.find('[data-progress-target]').text(periodTarget);
+        $card.find('[data-daily-target-label]').text(dailyTarget);
+        $card.find('[data-period-days]').text(days);
+        $card.find('[data-target-input]').val(dailyTarget);
+
+        $card
+            .find('[data-good-count]')
+            .text(parseInt(row.good_count, 10) || 0);
+
+        $card
+            .find('[data-bad-count]')
+            .text(parseInt(row.bad_count, 10) || 0);
+
+        $card
+            .find('[data-unreviewed-count]')
+            .text(parseInt(row.unreviewed_count, 10) || 0);
+
+        $card
+            .find('[data-progress-fill]')
+            .css('width', percent + '%');
+
+        $card
+            .find('.sales-progress-track')
+            .attr('aria-valuemax', periodTarget)
+            .attr('aria-valuenow', count);
+
+        $card
+            .find('[data-target-badge]')
+            .toggleClass('hidden', !met);
+
+        const $view = $card.find('[data-view-posts]');
+        $view
+            .attr('href', row.view_url || '#')
+            .text(period === 'day' ? 'View Posts' : 'View Report');
+
+        $card
+            .removeClass('period-updated');
+
+        void $card.get(0).offsetWidth;
+
+        $card.addClass('period-updated');
+
+        setTimeout(function(){
+            $card.removeClass('period-updated');
+        }, 800);
+    }
+
+    function applyProgress(data){
+        currentPeriod = data.period || 'day';
+        currentPeriodDays = parseInt(data.days, 10) || 1;
+        baselineCount = parseInt(data.post_count, 10) || 0;
+        baselineMaxId = parseInt(data.max_post_id, 10) || 0;
+        noticeShown = false;
+        $notice.addClass('hidden');
+
+        $live
+            .attr('data-period', currentPeriod)
+            .attr('data-period-days', currentPeriodDays)
+            .attr('data-post-count', baselineCount)
+            .attr('data-max-post-id', baselineMaxId);
+
+        updatePeriodButtons(currentPeriod);
+        updateUrlPeriod(currentPeriod);
+
+        $('#dashboardPeriodLabel').text(
+            data.period_label || ''
+        );
+        $('#dashboardProgressTitle').text(
+            periodName(currentPeriod) + ' Posting Progress'
+        );
+        $('#dashboardProgressSubtitle').text(
+            'Daily target × '
+            + currentPeriodDays
+            + ' = '
+            + (data.period_short_label || 'period target')
+            + '.'
+        );
+        $('#dashboardPostCount').text(baselineCount);
+
+        const rows = Array.isArray(data.rows) ? data.rows : [];
+        const byId = {};
+
+        rows.forEach(function(row){
+            byId[String(row.sales_user_id)] = row;
+        });
+
+        $grid.find('.sales-progress-card').each(function(){
+            const $card = $(this);
+            const id = String($card.data('sales-id'));
+            const row = byId[id];
+
+            if(row){
+                updateCard(
+                    $card,
+                    row,
+                    currentPeriodDays,
+                    currentPeriod
+                );
+            }
+        });
+    }
+
+    function loadPeriod(period){
+        if(periodRequest && periodRequest.readyState !== 4){
+            periodRequest.abort();
+        }
+
+        $('#dashboardPeriodSwitch [data-period]')
+            .prop('disabled', true);
+
+        $grid.addClass('period-loading');
+
+        periodRequest = $.ajax({
+            url: progressUrl,
+            method: 'GET',
+            dataType: 'json',
+            cache: false,
+            data: {
+                date: date,
+                period: period,
+                _: Date.now()
+            }
+        })
+        .done(function(data){
+            if(!data || !data.ok){
+                return;
+            }
+
+            applyProgress(data);
+        })
+        .always(function(){
+            $grid.removeClass('period-loading');
+            $('#dashboardPeriodSwitch [data-period]')
+                .prop('disabled', false);
+        });
+    }
+
+    $('#dashboardPeriodSwitch').on(
+        'click',
+        '[data-period]',
+        function(){
+            const period = String($(this).data('period') || 'day');
+
+            if(period === currentPeriod){
+                return;
+            }
+
+            loadPeriod(period);
+        }
+    );
+
+    function redrawAfterDailyTargetSave($card, dailyTarget){
+        const count = parseInt(
+            $card.attr('data-post-count'),
+            10
+        ) || 0;
+        const periodTarget = dailyTarget * currentPeriodDays;
+        const percent = Math.min(
+            100,
+            Math.round((count / periodTarget) * 100)
+        );
+        const met = count >= periodTarget;
+
+        $card
+            .attr('data-daily-target', dailyTarget)
+            .toggleClass('target-met', met);
+
+        $card.find('[data-daily-target-label]').text(dailyTarget);
+        $card.find('[data-progress-target]').text(periodTarget);
+        $card.find('[data-progress-fill]').css(
+            'width',
+            percent + '%'
+        );
+        $card
+            .find('.sales-progress-track')
+            .attr('aria-valuemax', periodTarget)
+            .attr('aria-valuenow', count);
+        $card
+            .find('[data-target-badge]')
+            .toggleClass('hidden', !met);
+    }
+
+    $(document).on('click', '[data-target-save]', function(){
+        const $button = $(this);
+        const $card = $button.closest('.sales-progress-card');
+        const $input = $card.find('[data-target-input]');
+        const salesId = parseInt(
+            $card.attr('data-sales-id'),
+            10
+        ) || 0;
+        const target = parseInt($input.val(), 10) || 0;
+
+        setTargetMessage($card, '', false);
+        $input.removeClass('field-error');
+
+        if(target < 1 || target > 999){
+            $input.addClass('field-error').focus();
+            setTargetMessage(
+                $card,
+                'Target must be 1–999.',
+                true
+            );
+            return;
+        }
+
+        $button.prop('disabled', true).text('Saving...');
+
+        $.ajax({
+            url: targetUrl,
+            method: 'POST',
+            dataType: 'json',
+            data: {
+                _csrf: csrf,
+                sales_user_id: salesId,
+                target: target
+            }
+        })
+        .done(function(data){
+            if(!data || !data.ok){
                 setTargetMessage(
                     $card,
-                    'Target must be 1–999.',
+                    (data && data.message) || 'Could not save.',
                     true
                 );
                 return;
             }
 
-            $button.prop('disabled', true).text('Saving...');
-
-            $.ajax({
-                url: targetUrl,
-                method: 'POST',
-                dataType: 'json',
-                data: {
-                    _csrf: csrf,
-                    sales_user_id: salesId,
-                    target: target
-                }
-            })
-            .done(function(data){
-                if(!data || !data.ok){
-                    setTargetMessage(
-                        $card,
-                        (data && data.message) || 'Could not save.',
-                        true
-                    );
-                    return;
-                }
-
-                $input.val(data.target);
-                redrawProgress($card, data.target);
-                setTargetMessage($card, 'Saved', false);
-            })
-            .fail(function(xhr){
-                const data = xhr.responseJSON || {};
-                setTargetMessage(
-                    $card,
-                    data.message || 'Could not save.',
-                    true
-                );
-            })
-            .always(function(){
-                $button.prop('disabled', false).text('Save');
-            });
-        });
-
-        $grid.on('input', '[data-target-input]', function(){
-            $(this).removeClass('field-error');
+            const dailyTarget = parseInt(data.target, 10) || 10;
+            $input.val(dailyTarget);
+            redrawAfterDailyTargetSave($card, dailyTarget);
+            setTargetMessage($card, 'Saved', false);
+        })
+        .fail(function(xhr){
+            const data = xhr.responseJSON || {};
             setTargetMessage(
-                $(this).closest('.sales-progress-card'),
-                '',
-                false
+                $card,
+                data.message || 'Could not save.',
+                true
             );
+        })
+        .always(function(){
+            $button.prop('disabled', false).text('Save');
         });
-    }
+    });
 
-    const $live = $('#adminDashboardLive');
-
-    if(!$live.length){
-        return;
-    }
-
-    const url = $live.data('updates-url');
-    const date = String($live.data('date') || '');
-    const baselineCount = parseInt(
-        $live.attr('data-post-count'),
-        10
-    ) || 0;
-    const baselineMaxId = parseInt(
-        $live.attr('data-max-post-id'),
-        10
-    ) || 0;
-
-    const $notice = $('#dashboardRefreshNotice');
-    const $title = $('#dashboardRefreshTitle');
-    const $text = $('#dashboardRefreshText');
-
-    let timer = null;
-    let request = null;
-    let noticeShown = false;
+    $grid.on('input', '[data-target-input]', function(){
+        $(this).removeClass('field-error');
+        setTargetMessage(
+            $(this).closest('.sales-progress-card'),
+            '',
+            false
+        );
+    });
 
     function showRefreshNotice(data){
         if(noticeShown){
@@ -1083,14 +1316,18 @@ $(function(){
         const count = parseInt(data.post_count, 10) || 0;
         const delta = Math.max(0, count - baselineCount);
 
-        $title.text(
+        $noticeTitle.text(
             delta > 0
-                ? delta + ' new post' + (delta === 1 ? '' : 's') + ' available'
+                ? delta + ' new post'
+                    + (delta === 1 ? '' : 's')
+                    + ' available'
                 : 'New Sales activity is available'
         );
 
-        $text.text(
-            'Refresh to load the latest Sales progress and posts.'
+        $noticeText.text(
+            'Refresh to load the latest '
+            + periodName(currentPeriod).toLowerCase()
+            + ' progress.'
         );
 
         $notice.removeClass('hidden');
@@ -1101,17 +1338,18 @@ $(function(){
             return;
         }
 
-        if(request && request.readyState !== 4){
+        if(activityRequest && activityRequest.readyState !== 4){
             return;
         }
 
-        request = $.ajax({
-            url: url,
+        activityRequest = $.ajax({
+            url: updatesUrl,
             method: 'GET',
             dataType: 'json',
             cache: false,
             data: {
                 date: date,
+                period: currentPeriod,
                 _: Date.now()
             }
         })
@@ -1143,6 +1381,7 @@ $(function(){
     });
 
     checkDashboardActivity();
-    timer = setInterval(checkDashboardActivity, 5000);
+    activityTimer = setInterval(checkDashboardActivity, 5000);
 })();
+;
 });

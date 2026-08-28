@@ -84,14 +84,16 @@ class Post {
         return $s->fetchAll();
     }
 
-    public static function adminDailySalesProgress(string $date): array
-    {
+    public static function adminSalesProgress(
+        string $from,
+        string $to
+    ): array {
         $s = Database::connection()->prepare(
             "SELECT
                 u.id AS sales_user_id,
                 u.sales_id,
                 u.display_name,
-                COALESCE(NULLIF(u.daily_post_target,0),10) AS target_posts,
+                COALESCE(NULLIF(u.daily_post_target,0),10) AS daily_target,
                 COUNT(p.id) AS post_count,
                 COALESCE(SUM(p.admin_review_status='good'),0) AS good_count,
                 COALESCE(SUM(p.admin_review_status='bad'),0) AS bad_count
@@ -99,7 +101,7 @@ class Post {
              LEFT JOIN cdsp_sales_posts p
                ON p.sales_user_id=u.id
               AND p.deleted_at IS NULL
-              AND p.published_date=?
+              AND p.published_date BETWEEN ? AND ?
              WHERE u.role='sales'
                AND u.active=1
              GROUP BY
@@ -110,28 +112,40 @@ class Post {
              ORDER BY u.display_name"
         );
 
-        $s->execute([$date]);
+        $s->execute([$from,$to]);
 
         return $s->fetchAll();
     }
 
-    public static function adminDashboardState(string $date): array
-    {
+    public static function adminDashboardStateRange(
+        string $from,
+        string $to
+    ): array {
         $s = Database::connection()->prepare(
             "SELECT
                 COUNT(*) AS post_count,
                 COALESCE(MAX(id),0) AS max_post_id
              FROM cdsp_sales_posts
              WHERE deleted_at IS NULL
-               AND published_date=?"
+               AND published_date BETWEEN ? AND ?"
         );
-        $s->execute([$date]);
+        $s->execute([$from,$to]);
         $row = $s->fetch() ?: [];
 
         return [
             'post_count' => (int)($row['post_count'] ?? 0),
             'max_post_id' => (int)($row['max_post_id'] ?? 0),
         ];
+    }
+
+    public static function adminDailySalesProgress(string $date): array
+    {
+        return self::adminSalesProgress($date,$date);
+    }
+
+    public static function adminDashboardState(string $date): array
+    {
+        return self::adminDashboardStateRange($date,$date);
     }
 
     public static function dailyCounts(int $uid,string $from,string $to):array{

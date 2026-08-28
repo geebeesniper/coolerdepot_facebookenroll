@@ -4,12 +4,21 @@ use App\Core\Util;
 
 $base = $config['app']['base_path'];
 $csrf = Csrf::token();
+
+$periodNames = [
+    'day' => 'Daily',
+    'week' => 'Weekly',
+    'month' => 'Monthly',
+];
 ?>
 
 <div
     id="adminDashboardLive"
     data-updates-url="<?= Util::e($base) ?>/admin/dashboard/updates"
+    data-progress-url="<?= Util::e($base) ?>/admin/dashboard/progress"
     data-date="<?= Util::e($date) ?>"
+    data-period="<?= Util::e($period) ?>"
+    data-period-days="<?= (int)$periodInfo['days'] ?>"
     data-post-count="<?= (int)$dashboardState['post_count'] ?>"
     data-max-post-id="<?= (int)$dashboardState['max_post_id'] ?>"
 ></div>
@@ -19,7 +28,7 @@ $csrf = Csrf::token();
         <span class="dashboard-refresh-dot"></span>
         <strong id="dashboardRefreshTitle">New posts are available</strong>
         <small id="dashboardRefreshText">
-            Sales activity changed since this page was loaded.
+            Sales activity changed since this view was loaded.
         </small>
     </div>
     <button type="button" class="btn" id="dashboardRefreshButton">
@@ -30,13 +39,19 @@ $csrf = Csrf::token();
 <div class="page-head admin-page-head">
     <div>
         <div class="eyebrow">Administrator</div>
-        <h1>Daily Work Progress</h1>
-        <p class="dashboard-date-copy">
-            <?= Util::e(date('F j, Y', strtotime($date.' 12:00:00'))) ?>
+        <h1>Sales Work Progress</h1>
+        <p class="dashboard-date-copy" id="dashboardPeriodLabel">
+            <?= Util::e($periodInfo['label']) ?>
         </p>
     </div>
 
     <form class="filters" method="get">
+        <input
+            type="hidden"
+            name="period"
+            value="<?= Util::e($period) ?>"
+            id="dashboardPeriodFormValue"
+        >
         <?php if ($salesFilter > 0): ?>
             <input
                 type="hidden"
@@ -54,16 +69,46 @@ $csrf = Csrf::token();
 </div>
 
 <section class="admin-sales-progress-section">
-    <div class="admin-section-head">
-        <div>
-            <h2>Sales Posting Progress</h2>
-            <p>
-                Today's verified Marketplace posts against each Sales target.
-            </p>
+    <div class="admin-progress-toolbar">
+        <div
+            class="dashboard-period-switch"
+            id="dashboardPeriodSwitch"
+            aria-label="Sales progress period"
+        >
+            <?php foreach ($periodNames as $periodKey => $periodName): ?>
+                <button
+                    type="button"
+                    class="dashboard-period-button<?= $period === $periodKey ? ' active' : '' ?>"
+                    data-period="<?= Util::e($periodKey) ?>"
+                    aria-pressed="<?= $period === $periodKey ? 'true' : 'false' ?>"
+                >
+                    <?= Util::e($periodName) ?>
+                </button>
+            <?php endforeach; ?>
         </div>
+
         <div class="admin-section-summary">
-            <?= count($salesProgress) ?> Sales
-            · <?= (int)$dashboardState['post_count'] ?> Posts
+            <strong id="dashboardSalesCount">
+                <?= count($salesProgress) ?>
+            </strong>
+            Sales
+            <span>·</span>
+            <strong id="dashboardPostCount">
+                <?= (int)$dashboardState['post_count'] ?>
+            </strong>
+            Posts
+        </div>
+    </div>
+
+    <div class="admin-section-head compact">
+        <div>
+            <h2 id="dashboardProgressTitle">
+                <?= Util::e($periodNames[$period]) ?> Posting Progress
+            </h2>
+            <p id="dashboardProgressSubtitle">
+                Daily target × <?= (int)$periodInfo['days'] ?>
+                = <?= Util::e($periodInfo['short_label']) ?>.
+            </p>
         </div>
     </div>
 
@@ -74,25 +119,13 @@ $csrf = Csrf::token();
         id="salesProgressGrid"
         data-target-url="<?= Util::e($base) ?>/admin/sales-target"
     >
-        <?php foreach ($salesProgress as $row): ?>
-            <?php
-            $count = (int)$row['post_count'];
-            $target = max(1, (int)$row['target_posts']);
-            $percent = min(100, round(($count / $target) * 100));
-            $met = $count >= $target;
-            $unreviewed = max(
-                0,
-                $count - (int)$row['good_count'] - (int)$row['bad_count']
-            );
-            $cardHref = $base
-                . '/admin?date=' . rawurlencode($date)
-                . '&sales_id=' . (int)$row['sales_user_id']
-                . '#daily-posts';
-            ?>
+        <?php foreach ($salesProgress as $index => $row): ?>
             <article
-                class="sales-progress-card<?= $met ? ' target-met' : '' ?><?= $salesFilter === (int)$row['sales_user_id'] ? ' selected' : '' ?>"
+                class="sales-progress-card<?= !empty($row['target_met']) ? ' target-met' : '' ?><?= $salesFilter === (int)$row['sales_user_id'] ? ' selected' : '' ?>"
                 data-sales-id="<?= (int)$row['sales_user_id'] ?>"
-                data-post-count="<?= $count ?>"
+                data-post-count="<?= (int)$row['post_count'] ?>"
+                data-daily-target="<?= (int)$row['daily_target'] ?>"
+                style="--card-index:<?= (int)$index ?>"
             >
                 <div class="sales-progress-card-head">
                     <div class="sales-progress-avatar" aria-hidden="true">
@@ -110,61 +143,87 @@ $csrf = Csrf::token();
                         <strong><?= Util::e($row['display_name']) ?></strong>
                         <span>#<?= Util::e($row['sales_id']) ?></span>
                     </div>
-                    <?php if ($met): ?>
-                        <span class="sales-target-badge">Target met</span>
-                    <?php endif; ?>
+
+                    <span
+                        class="sales-target-badge<?= empty($row['target_met']) ? ' hidden' : '' ?>"
+                        data-target-badge
+                    >
+                        Target met
+                    </span>
                 </div>
 
                 <div class="sales-progress-number">
-                    <strong data-progress-count><?= $count ?></strong>
+                    <strong data-progress-count>
+                        <?= (int)$row['post_count'] ?>
+                    </strong>
                     <span>
-                        / <b data-progress-target><?= $target ?></b> posts
+                        / <b data-progress-target>
+                            <?= (int)$row['period_target'] ?>
+                        </b> posts
+                    </span>
+                </div>
+
+                <div class="sales-period-target-copy">
+                    <span>
+                        <b data-daily-target-label>
+                            <?= (int)$row['daily_target'] ?>
+                        </b>/day
+                    </span>
+                    <span>
+                        <b data-period-days>
+                            <?= (int)$periodInfo['days'] ?>
+                        </b>
+                        day<?= (int)$periodInfo['days'] === 1 ? '' : 's' ?>
                     </span>
                 </div>
 
                 <div
                     class="sales-progress-track"
                     role="progressbar"
-                    aria-label="<?= Util::e($row['display_name']) ?> daily posting progress"
+                    aria-label="<?= Util::e($row['display_name']) ?> posting progress"
                     aria-valuemin="0"
-                    aria-valuemax="<?= $target ?>"
-                    aria-valuenow="<?= $count ?>"
+                    aria-valuemax="<?= (int)$row['period_target'] ?>"
+                    aria-valuenow="<?= (int)$row['post_count'] ?>"
                 >
                     <div
                         class="sales-progress-fill"
                         data-progress-fill
-                        style="width:<?= $percent ?>%"
+                        style="width:<?= (int)$row['percent'] ?>%"
                     ></div>
                 </div>
 
                 <div class="sales-progress-meta">
                     <span>
-                        <?= (int)$row['good_count'] ?> Good
+                        <b data-good-count><?= (int)$row['good_count'] ?></b>
+                        Good
                     </span>
                     <span>
-                        <?= (int)$row['bad_count'] ?> Issues
+                        <b data-bad-count><?= (int)$row['bad_count'] ?></b>
+                        Issues
                     </span>
                     <span>
-                        <?= $unreviewed ?> Unreviewed
+                        <b data-unreviewed-count><?= (int)$row['unreviewed_count'] ?></b>
+                        Unreviewed
                     </span>
                 </div>
 
                 <div class="sales-progress-actions">
                     <a
                         class="sales-progress-view"
-                        href="<?= Util::e($cardHref) ?>"
+                        data-view-posts
+                        href="<?= Util::e($row['view_url']) ?>"
                     >
-                        View Posts
+                        <?= $period === 'day' ? 'View Posts' : 'View Report' ?>
                     </a>
 
                     <div class="sales-target-editor">
                         <label>
-                            Target
+                            Daily Target
                             <input
                                 type="number"
                                 min="1"
                                 max="999"
-                                value="<?= $target ?>"
+                                value="<?= (int)$row['daily_target'] ?>"
                                 data-target-input
                                 aria-label="Daily target for <?= Util::e($row['display_name']) ?>"
                             >
@@ -205,7 +264,7 @@ $csrf = Csrf::token();
                 <?php endif; ?>
             </h2>
             <p class="panel-subtitle">
-                Verified Facebook Marketplace publication date.
+                This table stays on the selected calendar day.
             </p>
         </div>
 
@@ -214,6 +273,7 @@ $csrf = Csrf::token();
                 class="btn"
                 href="<?= Util::e(
                     $base . '/admin?date=' . rawurlencode($date)
+                    . '&period=' . rawurlencode($period)
                     . '#daily-posts'
                 ) ?>"
             >

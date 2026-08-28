@@ -1178,3 +1178,123 @@
         width:100%;
     }
 }
+
+/* v0.1.18 Dynamic Daily / Weekly / Monthly progress UX */
+.admin-progress-toolbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:14px;
+    margin-bottom:12px;
+}
+.dashboard-period-switch{
+    display:inline-flex;
+    align-items:center;
+    gap:3px;
+    padding:3px;
+    border:1px solid #d8dee8;
+    border-radius:4px;
+    background:#eef2f6;
+}
+.dashboard-period-button{
+    min-width:82px;
+    min-height:32px;
+    padding:6px 12px;
+    border:0;
+    border-radius:4px;
+    background:transparent;
+    color:#667085;
+    cursor:pointer;
+    font-size:10px;
+    font-weight:900;
+    transition:
+        background .18s ease,
+        color .18s ease,
+        box-shadow .18s ease,
+        transform .18s ease;
+}
+.dashboard-period-button:hover{
+    color:#1d4ed8;
+}
+.dashboard-period-button.active{
+    background:#fff;
+    color:#1d4ed8;
+    box-shadow:0 2px 8px rgba(15,23,42,.09);
+    transform:translateY(-1px);
+}
+.dashboard-period-button:disabled{
+    cursor:wait;
+    opacity:.6;
+}
+.admin-section-head.compact{
+    margin-bottom:10px;
+}
+.sales-period-target-copy{
+    display:flex;
+    gap:7px;
+    margin-top:6px;
+}
+.sales-period-target-copy span{
+    padding:3px 5px;
+    border:1px solid #e3e8ef;
+    border-radius:4px;
+    background:#f8fafc;
+    color:#667085;
+    font-size:8px;
+    font-weight:800;
+}
+.sales-period-target-copy b{
+    color:#344054;
+}
+.sales-progress-grid.period-loading .sales-progress-card{
+    opacity:.45;
+    transform:translateY(3px) scale(.995);
+}
+.sales-progress-card{
+    transition:
+        border-color .16s ease,
+        box-shadow .16s ease,
+        transform .22s ease,
+        opacity .18s ease;
+}
+.sales-progress-card.period-updated{
+    animation:salesCardPeriodUpdate .34s ease both;
+    animation-delay:calc(var(--card-index) * 18ms);
+}
+.sales-progress-fill{
+    transition:
+        width .48s cubic-bezier(.2,.8,.2,1),
+        background .25s ease;
+}
+.sales-progress-number strong{
+    transition:color .2s ease;
+}
+.sales-progress-card.period-updated .sales-progress-number strong{
+    color:#2563eb;
+}
+.sales-target-badge.hidden{
+    display:none;
+}
+@keyframes salesCardPeriodUpdate{
+    0%{
+        opacity:.55;
+        transform:translateY(5px);
+    }
+    100%{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+@media(max-width:620px){
+    .admin-progress-toolbar{
+        align-items:flex-start;
+        flex-direction:column;
+    }
+    .dashboard-period-switch{
+        width:100%;
+    }
+    .dashboard-period-button{
+        flex:1;
+        min-width:0;
+    }
+}

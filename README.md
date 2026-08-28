@@ -500,3 +500,20 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - The previous large Posting Performance bar chart has been removed.
 - Requires migration `007_sales_daily_target`.
 - All border radius remains `4px`.
+
+## v0.1.18 — Dynamic Daily / Weekly / Monthly Sales progress
+
+- Added a SaaS-style `Daily / Weekly / Monthly` segmented filter above the Sales progress grid.
+- Period changes happen through AJAX without a full page reload.
+- Sales cards stay in place and animate their count, target, progress fill, review counts, and action link.
+- Daily target remains the only manually configured target.
+- Weekly target is `daily target × 7`.
+- Monthly target is `daily target × number of calendar days in the selected month`.
+- Weekly ranges use Monday through Sunday around the selected dashboard date.
+- Monthly ranges use the selected date's full calendar month.
+- Weekly/Monthly `View Report` links route to the existing period report for that Sales user.
+- The detailed Posts table remains tied to the selected calendar day.
+- New-post activity polling follows the currently selected Daily/Weekly/Monthly period and still shows the non-disruptive `Refresh` notice rather than auto-reloading.
+- Added staggered card updates, count-up animation, smooth progress transitions, and loading-state motion.
+- No database migration is required.
+- All border radius remains `4px`.

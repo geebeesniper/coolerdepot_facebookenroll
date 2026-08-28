@@ -6,11 +6,12 @@ use App\Core\Controller;use App\Core\Auth;use App\Core\Csrf;use App\Core\Databas
 class AdminController extends Controller{
     public function dashboard():void{
         $admin=Auth::requireRole('admin');
-        $date=(string)($_GET['date']??date('Y-m-d'));
-
-        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
-            $date=date('Y-m-d');
-        }
+        $date=$this->validDashboardDate(
+            (string)($_GET['date']??date('Y-m-d'))
+        );
+        $period=$this->validDashboardPeriod(
+            (string)($_GET['period']??'day')
+        );
 
         $salesFilter=(int)($_GET['sales_id']??0);
         $sales=User::allSales();
@@ -24,8 +25,20 @@ class AdminController extends Controller{
             $salesFilter=0;
         }
 
-        $salesProgress=Post::adminDailySalesProgress($date);
-        $dashboardState=Post::adminDashboardState($date);
+        $periodInfo=$this->dashboardPeriodInfo($date,$period);
+        $salesProgress=$this->formatProgressRows(
+            Post::adminSalesProgress(
+                $periodInfo['from'],
+                $periodInfo['to']
+            ),
+            $periodInfo
+        );
+        $dashboardState=Post::adminDashboardStateRange(
+            $periodInfo['from'],
+            $periodInfo['to']
+        );
+
+        // The detailed table remains the selected calendar day.
         $posts=Post::adminQueue($date,$salesFilter);
 
         $selectedSalesName='All Sales';
@@ -54,6 +67,8 @@ class AdminController extends Controller{
             compact(
                 'admin',
                 'date',
+                'period',
+                'periodInfo',
                 'posts',
                 'sales',
                 'salesFilter',
@@ -63,6 +78,52 @@ class AdminController extends Controller{
                 'deletionRequests'
             )
         );
+    }
+
+    public function dashboardProgress():void{
+        Auth::requireRole('admin');
+
+        $date=$this->validDashboardDate(
+            (string)($_GET['date']??date('Y-m-d'))
+        );
+        $period=$this->validDashboardPeriod(
+            (string)($_GET['period']??'day')
+        );
+        $periodInfo=$this->dashboardPeriodInfo($date,$period);
+
+        if (session_status()===PHP_SESSION_ACTIVE) {
+            session_write_close();
+        }
+
+        $rows=$this->formatProgressRows(
+            Post::adminSalesProgress(
+                $periodInfo['from'],
+                $periodInfo['to']
+            ),
+            $periodInfo
+        );
+        $state=Post::adminDashboardStateRange(
+            $periodInfo['from'],
+            $periodInfo['to']
+        );
+
+        header(
+            'Cache-Control: no-store, no-cache, must-revalidate, max-age=0'
+        );
+
+        $this->json([
+            'ok'=>true,
+            'date'=>$date,
+            'period'=>$period,
+            'period_label'=>$periodInfo['label'],
+            'period_short_label'=>$periodInfo['short_label'],
+            'from'=>$periodInfo['from'],
+            'to'=>$periodInfo['to'],
+            'days'=>$periodInfo['days'],
+            'post_count'=>$state['post_count'],
+            'max_post_id'=>$state['max_post_id'],
+            'rows'=>$rows,
+        ]);
     }
 
     public function saveSalesTarget():void{
@@ -110,20 +171,22 @@ class AdminController extends Controller{
     public function dashboardUpdates():void{
         Auth::requireRole('admin');
 
-        $date=(string)($_GET['date']??date('Y-m-d'));
-
-        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
-            $this->json([
-                'ok'=>false,
-                'message'=>'Invalid dashboard date.',
-            ],422);
-        }
+        $date=$this->validDashboardDate(
+            (string)($_GET['date']??date('Y-m-d'))
+        );
+        $period=$this->validDashboardPeriod(
+            (string)($_GET['period']??'day')
+        );
+        $periodInfo=$this->dashboardPeriodInfo($date,$period);
 
         if (session_status()===PHP_SESSION_ACTIVE) {
             session_write_close();
         }
 
-        $state=Post::adminDashboardState($date);
+        $state=Post::adminDashboardStateRange(
+            $periodInfo['from'],
+            $periodInfo['to']
+        );
 
         header(
             'Cache-Control: no-store, no-cache, must-revalidate, max-age=0'
@@ -132,9 +195,121 @@ class AdminController extends Controller{
         $this->json([
             'ok'=>true,
             'date'=>$date,
+            'period'=>$period,
+            'from'=>$periodInfo['from'],
+            'to'=>$periodInfo['to'],
             'post_count'=>$state['post_count'],
             'max_post_id'=>$state['max_post_id'],
         ]);
+    }
+
+    private function validDashboardDate(string $date):string{
+        return preg_match('/^\d{4}-\d{2}-\d{2}$/',$date)
+            ? $date
+            : date('Y-m-d');
+    }
+
+    private function validDashboardPeriod(string $period):string{
+        return in_array($period,['day','week','month'],true)
+            ? $period
+            : 'day';
+    }
+
+    private function dashboardPeriodInfo(
+        string $date,
+        string $period
+    ):array{
+        $anchor=strtotime($date.' 12:00:00');
+
+        if ($period==='week') {
+            $daysFromMonday=(int)date('N',$anchor)-1;
+            $from=date(
+                'Y-m-d',
+                strtotime('-'.$daysFromMonday.' days',$anchor)
+            );
+            $to=date(
+                'Y-m-d',
+                strtotime($from.' +6 days')
+            );
+            $days=7;
+            $label=date('M j',strtotime($from))
+                .' — '
+                .date('M j, Y',strtotime($to));
+            $shortLabel='7-day target';
+        } elseif ($period==='month') {
+            $from=date('Y-m-01',$anchor);
+            $to=date('Y-m-t',$anchor);
+            $days=(int)date('t',$anchor);
+            $label=date('F Y',$anchor);
+            $shortLabel=$days.'-day target';
+        } else {
+            $period='day';
+            $from=$date;
+            $to=$date;
+            $days=1;
+            $label=date('F j, Y',$anchor);
+            $shortLabel='Daily target';
+        }
+
+        return [
+            'period'=>$period,
+            'from'=>$from,
+            'to'=>$to,
+            'days'=>$days,
+            'label'=>$label,
+            'short_label'=>$shortLabel,
+        ];
+    }
+
+    private function formatProgressRows(
+        array $rows,
+        array $periodInfo
+    ):array{
+        $days=max(1,(int)$periodInfo['days']);
+        $period=(string)$periodInfo['period'];
+        $from=(string)$periodInfo['from'];
+
+        foreach ($rows as &$row) {
+            $dailyTarget=max(1,(int)($row['daily_target']??10));
+            $periodTarget=$dailyTarget*$days;
+            $postCount=(int)($row['post_count']??0);
+            $good=(int)($row['good_count']??0);
+            $bad=(int)($row['bad_count']??0);
+
+            $row['daily_target']=$dailyTarget;
+            $row['period_target']=$periodTarget;
+            $row['unreviewed_count']=max(
+                0,
+                $postCount-$good-$bad
+            );
+            $row['percent']=$periodTarget > 0
+                ? min(
+                    100,
+                    (int)round(
+                        ($postCount/$periodTarget)*100
+                    )
+                )
+                : 0;
+            $row['target_met']=$postCount >= $periodTarget;
+
+            if ($period==='day') {
+                $row['view_url']=
+                    $GLOBALS['config']['app']['base_path']
+                    .'/admin?date='.rawurlencode($from)
+                    .'&sales_id='.(int)$row['sales_user_id']
+                    .'#daily-posts';
+            } else {
+                $row['view_url']=
+                    $GLOBALS['config']['app']['base_path']
+                    .'/admin/reports?period='
+                    .rawurlencode($period)
+                    .'&start='.rawurlencode($from)
+                    .'&sales_id='.(int)$row['sales_user_id'];
+            }
+        }
+        unset($row);
+
+        return $rows;
     }
 
     public function postReview():void{
