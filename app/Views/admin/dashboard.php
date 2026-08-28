@@ -16,6 +16,7 @@ $periodNames = [
     id="adminDashboardLive"
     data-updates-url="<?= Util::e($base) ?>/admin/dashboard/updates"
     data-progress-url="<?= Util::e($base) ?>/admin/dashboard/progress"
+    data-sales-posts-url="<?= Util::e($base) ?>/admin/dashboard/sales-posts"
     data-date="<?= Util::e($date) ?>"
     data-period="<?= Util::e($period) ?>"
     data-period-days="<?= (int)$periodInfo['days'] ?>"
@@ -121,10 +122,16 @@ $periodNames = [
     >
         <?php foreach ($salesProgress as $index => $row): ?>
             <article
-                class="sales-progress-card<?= !empty($row['target_met']) ? ' target-met' : '' ?><?= $salesFilter === (int)$row['sales_user_id'] ? ' selected' : '' ?>"
+                class="sales-progress-card sales-progress-color-<?= ($index % 8) + 1 ?><?= !empty($row['target_met']) ? ' target-met' : '' ?>"
                 data-sales-id="<?= (int)$row['sales_user_id'] ?>"
+                data-sales-name="<?= Util::e($row['display_name']) ?>"
                 data-post-count="<?= (int)$row['post_count'] ?>"
                 data-daily-target="<?= (int)$row['daily_target'] ?>"
+                data-card-toggle
+                role="button"
+                tabindex="0"
+                aria-expanded="false"
+                aria-controls="salesExpandedPosts"
                 style="--card-index:<?= (int)$index ?>"
             >
                 <div class="sales-progress-card-head">
@@ -208,15 +215,12 @@ $periodNames = [
                 </div>
 
                 <div class="sales-progress-actions">
-                    <a
-                        class="sales-progress-view"
-                        data-view-posts
-                        href="<?= Util::e($row['view_url']) ?>"
-                    >
-                        <?= $period === 'day' ? 'View Posts' : 'View Report' ?>
-                    </a>
+                    <div class="sales-card-expand-hint">
+                        <span>Tap to view posts</span>
+                        <span class="sales-card-chevron" aria-hidden="true">⌄</span>
+                    </div>
 
-                    <div class="sales-target-editor">
+                    <div class="sales-target-editor" data-card-control>
                         <label>
                             Daily Target
                             <input
@@ -252,9 +256,44 @@ $periodNames = [
             </div>
         <?php endif; ?>
     </div>
+
+    <section
+        class="sales-expanded-posts hidden"
+        id="salesExpandedPosts"
+        aria-live="polite"
+    >
+        <div class="sales-expanded-head">
+            <div>
+                <div class="eyebrow" id="salesExpandedEyebrow">
+                    Sales Posts
+                </div>
+                <h3 id="salesExpandedTitle">Posts</h3>
+                <p id="salesExpandedSubtitle"></p>
+            </div>
+            <button
+                type="button"
+                class="tiny sales-expanded-close"
+                id="salesExpandedClose"
+                aria-label="Close Sales post list"
+            >
+                Close
+            </button>
+        </div>
+
+        <div class="sales-expanded-loading hidden" id="salesExpandedLoading">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+
+        <div
+            class="sales-expanded-list"
+            id="salesExpandedList"
+        ></div>
+    </section>
 </section>
 
-<section class="panel" id="daily-posts">
+<section class="panel daily-posts-panel" id="daily-posts">
     <div class="panel-head">
         <div>
             <h2>
@@ -268,18 +307,6 @@ $periodNames = [
             </p>
         </div>
 
-        <?php if ($salesFilter > 0): ?>
-            <a
-                class="btn"
-                href="<?= Util::e(
-                    $base . '/admin?date=' . rawurlencode($date)
-                    . '&period=' . rawurlencode($period)
-                    . '#daily-posts'
-                ) ?>"
-            >
-                All Sales
-            </a>
-        <?php endif; ?>
     </div>
 
     <div class="tablewrap">

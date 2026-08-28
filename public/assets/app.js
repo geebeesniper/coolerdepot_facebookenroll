@@ -207,66 +207,302 @@ $(function(){
 
 
 
-    function syncHtmlNote($root){
-        const $editor = $root.find('[data-html-editor]');
-        const $source = $root.find('[data-html-source]');
 
-        if(!$editor.hasClass('hidden')){
-            $source.val($editor.html());
+function syncHtmlNote($root){
+    const $editor = $root.find('[data-html-editor]');
+    const $source = $root.find('[data-html-source]');
+
+    if(!$editor.hasClass('hidden')){
+        $source.val($editor.html());
+    }
+}
+
+function normalizeEditorBlock(value){
+    value = String(value || 'p').toLowerCase();
+
+    return ['p','h3','h4','blockquote'].includes(value)
+        ? value
+        : 'p';
+}
+
+$('[data-html-note]').each(function(){
+    const $root = $(this);
+    const $editor = $root.find('[data-html-editor]');
+    const $source = $root.find('[data-html-source]');
+    const $toolbar = $root.find('[data-html-toolbar]');
+    const $tabs = $root.find('[data-note-mode]');
+    const $format = $root.find('[data-note-format]');
+    const $status = $root.find('[data-note-status]');
+    const $linkbar = $root.find('[data-note-linkbar]');
+    const $linkInput = $root.find('[data-note-link-input]');
+    const $linkNewTab = $root.find('[data-note-link-newtab]');
+
+    let mode = 'visual';
+    let savedRange = null;
+
+    function updateMode(nextMode){
+        mode = nextMode === 'html' ? 'html' : 'visual';
+
+        if(mode === 'html'){
+            syncHtmlNote($root);
+            $editor.addClass('hidden');
+            $toolbar.addClass('hidden');
+            $linkbar.addClass('hidden').attr('aria-hidden', 'true');
+            $source.removeClass('hidden');
+            $status.text('HTML source');
+        }else{
+            $editor.html($source.val());
+            $source.addClass('hidden');
+            $editor.removeClass('hidden');
+            $toolbar.removeClass('hidden');
+            $status.text('Visual editor');
+        }
+
+        $tabs.each(function(){
+            const active = $(this).data('note-mode') === mode;
+
+            $(this)
+                .toggleClass('active', active)
+                .attr('aria-selected', active ? 'true' : 'false');
+        });
+
+        if(mode === 'visual'){
+            setTimeout(function(){
+                $editor.trigger('focus');
+            }, 0);
+        }else{
+            setTimeout(function(){
+                $source.trigger('focus');
+            }, 0);
         }
     }
 
-    $('[data-html-note]').each(function(){
-        const $root = $(this);
-        const $editor = $root.find('[data-html-editor]');
-        const $source = $root.find('[data-html-source]');
-        const $toolbar = $root.find('[data-html-toolbar]');
-        const $toggle = $root.find('[data-html-editor-toggle]');
+    function rememberSelection(){
+        const selection = window.getSelection();
 
-        $toggle.on('click', function(){
-            const editorOn = !$editor.hasClass('hidden');
+        if(!selection || !selection.rangeCount){
+            return;
+        }
 
-            if(editorOn){
-                $source.val($editor.html());
-                $editor.addClass('hidden');
-                $toolbar.addClass('hidden');
-                $source.removeClass('hidden');
-                $toggle.text('Editor On');
-            }else{
-                $editor.html($source.val());
-                $source.addClass('hidden');
-                $editor.removeClass('hidden');
-                $toolbar.removeClass('hidden');
-                $toggle.text('Editor Off');
-                $editor.trigger('focus');
-            }
-        });
+        const range = selection.getRangeAt(0);
+        const node = range.commonAncestorContainer;
+        const editorNode = $editor.get(0);
 
-        $toolbar.on('click', '[data-cmd]', function(){
-            const cmd = $(this).data('cmd');
-            const value = $(this).data('value') || null;
+        if(!editorNode){
+            return;
+        }
 
+        if(
+            node === editorNode
+            || $.contains(editorNode, node.nodeType === 1 ? node : node.parentNode)
+        ){
+            savedRange = range.cloneRange();
+        }
+    }
+
+    function restoreSelection(){
+        if(!savedRange){
             $editor.trigger('focus');
+            return;
+        }
 
-            if(cmd === 'createLink'){
-                const href = window.prompt('Link URL');
-                if(href){
-                    document.execCommand('createLink', false, href);
-                }
-                return;
+        const selection = window.getSelection();
+
+        if(!selection){
+            return;
+        }
+
+        selection.removeAllRanges();
+        selection.addRange(savedRange);
+    }
+
+    function runCommand(command, value){
+        $editor.trigger('focus');
+        restoreSelection();
+
+        document.execCommand(command, false, value || null);
+
+        rememberSelection();
+        $source.val($editor.html());
+    }
+
+    function findSelectedLink(){
+        const selection = window.getSelection();
+
+        if(!selection || !selection.rangeCount){
+            return null;
+        }
+
+        let node = selection.anchorNode;
+
+        if(node && node.nodeType === 3){
+            node = node.parentNode;
+        }
+
+        while(node && node !== $editor.get(0)){
+            if(
+                node.nodeType === 1
+                && String(node.tagName).toLowerCase() === 'a'
+            ){
+                return node;
             }
 
-            document.execCommand(cmd, false, value);
-        });
+            node = node.parentNode;
+        }
 
-        $editor.on('input blur', function(){
-            $source.val($editor.html());
-        });
+        return null;
+    }
 
-        $root.closest('form').on('submit', function(){
-            syncHtmlNote($root);
-        });
+    function openLinkbar(){
+        rememberSelection();
+
+        const link = findSelectedLink();
+
+        if(link){
+            $linkInput.val(link.getAttribute('href') || '');
+            $linkNewTab.prop(
+                'checked',
+                link.getAttribute('target') === '_blank'
+            );
+        }else{
+            $linkInput.val('');
+            $linkNewTab.prop('checked', false);
+        }
+
+        $linkbar
+            .removeClass('hidden')
+            .attr('aria-hidden', 'false');
+
+        setTimeout(function(){
+            $linkInput.trigger('focus');
+        }, 0);
+    }
+
+    function closeLinkbar(){
+        $linkbar
+            .addClass('hidden')
+            .attr('aria-hidden', 'true');
+
+        $linkInput.val('');
+        $linkNewTab.prop('checked', false);
+    }
+
+    $tabs.on('click', function(){
+        updateMode($(this).data('note-mode'));
     });
+
+    $format.on('change', function(){
+        const block = normalizeEditorBlock($(this).val());
+        runCommand('formatBlock', '<' + block + '>');
+    });
+
+    $toolbar.on('mousedown', '[data-cmd],[data-note-link]', function(){
+        rememberSelection();
+    });
+
+    $toolbar.on('click', '[data-cmd]', function(){
+        const command = String($(this).data('cmd') || '');
+        let value = $(this).data('value') || null;
+
+        if(command === 'formatBlock' && value){
+            value = '<' + normalizeEditorBlock(value) + '>';
+        }
+
+        runCommand(command, value);
+    });
+
+    $toolbar.on('click', '[data-note-link]', function(){
+        openLinkbar();
+    });
+
+    $root.on('click', '[data-note-link-cancel]', function(){
+        closeLinkbar();
+        restoreSelection();
+    });
+
+    $root.on('click', '[data-note-link-apply]', function(){
+        const href = String($linkInput.val() || '').trim();
+
+        if(!href){
+            $linkInput.addClass('field-error').trigger('focus');
+            return;
+        }
+
+        $linkInput.removeClass('field-error');
+
+        restoreSelection();
+
+        const existingLink = findSelectedLink();
+
+        if(existingLink){
+            existingLink.setAttribute('href', href);
+
+            if($linkNewTab.is(':checked')){
+                existingLink.setAttribute('target', '_blank');
+                existingLink.setAttribute(
+                    'rel',
+                    'noopener noreferrer'
+                );
+            }else{
+                existingLink.removeAttribute('target');
+            }
+        }else{
+            document.execCommand('createLink', false, href);
+
+            const newLink = findSelectedLink();
+
+            if(newLink && $linkNewTab.is(':checked')){
+                newLink.setAttribute('target', '_blank');
+                newLink.setAttribute(
+                    'rel',
+                    'noopener noreferrer'
+                );
+            }
+        }
+
+        $source.val($editor.html());
+        closeLinkbar();
+        $editor.trigger('focus');
+    });
+
+    $linkInput.on('input', function(){
+        $(this).removeClass('field-error');
+    });
+
+    $linkInput.on('keydown', function(event){
+        if(event.key === 'Enter'){
+            event.preventDefault();
+            $root.find('[data-note-link-apply]').trigger('click');
+        }
+
+        if(event.key === 'Escape'){
+            event.preventDefault();
+            closeLinkbar();
+            restoreSelection();
+        }
+    });
+
+    $editor.on('keyup mouseup input blur', function(){
+        rememberSelection();
+        $source.val($editor.html());
+    });
+
+    $source.on('input', function(){
+        if(mode === 'html'){
+            $status.text('HTML source · modified');
+        }
+    });
+
+    $root.closest('form').on('submit', function(){
+        if(mode === 'html'){
+            $editor.html($source.val());
+        }else{
+            syncHtmlNote($root);
+        }
+    });
+
+    updateMode('visual');
+});
 
 
     // v0.1.13 Live Provider Jobs
@@ -931,6 +1167,7 @@ $(function(){
     const targetUrl = $grid.data('target-url');
     const progressUrl = $live.data('progress-url');
     const updatesUrl = $live.data('updates-url');
+    const salesPostsUrl = $live.data('sales-posts-url');
     const csrf = $('#adminDashboardCsrf').val();
     const date = String($live.data('date') || '');
 
@@ -954,8 +1191,15 @@ $(function(){
     let activityRequest = null;
     let activityTimer = null;
     let noticeShown = false;
+    let expandedSalesId = 0;
+    let expandedRequest = null;
 
     const $notice = $('#dashboardRefreshNotice');
+    const $expanded = $('#salesExpandedPosts');
+    const $expandedTitle = $('#salesExpandedTitle');
+    const $expandedSubtitle = $('#salesExpandedSubtitle');
+    const $expandedList = $('#salesExpandedList');
+    const $expandedLoading = $('#salesExpandedLoading');
     const $noticeTitle = $('#dashboardRefreshTitle');
     const $noticeText = $('#dashboardRefreshText');
 
@@ -1082,11 +1326,6 @@ $(function(){
             .find('[data-target-badge]')
             .toggleClass('hidden', !met);
 
-        const $view = $card.find('[data-view-posts]');
-        $view
-            .attr('href', row.view_url || '#')
-            .text(period === 'day' ? 'View Posts' : 'View Report');
-
         $card
             .removeClass('period-updated');
 
@@ -1155,6 +1394,8 @@ $(function(){
     }
 
     function loadPeriod(period){
+        closeExpandedPosts();
+
         if(periodRequest && periodRequest.readyState !== 4){
             periodRequest.abort();
         }
@@ -1233,6 +1474,230 @@ $(function(){
             .find('[data-target-badge]')
             .toggleClass('hidden', !met);
     }
+
+
+function escapeHtml(value){
+    return $('<div>').text(
+        value == null ? '' : String(value)
+    ).html();
+}
+
+function statusHtml(status){
+    status = String(status || '').toLowerCase();
+
+    if(status === 'good'){
+        return '<span class="status good">Good</span>';
+    }
+
+    if(status === 'bad'){
+        return '<span class="status bad">Bad</span>';
+    }
+
+    return '<span class="sales-expanded-cell">Unreviewed</span>';
+}
+
+function closeExpandedPosts(){
+    expandedSalesId = 0;
+
+    $grid
+        .find('.sales-progress-card.expanded')
+        .removeClass('expanded')
+        .attr('aria-expanded', 'false');
+
+    $expanded
+        .addClass('hidden')
+        .removeAttr('data-sales-id');
+
+    $expandedList.empty();
+    $expandedLoading.addClass('hidden');
+
+    if(expandedRequest && expandedRequest.readyState !== 4){
+        expandedRequest.abort();
+    }
+}
+
+function renderExpandedPosts(data){
+    const posts = Array.isArray(data.posts) ? data.posts : [];
+
+    $expandedTitle.text(
+        data.sales.name + ' · ' + data.count + ' post'
+        + (data.count === 1 ? '' : 's')
+    );
+
+    $expandedSubtitle.text(
+        data.period_label
+        + ' · #'
+        + data.sales.sales_id
+    );
+
+    if(!posts.length){
+        $expandedList.html(
+            '<div class="sales-expanded-empty">'+
+                'No verified posts in this period.'+
+            '</div>'
+        );
+        return;
+    }
+
+    const html = posts.map(function(post){
+        return (
+            '<div class="sales-expanded-row">'+
+                '<div class="sales-expanded-title">'+
+                    '<strong>'+escapeHtml(post.title)+'</strong>'+
+                    '<small>'+escapeHtml(post.platform)+'</small>'+
+                '</div>'+
+                '<div class="sales-expanded-cell">'+
+                    escapeHtml(post.published_date)+
+                '</div>'+
+                '<div class="sales-expanded-cell">'+
+                    escapeHtml(post.published_at)+
+                '</div>'+
+                '<div class="sales-expanded-status">'+
+                    statusHtml(post.status)+
+                '</div>'+
+                '<a class="sales-expanded-review" href="'
+                    +escapeHtml(post.review_url)
+                    +'">Review</a>'+
+            '</div>'
+        );
+    }).join('');
+
+    $expandedList.html(html);
+}
+
+function openExpandedPosts($card){
+    const salesId = parseInt(
+        $card.attr('data-sales-id'),
+        10
+    ) || 0;
+
+    if(!salesId){
+        return;
+    }
+
+    if(expandedSalesId === salesId){
+        closeExpandedPosts();
+        return;
+    }
+
+    if(expandedRequest && expandedRequest.readyState !== 4){
+        expandedRequest.abort();
+    }
+
+    expandedSalesId = salesId;
+
+    $grid
+        .find('.sales-progress-card')
+        .removeClass('expanded')
+        .attr('aria-expanded', 'false');
+
+    $card
+        .addClass('expanded')
+        .attr('aria-expanded', 'true');
+
+    $expanded
+        .removeClass('hidden')
+        .attr('data-sales-id', salesId);
+
+    $expandedTitle.text(
+        String($card.attr('data-sales-name') || 'Sales') + ' · Loading'
+    );
+    $expandedSubtitle.text(
+        periodName(currentPeriod) + ' posts'
+    );
+    $expandedList.empty();
+    $expandedLoading.removeClass('hidden');
+
+    const expandedEl = $expanded.get(0);
+
+    if(expandedEl){
+        const rect = expandedEl.getBoundingClientRect();
+
+        if(rect.top < 0 || rect.top > window.innerHeight * .82){
+            expandedEl.scrollIntoView({
+                behavior:'smooth',
+                block:'nearest'
+            });
+        }
+    }
+
+    expandedRequest = $.ajax({
+        url: salesPostsUrl,
+        method: 'GET',
+        dataType: 'json',
+        cache: false,
+        data: {
+            sales_id: salesId,
+            date: date,
+            period: currentPeriod,
+            _: Date.now()
+        }
+    })
+    .done(function(data){
+        if(
+            !data
+            || !data.ok
+            || expandedSalesId !== salesId
+        ){
+            return;
+        }
+
+        renderExpandedPosts(data);
+    })
+    .fail(function(xhr, status){
+        if(status === 'abort' || expandedSalesId !== salesId){
+            return;
+        }
+
+        const data = xhr.responseJSON || {};
+
+        $expandedList.html(
+            '<div class="sales-expanded-error">'+
+                escapeHtml(
+                    data.message || 'Could not load Sales posts.'
+                )+
+            '</div>'
+        );
+    })
+    .always(function(){
+        if(expandedSalesId === salesId){
+            $expandedLoading.addClass('hidden');
+        }
+    });
+}
+
+$grid.on('click', '[data-card-toggle]', function(event){
+    if(
+        $(event.target).closest(
+            '[data-card-control],a,button,input,select,textarea'
+        ).length
+    ){
+        return;
+    }
+
+    openExpandedPosts($(this));
+});
+
+$grid.on('keydown', '[data-card-toggle]', function(event){
+    if(event.key !== 'Enter' && event.key !== ' '){
+        return;
+    }
+
+    if(
+        $(event.target).closest(
+            '[data-card-control],input,button'
+        ).length
+    ){
+        return;
+    }
+
+    event.preventDefault();
+    openExpandedPosts($(this));
+});
+
+$('#salesExpandedClose').on('click', function(){
+    closeExpandedPosts();
+});
 
     $(document).on('click', '[data-target-save]', function(){
         const $button = $(this);

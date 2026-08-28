@@ -511,59 +511,235 @@
 }
 
 
-/* HTML note editor */
+/* v0.1.19 WordPress / Shopify style HTML note editor */
 .html-note{
     margin-top:12px;
 }
-.html-note-head{
+.wp-note-editor-head{
     display:flex;
-    align-items:center;
+    align-items:flex-end;
     justify-content:space-between;
-    gap:10px;
-    margin-bottom:7px;
+    gap:12px;
+    margin-bottom:0;
 }
-.html-note-head label{
-    margin:0;
+.wp-note-editor-head > label{
+    margin:0 0 7px;
 }
-.html-editor-toolbar{
+.wp-note-mode-tabs{
+    display:flex;
+    align-items:flex-end;
+    gap:3px;
+}
+.wp-note-mode-tab{
+    min-width:66px;
+    padding:7px 12px 6px;
+    border:1px solid #d0d5dd;
+    border-bottom:0;
+    border-radius:4px;
+    background:#f2f4f7;
+    color:#475467;
+    cursor:pointer;
+    font-size:10px;
+    font-weight:800;
+}
+.wp-note-mode-tab.active{
+    position:relative;
+    z-index:2;
+    margin-bottom:-1px;
+    background:#fff;
+    color:#101828;
+}
+.wp-note-editor-frame{
+    overflow:hidden;
+    border:1px solid #d0d5dd;
+    border-radius:4px;
+    background:#fff;
+}
+.wp-note-toolbar{
     display:flex;
     align-items:center;
     gap:4px;
     flex-wrap:wrap;
-    padding:7px;
-    border:1px solid var(--line);
-    border-bottom:0;
-    border-radius:4px;
+    min-height:43px;
+    padding:6px 7px;
+    border-bottom:1px solid #e4e7ec;
     background:#f8fafc;
 }
-.html-editor{
-    min-height:190px;
-    padding:11px 12px;
-    border:1px solid var(--line);
+.wp-note-format{
+    width:auto;
+    min-width:120px;
+    min-height:29px;
+    margin:0;
+    padding:5px 28px 5px 8px;
+    border:1px solid #d0d5dd;
+    border-radius:4px;
+    background:#fff;
+    font-size:10px;
+    font-weight:700;
+}
+.wp-note-tool{
+    min-width:29px;
+    height:29px;
+    padding:4px 7px;
+    border:1px solid transparent;
+    border-radius:4px;
+    background:transparent;
+    color:#344054;
+    cursor:pointer;
+    font-size:11px;
+    line-height:1;
+    font-weight:800;
+}
+.wp-note-tool:hover,
+.wp-note-tool:focus{
+    border-color:#cbd5e1;
+    background:#fff;
+    outline:none;
+}
+.wp-note-tool:active{
+    background:#eaf2ff;
+    color:#1d4ed8;
+}
+.wp-note-tool-wide{
+    min-width:auto;
+}
+.wp-note-toolbar-separator{
+    width:1px;
+    height:20px;
+    margin:0 2px;
+    background:#d8dee8;
+}
+.wp-note-linkbar{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    padding:7px;
+    border-bottom:1px solid #e4e7ec;
+    background:#f9fafb;
+}
+.wp-note-linkbar.hidden{
+    display:none;
+}
+.wp-note-linkbar > input[type="url"]{
+    flex:1;
+    min-width:160px;
+    min-height:31px;
+    margin:0;
+    padding:6px 8px;
+    font-size:10px;
+}
+.wp-note-link-check{
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    margin:0;
+    color:#475467;
+    white-space:nowrap;
+    font-size:9px;
+    font-weight:700;
+}
+.wp-note-link-check input{
+    width:auto;
+    margin:0;
+}
+.wp-note-visual{
+    min-height:230px;
+    padding:14px 15px;
+    border:0;
     border-radius:4px;
     background:#fff;
     outline:none;
+    color:#101828;
     font-size:12px;
-    line-height:1.55;
+    line-height:1.65;
 }
-.html-editor:focus{
-    border-color:#98a2b3;
+.wp-note-visual:focus{
+    box-shadow:inset 0 0 0 1px #98a2b3;
 }
-.html-editor p:first-child,
-.html-editor h3:first-child,
-.html-editor h4:first-child{
+.wp-note-visual p:first-child,
+.wp-note-visual h3:first-child,
+.wp-note-visual h4:first-child,
+.wp-note-visual blockquote:first-child{
     margin-top:0;
 }
-.html-editor p:last-child{
+.wp-note-visual p:last-child,
+.wp-note-visual ul:last-child,
+.wp-note-visual ol:last-child,
+.wp-note-visual blockquote:last-child{
     margin-bottom:0;
 }
-.html-source{
-    min-height:190px;
+.wp-note-visual h3{
+    margin:1em 0 .45em;
+    font-size:17px;
+}
+.wp-note-visual h4{
+    margin:1em 0 .45em;
+    font-size:14px;
+}
+.wp-note-visual blockquote{
+    margin:12px 0;
+    padding:8px 12px;
+    border-left:3px solid #cbd5e1;
+    color:#475467;
+}
+.wp-note-visual a{
+    color:#2563eb;
+    text-decoration:underline;
+}
+.wp-note-source{
+    display:block;
+    width:100%;
+    min-height:230px;
+    margin:0;
+    padding:13px 14px;
+    border:0;
+    border-radius:4px;
+    background:#0f172a;
+    color:#e2e8f0;
+    resize:vertical;
+    outline:none;
     font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
     font-size:11px;
-    line-height:1.5;
+    line-height:1.55;
+    tab-size:2;
     white-space:pre-wrap;
 }
+.wp-note-source:focus{
+    box-shadow:inset 0 0 0 1px #60a5fa;
+}
+.wp-note-statusbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    min-height:29px;
+    padding:5px 8px;
+    border-top:1px solid #e4e7ec;
+    background:#f8fafc;
+    color:#667085;
+    font-size:8px;
+    font-weight:700;
+}
+.wp-note-editor .field-error{
+    border-color:#dc2626 !important;
+    box-shadow:0 0 0 1px rgba(220,38,38,.12);
+}
+@media(max-width:700px){
+    .wp-note-toolbar{
+        align-items:flex-start;
+    }
+    .wp-note-format{
+        flex:1 1 150px;
+    }
+    .wp-note-linkbar{
+        align-items:stretch;
+        flex-wrap:wrap;
+    }
+    .wp-note-linkbar > input[type="url"]{
+        flex:1 1 100%;
+    }
+}
+
 .settings-test-button{
     display:block;
     width:max-content;
@@ -1296,5 +1472,340 @@
     .dashboard-period-button{
         flex:1;
         min-width:0;
+    }
+}
+
+/* v0.1.20 Colorful touch-first Sales cards + expandable post list */
+.sales-progress-card{
+    --card-accent:#3b82f6;
+    --card-soft:#eff6ff;
+    --card-soft-strong:#dbeafe;
+    cursor:pointer;
+    border-top:4px solid var(--card-accent);
+    background:
+        linear-gradient(
+            180deg,
+            var(--card-soft) 0,
+            rgba(255,255,255,.98) 78px,
+            #fff 100%
+        );
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+    user-select:none;
+}
+.sales-progress-color-1{
+    --card-accent:#2563eb;
+    --card-soft:#eff6ff;
+    --card-soft-strong:#dbeafe;
+}
+.sales-progress-color-2{
+    --card-accent:#7c3aed;
+    --card-soft:#f5f3ff;
+    --card-soft-strong:#ede9fe;
+}
+.sales-progress-color-3{
+    --card-accent:#0891b2;
+    --card-soft:#ecfeff;
+    --card-soft-strong:#cffafe;
+}
+.sales-progress-color-4{
+    --card-accent:#059669;
+    --card-soft:#ecfdf5;
+    --card-soft-strong:#d1fae5;
+}
+.sales-progress-color-5{
+    --card-accent:#d97706;
+    --card-soft:#fffbeb;
+    --card-soft-strong:#fef3c7;
+}
+.sales-progress-color-6{
+    --card-accent:#db2777;
+    --card-soft:#fdf2f8;
+    --card-soft-strong:#fce7f3;
+}
+.sales-progress-color-7{
+    --card-accent:#4f46e5;
+    --card-soft:#eef2ff;
+    --card-soft-strong:#e0e7ff;
+}
+.sales-progress-color-8{
+    --card-accent:#0f766e;
+    --card-soft:#f0fdfa;
+    --card-soft-strong:#ccfbf1;
+}
+.sales-progress-card:hover{
+    border-color:#cbd5e1;
+    border-top-color:var(--card-accent);
+}
+.sales-progress-card:focus-visible{
+    outline:3px solid color-mix(in srgb, var(--card-accent) 28%, transparent);
+    outline-offset:2px;
+}
+.sales-progress-card.expanded{
+    border-color:var(--card-accent);
+    border-top-color:var(--card-accent);
+    box-shadow:
+        0 0 0 2px var(--card-soft-strong),
+        0 10px 26px rgba(15,23,42,.08);
+}
+.sales-progress-avatar{
+    background:var(--card-soft-strong);
+    color:var(--card-accent);
+}
+.sales-progress-track{
+    height:15px;
+    margin-top:13px;
+    border:1px solid rgba(148,163,184,.28);
+    background:#e9edf3;
+}
+.sales-progress-fill{
+    background:var(--card-accent);
+}
+.sales-progress-card.target-met .sales-progress-fill{
+    background:#16a34a;
+}
+.sales-progress-number strong{
+    font-size:32px;
+}
+.sales-card-expand-hint{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    min-height:44px;
+    color:var(--card-accent);
+    font-size:10px;
+    font-weight:900;
+}
+.sales-card-chevron{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:24px;
+    height:24px;
+    font-size:15px;
+    transition:transform .2s ease;
+}
+.sales-progress-card.expanded .sales-card-chevron{
+    transform:rotate(180deg);
+}
+.sales-target-editor{
+    min-height:44px;
+}
+.sales-target-editor input,
+.sales-target-save{
+    min-height:36px;
+}
+.sales-target-save{
+    min-width:48px;
+}
+.sales-expanded-posts{
+    margin-top:14px;
+    border:1px solid #d8dee8;
+    border-left:4px solid #2563eb;
+    border-radius:4px;
+    background:#fff;
+    box-shadow:0 8px 26px rgba(15,23,42,.05);
+    overflow:hidden;
+}
+.sales-expanded-posts.hidden{
+    display:none;
+}
+.sales-expanded-head{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:14px;
+    padding:15px 16px 12px;
+    border-bottom:1px solid #edf0f4;
+    background:#f8fafc;
+}
+.sales-expanded-head h3{
+    margin:3px 0 2px;
+    font-size:16px;
+}
+.sales-expanded-head p{
+    margin:0;
+    color:#667085;
+    font-size:10px;
+}
+.sales-expanded-close{
+    min-width:52px;
+    min-height:40px;
+}
+.sales-expanded-loading{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:5px;
+    min-height:90px;
+}
+.sales-expanded-loading.hidden{
+    display:none;
+}
+.sales-expanded-loading span{
+    width:8px;
+    height:8px;
+    border-radius:4px;
+    background:#94a3b8;
+    animation:salesExpandedPulse .85s ease-in-out infinite alternate;
+}
+.sales-expanded-loading span:nth-child(2){
+    animation-delay:.15s;
+}
+.sales-expanded-loading span:nth-child(3){
+    animation-delay:.3s;
+}
+@keyframes salesExpandedPulse{
+    from{opacity:.35;transform:translateY(0)}
+    to{opacity:1;transform:translateY(-4px)}
+}
+.sales-expanded-list{
+    padding:0;
+}
+.sales-expanded-row{
+    display:grid;
+    grid-template-columns:minmax(120px,1.55fr) 100px 160px 86px 64px;
+    gap:12px;
+    align-items:center;
+    min-height:58px;
+    padding:10px 16px;
+    border-bottom:1px solid #edf0f4;
+    background:#fff;
+    transition:background .14s ease;
+}
+.sales-expanded-row:last-child{
+    border-bottom:0;
+}
+.sales-expanded-row:hover{
+    background:#fafcff;
+}
+.sales-expanded-title{
+    min-width:0;
+}
+.sales-expanded-title strong{
+    display:block;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    font-size:11px;
+}
+.sales-expanded-title small,
+.sales-expanded-cell{
+    color:#667085;
+    font-size:9px;
+}
+.sales-expanded-status{
+    justify-self:start;
+}
+.sales-expanded-review{
+    justify-self:end;
+    min-height:36px;
+    display:inline-flex;
+    align-items:center;
+    padding:6px 8px;
+    border-radius:4px;
+    background:#eff6ff;
+    color:#1d4ed8;
+    font-size:9px;
+    font-weight:900;
+}
+.sales-expanded-empty,
+.sales-expanded-error{
+    padding:24px 16px;
+    text-align:center;
+    color:#667085;
+    font-size:10px;
+}
+.sales-expanded-error{
+    color:#b42318;
+}
+@media(pointer:coarse){
+    .sales-progress-card:hover{
+        transform:none;
+    }
+    .sales-progress-card,
+    .dashboard-period-button,
+    .sales-target-save,
+    .sales-expanded-close,
+    .sales-expanded-review{
+        min-height:44px;
+    }
+    .sales-target-editor input{
+        min-height:44px;
+        font-size:16px;
+    }
+}
+@media(min-width:1280px){
+    .sales-progress-grid{
+        grid-template-columns:repeat(4,minmax(230px,1fr));
+    }
+}
+@media(min-width:800px) and (max-width:1279px){
+    .sales-progress-grid{
+        grid-template-columns:repeat(3,minmax(220px,1fr));
+    }
+}
+@media(min-width:600px) and (max-width:899px){
+    .sales-progress-grid{
+        grid-template-columns:repeat(2,minmax(220px,1fr));
+    }
+}
+@media(max-width:760px){
+    .sales-expanded-row{
+        grid-template-columns:minmax(0,1fr) auto;
+        gap:5px 10px;
+        padding:12px 13px;
+    }
+    .sales-expanded-title{
+        grid-column:1 / -1;
+    }
+    .sales-expanded-review{
+        grid-column:2;
+        grid-row:2 / span 2;
+        align-self:center;
+    }
+    .sales-expanded-cell{
+        grid-column:1;
+    }
+    .sales-expanded-status{
+        grid-column:1;
+    }
+}
+@media(max-width:599px){
+    .sales-progress-grid{
+        grid-template-columns:1fr;
+    }
+    .sales-progress-card{
+        padding:16px;
+    }
+    .sales-progress-number strong{
+        font-size:34px;
+    }
+    .sales-progress-track{
+        height:17px;
+    }
+    .sales-progress-actions{
+        align-items:stretch;
+        gap:6px;
+    }
+    .sales-card-expand-hint{
+        flex:1;
+    }
+    .sales-target-editor{
+        flex:0 0 auto;
+    }
+}
+@media(max-width:420px){
+    .sales-progress-actions{
+        flex-direction:column;
+    }
+    .sales-target-editor{
+        width:100%;
+    }
+    .sales-target-editor label{
+        flex:1;
+    }
+    .sales-target-editor input{
+        width:100%;
     }
 }

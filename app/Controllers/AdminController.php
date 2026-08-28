@@ -126,6 +126,90 @@ class AdminController extends Controller{
         ]);
     }
 
+    public function dashboardSalesPosts():void{
+        Auth::requireRole('admin');
+
+        $salesUserId=(int)($_GET['sales_id']??0);
+        $date=$this->validDashboardDate(
+            (string)($_GET['date']??date('Y-m-d'))
+        );
+        $period=$this->validDashboardPeriod(
+            (string)($_GET['period']??'day')
+        );
+
+        if ($salesUserId < 1) {
+            $this->json([
+                'ok'=>false,
+                'message'=>'Sales user is required.',
+            ],422);
+        }
+
+        $salesUser=User::find($salesUserId);
+
+        if (!$salesUser
+            || ($salesUser['role']??'')!=='sales'
+            || !(int)($salesUser['active']??0)) {
+            $this->json([
+                'ok'=>false,
+                'message'=>'Sales user was not found.',
+            ],404);
+        }
+
+        $periodInfo=$this->dashboardPeriodInfo($date,$period);
+
+        if (session_status()===PHP_SESSION_ACTIVE) {
+            session_write_close();
+        }
+
+        $posts=Post::adminSalesPostsForPeriod(
+            $salesUserId,
+            $periodInfo['from'],
+            $periodInfo['to']
+        );
+
+        $items=[];
+
+        foreach ($posts as $post) {
+            $status=in_array(
+                ($post['admin_review_status']??null),
+                ['good','bad'],
+                true
+            )
+                ? (string)$post['admin_review_status']
+                : null;
+
+            $items[]=[
+                'id'=>(int)$post['id'],
+                'title'=>(string)$post['title'],
+                'platform'=>ucfirst((string)$post['platform']),
+                'published_at'=>(string)$post['published_at'],
+                'published_date'=>(string)$post['published_date'],
+                'status'=>$status,
+                'review_url'=>$GLOBALS['config']['app']['base_path']
+                    .'/admin/post?id='.(int)$post['id'],
+            ];
+        }
+
+        header(
+            'Cache-Control: no-store, no-cache, must-revalidate, max-age=0'
+        );
+
+        $this->json([
+            'ok'=>true,
+            'sales'=>[
+                'id'=>(int)$salesUser['id'],
+                'name'=>(string)$salesUser['display_name'],
+                'sales_id'=>(string)$salesUser['sales_id'],
+            ],
+            'period'=>$period,
+            'period_label'=>$periodInfo['label'],
+            'from'=>$periodInfo['from'],
+            'to'=>$periodInfo['to'],
+            'posts'=>$items,
+            'count'=>count($items),
+        ]);
+    }
+
     public function saveSalesTarget():void{
         $admin=Auth::requireRole('admin');
         Csrf::verify($_POST['_csrf']??null);

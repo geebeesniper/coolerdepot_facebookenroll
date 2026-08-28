@@ -148,6 +148,34 @@ class Post {
         return self::adminDashboardStateRange($date,$date);
     }
 
+
+    public static function adminSalesPostsForPeriod(
+        int $salesUserId,
+        string $from,
+        string $to
+    ): array {
+        $s = Database::connection()->prepare(
+            "SELECT
+                p.*,
+                u.display_name,
+                u.sales_id,
+                r.decision
+             FROM cdsp_sales_posts p
+             JOIN cdsp_users u
+               ON u.id=p.sales_user_id
+             LEFT JOIN cdsp_post_reviews r
+               ON r.post_id=p.id
+             WHERE p.sales_user_id=?
+               AND p.deleted_at IS NULL
+               AND p.published_date BETWEEN ? AND ?
+             ORDER BY p.published_at DESC,p.id DESC"
+        );
+
+        $s->execute([$salesUserId,$from,$to]);
+
+        return $s->fetchAll();
+    }
+
     public static function dailyCounts(int $uid,string $from,string $to):array{
         $s=Database::connection()->prepare("SELECT DATE(created_at) work_date,platform,COUNT(*) cnt FROM cdsp_sales_posts WHERE sales_user_id=? AND created_at>=? AND created_at<DATE_ADD(?,INTERVAL 1 DAY) AND deleted_at IS NULL GROUP BY DATE(created_at),platform ORDER BY work_date DESC");
         $s->execute([$uid,$from.' 00:00:00',$to.' 00:00:00']);return$s->fetchAll();

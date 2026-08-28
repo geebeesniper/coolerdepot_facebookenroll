@@ -517,3 +517,30 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - Added staggered card updates, count-up animation, smooth progress transitions, and loading-state motion.
 - No database migration is required.
 - All border radius remains `4px`.
+
+## v0.1.19 — WordPress/Shopify-style HTML note editor
+
+- Replaced the old `Editor Off` toggle with `Visual / HTML` tabs.
+- Visual mode now resembles a classic WordPress/Shopify rich-text editor.
+- Added Paragraph / Heading 3 / Heading 4 / Quote format selector.
+- Added Bold, Italic, Underline, Strikethrough, bulleted list, numbered list, blockquote, link, unlink, clear formatting, undo, and redo controls.
+- Link editing uses an inline link bar instead of browser `prompt()`.
+- HTML mode uses a dedicated dark monospace source editor.
+- Visual and HTML modes stay synchronized and submit the same sanitized HTML field.
+- Existing server-side HTML sanitizer remains in force.
+- No database migration is required.
+- All border radius remains `4px`.
+
+## v0.1.20 — Colorful touch-first Sales grid
+
+- Each Sales card now receives one of eight distinct accent palettes.
+- Increased progress-bar thickness for faster scanning on desktop, tablet, and touch devices.
+- The whole Sales card is now the primary interaction target; click/tap/Enter/Space expands that Sales user's post list directly below the grid.
+- Expanded lists follow the currently selected Daily / Weekly / Monthly period and load asynchronously without a page refresh.
+- Clicking the same Sales card again collapses the list; selecting another Sales card switches the expanded list.
+- Removed the redundant `All Sales` button and the small `View Posts/View Report` card link.
+- Target input and Save controls are isolated from card toggle behavior.
+- Added touch-first 44px interaction targets, coarse-pointer behavior, keyboard accessibility, focus states, and responsive 4/3/2/1-column layouts.
+- Mobile expanded post rows collapse into a compact two-column layout.
+- No database migration is required.
+- All border radius remains `4px`.
