@@ -5,17 +5,17 @@ use App\Models\ProviderProfile;
 
 class FacebookMarketplaceProviderChain
 {
-    public function fetch(string $url, int $requestedByUserId): array
+    public function fetch(string $url, int $requestedByUserId, bool $bypassCache = false): array
     {
         if (ProviderProfile::registryEnabled()) {
-            return $this->fetchRegistry($url, $requestedByUserId);
+            return $this->fetchRegistry($url, $requestedByUserId, $bypassCache);
         }
 
         // Backward compatibility until migration 005 has been run.
         return $this->fetchLegacy($url, $requestedByUserId);
     }
 
-    private function fetchRegistry(string $url, int $userId): array
+    private function fetchRegistry(string $url, int $userId, bool $bypassCache = false): array
     {
         $profiles = ProviderProfile::activeVerifiedWithSecrets();
 
@@ -39,7 +39,8 @@ class FacebookMarketplaceProviderChain
             try {
                 $item = MarketplaceProviderFactory::make($profile)->fetch(
                     $url,
-                    $userId
+                    $userId,
+                    $bypassCache
                 );
 
                 if (!$this->complete($item)) {

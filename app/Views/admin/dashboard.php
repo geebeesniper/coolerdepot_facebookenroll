@@ -20,6 +20,7 @@ $periodNames = [
     data-sales-posts-url="<?= Util::e($base) ?>/admin/dashboard/sales-posts"
     data-post-review-url="<?= Util::e($base) ?>/admin/dashboard/post-review"
     data-review-save-url="<?= Util::e($base) ?>/admin/post/review"
+    data-get-content-url="<?= Util::e($base) ?>/admin/dashboard/get-content"
     data-today="<?= Util::e($today) ?>"
     data-date="<?= Util::e($date) ?>"
     data-period="<?= Util::e($period) ?>"
@@ -363,6 +364,17 @@ $periodNames = [
             </div>
 
             <div class="review-modal-head-actions">
+                <button
+                    type="button"
+                    class="review-get-content"
+                    id="dashboardGetContent"
+                >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 4a8 8 0 0 1 7.4 4.9l1.7-1.7V13h-5.8l2.3-2.3A6 6 0 1 0 18 14h2a8 8 0 1 1-8-10Z"/>
+                    </svg>
+                    <span>Get Content</span>
+                </button>
+
                 <a
                     class="review-modal-original hidden"
                     id="dashboardReviewOriginal"
@@ -372,6 +384,7 @@ $periodNames = [
                 >
                     Open original
                 </a>
+
                 <button
                     type="button"
                     class="icon-close"
@@ -415,6 +428,37 @@ $periodNames = [
                     <strong id="dashboardReviewItemId">—</strong>
                 </div>
             </div>
+
+            <section
+                class="review-content-preview"
+                id="dashboardContentPreview"
+            >
+                <div class="review-content-head">
+                    <div>
+                        <span class="review-content-kicker">Listing Content</span>
+                        <strong id="dashboardContentProvider">Saved post</strong>
+                    </div>
+                    <span
+                        class="review-content-fetched"
+                        id="dashboardContentFetched"
+                    ></span>
+                </div>
+
+                <div class="review-content-body">
+                    <h3 id="dashboardContentTitle">No content loaded</h3>
+                    <p id="dashboardContentDescription"></p>
+
+                    <div
+                        class="review-content-facts"
+                        id="dashboardContentFacts"
+                    ></div>
+
+                    <div
+                        class="review-content-photos hidden"
+                        id="dashboardContentPhotos"
+                    ></div>
+                </div>
+            </section>
 
             <fieldset class="review-decision review-decision-modern">
                 <legend>Decision</legend>

@@ -2,6 +2,7 @@
 namespace App\Controllers;
 
 use App\Services\HtmlNoteSanitizer;
+use App\Services\FacebookMarketplaceProviderChain;
 use App\Core\Controller;use App\Core\Auth;use App\Core\Csrf;use App\Core\Database;use App\Models\Post;use App\Models\User;use App\Services\UploadService;
 class AdminController extends Controller{
     public function dashboard():void{
@@ -283,8 +284,100 @@ class AdminController extends Controller{
                     ? (string)$review['note']
                     : '',
             ],
+            'content'=>[
+                'provider'=>'Saved post',
+                'title'=>(string)$post['title'],
+                'description'=>(string)$post['description'],
+                'listing_date'=>(string)$post['published_at'],
+                'price'=>null,
+                'location'=>null,
+                'photos'=>[],
+                'fetched_at'=>(string)$post['fetched_at'],
+            ],
             'attachments'=>$attachments,
         ]);
+    }
+
+    public function dashboardGetContent():void{
+        $admin=Auth::requireRole('admin');
+
+        try{
+            Csrf::verify($_POST['_csrf']??null);
+
+            $postId=(int)($_POST['post_id']??0);
+            $post=Post::find($postId);
+
+            if(!$post){
+                $this->json([
+                    'ok'=>false,
+                    'message'=>'Post was not found.',
+                ],404);
+            }
+
+            $platform=strtolower((string)$post['platform']);
+
+            if($platform!=='facebook'){
+                $this->json([
+                    'ok'=>false,
+                    'message'=>'Get Content currently uses the configured Facebook Marketplace provider chain for Facebook posts.',
+                ],422);
+            }
+
+            $url=trim((string)(
+                $post['canonical_url']
+                ?: $post['submitted_url']
+            ));
+
+            if($url===''){
+                $this->json([
+                    'ok'=>false,
+                    'message'=>'This post does not have a source URL.',
+                ],422);
+            }
+
+            if(session_status()===PHP_SESSION_ACTIVE){
+                session_write_close();
+            }
+
+            // Explicit Admin action: force a real provider request instead of
+            // serving the 10-minute provider cache.
+            $item=(new FacebookMarketplaceProviderChain())->fetch(
+                $url,
+                (int)$admin['id'],
+                true
+            );
+
+            $title=trim((string)($item['title']??''));
+            $description=trim((string)($item['description']??''));
+
+            if($title==='' || $description===''){
+                throw new \RuntimeException(
+                    'The provider returned the listing but title or description is missing.'
+                );
+            }
+
+            Post::updateFetchedContent(
+                $postId,
+                $title,
+                $description
+            );
+
+            $content=$this->marketplaceContentPreview($item);
+
+            $this->json([
+                'ok'=>true,
+                'post_id'=>$postId,
+                'content'=>$content,
+                'message'=>'Content fetched successfully.',
+            ]);
+        }catch(\Throwable $e){
+            $this->json([
+                'ok'=>false,
+                'message'=>$e->getMessage()!=='' 
+                    ? $e->getMessage()
+                    : 'Could not fetch listing content.',
+            ],422);
+        }
     }
 
     public function saveSalesTarget():void{
@@ -362,6 +455,133 @@ class AdminController extends Controller{
             'post_count'=>$state['post_count'],
             'max_post_id'=>$state['max_post_id'],
         ]);
+    }
+
+    private function marketplaceContentPreview(array $item):array{
+        $raw=is_array($item['raw']??null)
+            ? $item['raw']
+            : [];
+
+        $provider=trim((string)(
+            $item['_provider_profile_name']
+            ?? $item['provider_name']
+            ?? $item['provider']
+            ?? 'Provider'
+        ));
+
+        $price=$this->firstScalar([
+            $raw['listingPrice']['formatted_amount_zeros_stripped']??null,
+            $raw['listingPrice']['formatted_amount']??null,
+            $raw['listingPrice']['amount']??null,
+            $raw['price']['formatted']??null,
+            $raw['price']['text']??null,
+            $raw['price']??null,
+            $raw['listing_price']??null,
+        ]);
+
+        $location=$this->firstScalar([
+            $raw['locationText']['text']??null,
+            $raw['location_name']??null,
+            $raw['location']['name']??null,
+            $raw['location']['text']??null,
+            $raw['location']??null,
+        ]);
+
+        $photos=$this->extractMarketplacePhotos($raw);
+
+        return [
+            'provider'=>$provider!=='' ? $provider : 'Provider',
+            'title'=>trim((string)($item['title']??'')),
+            'description'=>trim((string)($item['description']??'')),
+            'listing_date'=>trim((string)($item['published_raw']??'')),
+            'price'=>$price,
+            'location'=>$location,
+            'photos'=>$photos,
+            'fetched_at'=>date('Y-m-d H:i:s'),
+            'fallback_used'=>!empty($item['_fallback_used']),
+            'fallback_reason'=>$item['_fallback_reason']??null,
+        ];
+    }
+
+    private function firstScalar(array $values):?string{
+        foreach($values as $value){
+            if(is_string($value)||is_numeric($value)){
+                $text=trim((string)$value);
+
+                if($text!==''){
+                    return $text;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private function extractMarketplacePhotos(array $raw):array{
+        $urls=[];
+
+        $push=function($value)use(&$urls):void{
+            if(!is_string($value)){
+                return;
+            }
+
+            $value=trim($value);
+
+            if(
+                $value!==''
+                && str_starts_with($value,'https://')
+                && !in_array($value,$urls,true)
+            ){
+                $urls[]=$value;
+            }
+        };
+
+        foreach(($raw['listingPhotos']??[]) as $photo){
+            if(!is_array($photo)){
+                continue;
+            }
+
+            $push($photo['image']['uri']??null);
+            $push($photo['url']??null);
+            $push($photo['uri']??null);
+        }
+
+        foreach(($raw['photos']??[]) as $photo){
+            if(is_string($photo)){
+                $push($photo);
+                continue;
+            }
+
+            if(is_array($photo)){
+                $push($photo['url']??null);
+                $push($photo['uri']??null);
+                $push($photo['image']['uri']??null);
+            }
+        }
+
+        foreach(($raw['images']??[]) as $image){
+            if(is_string($image)){
+                $push($image);
+                continue;
+            }
+
+            if(is_array($image)){
+                $push($image['url']??null);
+                $push($image['uri']??null);
+                $push($image['src']??null);
+            }
+        }
+
+        foreach([
+            $raw['image']??null,
+            $raw['image_url']??null,
+            $raw['thumbnail']??null,
+            $raw['thumbnail_url']??null,
+        ] as $single){
+            $push($single);
+        }
+
+        return array_slice($urls,0,8);
     }
 
     private function validDashboardDate(string $date):string{

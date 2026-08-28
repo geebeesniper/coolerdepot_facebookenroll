@@ -1298,6 +1298,7 @@ $('[data-html-note]').each(function(){
     const salesPostsUrl = $live.data('sales-posts-url');
     const postReviewUrl = $live.data('post-review-url');
     const reviewSaveUrl = $live.data('review-save-url');
+    const getContentUrl = $live.data('get-content-url');
     const today = String($live.data('today') || '');
     const csrf = $('#adminDashboardCsrf').val();
 
@@ -1339,12 +1340,65 @@ $('[data-html-note]').each(function(){
     const $modalLoading = $('#dashboardReviewLoading');
     const $modalMessage = $('#dashboardReviewMessage');
     const $modalAttachments = $('#dashboardReviewAttachments');
+    const $contentPreview = $('#dashboardContentPreview');
+    const $contentProvider = $('#dashboardContentProvider');
+    const $contentFetched = $('#dashboardContentFetched');
+    const $contentTitle = $('#dashboardContentTitle');
+    const $contentDescription = $('#dashboardContentDescription');
+    const $contentFacts = $('#dashboardContentFacts');
+    const $contentPhotos = $('#dashboardContentPhotos');
+    const $getContent = $('#dashboardGetContent');
 
     function escapeHtml(value){
         return $('<div>').text(
             value == null ? '' : String(value)
         ).html();
     }
+
+function platformLogoHtml(platform){
+    const key = String(platform || '').toLowerCase();
+
+    if(key === 'facebook'){
+        return (
+            '<span class="platform-logo platform-logo-facebook"'
+            +' title="Facebook" aria-label="Facebook">'
+            +'<svg viewBox="0 0 24 24" aria-hidden="true">'
+            +'<path d="M13.8 21v-8h2.7l.4-3.1h-3.1v-2c0-.9.3-1.5 1.6-1.5H17V3.6c-.3 0-1.3-.1-2.5-.1-2.5 0-4.2 1.5-4.2 4.3v2.1H7.5V13h2.8v8h3.5Z"/>'
+            +'</svg></span>'
+        );
+    }
+
+    if(key === 'offerup'){
+        return (
+            '<span class="platform-logo platform-logo-offerup"'
+            +' title="OfferUp" aria-label="OfferUp">'
+            +'<svg viewBox="0 0 24 24" aria-hidden="true">'
+            +'<circle cx="8" cy="12" r="5.2"/>'
+            +'<circle cx="16" cy="12" r="5.2"/>'
+            +'<path d="M7.8 8.7v6.6M16.2 8.7v6.6"/>'
+            +'</svg></span>'
+        );
+    }
+
+    if(key === 'craigslist'){
+        return (
+            '<span class="platform-logo platform-logo-craigslist"'
+            +' title="Craigslist" aria-label="Craigslist">'
+            +'<svg viewBox="0 0 24 24" aria-hidden="true">'
+            +'<circle cx="12" cy="12" r="8"/>'
+            +'<path d="M12 4v16M12 12l-5.2 4M12 12l5.2 4"/>'
+            +'</svg></span>'
+        );
+    }
+
+    return (
+        '<span class="platform-logo platform-logo-generic"'
+        +' title="'+escapeHtml(platform)+'">'
+        +'<svg viewBox="0 0 24 24" aria-hidden="true">'
+        +'<path d="M4 5h16v14H4V5Zm2 2v10h12V7H6Z"/>'
+        +'</svg></span>'
+    );
+}
 
     function periodName(period){
         if(period === 'week') return 'Weekly';
@@ -1585,11 +1639,7 @@ $('[data-html-note]').each(function(){
                         '<div class="sales-post-tile-sequence">'
                             +escapeHtml(post.sequence)
                         +'</div>'+
-                        '<span class="sales-post-review-icon" aria-hidden="true">'+
-                            '<svg viewBox="0 0 24 24">'+
-                                '<path d="M4 17.3V20h2.7L17.8 8.9l-2.7-2.7L4 17.3Zm15.9-10.5c.3-.3.3-.8 0-1.1l-1.6-1.6a.8.8 0 0 0-1.1 0l-1.3 1.3 2.7 2.7 1.3-1.3Z"/>'+
-                            '</svg>'+
-                        '</span>'+
+                        platformLogoHtml(post.platform)+
                     '</div>'+
                     '<div class="sales-post-tile-main">'+
                         '<span class="sales-post-tile-time">'
@@ -1907,6 +1957,88 @@ $('[data-html-note]').each(function(){
             .trigger('click');
     }
 
+function renderContentPreview(content){
+    content = content || {};
+
+    $contentProvider.text(
+        content.provider || 'Saved post'
+    );
+    $contentFetched.text(
+        content.fetched_at
+            ? 'Fetched ' + content.fetched_at
+            : ''
+    );
+    $contentTitle.text(
+        content.title || 'No title returned'
+    );
+    $contentDescription.text(
+        content.description || 'No description returned.'
+    );
+
+    const facts = [];
+
+    if(content.listing_date){
+        facts.push(
+            '<span><b>Listing Date</b>'
+            +escapeHtml(content.listing_date)
+            +'</span>'
+        );
+    }
+
+    if(content.price){
+        facts.push(
+            '<span><b>Price</b>'
+            +escapeHtml(content.price)
+            +'</span>'
+        );
+    }
+
+    if(content.location){
+        facts.push(
+            '<span><b>Location</b>'
+            +escapeHtml(content.location)
+            +'</span>'
+        );
+    }
+
+    if(content.fallback_used){
+        facts.push(
+            '<span><b>Failover</b>Fallback provider used</span>'
+        );
+    }
+
+    $contentFacts.html(facts.join(''));
+
+    const photos = Array.isArray(content.photos)
+        ? content.photos
+        : [];
+
+    if(!photos.length){
+        $contentPhotos
+            .addClass('hidden')
+            .empty();
+        return;
+    }
+
+    const html = photos.map(function(url, index){
+        return (
+            '<a target="_blank" rel="noopener" href="'
+            +escapeHtml(url)
+            +'">'
+            +'<img loading="lazy" src="'
+            +escapeHtml(url)
+            +'" alt="Marketplace photo '
+            +(index + 1)
+            +'">'
+            +'</a>'
+        );
+    }).join('');
+
+    $contentPhotos
+        .html(html)
+        .removeClass('hidden');
+}
+
     function renderAttachments(items){
         items = Array.isArray(items) ? items : [];
 
@@ -1945,6 +2077,12 @@ $('[data-html-note]').each(function(){
             .addClass('hidden')
             .attr('href', '#');
         renderAttachments([]);
+        renderContentPreview({
+            provider:'Saved post',
+            title:'No content loaded',
+            description:'',
+            photos:[]
+        });
         setModalEditorHtml('');
     }
 
@@ -2045,6 +2183,7 @@ $('[data-html-note]').each(function(){
             setModalEditorHtml(
                 data.review ? data.review.note : ''
             );
+            renderContentPreview(data.content);
             renderAttachments(data.attachments);
         })
         .fail(function(xhr, status){
@@ -2099,6 +2238,74 @@ $('[data-html-note]').each(function(){
             closeReviewModal();
         }
     });
+
+$getContent.on('click', function(){
+    const postId = parseInt(
+        $('#dashboardReviewPostId').val(),
+        10
+    ) || 0;
+
+    if(!postId){
+        return;
+    }
+
+    const originalHtml = $getContent.html();
+
+    $modalMessage
+        .removeClass('error')
+        .text('Fetching fresh Marketplace content…');
+
+    $getContent
+        .prop('disabled', true)
+        .addClass('loading');
+
+    $.ajax({
+        url:getContentUrl,
+        method:'POST',
+        dataType:'json',
+        data:{
+            _csrf:csrf,
+            post_id:postId
+        },
+        headers:{
+            'X-Requested-With':'XMLHttpRequest',
+            'Accept':'application/json'
+        }
+    })
+    .done(function(data){
+        if(!data || !data.ok){
+            $modalMessage
+                .addClass('error')
+                .text(
+                    (data && data.message)
+                    || 'Could not fetch content.'
+                );
+            return;
+        }
+
+        renderContentPreview(data.content);
+
+        $modalMessage
+            .removeClass('error')
+            .text('Content fetched successfully.');
+    })
+    .fail(function(xhr){
+        const data = xhr.responseJSON || {};
+
+        $modalMessage
+            .addClass('error')
+            .text(
+                data.message
+                || 'Could not fetch content.'
+            );
+    })
+    .always(function(){
+        $getContent
+            .prop('disabled', false)
+            .removeClass('loading')
+            .html(originalHtml);
+    });
+});
 
     $modalForm.on('submit', function(event){
         event.preventDefault();

@@ -176,6 +176,34 @@ class Post {
         return $s->fetchAll();
     }
 
+
+    public static function updateFetchedContent(
+        int $postId,
+        string $title,
+        string $description
+    ): void {
+        $s = Database::connection()->prepare(
+            "UPDATE cdsp_sales_posts
+             SET title=?,
+                 normalized_title_hash=?,
+                 description=?,
+                 description_hash=?,
+                 fetched_at=NOW(),
+                 verification_status='verified',
+                 updated_at=NOW()
+             WHERE id=?
+               AND deleted_at IS NULL"
+        );
+
+        $s->execute([
+            $title,
+            Util::hashText($title),
+            $description,
+            Util::hashText($description),
+            $postId,
+        ]);
+    }
+
     public static function dailyCounts(int $uid,string $from,string $to):array{
         $s=Database::connection()->prepare("SELECT DATE(created_at) work_date,platform,COUNT(*) cnt FROM cdsp_sales_posts WHERE sales_user_id=? AND created_at>=? AND created_at<DATE_ADD(?,INTERVAL 1 DAY) AND deleted_at IS NULL GROUP BY DATE(created_at),platform ORDER BY work_date DESC");
         $s->execute([$uid,$from.' 00:00:00',$to.' 00:00:00']);return$s->fetchAll();

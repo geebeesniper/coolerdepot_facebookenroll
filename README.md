@@ -603,3 +603,15 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - Increased time hierarchy and simplified the card footer to platform + review state.
 - No database migration is required.
 - All border radius remains `4px`.
+
+## v0.1.25 — Platform icons and Get Content
+
+- Replaced the upper-right Post Grid edit/pencil icon with the post's actual platform identity.
+- Facebook uses a Facebook SVG mark, OfferUp uses its own green/orange platform mark, Craigslist uses its purple peace-mark treatment, and unknown platforms use a neutral fallback icon.
+- Added `Get Content` to the Review popup.
+- `Get Content` forces a fresh Facebook Marketplace provider-chain request instead of using the recent provider cache.
+- Fresh content preview includes title, description, listing date, price when returned, location when returned, up to eight Marketplace photos, provider name, and failover state.
+- The fetched title and description are persisted back to the existing post; the existing dashboard historical published date/time is intentionally not moved by this Admin content-preview action.
+- Content fetch errors remain inside the Review popup and do not navigate away.
+- No database migration is required.
+- All border radius remains `4px`.
