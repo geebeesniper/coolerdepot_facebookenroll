@@ -486,3 +486,17 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - Legacy rating database columns remain nullable for safe backwards compatibility; new reviews always store NULL.
 - HTML Note editor remains enabled and now includes H3/H4 toolbar controls plus HTML source toggle.
 - All border radius remains `4px`.
+
+## v0.1.17 — SaaS-style daily Sales progress grid
+
+- Replaced the Admin Daily/Weekly/Monthly bar chart with a Sales card grid.
+- Each active Sales user has one card showing today's verified post count against a configurable daily target.
+- Daily target defaults to `10` and is stored per Sales user in `cdsp_users.daily_post_target`.
+- Admin can change a target inline from the card without reloading the page.
+- Progress bars cap visually at 100%; cards show `Target met` when the daily count reaches or exceeds the target.
+- Clicking `View Posts` filters the existing Daily Posts table to that Sales user.
+- Added a lightweight SaaS-style activity watcher. The Admin dashboard checks every 5 seconds for newly added posts for the selected date.
+- New Sales activity does not auto-reload or move the dashboard. A `New posts available — Refresh` notice appears and waits for the Admin to refresh manually.
+- The previous large Posting Performance bar chart has been removed.
+- Requires migration `007_sales_daily_target`.
+- All border radius remains `4px`.

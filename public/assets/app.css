@@ -910,233 +910,271 @@
     font-weight:700;
 }
 
-/* v0.1.16 Admin posting-performance chart */
+/* v0.1.17 Admin Sales progress grid */
 .admin-page-head{
     align-items:center;
 }
-.admin-progress-panel{
-    padding:22px 22px 18px;
+.dashboard-date-copy{
+    margin:4px 0 0;
+    color:var(--muted);
+    font-size:11px;
 }
-.admin-progress-head{
+.admin-sales-progress-section{
+    margin-bottom:20px;
+}
+.admin-section-head{
     display:flex;
-    align-items:flex-start;
+    align-items:flex-end;
     justify-content:space-between;
-    gap:18px;
+    gap:16px;
+    margin:0 0 12px;
 }
-.admin-progress-head h2{
-    margin:3px 0 5px;
-    font-size:21px;
+.admin-section-head h2{
+    margin:0 0 3px;
+    font-size:18px;
 }
-.admin-progress-head p,
-.panel-subtitle{
+.admin-section-head p{
     margin:0;
     color:var(--muted);
     font-size:11px;
 }
-.admin-chart-filter{
-    min-width:220px;
-}
-.admin-chart-filter label{
-    margin:0;
-}
-.admin-period-switch{
-    display:flex;
-    gap:6px;
-    margin:17px 0 14px;
-}
-.admin-period-switch a{
-    display:inline-flex;
-    align-items:center;
-    min-height:34px;
-    padding:7px 12px;
-    border:1px solid var(--line);
-    border-radius:4px;
-    background:#f8fafc;
+.admin-section-summary{
     color:#475467;
     font-size:11px;
     font-weight:800;
 }
-.admin-period-switch a.active{
-    border-color:#93c5fd;
-    background:#eff6ff;
-    color:#1d4ed8;
-}
-.admin-chart-metrics{
+.sales-progress-grid{
     display:grid;
-    grid-template-columns:repeat(4,minmax(120px,1fr));
-    gap:8px;
-    margin-bottom:12px;
+    grid-template-columns:repeat(auto-fill,minmax(245px,1fr));
+    gap:12px;
 }
-.admin-chart-metrics > div{
-    padding:10px 12px;
-    border:1px solid var(--line);
+.sales-progress-card{
+    position:relative;
+    min-width:0;
+    padding:15px;
+    border:1px solid #d8dee8;
     border-radius:4px;
     background:#fff;
+    box-shadow:0 5px 18px rgba(15,23,42,.035);
+    transition:
+        border-color .16s ease,
+        box-shadow .16s ease,
+        transform .16s ease;
 }
-.admin-chart-metrics strong{
-    display:block;
-    font-size:20px;
-    line-height:1.1;
+.sales-progress-card:hover{
+    border-color:#b9c5d6;
+    box-shadow:0 8px 22px rgba(15,23,42,.06);
+    transform:translateY(-1px);
 }
-.admin-chart-metrics span{
-    color:var(--muted);
-    font-size:10px;
-    font-weight:700;
+.sales-progress-card.selected{
+    border-color:#93c5fd;
+    box-shadow:0 0 0 1px rgba(59,130,246,.08);
 }
-.admin-chart-metrics .pass strong{
-    color:#15803d;
-}
-.admin-chart-metrics .issue strong{
-    color:#b91c1c;
-}
-.admin-chart-legend{
+.sales-progress-card-head{
     display:flex;
-    flex-wrap:wrap;
-    gap:14px;
     align-items:center;
-    margin:0 0 10px;
-    color:#667085;
-    font-size:10px;
-    font-weight:700;
+    gap:10px;
+    min-width:0;
 }
-.admin-chart-legend span{
-    display:inline-flex;
+.sales-progress-avatar{
+    flex:0 0 34px;
+    width:34px;
+    height:34px;
+    display:flex;
     align-items:center;
-    gap:6px;
-}
-.admin-chart-legend i{
-    display:inline-block;
-    width:10px;
-    height:10px;
+    justify-content:center;
     border-radius:4px;
-    background:#e5e7eb;
-}
-.admin-chart-legend i.pass{
-    background:#22c55e;
-}
-.admin-chart-legend i.issue{
-    background:#ef4444;
-}
-.admin-chart-legend i.unreviewed{
-    background:#e5e7eb;
-    border:1px solid #cbd5e1;
-}
-.admin-sales-chart-scroll{
-    overflow-x:auto;
-    overflow-y:hidden;
-    padding:4px 2px 3px;
-}
-.admin-sales-chart{
-    min-width:max(100%, calc(var(--chart-columns) * 78px));
-    height:310px;
-    display:grid;
-    grid-template-columns:repeat(var(--chart-columns),minmax(68px,1fr));
-    gap:8px;
-    align-items:end;
-    border-bottom:1px solid var(--line);
-    background:
-        linear-gradient(to top, transparent 24%, #f1f5f9 25%, transparent 26%),
-        linear-gradient(to top, transparent 49%, #f1f5f9 50%, transparent 51%),
-        linear-gradient(to top, transparent 74%, #f1f5f9 75%, transparent 76%);
-}
-.admin-sales-bar{
-    height:100%;
-    min-width:68px;
-    display:grid;
-    grid-template-rows:24px 1fr 54px;
-    align-items:end;
-    color:var(--text);
-    padding:0 4px;
-    border:1px solid transparent;
-    border-radius:4px;
-}
-.admin-sales-bar:hover,
-.admin-sales-bar.selected{
-    background:#f8fafc;
-    border-color:#dbeafe;
-}
-.admin-sales-bar-value{
-    align-self:center;
-    text-align:center;
-    color:#344054;
-    font-size:11px;
+    background:#eef2ff;
+    color:#3730a3;
+    font-size:14px;
     font-weight:900;
 }
-.admin-sales-bar-shell{
-    height:220px;
-    display:flex;
-    align-items:flex-end;
-    justify-content:center;
-}
-.admin-sales-bar-track{
-    position:relative;
-    width:40px;
-    min-height:6px;
-    overflow:hidden;
-    border:1px solid #cbd5e1;
-    border-radius:4px;
-    background:#e5e7eb;
-}
-.admin-sales-bar-pass,
-.admin-sales-bar-issue{
-    position:absolute;
-    left:0;
-    right:0;
-}
-.admin-sales-bar-pass{
-    bottom:0;
-    background:#22c55e;
-}
-.admin-sales-bar-issue{
-    background:#ef4444;
-    border-top:1px solid rgba(255,255,255,.85);
-}
-.admin-sales-bar-zero{
-    width:40px;
-    height:3px;
-    margin:0 auto;
-    background:#e5e7eb;
-}
-.admin-sales-bar-label{
+.sales-progress-person{
     min-width:0;
-    align-self:start;
-    padding-top:7px;
-    text-align:center;
+    flex:1;
 }
-.admin-sales-bar-label b{
+.sales-progress-person strong{
     display:block;
-    max-width:100%;
     overflow:hidden;
     text-overflow:ellipsis;
     white-space:nowrap;
-    font-size:10px;
+    font-size:13px;
 }
-.admin-sales-bar-label small{
+.sales-progress-person span{
     display:block;
-    margin-top:2px;
+    margin-top:1px;
     color:var(--muted);
     font-size:9px;
 }
-@media(max-width:850px){
-    .admin-progress-head{
+.sales-target-badge{
+    flex:0 0 auto;
+    padding:4px 6px;
+    border-radius:4px;
+    background:#dcfce7;
+    color:#166534;
+    font-size:8px;
+    font-weight:900;
+    text-transform:uppercase;
+    letter-spacing:.03em;
+}
+.sales-progress-number{
+    display:flex;
+    align-items:baseline;
+    gap:4px;
+    margin-top:17px;
+}
+.sales-progress-number strong{
+    font-size:28px;
+    line-height:1;
+    letter-spacing:-.035em;
+}
+.sales-progress-number span{
+    color:#667085;
+    font-size:11px;
+}
+.sales-progress-number b{
+    color:#344054;
+}
+.sales-progress-track{
+    position:relative;
+    height:9px;
+    margin-top:11px;
+    overflow:hidden;
+    border-radius:4px;
+    background:#e9edf3;
+}
+.sales-progress-fill{
+    width:0;
+    height:100%;
+    border-radius:4px;
+    background:#3b82f6;
+    transition:width .22s ease;
+}
+.sales-progress-card.target-met .sales-progress-fill{
+    background:#22c55e;
+}
+.sales-progress-meta{
+    display:flex;
+    flex-wrap:wrap;
+    gap:5px 10px;
+    margin-top:8px;
+    color:#667085;
+    font-size:9px;
+    font-weight:700;
+}
+.sales-progress-actions{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:10px;
+    margin-top:15px;
+    padding-top:12px;
+    border-top:1px solid #eef1f5;
+}
+.sales-progress-view{
+    flex:0 0 auto;
+    padding-bottom:7px;
+    font-size:10px;
+    font-weight:800;
+}
+.sales-target-editor{
+    display:flex;
+    align-items:flex-end;
+    gap:5px;
+}
+.sales-target-editor label{
+    margin:0;
+    color:#667085;
+    font-size:8px;
+    font-weight:800;
+}
+.sales-target-editor input{
+    width:58px;
+    min-height:29px;
+    margin-top:3px;
+    padding:5px 7px;
+    font-size:10px;
+}
+.sales-target-save{
+    min-height:29px;
+}
+.sales-target-message{
+    min-height:13px;
+    margin-top:5px;
+    text-align:right;
+    color:#15803d;
+    font-size:8px;
+    font-weight:800;
+}
+.sales-target-message.error{
+    color:#b42318;
+}
+.dashboard-refresh-notice{
+    position:sticky;
+    top:8px;
+    z-index:40;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    max-width:760px;
+    margin:0 auto 14px;
+    padding:10px 11px;
+    border:1px solid #bfdbfe;
+    border-radius:4px;
+    background:#eff6ff;
+    box-shadow:0 10px 28px rgba(15,23,42,.10);
+}
+.dashboard-refresh-notice.hidden{
+    display:none;
+}
+.dashboard-refresh-notice > div{
+    display:grid;
+    grid-template-columns:10px auto;
+    column-gap:8px;
+    align-items:center;
+}
+.dashboard-refresh-dot{
+    grid-row:1 / span 2;
+    width:8px;
+    height:8px;
+    border-radius:4px;
+    background:#2563eb;
+    animation:dashboardActivityPulse 1.4s ease-in-out infinite;
+}
+.dashboard-refresh-notice strong{
+    color:#1e3a8a;
+    font-size:11px;
+}
+.dashboard-refresh-notice small{
+    display:block;
+    margin-top:1px;
+    color:#475569;
+    font-size:9px;
+}
+@keyframes dashboardActivityPulse{
+    0%,100%{opacity:1}
+    50%{opacity:.35}
+}
+@media(max-width:720px){
+    .admin-section-head{
+        align-items:flex-start;
         flex-direction:column;
     }
-    .admin-chart-filter{
-        width:100%;
+    .sales-progress-grid{
+        grid-template-columns:1fr;
     }
-    .admin-chart-metrics{
-        grid-template-columns:repeat(2,minmax(120px,1fr));
+    .dashboard-refresh-notice{
+        position:relative;
+        top:auto;
     }
 }
-@media(max-width:560px){
-    .admin-chart-metrics{
-        grid-template-columns:1fr 1fr;
+@media(max-width:460px){
+    .sales-progress-actions{
+        align-items:flex-start;
+        flex-direction:column;
     }
-    .admin-period-switch{
+    .sales-target-editor{
         width:100%;
-    }
-    .admin-period-switch a{
-        flex:1;
-        justify-content:center;
     }
 }

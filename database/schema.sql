@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS cdsp_users (
  display_name VARCHAR(150) NOT NULL DEFAULT '',
  role ENUM('sales','admin') NOT NULL DEFAULT 'sales',
  active TINYINT(1) NOT NULL DEFAULT 1,
+ daily_post_target SMALLINT UNSIGNED NOT NULL DEFAULT 10,
  auth_source VARCHAR(50) NOT NULL DEFAULT 'local',
  last_handoff_at DATETIME NULL,
  created_at DATETIME NOT NULL,

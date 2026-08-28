@@ -918,4 +918,231 @@ $(function(){
         syncProviderType();
     })();
 
+
+// v0.1.17 Admin Sales progress grid
+(function(){
+    const $grid = $('#salesProgressGrid');
+
+    if($grid.length){
+        const targetUrl = $grid.data('target-url');
+        const csrf = $('#adminDashboardCsrf').val();
+
+        function setTargetMessage($card, message, error){
+            const $message = $card.find('[data-target-message]');
+            $message
+                .toggleClass('error', !!error)
+                .text(message || '');
+        }
+
+        function redrawProgress($card, target){
+            const count = parseInt(
+                $card.attr('data-post-count'),
+                10
+            ) || 0;
+
+            target = Math.max(1, parseInt(target, 10) || 10);
+
+            const percent = Math.min(
+                100,
+                Math.round((count / target) * 100)
+            );
+
+            $card
+                .toggleClass('target-met', count >= target)
+                .find('[data-progress-target]')
+                .text(target);
+
+            $card
+                .find('[data-progress-fill]')
+                .css('width', percent + '%');
+
+            const $track = $card.find('.sales-progress-track');
+            $track
+                .attr('aria-valuemax', target)
+                .attr('aria-valuenow', count);
+
+            if(count >= target){
+                if(!$card.find('.sales-target-badge').length){
+                    $card
+                        .find('.sales-progress-card-head')
+                        .append(
+                            '<span class="sales-target-badge">'+
+                                'Target met'+
+                            '</span>'
+                        );
+                }
+            }else{
+                $card.find('.sales-target-badge').remove();
+            }
+        }
+
+        $(document).on('click', '[data-target-save]', function(){
+            const $button = $(this);
+            const $card = $button.closest('.sales-progress-card');
+            const $input = $card.find('[data-target-input]');
+            const salesId = parseInt(
+                $card.attr('data-sales-id'),
+                10
+            ) || 0;
+            const target = parseInt($input.val(), 10) || 0;
+
+            setTargetMessage($card, '', false);
+            $input.removeClass('field-error');
+
+            if(target < 1 || target > 999){
+                $input.addClass('field-error').focus();
+                setTargetMessage(
+                    $card,
+                    'Target must be 1–999.',
+                    true
+                );
+                return;
+            }
+
+            $button.prop('disabled', true).text('Saving...');
+
+            $.ajax({
+                url: targetUrl,
+                method: 'POST',
+                dataType: 'json',
+                data: {
+                    _csrf: csrf,
+                    sales_user_id: salesId,
+                    target: target
+                }
+            })
+            .done(function(data){
+                if(!data || !data.ok){
+                    setTargetMessage(
+                        $card,
+                        (data && data.message) || 'Could not save.',
+                        true
+                    );
+                    return;
+                }
+
+                $input.val(data.target);
+                redrawProgress($card, data.target);
+                setTargetMessage($card, 'Saved', false);
+            })
+            .fail(function(xhr){
+                const data = xhr.responseJSON || {};
+                setTargetMessage(
+                    $card,
+                    data.message || 'Could not save.',
+                    true
+                );
+            })
+            .always(function(){
+                $button.prop('disabled', false).text('Save');
+            });
+        });
+
+        $grid.on('input', '[data-target-input]', function(){
+            $(this).removeClass('field-error');
+            setTargetMessage(
+                $(this).closest('.sales-progress-card'),
+                '',
+                false
+            );
+        });
+    }
+
+    const $live = $('#adminDashboardLive');
+
+    if(!$live.length){
+        return;
+    }
+
+    const url = $live.data('updates-url');
+    const date = String($live.data('date') || '');
+    const baselineCount = parseInt(
+        $live.attr('data-post-count'),
+        10
+    ) || 0;
+    const baselineMaxId = parseInt(
+        $live.attr('data-max-post-id'),
+        10
+    ) || 0;
+
+    const $notice = $('#dashboardRefreshNotice');
+    const $title = $('#dashboardRefreshTitle');
+    const $text = $('#dashboardRefreshText');
+
+    let timer = null;
+    let request = null;
+    let noticeShown = false;
+
+    function showRefreshNotice(data){
+        if(noticeShown){
+            return;
+        }
+
+        noticeShown = true;
+
+        const count = parseInt(data.post_count, 10) || 0;
+        const delta = Math.max(0, count - baselineCount);
+
+        $title.text(
+            delta > 0
+                ? delta + ' new post' + (delta === 1 ? '' : 's') + ' available'
+                : 'New Sales activity is available'
+        );
+
+        $text.text(
+            'Refresh to load the latest Sales progress and posts.'
+        );
+
+        $notice.removeClass('hidden');
+    }
+
+    function checkDashboardActivity(){
+        if(document.hidden || noticeShown){
+            return;
+        }
+
+        if(request && request.readyState !== 4){
+            return;
+        }
+
+        request = $.ajax({
+            url: url,
+            method: 'GET',
+            dataType: 'json',
+            cache: false,
+            data: {
+                date: date,
+                _: Date.now()
+            }
+        })
+        .done(function(data){
+            if(!data || !data.ok){
+                return;
+            }
+
+            const postCount = parseInt(data.post_count, 10) || 0;
+            const maxPostId = parseInt(data.max_post_id, 10) || 0;
+
+            if(
+                postCount > baselineCount
+                || maxPostId > baselineMaxId
+            ){
+                showRefreshNotice(data);
+            }
+        });
+    }
+
+    $('#dashboardRefreshButton').on('click', function(){
+        window.location.reload();
+    });
+
+    document.addEventListener('visibilitychange', function(){
+        if(!document.hidden){
+            checkDashboardActivity();
+        }
+    });
+
+    checkDashboardActivity();
+    timer = setInterval(checkDashboardActivity, 5000);
+})();
 });

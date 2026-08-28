@@ -3,45 +3,40 @@ use App\Core\Csrf;
 use App\Core\Util;
 
 $base = $config['app']['base_path'];
-
-$periodLabels = [
-    'day' => 'Daily',
-    'week' => 'Weekly',
-    'month' => 'Monthly',
-];
-
-$maxPosts = 0;
-
-foreach ($chartRows as $chartRow) {
-    $maxPosts = max($maxPosts, (int)$chartRow['total_posts']);
-}
-
-$maxPosts = max(1, $maxPosts);
-
-$selectedSalesName = 'All Sales';
-
-if ($salesFilter > 0) {
-    foreach ($sales as $salesUser) {
-        if ((int)$salesUser['id'] === $salesFilter) {
-            $selectedSalesName = (string)$salesUser['display_name'];
-            break;
-        }
-    }
-}
+$csrf = Csrf::token();
 ?>
+
+<div
+    id="adminDashboardLive"
+    data-updates-url="<?= Util::e($base) ?>/admin/dashboard/updates"
+    data-date="<?= Util::e($date) ?>"
+    data-post-count="<?= (int)$dashboardState['post_count'] ?>"
+    data-max-post-id="<?= (int)$dashboardState['max_post_id'] ?>"
+></div>
+
+<div class="dashboard-refresh-notice hidden" id="dashboardRefreshNotice">
+    <div>
+        <span class="dashboard-refresh-dot"></span>
+        <strong id="dashboardRefreshTitle">New posts are available</strong>
+        <small id="dashboardRefreshText">
+            Sales activity changed since this page was loaded.
+        </small>
+    </div>
+    <button type="button" class="btn" id="dashboardRefreshButton">
+        Refresh
+    </button>
+</div>
 
 <div class="page-head admin-page-head">
     <div>
         <div class="eyebrow">Administrator</div>
         <h1>Daily Work Progress</h1>
+        <p class="dashboard-date-copy">
+            <?= Util::e(date('F j, Y', strtotime($date.' 12:00:00'))) ?>
+        </p>
     </div>
 
     <form class="filters" method="get">
-        <input
-            type="hidden"
-            name="chart_period"
-            value="<?= Util::e($chartPeriod) ?>"
-        >
         <?php if ($salesFilter > 0): ?>
             <input
                 type="hidden"
@@ -58,169 +53,144 @@ if ($salesFilter > 0) {
     </form>
 </div>
 
-<section class="panel admin-progress-panel">
-    <div class="admin-progress-head">
+<section class="admin-sales-progress-section">
+    <div class="admin-section-head">
         <div>
-            <div class="eyebrow">Posting Performance</div>
-            <h2><?= Util::e($periodLabels[$chartPeriod]) ?> Posting Volume</h2>
+            <h2>Sales Posting Progress</h2>
             <p>
-                <?= Util::e($chartLabel) ?>
-                · <?= Util::e($selectedSalesName) ?>
+                Today's verified Marketplace posts against each Sales target.
             </p>
         </div>
-
-        <form class="admin-chart-filter" method="get">
-            <input type="hidden" name="date" value="<?= Util::e($date) ?>">
-            <input
-                type="hidden"
-                name="chart_period"
-                value="<?= Util::e($chartPeriod) ?>"
-            >
-
-            <label>
-                Sales
-                <select name="sales_id" onchange="this.form.submit()">
-                    <option value="0">All Sales</option>
-                    <?php foreach ($sales as $salesUser): ?>
-                        <option
-                            value="<?= (int)$salesUser['id'] ?>"
-                            <?= $salesFilter === (int)$salesUser['id']
-                                ? 'selected'
-                                : '' ?>
-                        >
-                            <?= Util::e($salesUser['display_name']) ?>
-                            #<?= Util::e($salesUser['sales_id']) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </label>
-        </form>
+        <div class="admin-section-summary">
+            <?= count($salesProgress) ?> Sales
+            · <?= (int)$dashboardState['post_count'] ?> Posts
+        </div>
     </div>
 
-    <div class="admin-period-switch" aria-label="Posting report period">
-        <?php foreach ($periodLabels as $periodKey => $periodLabel): ?>
+    <input type="hidden" id="adminDashboardCsrf" value="<?= Util::e($csrf) ?>">
+
+    <div
+        class="sales-progress-grid"
+        id="salesProgressGrid"
+        data-target-url="<?= Util::e($base) ?>/admin/sales-target"
+    >
+        <?php foreach ($salesProgress as $row): ?>
             <?php
-            $periodHref = $base
+            $count = (int)$row['post_count'];
+            $target = max(1, (int)$row['target_posts']);
+            $percent = min(100, round(($count / $target) * 100));
+            $met = $count >= $target;
+            $unreviewed = max(
+                0,
+                $count - (int)$row['good_count'] - (int)$row['bad_count']
+            );
+            $cardHref = $base
                 . '/admin?date=' . rawurlencode($date)
-                . '&chart_period=' . rawurlencode($periodKey)
-                . '&sales_id=' . (int)$salesFilter;
+                . '&sales_id=' . (int)$row['sales_user_id']
+                . '#daily-posts';
             ?>
-            <a
-                class="<?= $chartPeriod === $periodKey ? 'active' : '' ?>"
-                href="<?= Util::e($periodHref) ?>"
+            <article
+                class="sales-progress-card<?= $met ? ' target-met' : '' ?><?= $salesFilter === (int)$row['sales_user_id'] ? ' selected' : '' ?>"
+                data-sales-id="<?= (int)$row['sales_user_id'] ?>"
+                data-post-count="<?= $count ?>"
             >
-                <?= Util::e($periodLabel) ?>
-            </a>
-        <?php endforeach; ?>
-    </div>
+                <div class="sales-progress-card-head">
+                    <div class="sales-progress-avatar" aria-hidden="true">
+                        <?= Util::e(
+                            strtoupper(
+                                substr(
+                                    trim((string)$row['display_name']),
+                                    0,
+                                    1
+                                )
+                            )
+                        ) ?>
+                    </div>
+                    <div class="sales-progress-person">
+                        <strong><?= Util::e($row['display_name']) ?></strong>
+                        <span>#<?= Util::e($row['sales_id']) ?></span>
+                    </div>
+                    <?php if ($met): ?>
+                        <span class="sales-target-badge">Target met</span>
+                    <?php endif; ?>
+                </div>
 
-    <div class="admin-chart-metrics">
-        <div>
-            <strong><?= (int)$chartTotals['posts'] ?></strong>
-            <span>Total Posts</span>
-        </div>
-        <div class="pass">
-            <strong><?= (int)$chartTotals['good'] ?></strong>
-            <span>Pass</span>
-        </div>
-        <div class="issue">
-            <strong><?= (int)$chartTotals['bad'] ?></strong>
-            <span>Issues</span>
-        </div>
-        <div>
-            <strong><?= (int)$chartTotals['unreviewed'] ?></strong>
-            <span>Unreviewed</span>
-        </div>
-    </div>
+                <div class="sales-progress-number">
+                    <strong data-progress-count><?= $count ?></strong>
+                    <span>
+                        / <b data-progress-target><?= $target ?></b> posts
+                    </span>
+                </div>
 
-    <div class="admin-chart-legend" aria-label="Chart legend">
-        <span><i class="pass"></i> Pass / Good</span>
-        <span><i class="issue"></i> Issues / Bad</span>
-        <span><i class="unreviewed"></i> Unreviewed</span>
-    </div>
+                <div
+                    class="sales-progress-track"
+                    role="progressbar"
+                    aria-label="<?= Util::e($row['display_name']) ?> daily posting progress"
+                    aria-valuemin="0"
+                    aria-valuemax="<?= $target ?>"
+                    aria-valuenow="<?= $count ?>"
+                >
+                    <div
+                        class="sales-progress-fill"
+                        data-progress-fill
+                        style="width:<?= $percent ?>%"
+                    ></div>
+                </div>
 
-    <div class="admin-sales-chart-scroll">
-        <?php if ($chartRows): ?>
-            <div
-                class="admin-sales-chart"
-                style="--chart-columns:<?= max(1, count($chartRows)) ?>"
-            >
-                <?php foreach ($chartRows as $row): ?>
-                    <?php
-                    $total = (int)$row['total_posts'];
-                    $good = (int)$row['good_posts'];
-                    $bad = (int)$row['bad_posts'];
-                    $unreviewed = max(0, $total - $good - $bad);
+                <div class="sales-progress-meta">
+                    <span>
+                        <?= (int)$row['good_count'] ?> Good
+                    </span>
+                    <span>
+                        <?= (int)$row['bad_count'] ?> Issues
+                    </span>
+                    <span>
+                        <?= $unreviewed ?> Unreviewed
+                    </span>
+                </div>
 
-                    $trackHeight = $total > 0
-                        ? max(7, ($total / $maxPosts) * 100)
-                        : 0;
-
-                    $goodHeight = $total > 0
-                        ? ($good / $total) * 100
-                        : 0;
-
-                    $badHeight = $total > 0
-                        ? ($bad / $total) * 100
-                        : 0;
-
-                    $badBottom = $goodHeight;
-
-                    $barHref = $base
-                        . '/admin?date=' . rawurlencode($date)
-                        . '&chart_period=' . rawurlencode($chartPeriod)
-                        . '&sales_id=' . (int)$row['sales_user_id']
-                        . '#daily-posts';
-                    ?>
+                <div class="sales-progress-actions">
                     <a
-                        class="admin-sales-bar<?= $salesFilter === (int)$row['sales_user_id']
-                            ? ' selected'
-                            : '' ?>"
-                        href="<?= Util::e($barHref) ?>"
-                        title="<?= Util::e(
-                            $row['display_name']
-                            . ': ' . $total . ' posts, '
-                            . $good . ' pass, '
-                            . $bad . ' issues, '
-                            . $unreviewed . ' unreviewed'
-                        ) ?>"
+                        class="sales-progress-view"
+                        href="<?= Util::e($cardHref) ?>"
                     >
-                        <div class="admin-sales-bar-value">
-                            <?= $total ?>
-                        </div>
-
-                        <div class="admin-sales-bar-shell">
-                            <?php if ($total > 0): ?>
-                                <div
-                                    class="admin-sales-bar-track"
-                                    style="height:<?= round($trackHeight, 2) ?>%"
-                                >
-                                    <div
-                                        class="admin-sales-bar-pass"
-                                        style="height:<?= round($goodHeight, 2) ?>%"
-                                    ></div>
-                                    <div
-                                        class="admin-sales-bar-issue"
-                                        style="
-                                            height:<?= round($badHeight, 2) ?>%;
-                                            bottom:<?= round($badBottom, 2) ?>%
-                                        "
-                                    ></div>
-                                </div>
-                            <?php else: ?>
-                                <div class="admin-sales-bar-zero"></div>
-                            <?php endif; ?>
-                        </div>
-
-                        <div class="admin-sales-bar-label">
-                            <b><?= Util::e($row['display_name']) ?></b>
-                            <small>#<?= Util::e($row['sales_id']) ?></small>
-                        </div>
+                        View Posts
                     </a>
-                <?php endforeach; ?>
+
+                    <div class="sales-target-editor">
+                        <label>
+                            Target
+                            <input
+                                type="number"
+                                min="1"
+                                max="999"
+                                value="<?= $target ?>"
+                                data-target-input
+                                aria-label="Daily target for <?= Util::e($row['display_name']) ?>"
+                            >
+                        </label>
+                        <button
+                            type="button"
+                            class="tiny sales-target-save"
+                            data-target-save
+                        >
+                            Save
+                        </button>
+                    </div>
+                </div>
+
+                <div
+                    class="sales-target-message"
+                    data-target-message
+                    aria-live="polite"
+                ></div>
+            </article>
+        <?php endforeach; ?>
+
+        <?php if (!$salesProgress): ?>
+            <div class="panel empty">
+                No active Sales users.
             </div>
-        <?php else: ?>
-            <div class="empty">No Sales users are available.</div>
         <?php endif; ?>
     </div>
 </section>
@@ -235,13 +205,21 @@ if ($salesFilter > 0) {
                 <?php endif; ?>
             </h2>
             <p class="panel-subtitle">
-                Based on the verified Facebook Marketplace published date.
+                Verified Facebook Marketplace publication date.
             </p>
         </div>
 
-        <a class="btn" href="<?= $base ?>/admin/reports">
-            Weekly / Monthly Reports
-        </a>
+        <?php if ($salesFilter > 0): ?>
+            <a
+                class="btn"
+                href="<?= Util::e(
+                    $base . '/admin?date=' . rawurlencode($date)
+                    . '#daily-posts'
+                ) ?>"
+            >
+                All Sales
+            </a>
+        <?php endif; ?>
     </div>
 
     <div class="tablewrap">
@@ -272,8 +250,14 @@ if ($salesFilter > 0) {
                                 ['good','bad'],
                                 true
                             )): ?>
-                                <span class="status <?= Util::e($post['admin_review_status']) ?>">
-                                    <?= Util::e(ucfirst($post['admin_review_status'])) ?>
+                                <span
+                                    class="status <?= Util::e(
+                                        $post['admin_review_status']
+                                    ) ?>"
+                                >
+                                    <?= Util::e(
+                                        ucfirst($post['admin_review_status'])
+                                    ) ?>
                                 </span>
                             <?php else: ?>
                                 —
@@ -337,7 +321,7 @@ if ($salesFilter > 0) {
                     <input
                         type="hidden"
                         name="_csrf"
-                        value="<?= Util::e(Csrf::token()) ?>"
+                        value="<?= Util::e($csrf) ?>"
                     >
                     <input
                         type="hidden"

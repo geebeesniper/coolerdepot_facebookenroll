@@ -83,6 +83,57 @@ class Post {
 
         return $s->fetchAll();
     }
+
+    public static function adminDailySalesProgress(string $date): array
+    {
+        $s = Database::connection()->prepare(
+            "SELECT
+                u.id AS sales_user_id,
+                u.sales_id,
+                u.display_name,
+                COALESCE(NULLIF(u.daily_post_target,0),10) AS target_posts,
+                COUNT(p.id) AS post_count,
+                COALESCE(SUM(p.admin_review_status='good'),0) AS good_count,
+                COALESCE(SUM(p.admin_review_status='bad'),0) AS bad_count
+             FROM cdsp_users u
+             LEFT JOIN cdsp_sales_posts p
+               ON p.sales_user_id=u.id
+              AND p.deleted_at IS NULL
+              AND p.published_date=?
+             WHERE u.role='sales'
+               AND u.active=1
+             GROUP BY
+                u.id,
+                u.sales_id,
+                u.display_name,
+                u.daily_post_target
+             ORDER BY u.display_name"
+        );
+
+        $s->execute([$date]);
+
+        return $s->fetchAll();
+    }
+
+    public static function adminDashboardState(string $date): array
+    {
+        $s = Database::connection()->prepare(
+            "SELECT
+                COUNT(*) AS post_count,
+                COALESCE(MAX(id),0) AS max_post_id
+             FROM cdsp_sales_posts
+             WHERE deleted_at IS NULL
+               AND published_date=?"
+        );
+        $s->execute([$date]);
+        $row = $s->fetch() ?: [];
+
+        return [
+            'post_count' => (int)($row['post_count'] ?? 0),
+            'max_post_id' => (int)($row['max_post_id'] ?? 0),
+        ];
+    }
+
     public static function dailyCounts(int $uid,string $from,string $to):array{
         $s=Database::connection()->prepare("SELECT DATE(created_at) work_date,platform,COUNT(*) cnt FROM cdsp_sales_posts WHERE sales_user_id=? AND created_at>=? AND created_at<DATE_ADD(?,INTERVAL 1 DAY) AND deleted_at IS NULL GROUP BY DATE(created_at),platform ORDER BY work_date DESC");
         $s->execute([$uid,$from.' 00:00:00',$to.' 00:00:00']);return$s->fetchAll();

@@ -8,76 +8,36 @@ class AdminController extends Controller{
         $admin=Auth::requireRole('admin');
         $date=(string)($_GET['date']??date('Y-m-d'));
 
-        if (!preg_match('/^\\d{4}-\\d{2}-\\d{2}$/', $date)) {
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
             $date=date('Y-m-d');
-        }
-
-        $chartPeriod=(string)($_GET['chart_period']??'day');
-
-        if (!in_array($chartPeriod,['day','week','month'],true)) {
-            $chartPeriod='day';
         }
 
         $salesFilter=(int)($_GET['sales_id']??0);
         $sales=User::allSales();
+        $validSalesIds=array_map(
+            static fn(array $row): int => (int)$row['id'],
+            $sales
+        );
+
+        if ($salesFilter > 0
+            && !in_array($salesFilter,$validSalesIds,true)) {
+            $salesFilter=0;
+        }
+
+        $salesProgress=Post::adminDailySalesProgress($date);
+        $dashboardState=Post::adminDashboardState($date);
+        $posts=Post::adminQueue($date,$salesFilter);
+
+        $selectedSalesName='All Sales';
 
         if ($salesFilter > 0) {
-            $validSales=false;
-
             foreach ($sales as $salesUser) {
                 if ((int)$salesUser['id']===$salesFilter) {
-                    $validSales=true;
+                    $selectedSalesName=(string)$salesUser['display_name'];
                     break;
                 }
             }
-
-            if (!$validSales) {
-                $salesFilter=0;
-            }
         }
-
-        $anchor=strtotime($date.' 12:00:00');
-
-        if ($chartPeriod==='month') {
-            $chartFrom=date('Y-m-01',$anchor);
-            $chartTo=date('Y-m-t',$anchor);
-            $chartLabel=date('F Y',$anchor);
-        } elseif ($chartPeriod==='week') {
-            $daysFromMonday=(int)date('N',$anchor)-1;
-            $chartFrom=date('Y-m-d',strtotime('-'.$daysFromMonday.' days',$anchor));
-            $chartTo=date('Y-m-d',strtotime($chartFrom.' +6 days'));
-            $chartLabel=$chartFrom.' — '.$chartTo;
-        } else {
-            $chartFrom=$date;
-            $chartTo=$date;
-            $chartLabel=date('F j, Y',$anchor);
-        }
-
-        $chartRows=Post::adminProgressStats(
-            $chartFrom,
-            $chartTo,
-            $salesFilter
-        );
-
-        $chartTotals=[
-            'posts'=>0,
-            'good'=>0,
-            'bad'=>0,
-            'unreviewed'=>0,
-        ];
-
-        foreach ($chartRows as $row) {
-            $total=(int)$row['total_posts'];
-            $good=(int)$row['good_posts'];
-            $bad=(int)$row['bad_posts'];
-
-            $chartTotals['posts'] += $total;
-            $chartTotals['good'] += $good;
-            $chartTotals['bad'] += $bad;
-            $chartTotals['unreviewed'] += max(0,$total-$good-$bad);
-        }
-
-        $posts=Post::adminQueue($date,$salesFilter);
 
         $s=Database::connection()->query(
             "SELECT d.*,p.title,u.display_name
@@ -97,16 +57,86 @@ class AdminController extends Controller{
                 'posts',
                 'sales',
                 'salesFilter',
-                'chartPeriod',
-                'chartFrom',
-                'chartTo',
-                'chartLabel',
-                'chartRows',
-                'chartTotals',
+                'selectedSalesName',
+                'salesProgress',
+                'dashboardState',
                 'deletionRequests'
             )
         );
     }
+
+    public function saveSalesTarget():void{
+        $admin=Auth::requireRole('admin');
+        Csrf::verify($_POST['_csrf']??null);
+
+        $salesUserId=(int)($_POST['sales_user_id']??0);
+        $target=(int)($_POST['target']??0);
+
+        if ($salesUserId < 1) {
+            $this->json([
+                'ok'=>false,
+                'message'=>'Sales user is required.',
+            ],422);
+        }
+
+        if ($target < 1 || $target > 999) {
+            $this->json([
+                'ok'=>false,
+                'field'=>'target',
+                'message'=>'Target must be between 1 and 999.',
+            ],422);
+        }
+
+        $salesUser=User::find($salesUserId);
+
+        if (!$salesUser
+            || ($salesUser['role']??'')!=='sales'
+            || !(int)($salesUser['active']??0)) {
+            $this->json([
+                'ok'=>false,
+                'message'=>'Sales user was not found.',
+            ],404);
+        }
+
+        User::setDailyPostTarget($salesUserId,$target);
+
+        $this->json([
+            'ok'=>true,
+            'target'=>$target,
+            'message'=>'Daily target saved.',
+        ]);
+    }
+
+    public function dashboardUpdates():void{
+        Auth::requireRole('admin');
+
+        $date=(string)($_GET['date']??date('Y-m-d'));
+
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+            $this->json([
+                'ok'=>false,
+                'message'=>'Invalid dashboard date.',
+            ],422);
+        }
+
+        if (session_status()===PHP_SESSION_ACTIVE) {
+            session_write_close();
+        }
+
+        $state=Post::adminDashboardState($date);
+
+        header(
+            'Cache-Control: no-store, no-cache, must-revalidate, max-age=0'
+        );
+
+        $this->json([
+            'ok'=>true,
+            'date'=>$date,
+            'post_count'=>$state['post_count'],
+            'max_post_id'=>$state['max_post_id'],
+        ]);
+    }
+
     public function postReview():void{
         $admin=Auth::requireRole('admin');$post=Post::find((int)($_GET['id']??0));if(!$post){http_response_code(404);exit('Post not found');}
         $s=Database::connection()->prepare("SELECT * FROM cdsp_post_reviews WHERE post_id=? LIMIT 1");$s->execute([$post['id']]);$review=$s->fetch()?:null;
