@@ -198,7 +198,7 @@ CREATE TABLE IF NOT EXISTS cdsp_period_sales_reviews (
 
 CREATE TABLE IF NOT EXISTS cdsp_review_attachments (
  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
- entity_type ENUM('post_review','daily_review','period_review','post_note') NOT NULL,
+ entity_type ENUM('post_review','daily_review','period_review','post_note','post_comment') NOT NULL,
  entity_id BIGINT UNSIGNED NOT NULL,
  uploaded_by INT UNSIGNED NOT NULL,
  original_name VARCHAR(255) NOT NULL,

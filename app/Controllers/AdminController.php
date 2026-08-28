@@ -388,101 +388,112 @@ class AdminController extends Controller{
 
 public function dashboardAddComment():void{
     $admin=Auth::requireRole('admin');
-    $this->verifyAjaxCsrf();
 
-    $postId=(int)($_POST['post_id']??0);
-    $body=HtmlNoteSanitizer::clean(
-        (string)($_POST['comment_body']??'')
-    );
-
-    if(!Post::find($postId)){
+    if($this->requestExceedsPostMaxSize()){
         $this->json([
             'ok'=>false,
-            'message'=>'Post was not found.',
-        ],404);
+            'message'=>'Upload request exceeds PHP post_max_size ('
+                .ini_get('post_max_size').').',
+        ],413);
     }
 
-    if(!$this->commentHasContent($body)){
+    $this->verifyAjaxCsrf();
+    $postId=(int)($_POST['post_id']??0);
+    $body=HtmlNoteSanitizer::clean((string)($_POST['comment_body']??''));
+    $hasImages=$this->hasUploadedFiles('comment_images');
+
+    if(!Post::find($postId)){
+        $this->json(['ok'=>false,'message'=>'Post was not found.'],404);
+    }
+
+    if(!$this->commentHasContent($body)&&!$hasImages){
         $this->json([
             'ok'=>false,
             'field'=>'comment_body',
-            'message'=>'Write a note before adding it.',
+            'message'=>'Write a note or attach an image before adding it.',
         ],422);
     }
 
-    $s=Database::connection()->prepare(
+    $pdo=Database::connection();
+    $s=$pdo->prepare(
         "INSERT INTO cdsp_post_review_comments(
-            post_id,
-            admin_user_id,
-            body_html,
-            created_at,
-            updated_at
-         )
-         VALUES(?,?,?,NOW(),NOW())"
+            post_id,admin_user_id,body_html,created_at,updated_at
+         ) VALUES(?,?,?,NOW(),NOW())"
     );
+    $s->execute([$postId,(int)$admin['id'],$body]);
+    $commentId=(int)$pdo->lastInsertId();
+    $uploadWarning=null;
 
-    $s->execute([
-        $postId,
-        (int)$admin['id'],
-        $body,
-    ]);
-
-    $commentId=(int)Database::connection()->lastInsertId();
+    try{
+        (new UploadService())->save(
+            'post_comment',$commentId,(int)$admin['id'],'comment_images'
+        );
+    }catch(\Throwable $e){
+        $uploadWarning=$e->getMessage();
+    }
 
     $this->json([
         'ok'=>true,
         'comment'=>$this->postReviewComment($commentId),
-        'message'=>'Note added.',
+        'upload_warning'=>$uploadWarning,
+        'message'=>$uploadWarning
+            ? 'Note saved, but an image could not be uploaded.'
+            : 'Note added.',
     ]);
 }
 
 public function dashboardUpdateComment():void{
     $admin=Auth::requireRole('admin');
+
+    if($this->requestExceedsPostMaxSize()){
+        $this->json([
+            'ok'=>false,
+            'message'=>'Upload request exceeds PHP post_max_size ('
+                .ini_get('post_max_size').').',
+        ],413);
+    }
+
     $this->verifyAjaxCsrf();
-
     $commentId=(int)($_POST['comment_id']??0);
-    $body=HtmlNoteSanitizer::clean(
-        (string)($_POST['comment_body']??'')
-    );
+    $body=HtmlNoteSanitizer::clean((string)($_POST['comment_body']??''));
+    $hasImages=$this->hasUploadedFiles('comment_images');
+    $existing=$this->postReviewComment($commentId);
 
-    if(!$this->commentHasContent($body)){
+    if(!$existing){
+        $this->json(['ok'=>false,'message'=>'Comment was not found.'],404);
+    }
+
+    if(!$this->commentHasContent($body)&&!$hasImages&&empty($existing['attachments'])){
         $this->json([
             'ok'=>false,
             'field'=>'comment_body',
-            'message'=>'A note cannot be empty.',
+            'message'=>'A note cannot be empty unless it has an image.',
         ],422);
     }
 
     $s=Database::connection()->prepare(
         "UPDATE cdsp_post_review_comments
-         SET body_html=?,
-             updated_by=?,
-             updated_at=NOW()
-         WHERE id=?
-           AND deleted_at IS NULL"
+         SET body_html=?,updated_by=?,updated_at=NOW()
+         WHERE id=? AND deleted_at IS NULL"
     );
+    $s->execute([$body,(int)$admin['id'],$commentId]);
+    $uploadWarning=null;
 
-    $s->execute([
-        $body,
-        (int)$admin['id'],
-        $commentId,
-    ]);
-
-    if($s->rowCount()<1){
-        $exists=$this->postReviewComment($commentId);
-
-        if(!$exists){
-            $this->json([
-                'ok'=>false,
-                'message'=>'Comment was not found.',
-            ],404);
-        }
+    try{
+        (new UploadService())->save(
+            'post_comment',$commentId,(int)$admin['id'],'comment_images'
+        );
+    }catch(\Throwable $e){
+        $uploadWarning=$e->getMessage();
     }
 
     $this->json([
         'ok'=>true,
         'comment'=>$this->postReviewComment($commentId),
-        'message'=>'Note updated.',
+        'upload_warning'=>$uploadWarning,
+        'message'=>$uploadWarning
+            ? 'Note updated, but an image could not be uploaded.'
+            : 'Note updated.',
     ]);
 }
 
@@ -517,6 +528,42 @@ public function dashboardDeleteComment():void{
         'ok'=>true,
         'comment_id'=>$commentId,
         'message'=>'Note deleted.',
+    ]);
+}
+
+public function dashboardDeleteAttachment():void{
+    Auth::requireRole('admin');
+    $this->verifyAjaxCsrf();
+    $attachmentId=(int)($_POST['attachment_id']??0);
+
+    $s=Database::connection()->prepare(
+        "SELECT * FROM cdsp_review_attachments
+         WHERE id=? AND entity_type IN ('post_comment','post_review')
+         LIMIT 1"
+    );
+    $s->execute([$attachmentId]);
+    $attachment=$s->fetch();
+
+    if(!$attachment){
+        $this->json(['ok'=>false,'message'=>'Image was not found.'],404);
+    }
+
+    $base=realpath(dirname(__DIR__,2).'/storage/uploads');
+    $candidate=dirname(__DIR__,2).'/storage/uploads/'.(string)$attachment['stored_path'];
+    $path=realpath($candidate);
+    $d=Database::connection()->prepare("DELETE FROM cdsp_review_attachments WHERE id=?");
+    $d->execute([$attachmentId]);
+
+    if($base&&$path&&str_starts_with($path,$base)&&is_file($path)){
+        @unlink($path);
+    }
+
+    $this->json([
+        'ok'=>true,
+        'attachment_id'=>$attachmentId,
+        'entity_type'=>(string)$attachment['entity_type'],
+        'entity_id'=>(int)$attachment['entity_id'],
+        'message'=>'Image deleted.',
     ]);
 }
 
@@ -1174,6 +1221,9 @@ private function formatPostReviewComment(array $row):array{
         'created_at'=>$created,
         'updated_at'=>$updated,
         'edited'=>$edited,
+        'attachments'=>$this->formatAttachments(
+            $this->attachments('post_comment',(int)$row['id'])
+        ),
     ];
 }
 
@@ -1183,6 +1233,30 @@ private function commentHasContent(string $html):bool{
     }
 
     return stripos($html,'<img')!==false;
+}
+
+private function hasUploadedFiles(string $field):bool{
+    if(empty($_FILES[$field])) return false;
+    $errors=$_FILES[$field]['error']??UPLOAD_ERR_NO_FILE;
+    if(!is_array($errors)) return (int)$errors!==UPLOAD_ERR_NO_FILE;
+    foreach($errors as $error){
+        if((int)$error!==UPLOAD_ERR_NO_FILE) return true;
+    }
+    return false;
+}
+
+private function formatAttachments(array $items):array{
+    $result=[];
+    foreach($items as $attachment){
+        $result[]=[
+            'id'=>(int)$attachment['id'],
+            'name'=>(string)$attachment['original_name'],
+            'mime'=>(string)$attachment['mime_type'],
+            'size'=>(int)$attachment['size_bytes'],
+            'url'=>$GLOBALS['config']['app']['base_path'].'/attachment?id='.(int)$attachment['id'],
+        ];
+    }
+    return $result;
 }
 
     private function attachments(string $type,int $id):array{$s=Database::connection()->prepare("SELECT * FROM cdsp_review_attachments WHERE entity_type=? AND entity_id=? ORDER BY created_at");$s->execute([$type,$id]);return$s->fetchAll();}

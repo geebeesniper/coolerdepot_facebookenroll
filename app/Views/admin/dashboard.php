@@ -25,6 +25,7 @@ $periodNames = [
     data-comment-add-url="<?= Util::e($base) ?>/admin/dashboard/comment/add"
     data-comment-update-url="<?= Util::e($base) ?>/admin/dashboard/comment/update"
     data-comment-delete-url="<?= Util::e($base) ?>/admin/dashboard/comment/delete"
+    data-attachment-delete-url="<?= Util::e($base) ?>/admin/dashboard/attachment/delete"
     data-today="<?= Util::e($today) ?>"
     data-date="<?= Util::e($date) ?>"
     data-period="<?= Util::e($period) ?>"
@@ -555,6 +556,22 @@ $periodNames = [
             require __DIR__ . '/_html_note_editor.php';
             ?>
 
+            <div class="review-comment-media">
+                <label for="dashboardCommentImages">
+                    Images <span>saved with this note</span>
+                </label>
+                <input
+                    id="dashboardCommentImages"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    multiple
+                >
+                <div
+                    class="review-comment-file-selection"
+                    id="dashboardCommentFileSelection"
+                ></div>
+            </div>
+
             <div class="review-comment-composer-actions">
                 <button
                     type="button"
@@ -579,23 +596,15 @@ $periodNames = [
                 aria-live="polite"
             ></div>
 
-            <div class="review-modal-upload">
-                <label for="dashboardReviewImages">Images</label>
-                <input
-                    id="dashboardReviewImages"
-                    type="file"
-                    name="images[]"
-                    accept="image/jpeg,image/png,image/webp"
-                    multiple
-                >
-            </div>
-
-            <div
-                class="review-modal-attachments hidden"
+            <section
+                class="review-legacy-attachments hidden"
                 id="dashboardReviewAttachments"
-            ></div>
+            >
+                <div class="review-legacy-attachments-title">Other review images</div>
+                <div class="review-legacy-attachments-list" data-review-attachment-list></div>
+            </section>
 
-            <div
+<div
                 class="review-modal-message"
                 id="dashboardReviewMessage"
                 aria-live="polite"

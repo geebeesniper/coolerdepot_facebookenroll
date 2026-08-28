@@ -685,3 +685,18 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - Touch targets are enlarged on coarse-pointer devices.
 - No database migration is required.
 - All border radius remains `4px`.
+
+## v0.1.31 — Comment-linked images and image deletion
+
+- Images selected below `Add Note` now belong to that exact comment and are uploaded together with Add/Update Note through AJAX.
+- Comment History renders each comment's attached images directly beneath the comment body.
+- Comment images are clickable and open the existing image lightbox.
+- Every comment image has its own `×` delete control.
+- Existing Review-level images receive delete controls too.
+- Added `post_comment` to the attachment entity types.
+- Migration `011_comment_attachments` automatically moves legacy `post_review` images into the migrated legacy comment when `legacy_review_id` provides an unambiguous mapping.
+- Images that cannot be mapped remain under `Other review images` and can still be deleted.
+- Comments may be image-only; text is not required when at least one image is selected or already attached.
+- Review Save no longer owns the comment-image picker; comment images are saved only by Add Note / Update Note.
+- Requires migration `011_comment_attachments`.
+- All border radius remains `4px`.

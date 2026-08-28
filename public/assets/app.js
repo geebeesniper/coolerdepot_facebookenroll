@@ -1007,6 +1007,7 @@ $('[data-html-note]').each(function(){
     const commentAddUrl = $live.data('comment-add-url');
     const commentUpdateUrl = $live.data('comment-update-url');
     const commentDeleteUrl = $live.data('comment-delete-url');
+    const attachmentDeleteUrl = $live.data('attachment-delete-url');
     const today = String($live.data('today') || '');
     const csrf = $('#adminDashboardCsrf').val();
 
@@ -1054,6 +1055,8 @@ $('[data-html-note]').each(function(){
     const $commentSave = $('#dashboardCommentSave');
     const $commentCancelEdit = $('#dashboardCommentCancelEdit');
     const $commentMessage = $('#dashboardCommentMessage');
+    const $commentImages = $('#dashboardCommentImages');
+    const $commentFileSelection = $('#dashboardCommentFileSelection');
     let editingCommentId = 0;
     let currentComments = [];
     let deleteCommentId = 0;
@@ -1824,6 +1827,32 @@ function commentDateLabel(value){
     });
 }
 
+function renderCommentAttachments(items){
+    items=Array.isArray(items)?items:[];
+    if(!items.length) return '';
+
+    return '<div class="review-comment-attachments">'
+        +items.map(function(item){
+            const image=String(item.mime||'').startsWith('image/');
+            return '<div class="review-comment-attachment" data-attachment-id="'
+                +escapeHtml(item.id)+'">'
+                +(image
+                    ?'<button type="button" class="review-comment-image" data-comment-image="'+escapeHtml(item.url)+'" aria-label="Open image"><img loading="lazy" src="'+escapeHtml(item.url)+'" alt="'+escapeHtml(item.name)+'"></button>'
+                    :'<a target="_blank" rel="noopener" href="'+escapeHtml(item.url)+'">'+escapeHtml(item.name)+'</a>')
+                +'<button type="button" class="attachment-remove" data-attachment-delete="'+escapeHtml(item.id)+'" aria-label="Delete image" title="Delete image">×</button>'
+                +'</div>';
+        }).join('')
+        +'</div>';
+}
+
+function updateCommentFileSelection(){
+    const input=$commentImages.get(0);
+    const files=input?Array.from(input.files||[]):[];
+    $commentFileSelection.html(
+        files.map(function(file){return '<span>'+escapeHtml(file.name)+'</span>';}).join('')
+    );
+}
+
 function renderComments(items){
     currentComments=Array.isArray(items)
         ?items.slice()
@@ -1894,7 +1923,7 @@ function renderComments(items){
                 '<div class="review-comment-body">'
                     +(comment.body_html||'')
                 +'</div>'+
-
+                renderCommentAttachments(comment.attachments||[])+
             '</article>'
         );
     }).join('');
@@ -1923,6 +1952,8 @@ function clearCommentComposer(){
         .prop('disabled',false)
         .text('Add Note');
     $commentCancelEdit.addClass('hidden');
+    $commentImages.val('');
+    $commentFileSelection.empty();
     $commentMessage
         .removeClass('error warning')
         .text('');
@@ -1959,28 +1990,23 @@ function startCommentEdit(commentId){
     }
 }
 
-    function renderAttachments(items){
-        items = Array.isArray(items) ? items : [];
-
-        if(!items.length){
-            $modalAttachments
-                .addClass('hidden')
-                .empty();
-            return;
-        }
-
-        const html = items.map(function(item){
-            return '<a target="_blank" rel="noopener" href="'
-                +escapeHtml(item.url)
-                +'">'
-                +escapeHtml(item.name)
-                +'</a>';
-        }).join('');
-
-        $modalAttachments
-            .html(html)
-            .removeClass('hidden');
+function renderAttachments(items){
+    items=Array.isArray(items)?items:[];
+    const $list=$modalAttachments.find('[data-review-attachment-list]');
+    if(!items.length){
+        $list.empty();
+        $modalAttachments.addClass('hidden');
+        return;
     }
+
+    $list.html(items.map(function(item){
+        return '<div class="legacy-attachment-chip" data-attachment-id="'+escapeHtml(item.id)+'">'
+            +'<a target="_blank" rel="noopener" href="'+escapeHtml(item.url)+'">'+escapeHtml(item.name)+'</a>'
+            +'<button type="button" class="attachment-remove" data-attachment-delete="'+escapeHtml(item.id)+'" aria-label="Delete image" title="Delete image">×</button>'
+            +'</div>';
+    }).join(''));
+    $modalAttachments.removeClass('hidden');
+}
 
     function resetReviewModal(){
         $modalMessage
@@ -2330,113 +2356,60 @@ function showDecisionError(message){
     );
 
 $commentSave.on('click',function(){
-    const postId=parseInt(
-        $('#dashboardReviewPostId').val(),
-        10
-    )||0;
-
+    const postId=parseInt($('#dashboardReviewPostId').val(),10)||0;
     const body=getCommentEditorHtml();
-
-    if(!postId){
-        return;
-    }
+    if(!postId) return;
 
     const isEditing=editingCommentId>0;
-    const url=isEditing
-        ?commentUpdateUrl
-        :commentAddUrl;
+    const url=isEditing?commentUpdateUrl:commentAddUrl;
+    const formData=new FormData();
+    formData.append('_csrf',csrf);
+    formData.append('post_id',postId);
+    formData.append('comment_body',body);
+    if(isEditing) formData.append('comment_id',editingCommentId);
 
-    const payload={
-        _csrf:csrf,
-        post_id:postId,
-        comment_body:body
-    };
+    const input=$commentImages.get(0);
+    const files=input?Array.from(input.files||[]):[];
+    files.forEach(function(file){formData.append('comment_images[]',file);});
 
-    if(isEditing){
-        payload.comment_id=editingCommentId;
-    }
-
-    $commentMessage
-        .removeClass('error warning')
-        .text(isEditing?'Updating note…':'Adding note…');
-
-    $commentSave
-        .prop('disabled',true)
-        .text(isEditing?'Updating…':'Adding…');
+    $commentMessage.removeClass('error warning').text(isEditing?'Updating note…':'Adding note…');
+    $commentSave.prop('disabled',true).text(isEditing?'Updating…':'Adding…');
 
     $.ajax({
-        url:url,
-        method:'POST',
-        dataType:'json',
-        data:payload,
-        headers:{
-            'X-Requested-With':'XMLHttpRequest',
-            'Accept':'application/json'
-        }
+        url:url,method:'POST',dataType:'json',data:formData,
+        processData:false,contentType:false,
+        headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'}
     })
     .done(function(data){
         if(!data||!data.ok){
-            $commentMessage
-                .addClass('error')
-                .text(
-                    (data&&data.message)
-                    ||'Could not save note.'
-                );
+            $commentMessage.addClass('error').text((data&&data.message)||'Could not save note.');
             return;
         }
-
         if(isEditing){
             currentComments=currentComments.map(function(item){
-                return parseInt(item.id,10)===parseInt(data.comment.id,10)
-                    ?data.comment
-                    :item;
+                return parseInt(item.id,10)===parseInt(data.comment.id,10)?data.comment:item;
             });
         }else{
             currentComments.push(data.comment);
         }
-
         renderComments(currentComments);
         clearCommentComposer();
-
-        $commentMessage
-            .removeClass('error warning')
-            .text(
-                isEditing
-                    ?'Note updated.'
-                    :'Note added.'
-            );
-
-        setTimeout(function(){
-            if(
-                $commentMessage.text()==='Note added.'
-                ||$commentMessage.text()==='Note updated.'
-            ){
-                $commentMessage.text('');
-            }
-        },1800);
+        if(data.upload_warning){
+            $commentMessage.addClass('warning').text('Note saved. Image warning: '+data.upload_warning);
+        }else{
+            $commentMessage.removeClass('error warning').text(isEditing?'Note updated.':'Note added.');
+        }
     })
     .fail(function(xhr){
         const data=xhr.responseJSON||{};
-        const raw=String(xhr.responseText||'').trim();
-
-        $commentMessage
-            .addClass('error')
-            .text(
-                data.message
-                ||raw
-                ||'Could not save note.'
-            );
+        $commentMessage.addClass('error').text(data.message||String(xhr.responseText||'').trim()||'Could not save note.');
     })
     .always(function(){
-        $commentSave.prop('disabled',false);
-
-        if(editingCommentId>0){
-            $commentSave.text('Update Note');
-        }else{
-            $commentSave.text('Add Note');
-        }
+        $commentSave.prop('disabled',false).text(editingCommentId>0?'Update Note':'Add Note');
     });
 });
+
+$commentImages.on('change',updateCommentFileSelection);
 
 $commentCancelEdit.on('click',function(){
     clearCommentComposer();
@@ -2453,6 +2426,55 @@ $commentList.on('click','[data-comment-edit]',function(){
     startCommentEdit(commentId);
 });
 
+
+$commentList.on('click','[data-comment-image]',function(){
+    openListingImage(String($(this).data('comment-image')||''));
+});
+
+function deleteAttachment(attachmentId,$source){
+    attachmentId=parseInt(attachmentId,10)||0;
+    if(!attachmentId) return;
+    $source.prop('disabled',true).text('…');
+
+    $.ajax({
+        url:attachmentDeleteUrl,method:'POST',dataType:'json',
+        data:{_csrf:csrf,attachment_id:attachmentId},
+        headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'}
+    })
+    .done(function(data){
+        if(!data||!data.ok){
+            $commentMessage.addClass('error').text((data&&data.message)||'Could not delete image.');
+            $source.prop('disabled',false).text('×');
+            return;
+        }
+
+        if(data.entity_type==='post_comment'){
+            currentComments=currentComments.map(function(comment){
+                if(parseInt(comment.id,10)===parseInt(data.entity_id,10)){
+                    comment.attachments=(comment.attachments||[]).filter(function(item){return parseInt(item.id,10)!==attachmentId;});
+                }
+                return comment;
+            });
+            renderComments(currentComments);
+        }else{
+            $modalAttachments.find('[data-attachment-id="'+attachmentId+'"]').remove();
+            if(!$modalAttachments.find('[data-review-attachment-list]').children().length){
+                $modalAttachments.addClass('hidden');
+            }
+        }
+        $commentMessage.removeClass('error warning').text('Image deleted.');
+    })
+    .fail(function(xhr){
+        const data=xhr.responseJSON||{};
+        $commentMessage.addClass('error').text(data.message||'Could not delete image.');
+        $source.prop('disabled',false).text('×');
+    });
+}
+
+$modal.on('click','[data-attachment-delete]',function(event){
+    event.preventDefault();event.stopPropagation();
+    deleteAttachment($(this).data('attachment-delete'),$(this));
+});
 
 $commentList.on('click','[data-comment-delete]',function(event){
     event.preventDefault();
