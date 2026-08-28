@@ -180,7 +180,8 @@ class Post {
     public static function updateFetchedContent(
         int $postId,
         string $title,
-        string $description
+        string $description,
+        ?string $imageUrl = null
     ): void {
         $s = Database::connection()->prepare(
             "UPDATE cdsp_sales_posts
@@ -189,6 +190,7 @@ class Post {
                  description=?,
                  description_hash=?,
                  fetched_at=NOW(),
+                 fetched_image_url=?,
                  verification_status='verified',
                  updated_at=NOW()
              WHERE id=?
@@ -200,6 +202,9 @@ class Post {
             Util::hashText($title),
             $description,
             Util::hashText($description),
+            $imageUrl !== null && trim($imageUrl) !== ''
+                ? trim($imageUrl)
+                : null,
             $postId,
         ]);
     }

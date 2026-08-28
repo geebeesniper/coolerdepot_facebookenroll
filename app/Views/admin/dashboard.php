@@ -21,6 +21,7 @@ $periodNames = [
     data-post-review-url="<?= Util::e($base) ?>/admin/dashboard/post-review"
     data-review-save-url="<?= Util::e($base) ?>/admin/post/review"
     data-get-content-url="<?= Util::e($base) ?>/admin/dashboard/get-content"
+    data-editor-image-url="<?= Util::e($base) ?>/admin/dashboard/editor-image"
     data-today="<?= Util::e($today) ?>"
     data-date="<?= Util::e($date) ?>"
     data-period="<?= Util::e($period) ?>"
@@ -461,13 +462,18 @@ $periodNames = [
             </section>
 
             <fieldset class="review-decision review-decision-modern">
-                <legend>Decision</legend>
+                <legend>
+                    Decision
+                    <span class="review-required">Required</span>
+                </legend>
 
                 <label class="review-decision-option good">
                     <input
                         type="radio"
                         name="decision"
                         value="good"
+                        required
+                        aria-describedby="dashboardDecisionError"
                     >
                     <span class="review-decision-icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24">
@@ -488,6 +494,8 @@ $periodNames = [
                         type="radio"
                         name="decision"
                         value="bad"
+                        required
+                        aria-describedby="dashboardDecisionError"
                     >
                     <span class="review-decision-icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24">
@@ -502,12 +510,22 @@ $periodNames = [
                         <svg viewBox="0 0 24 24"><path d="m9.1 16.6-4.2-4.2 1.4-1.4 2.8 2.8 8.6-8.6 1.4 1.4-10 10Z"/></svg>
                     </span>
                 </label>
+
+                <div
+                    class="review-decision-error hidden"
+                    id="dashboardDecisionError"
+                    data-decision-error
+                    role="alert"
+                >
+                    Select Good or Bad before saving.
+                </div>
             </fieldset>
 
             <?php
             $fieldName = 'note';
             $fieldId = 'dashboard-review-note';
             $noteValue = '';
+            $enableImageUpload = true;
             require __DIR__ . '/_html_note_editor.php';
             ?>
 
@@ -558,6 +576,14 @@ $periodNames = [
             Loading review…
         </div>
     </section>
+</div>
+
+
+<div class="listing-image-lightbox hidden" id="listingImageLightbox" aria-hidden="true">
+    <div class="listing-image-dialog" role="dialog" aria-modal="true">
+        <button type="button" class="icon-close listing-image-close" id="listingImageClose" aria-label="Close image">×</button>
+        <img id="listingImageLarge" src="" alt="Marketplace listing">
+    </div>
 </div>
 
 <?php if ($deletionRequests): ?>

@@ -615,3 +615,33 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - Content fetch errors remain inside the Review popup and do not navigate away.
 - No database migration is required.
 - All border radius remains `4px`.
+
+## v0.1.26 — Composer editor, image insertion, lightbox, and reliable review saves
+
+- Replaced the previous Note editor UI with a cleaner Shopify/Elementor-inspired composer.
+- Rich text mode has compact formatting controls, link insertion, and a dedicated image button.
+- Images can be inserted from an HTTPS URL, from the first fetched Marketplace listing photo, or by uploading JPG/PNG/WEBP directly from the Review popup.
+- Added `post_note` attachment support for securely hosted images inserted into HTML notes.
+- HTML sanitizer now safely supports `<img src alt title>` while continuing to reject unsafe URL schemes and dangerous embedded elements.
+- HTML source mode keeps line numbers, syntax highlighting, Tab indentation, and cursor line/column status in a more compact layout.
+- Marketplace content preview now displays only the first fetched listing photo.
+- Clicking that photo opens a full lightbox popup with an `×` close control; backdrop click and Escape also close it.
+- Review database saving is transactional and independent from optional attachment upload.
+- If a review saves but an attachment fails, the UI reports `Review saved` plus the exact image warning instead of falsely saying the review failed.
+- AJAX review saving now reports real errors for expired CSRF, PHP `post_max_size`, PHP upload errors, unsupported image type, image size, and unwritable storage.
+- Requires migration `008_note_editor_images`.
+- All border radius remains `4px`.
+
+## v0.1.27 — Image-aware Get Content, upload repair, and required review decisions
+
+- `Get Content` now treats the first Marketplace image as part of the requested content. If a provider returns valid listing metadata but no image, the provider chain continues to the next configured provider.
+- The first fetched image URL is stored in `cdsp_sales_posts.fetched_image_url`, so reopening Review can display the last fetched image without another API call.
+- Marketplace photo extraction now walks nested provider response shapes instead of depending on only a few fixed keys.
+- Added migration `009_fetched_image_url`.
+- Added `scripts/migrate_v0_1_27.php`; run it as container root to add the image column and repair `storage/uploads` ownership and permissions for `www-data`.
+- Good/Bad is now visibly required. Submitting without a choice adds a red Decision frame, red option borders, an inline `Select Good or Bad before saving` message, and scrolls the Decision section into view.
+- Selecting Good or Bad immediately clears the validation state.
+- Replaced the Note editor presentation with a cleaner single-toolbar Visual/HTML composer.
+- The image insertion panel now uses a responsive grid with equal-height controls and a dedicated full-width message row.
+- Image insertion still supports URL, the first fetched listing photo, and local JPG/PNG/WEBP upload.
+- All border radius remains `4px`.

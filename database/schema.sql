@@ -104,6 +104,7 @@ CREATE TABLE IF NOT EXISTS cdsp_sales_posts (
  published_at DATETIME NOT NULL,
  published_date DATE NOT NULL,
  fetched_at DATETIME NOT NULL,
+ fetched_image_url TEXT NULL,
  verification_status ENUM('verified','failed') NOT NULL DEFAULT 'verified',
  admin_review_status ENUM('good','bad') NULL DEFAULT NULL,
  created_at DATETIME NOT NULL,
@@ -173,7 +174,7 @@ CREATE TABLE IF NOT EXISTS cdsp_period_sales_reviews (
 
 CREATE TABLE IF NOT EXISTS cdsp_review_attachments (
  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
- entity_type ENUM('post_review','daily_review','period_review') NOT NULL,
+ entity_type ENUM('post_review','daily_review','period_review','post_note') NOT NULL,
  entity_id BIGINT UNSIGNED NOT NULL,
  uploaded_by INT UNSIGNED NOT NULL,
  original_name VARCHAR(255) NOT NULL,

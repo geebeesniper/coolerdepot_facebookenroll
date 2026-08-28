@@ -209,426 +209,130 @@ $(function(){
 
 
 function syncHtmlNote($root){
-    const $editor = $root.find('[data-html-editor]');
-    const $source = $root.find('[data-html-source]');
-
-    if(!$editor.hasClass('hidden')){
-        $source.val($editor.html());
-    }
+    const $editor=$root.find('[data-html-editor]');
+    const $source=$root.find('[data-html-source]');
+    if(!$editor.hasClass('hidden')){$source.val($editor.html());}
 }
 
 function normalizeEditorBlock(value){
-    value = String(value || 'p').toLowerCase();
-
-    return ['p','h3','h4','blockquote'].includes(value)
-        ? value
-        : 'p';
+    value=String(value||'p').toLowerCase();
+    return ['p','h3','h4','blockquote'].includes(value)?value:'p';
 }
 
 function escapeCodeHtml(value){
-    return String(value || '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
+    return String(value||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
 function highlightHtmlSource(source){
-    let escaped = escapeCodeHtml(source);
-
-    escaped = escaped.replace(
-        /(&lt;!--[\s\S]*?--&gt;)/g,
-        '<span class="code-comment">$1</span>'
-    );
-
-    escaped = escaped.replace(
-        /(&lt;\/?)([a-zA-Z][\w:-]*)([\s\S]*?)(&gt;)/g,
-        function(_, open, tag, attrs, close){
-            const highlightedAttrs = attrs.replace(
-                /([\w:-]+)(\s*=\s*)(&quot;[^&]*?&quot;|"[^"]*"|'[^']*')/g,
-                '<span class="code-attr">$1</span>$2<span class="code-string">$3</span>'
-            );
-
-            return '<span class="code-punct">'+open+'</span>'
-                +'<span class="code-tag">'+tag+'</span>'
-                +highlightedAttrs
-                +'<span class="code-punct">'+close+'</span>';
-        }
-    );
-
-    return escaped;
+    return escapeCodeHtml(source)
+        .replace(/(&lt;!--[\s\S]*?--&gt;)/g,'<span class="code-comment">$1</span>')
+        .replace(/(&lt;\/?)([a-zA-Z][\w:-]*)([\s\S]*?)(&gt;)/g,function(_,open,tag,attrs,close){
+            return '<span class="code-punct">'+open+'</span>'+'<span class="code-tag">'+tag+'</span>'+attrs+'<span class="code-punct">'+close+'</span>';
+        });
 }
 
 function lineNumberText(source){
-    const count = Math.max(
-        1,
-        String(source || '').split('\n').length
-    );
-
-    return Array.from(
-        {length:count},
-        function(_, index){
-            return String(index + 1);
-        }
-    ).join('\n');
+    const count=Math.max(1,String(source||'').split('\n').length);
+    return Array.from({length:count},(_,i)=>String(i+1)).join('\n');
 }
 
 $('[data-html-note]').each(function(){
-    const $root = $(this);
-    const $editor = $root.find('[data-html-editor]');
-    const $source = $root.find('[data-html-source]');
-    const $toolbar = $root.find('[data-html-toolbar]');
-    const $tabs = $root.find('[data-note-mode]');
-    const $format = $root.find('[data-note-format]');
-    const $status = $root.find('[data-note-status]');
-    const $cursorStatus = $root.find('[data-note-cursor]');
-    const $linkbar = $root.find('[data-note-linkbar]');
-    const $linkInput = $root.find('[data-note-link-input]');
-    const $linkNewTab = $root.find('[data-note-link-newtab]');
-    const $codeEditor = $root.find('[data-code-editor]');
-    const $codeHighlight = $root.find('[data-code-highlight]');
-    const $codeGutter = $root.find('[data-code-gutter]');
+    const $root=$(this),$editor=$root.find('[data-html-editor]'),$source=$root.find('[data-html-source]'),$toolbar=$root.find('[data-html-toolbar]'),$tabs=$root.find('[data-note-mode]'),$format=$root.find('[data-note-format]'),$status=$root.find('[data-note-status]'),$cursor=$root.find('[data-note-cursor]'),$linkbar=$root.find('[data-note-linkbar]'),$linkInput=$root.find('[data-note-link-input]'),$linkNewTab=$root.find('[data-note-link-newtab]'),$imagePanel=$root.find('[data-note-image-panel]'),$imageUrl=$root.find('[data-note-image-url]'),$listingPhoto=$root.find('[data-note-listing-photo]'),$imageFile=$root.find('[data-note-image-file]'),$imageMessage=$root.find('[data-note-image-message]'),$codeEditor=$root.find('[data-code-editor]'),$codeHighlight=$root.find('[data-code-highlight]'),$codeGutter=$root.find('[data-code-gutter]');
+    let mode='visual',savedRange=null;
 
-    let mode = 'visual';
-    let savedRange = null;
-
-    function renderSourceEditor(){
-        const value = String($source.val() || '');
-
-        $codeHighlight.html(
-            highlightHtmlSource(value) + '\n'
-        );
-        $codeGutter.text(
-            lineNumberText(value)
-        );
-
-        const sourceEl = $source.get(0);
-
-        if(sourceEl){
-            $codeHighlight.scrollTop(sourceEl.scrollTop);
-            $codeHighlight.scrollLeft(sourceEl.scrollLeft);
-            $codeGutter.scrollTop(sourceEl.scrollTop);
-        }
+    function renderSource(){
+        const value=String($source.val()||'');
+        $codeHighlight.html(highlightHtmlSource(value)+'\n');
+        $codeGutter.text(lineNumberText(value));
+        const el=$source.get(0);
+        if(el){$codeHighlight.scrollTop(el.scrollTop);$codeHighlight.scrollLeft(el.scrollLeft);$codeGutter.scrollTop(el.scrollTop);}
     }
 
-    function updateCursorStatus(){
-        const el = $source.get(0);
-
-        if(!el || mode !== 'html'){
-            return;
-        }
-
-        const before = el.value.slice(0, el.selectionStart);
-        const lines = before.split('\n');
-        const line = lines.length;
-        const column = lines[lines.length - 1].length + 1;
-
-        $cursorStatus.text(
-            'Ln ' + line + ', Col ' + column
-        );
-    }
-
-    function updateMode(nextMode){
-        mode = nextMode === 'html' ? 'html' : 'visual';
-
-        if(mode === 'html'){
-            syncHtmlNote($root);
-            renderSourceEditor();
-            $editor.addClass('hidden');
-            $toolbar.addClass('hidden');
-            $linkbar.addClass('hidden').attr('aria-hidden', 'true');
-            $codeEditor.removeClass('hidden');
-            $status.text('HTML source');
-            updateCursorStatus();
-        }else{
-            $editor.html($source.val());
-            $codeEditor.addClass('hidden');
-            $editor.removeClass('hidden');
-            $toolbar.removeClass('hidden');
-            $status.text('Visual editor');
-            $cursorStatus.text('HTML supported');
-        }
-
-        $tabs.each(function(){
-            const active = $(this).data('note-mode') === mode;
-
-            $(this)
-                .toggleClass('active', active)
-                .attr('aria-selected', active ? 'true' : 'false');
-        });
-
-        setTimeout(function(){
-            if(mode === 'visual'){
-                $editor.trigger('focus');
-            }else{
-                $source.trigger('focus');
-            }
-        }, 0);
+    function cursorStatus(){
+        const el=$source.get(0);if(!el||mode!=='html')return;
+        const before=el.value.slice(0,el.selectionStart),lines=before.split('\n');
+        $cursor.text('Ln '+lines.length+', Col '+(lines[lines.length-1].length+1));
     }
 
     function rememberSelection(){
-        const selection = window.getSelection();
-
-        if(!selection || !selection.rangeCount){
-            return;
-        }
-
-        const range = selection.getRangeAt(0);
-        const node = range.commonAncestorContainer;
-        const editorNode = $editor.get(0);
-
-        if(!editorNode){
-            return;
-        }
-
-        if(
-            node === editorNode
-            || $.contains(
-                editorNode,
-                node.nodeType === 1 ? node : node.parentNode
-            )
-        ){
-            savedRange = range.cloneRange();
-        }
+        const selection=window.getSelection();if(!selection||!selection.rangeCount)return;
+        const range=selection.getRangeAt(0),node=range.commonAncestorContainer,editorNode=$editor.get(0);
+        if(editorNode&&(node===editorNode||$.contains(editorNode,node.nodeType===1?node:node.parentNode))){savedRange=range.cloneRange();}
     }
 
     function restoreSelection(){
-        if(!savedRange){
-            $editor.trigger('focus');
-            return;
-        }
-
-        const selection = window.getSelection();
-
-        if(!selection){
-            return;
-        }
-
-        selection.removeAllRanges();
-        selection.addRange(savedRange);
+        if(!savedRange){$editor.trigger('focus');return;}
+        const selection=window.getSelection();if(selection){selection.removeAllRanges();selection.addRange(savedRange);}
     }
 
-    function runCommand(command, value){
-        $editor.trigger('focus');
-        restoreSelection();
-
-        document.execCommand(command, false, value || null);
-
-        rememberSelection();
-        $source.val($editor.html());
-    }
-
-    function findSelectedLink(){
-        const selection = window.getSelection();
-
-        if(!selection || !selection.rangeCount){
-            return null;
-        }
-
-        let node = selection.anchorNode;
-
-        if(node && node.nodeType === 3){
-            node = node.parentNode;
-        }
-
-        while(node && node !== $editor.get(0)){
-            if(
-                node.nodeType === 1
-                && String(node.tagName).toLowerCase() === 'a'
-            ){
-                return node;
-            }
-
-            node = node.parentNode;
-        }
-
-        return null;
-    }
-
-    function openLinkbar(){
-        rememberSelection();
-
-        const link = findSelectedLink();
-
-        if(link){
-            $linkInput.val(link.getAttribute('href') || '');
-            $linkNewTab.prop(
-                'checked',
-                link.getAttribute('target') === '_blank'
-            );
+    function setMode(next){
+        mode=next==='html'?'html':'visual';
+        $tabs.each(function(){const active=$(this).data('note-mode')===mode;$(this).toggleClass('active',active).attr('aria-selected',active?'true':'false');});
+        $linkbar.addClass('hidden');$imagePanel.addClass('hidden');
+        if(mode==='html'){
+            syncHtmlNote($root);renderSource();$toolbar.addClass('hidden');$editor.addClass('hidden');$codeEditor.removeClass('hidden');$status.text('HTML source');cursorStatus();setTimeout(()=>$source.trigger('focus'),0);
         }else{
-            $linkInput.val('');
-            $linkNewTab.prop('checked', false);
+            $editor.html($source.val());$codeEditor.addClass('hidden');$editor.removeClass('hidden');$toolbar.removeClass('hidden');$status.text('Rich text');$cursor.text('');setTimeout(()=>$editor.trigger('focus'),0);
         }
-
-        $linkbar
-            .removeClass('hidden')
-            .attr('aria-hidden', 'false');
-
-        setTimeout(function(){
-            $linkInput.trigger('focus');
-        }, 0);
     }
 
-    function closeLinkbar(){
-        $linkbar
-            .addClass('hidden')
-            .attr('aria-hidden', 'true');
+    function command(name,value){restoreSelection();$editor.trigger('focus');document.execCommand(name,false,value||null);rememberSelection();$source.val($editor.html());}
 
-        $linkInput.val('');
-        $linkNewTab.prop('checked', false);
+    function insertHtmlAtCursor(html){
+        if(mode==='html'){
+            const el=$source.get(0),start=el.selectionStart,end=el.selectionEnd;
+            el.value=el.value.slice(0,start)+html+el.value.slice(end);el.selectionStart=el.selectionEnd=start+html.length;$source.trigger('input');return;
+        }
+        restoreSelection();$editor.trigger('focus');document.execCommand('insertHTML',false,html);$source.val($editor.html());rememberSelection();
     }
 
-    $tabs.on('click', function(){
-        updateMode($(this).data('note-mode'));
+    function safeImageHtml(url){return '<p><img src="'+String(url).replace(/"/g,'&quot;')+'" alt=""></p>';}
+
+    function openImagePanel(){
+        rememberSelection();$linkbar.addClass('hidden');$imagePanel.removeClass('hidden');$imageMessage.removeClass('error').text('');
+        const photos=window.cdspReviewListingPhotos||[];$listingPhoto.toggleClass('hidden',!photos.length);
+    }
+
+    $tabs.on('click',function(){setMode($(this).data('note-mode'));});
+    $format.on('change',function(){command('formatBlock','<'+normalizeEditorBlock($(this).val())+'>');});
+    $toolbar.on('mousedown','[data-cmd],[data-note-link],[data-note-image]',rememberSelection);
+    $toolbar.on('click','[data-cmd]',function(){command(String($(this).data('cmd')||''),$(this).data('value')||null);});
+    $toolbar.on('click','[data-note-link]',function(){rememberSelection();$imagePanel.addClass('hidden');$linkbar.removeClass('hidden');setTimeout(()=>$linkInput.trigger('focus'),0);});
+    $toolbar.on('click','[data-note-image]',openImagePanel);
+    $root.on('click','[data-note-link-cancel]',()=> $linkbar.addClass('hidden'));
+    $root.on('click','[data-note-link-apply]',function(){
+        const href=String($linkInput.val()||'').trim();if(!href){$linkInput.addClass('field-error');return;}
+        restoreSelection();document.execCommand('createLink',false,href);
+        if($linkNewTab.is(':checked')){const selection=window.getSelection();let node=selection&&selection.anchorNode;if(node&&node.nodeType===3)node=node.parentNode;if(node&&String(node.tagName).toLowerCase()==='a'){node.setAttribute('target','_blank');node.setAttribute('rel','noopener noreferrer');}}
+        $source.val($editor.html());$linkbar.addClass('hidden');
+    });
+    $root.on('click','[data-note-image-cancel]',()=> $imagePanel.addClass('hidden'));
+    $root.on('click','[data-note-image-url-insert]',function(){
+        const url=String($imageUrl.val()||'').trim();
+        if(!/^https:\/\//i.test(url)&&!url.startsWith('/')){$imageMessage.addClass('error').text('Use an HTTPS or local image URL.');return;}
+        insertHtmlAtCursor(safeImageHtml(url));$imageUrl.val('');$imagePanel.addClass('hidden');
+    });
+    $root.on('click','[data-note-listing-photo]',function(){const photos=window.cdspReviewListingPhotos||[];if(photos.length){insertHtmlAtCursor(safeImageHtml(photos[0]));$imagePanel.addClass('hidden');}});
+
+    $imageFile.on('change',function(){
+        const file=this.files&&this.files[0];if(!file)return;
+        const postId=parseInt($('#dashboardReviewPostId').val(),10)||0,uploadUrl=$('#adminDashboardLive').data('editor-image-url');
+        if(!postId||!uploadUrl){$imageMessage.addClass('error').text('Open a post review before uploading.');return;}
+        const fd=new FormData();fd.append('_csrf',$('#adminDashboardCsrf').val());fd.append('post_id',postId);fd.append('editor_image',file);
+        $imageMessage.removeClass('error').text('Uploading…');
+        $.ajax({url:uploadUrl,method:'POST',dataType:'json',data:fd,processData:false,contentType:false,headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'}})
+        .done(function(data){if(!data||!data.ok){$imageMessage.addClass('error').text((data&&data.message)||'Image upload failed.');return;}insertHtmlAtCursor(safeImageHtml(data.image.url));$imageMessage.removeClass('error').text('Inserted');setTimeout(()=>$imagePanel.addClass('hidden'),350);})
+        .fail(function(xhr){$imageMessage.addClass('error').text((xhr.responseJSON&&xhr.responseJSON.message)||String(xhr.responseText||'').trim()||'Image upload failed.');})
+        .always(()=>{$imageFile.val('');});
     });
 
-    $format.on('change', function(){
-        const block = normalizeEditorBlock($(this).val());
-        runCommand('formatBlock', '<' + block + '>');
-    });
-
-    $toolbar.on('mousedown', '[data-cmd],[data-note-link]', function(){
-        rememberSelection();
-    });
-
-    $toolbar.on('click', '[data-cmd]', function(){
-        const command = String($(this).data('cmd') || '');
-        let value = $(this).data('value') || null;
-
-        if(command === 'formatBlock' && value){
-            value = '<' + normalizeEditorBlock(value) + '>';
-        }
-
-        runCommand(command, value);
-    });
-
-    $toolbar.on('click', '[data-note-link]', openLinkbar);
-
-    $root.on('click', '[data-note-link-cancel]', function(){
-        closeLinkbar();
-        restoreSelection();
-    });
-
-    $root.on('click', '[data-note-link-apply]', function(){
-        const href = String($linkInput.val() || '').trim();
-
-        if(!href){
-            $linkInput.addClass('field-error').trigger('focus');
-            return;
-        }
-
-        $linkInput.removeClass('field-error');
-        restoreSelection();
-
-        const existingLink = findSelectedLink();
-
-        if(existingLink){
-            existingLink.setAttribute('href', href);
-
-            if($linkNewTab.is(':checked')){
-                existingLink.setAttribute('target', '_blank');
-                existingLink.setAttribute(
-                    'rel',
-                    'noopener noreferrer'
-                );
-            }else{
-                existingLink.removeAttribute('target');
-                existingLink.removeAttribute('rel');
-            }
-        }else{
-            document.execCommand('createLink', false, href);
-
-            const newLink = findSelectedLink();
-
-            if(newLink && $linkNewTab.is(':checked')){
-                newLink.setAttribute('target', '_blank');
-                newLink.setAttribute(
-                    'rel',
-                    'noopener noreferrer'
-                );
-            }
-        }
-
-        $source.val($editor.html());
-        closeLinkbar();
-        $editor.trigger('focus');
-    });
-
-    $linkInput.on('input', function(){
-        $(this).removeClass('field-error');
-    });
-
-    $linkInput.on('keydown', function(event){
-        if(event.key === 'Enter'){
-            event.preventDefault();
-            $root.find('[data-note-link-apply]').trigger('click');
-        }
-
-        if(event.key === 'Escape'){
-            event.preventDefault();
-            closeLinkbar();
-            restoreSelection();
-        }
-    });
-
-    $editor.on('keyup mouseup input blur', function(){
-        rememberSelection();
-        $source.val($editor.html());
-    });
-
-    $source.on('input', function(){
-        if(mode === 'html'){
-            $status.text('HTML source · modified');
-            renderSourceEditor();
-            updateCursorStatus();
-        }
-    });
-
-    $source.on('scroll', function(){
-        const el = this;
-
-        $codeHighlight.scrollTop(el.scrollTop);
-        $codeHighlight.scrollLeft(el.scrollLeft);
-        $codeGutter.scrollTop(el.scrollTop);
-    });
-
-    $source.on(
-        'click keyup select',
-        updateCursorStatus
-    );
-
-    $source.on('keydown', function(event){
-        if(event.key !== 'Tab'){
-            return;
-        }
-
-        event.preventDefault();
-
-        const el = this;
-        const start = el.selectionStart;
-        const end = el.selectionEnd;
-        const indent = '  ';
-        const value = el.value;
-
-        el.value = value.slice(0, start)
-            + indent
-            + value.slice(end);
-
-        el.selectionStart = el.selectionEnd =
-            start + indent.length;
-
-        $(el).trigger('input');
-    });
-
-    $root.closest('form').on('submit', function(){
-        if(mode === 'html'){
-            $editor.html($source.val());
-        }else{
-            syncHtmlNote($root);
-        }
-    });
-
-    updateMode('visual');
+    $editor.on('keyup mouseup input blur',function(){rememberSelection();$source.val($editor.html());});
+    $source.on('input',function(){renderSource();cursorStatus();});
+    $source.on('scroll',function(){$codeHighlight.scrollTop(this.scrollTop);$codeHighlight.scrollLeft(this.scrollLeft);$codeGutter.scrollTop(this.scrollTop);});
+    $source.on('click keyup select',cursorStatus);
+    $source.on('keydown',function(event){if(event.key!=='Tab')return;event.preventDefault();const start=this.selectionStart,end=this.selectionEnd,indent='  ';this.value=this.value.slice(0,start)+indent+this.value.slice(end);this.selectionStart=this.selectionEnd=start+indent.length;$source.trigger('input');});
+    $root.closest('form').on('submit',function(){if(mode==='html'){$editor.html($source.val());}else{syncHtmlNote($root);}});
+    setMode('visual');
 });
 
 
@@ -1299,6 +1003,7 @@ $('[data-html-note]').each(function(){
     const postReviewUrl = $live.data('post-review-url');
     const reviewSaveUrl = $live.data('review-save-url');
     const getContentUrl = $live.data('get-content-url');
+    const editorImageUrl = $live.data('editor-image-url');
     const today = String($live.data('today') || '');
     const csrf = $('#adminDashboardCsrf').val();
 
@@ -1952,92 +1657,50 @@ function platformLogoHtml(platform){
         $source.val(html || '');
         $editor.html(html || '');
 
+        $note.find('[data-note-linkbar]').addClass('hidden');
+        $note.find('[data-note-image-panel]').addClass('hidden');
+        $note.find('[data-note-image-message]')
+            .removeClass('error')
+            .text('');
+
         $note
             .find('[data-note-mode="visual"]')
             .trigger('click');
     }
 
 function renderContentPreview(content){
-    content = content || {};
-
-    $contentProvider.text(
-        content.provider || 'Saved post'
-    );
-    $contentFetched.text(
-        content.fetched_at
-            ? 'Fetched ' + content.fetched_at
-            : ''
-    );
-    $contentTitle.text(
-        content.title || 'No title returned'
-    );
-    $contentDescription.text(
-        content.description || 'No description returned.'
-    );
-
-    const facts = [];
-
-    if(content.listing_date){
-        facts.push(
-            '<span><b>Listing Date</b>'
-            +escapeHtml(content.listing_date)
-            +'</span>'
-        );
-    }
-
-    if(content.price){
-        facts.push(
-            '<span><b>Price</b>'
-            +escapeHtml(content.price)
-            +'</span>'
-        );
-    }
-
-    if(content.location){
-        facts.push(
-            '<span><b>Location</b>'
-            +escapeHtml(content.location)
-            +'</span>'
-        );
-    }
-
-    if(content.fallback_used){
-        facts.push(
-            '<span><b>Failover</b>Fallback provider used</span>'
-        );
-    }
-
+    content=content||{};
+    $contentProvider.text(content.provider||'Saved post');
+    $contentFetched.text(content.fetched_at?'Fetched '+content.fetched_at:'');
+    $contentTitle.text(content.title||'No title returned');
+    $contentDescription.text(content.description||'No description returned.');
+    const facts=[];
+    if(content.listing_date)facts.push('<span><b>Listing Date</b>'+escapeHtml(content.listing_date)+'</span>');
+    if(content.price)facts.push('<span><b>Price</b>'+escapeHtml(content.price)+'</span>');
+    if(content.location)facts.push('<span><b>Location</b>'+escapeHtml(content.location)+'</span>');
     $contentFacts.html(facts.join(''));
-
-    const photos = Array.isArray(content.photos)
-        ? content.photos
-        : [];
-
-    if(!photos.length){
-        $contentPhotos
-            .addClass('hidden')
-            .empty();
-        return;
-    }
-
-    const html = photos.map(function(url, index){
-        return (
-            '<a target="_blank" rel="noopener" href="'
-            +escapeHtml(url)
-            +'">'
-            +'<img loading="lazy" src="'
-            +escapeHtml(url)
-            +'" alt="Marketplace photo '
-            +(index + 1)
-            +'">'
-            +'</a>'
-        );
-    }).join('');
-
-    $contentPhotos
-        .html(html)
-        .removeClass('hidden');
+    const photos=Array.isArray(content.photos)?content.photos.filter(Boolean):[];
+    window.cdspReviewListingPhotos=photos;
+    if(!photos.length){$contentPhotos.addClass('hidden').empty();return;}
+    $contentPhotos.html(
+        '<button type="button" class="listing-photo-thumb" data-listing-photo="'+escapeHtml(photos[0])+'" aria-label="Open listing photo">'
+        +'<img loading="lazy" src="'+escapeHtml(photos[0])+'" alt="Marketplace listing">'
+        +'<span class="listing-photo-zoom"><svg viewBox="0 0 24 24"><path d="M10 4a6 6 0 1 0 3.7 10.7L19 20l1-1-5.3-5.3A6 6 0 0 0 10 4Zm0 2a4 4 0 1 1 0 8 4 4 0 0 1 0-8Zm-.8 1.5h1.6v1.7h1.7v1.6h-1.7v1.7H9.2v-1.7H7.5V9.2h1.7V7.5Z"/></svg></span></button>'
+    ).removeClass('hidden');
 }
+
+    function openListingImage(url){
+        if(!url)return;
+        $('#listingImageLarge').attr('src',url);
+        $('#listingImageLightbox').removeClass('hidden').attr('aria-hidden','false');
+    }
+    function closeListingImage(){
+        $('#listingImageLightbox').addClass('hidden').attr('aria-hidden','true');
+        $('#listingImageLarge').attr('src','');
+    }
+    $contentPhotos.on('click','[data-listing-photo]',function(){openListingImage(String($(this).data('listing-photo')||''));});
+    $('#listingImageClose').on('click',closeListingImage);
+    $('#listingImageLightbox').on('click',function(event){if(event.target===this)closeListingImage();});
 
     function renderAttachments(items){
         items = Array.isArray(items) ? items : [];
@@ -2067,6 +1730,13 @@ function renderContentPreview(content){
             .removeClass('error')
             .text('');
         $modalForm.get(0).reset();
+        $modalForm
+            .find('.review-decision-modern')
+            .removeClass('is-invalid')
+            .attr('aria-invalid','false');
+        $modalForm
+            .find('[data-decision-error]')
+            .addClass('hidden');
         $('#dashboardReviewPostId').val('');
         $('#dashboardReviewModalTitle').text('Review Post');
         $('#dashboardReviewModalSubtitle').text('');
@@ -2076,6 +1746,7 @@ function renderContentPreview(content){
         $('#dashboardReviewOriginal')
             .addClass('hidden')
             .attr('href', '#');
+        window.cdspReviewListingPhotos=[];
         renderAttachments([]);
         renderContentPreview({
             provider:'Saved post',
@@ -2231,12 +1902,9 @@ function renderContentPreview(content){
     });
 
     $(document).on('keydown', function(event){
-        if(
-            event.key === 'Escape'
-            && !$modal.hasClass('hidden')
-        ){
-            closeReviewModal();
-        }
+        if(event.key!=='Escape')return;
+        if(!$('#listingImageLightbox').hasClass('hidden')){closeListingImage();return;}
+        if(!$modal.hasClass('hidden'))closeReviewModal();
     });
 
 $getContent.on('click', function(){
@@ -2285,9 +1953,22 @@ $getContent.on('click', function(){
 
         renderContentPreview(data.content);
 
+        const hasImage=
+            data.content
+            && Array.isArray(data.content.photos)
+            && data.content.photos.length>0;
+
         $modalMessage
-            .removeClass('error')
-            .text('Content fetched successfully.');
+            .removeClass('error warning')
+            .addClass(hasImage?'':'warning')
+            .text(
+                data.message
+                ||(
+                    hasImage
+                        ?'Content and image fetched.'
+                        :'Content fetched, but no image was returned.'
+                )
+            );
     })
     .fail(function(xhr){
         const data = xhr.responseJSON || {};
@@ -2307,6 +1988,32 @@ $getContent.on('click', function(){
     });
 });
 
+    $modalForm.on(
+        'change',
+        'input[name="decision"]',
+        function(){
+            const $decisionBlock=$modalForm.find(
+                '.review-decision-modern'
+            );
+
+            $decisionBlock
+                .removeClass('is-invalid')
+                .attr('aria-invalid','false');
+
+            $decisionBlock
+                .find('[data-decision-error]')
+                .addClass('hidden');
+
+            if(
+                $modalMessage.text().trim()==='Choose Good or Bad.'
+            ){
+                $modalMessage
+                    .removeClass('error')
+                    .text('');
+            }
+        }
+    );
+
     $modalForm.on('submit', function(event){
         event.preventDefault();
 
@@ -2317,9 +2024,32 @@ $getContent.on('click', function(){
         );
 
         if(!['good','bad'].includes(decision)){
+            const $decisionBlock=$modalForm.find(
+                '.review-decision-modern'
+            );
+
+            $decisionBlock
+                .addClass('is-invalid')
+                .attr('aria-invalid','true');
+
+            $decisionBlock
+                .find('[data-decision-error]')
+                .removeClass('hidden');
+
             $modalMessage
+                .removeClass('warning')
                 .addClass('error')
                 .text('Choose Good or Bad.');
+
+            const decisionEl=$decisionBlock.get(0);
+
+            if(decisionEl){
+                decisionEl.scrollIntoView({
+                    behavior:'smooth',
+                    block:'center'
+                });
+            }
+
             return;
         }
 
@@ -2381,9 +2111,11 @@ $getContent.on('click', function(){
                     status === 'good' ? 'Good' : 'Issue'
                 );
 
-            $modalMessage
-                .removeClass('error')
-                .text('Saved');
+            if(data.upload_warning){
+                $modalMessage.removeClass('error').addClass('warning').text('Review saved. Image warning: '+data.upload_warning);
+            }else{
+                $modalMessage.removeClass('error warning').text('Review saved.');
+            }
 
             // Update the Sales card metrics without closing the popup/grid.
             $.ajax({
@@ -2403,12 +2135,30 @@ $getContent.on('click', function(){
             });
         })
         .fail(function(xhr){
-            const data = xhr.responseJSON || {};
+            const data=xhr.responseJSON||{};
+            const raw=String(xhr.responseText||'').trim();
+
+            if(data.field==='decision'){
+                const $decisionBlock=$modalForm.find(
+                    '.review-decision-modern'
+                );
+
+                $decisionBlock
+                    .addClass('is-invalid')
+                    .attr('aria-invalid','true');
+
+                $decisionBlock
+                    .find('[data-decision-error]')
+                    .removeClass('hidden');
+            }
 
             $modalMessage
+                .removeClass('warning')
                 .addClass('error')
                 .text(
-                    data.message || 'Could not save review.'
+                    data.message
+                    ||raw
+                    ||'Could not save review.'
                 );
         })
         .always(function(){
