@@ -221,3 +221,19 @@ The database also contains unique keys for canonical URL and platform/external i
 - Admin Sales CSV upload UI.
 - Better audit log coverage for every change.
 - Export/report charts.
+## UI update
+
+Sales dashboard now defaults to a compact responsive grid for daily metrics and post cards. Grid/List choice is remembered per browser.
+
+## UI radius convention
+
+All border-radius values in this project are standardized to `4px`.
+
+## Facebook real-link diagnostic
+
+Run the bundled real-link test from the PHP container:
+
+    php /var/www/html/sales-posts/scripts/test_facebook_links.php
+
+It tests the supplied Facebook Marketplace URLs through the same `PostInspector`
+used by the Sales submit workflow, without saving the posts.
