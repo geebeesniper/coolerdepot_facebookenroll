@@ -222,9 +222,13 @@ CREATE TABLE IF NOT EXISTS cdsp_review_attachments (
  mime_type VARCHAR(100) NOT NULL,
  size_bytes INT UNSIGNED NOT NULL,
  created_at DATETIME NOT NULL,
+ deleted_at DATETIME NULL,
+ deleted_by INT UNSIGNED NULL,
  PRIMARY KEY(id),
  KEY idx_attachment_entity(entity_type,entity_id),
- CONSTRAINT fk_attachment_user FOREIGN KEY(uploaded_by) REFERENCES cdsp_users(id)
+ KEY idx_attachment_deleted(deleted_at),
+ CONSTRAINT fk_attachment_user FOREIGN KEY(uploaded_by) REFERENCES cdsp_users(id),
+ CONSTRAINT fk_attachment_deleted_by FOREIGN KEY(deleted_by) REFERENCES cdsp_users(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS cdsp_deletion_requests (

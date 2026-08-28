@@ -694,8 +694,8 @@ $periodNames = [
     aria-label="Delete note confirmation"
 >
     <div class="comment-delete-popover-copy">
-        <strong>Delete this note?</strong>
-        <span>This removes it from the visible review history.</span>
+        <strong>Mark this note as deleted?</strong>
+        <span>The record stays in History and will be marked as deleted.</span>
     </div>
 
     <div class="comment-delete-popover-actions">

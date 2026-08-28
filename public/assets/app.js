@@ -1062,6 +1062,7 @@ $('[data-html-note]').each(function(){
     let editingCommentId = 0;
     let currentComments = [];
     let currentReviewHistory = [];
+    let currentLegacyAttachments = [];
     let deleteCommentId = 0;
     let deleteAnchorButton = null;
     const $deletePopover = $('#commentDeletePopover');
@@ -1906,7 +1907,7 @@ function closeCommentDeletePopover(){
 
     $deleteConfirm
         .prop('disabled',false)
-        .text('Delete');
+        .text('Mark Deleted');
 }
 
 function positionCommentDeletePopover(){
@@ -2001,18 +2002,84 @@ function commentDateLabel(value){
 
 function renderCommentAttachments(items){
     items=Array.isArray(items)?items:[];
-    if(!items.length) return '';
+
+    if(!items.length){
+        return '';
+    }
 
     return '<div class="review-comment-attachments">'
         +items.map(function(item){
             const image=String(item.mime||'').startsWith('image/');
-            return '<div class="review-comment-attachment" data-attachment-id="'
-                +escapeHtml(item.id)+'">'
-                +(image
-                    ?'<button type="button" class="review-comment-image" data-comment-image="'+escapeHtml(item.url)+'" aria-label="Open image"><img loading="lazy" src="'+escapeHtml(item.url)+'" alt="'+escapeHtml(item.name)+'"></button>'
-                    :'<a target="_blank" rel="noopener" href="'+escapeHtml(item.url)+'">'+escapeHtml(item.name)+'</a>')
-                +'<button type="button" class="attachment-remove" data-attachment-delete="'+escapeHtml(item.id)+'" aria-label="Delete image" title="Delete image">×</button>'
-                +'</div>';
+            const deleted=Boolean(item.deleted);
+            const uploadedMeta=[
+                item.uploaded_by_name
+                    ?'Uploaded by '+item.uploaded_by_name
+                    :'Uploaded',
+                item.uploaded_at
+                    ?commentDateLabel(item.uploaded_at)
+                    :''
+            ].filter(Boolean).join(' · ');
+
+            const deletedMeta=deleted
+                ?'<div class="attachment-deleted-audit">'
+                    +'<strong>Marked as deleted</strong>'
+                    +(item.deleted_by_name
+                        ?' by '+escapeHtml(item.deleted_by_name)
+                        :'')
+                    +(item.deleted_at
+                        ?' · '+escapeHtml(
+                            commentDateLabel(item.deleted_at)
+                        )
+                        :'')
+                +'</div>'
+                :'';
+
+            return (
+                '<div class="review-comment-attachment'
+                +(deleted?' is-deleted':'')
+                +'" data-attachment-id="'
+                +escapeHtml(item.id)
+                +'">'+
+
+                    '<div class="review-comment-attachment-media">'
+                        +(image
+                            ?'<button type="button" class="review-comment-image"'
+                                +' data-comment-image="'
+                                +escapeHtml(item.url)
+                                +'" aria-label="Open image">'
+                                +'<img loading="lazy" src="'
+                                +escapeHtml(item.url)
+                                +'" alt="'
+                                +escapeHtml(item.name)
+                                +'">'
+                            +'</button>'
+                            :'<a target="_blank" rel="noopener" href="'
+                                +escapeHtml(item.url)
+                                +'">'
+                                +escapeHtml(item.name)
+                            +'</a>')
+                        +(deleted
+                            ?'<span class="attachment-deleted-overlay">'
+                                +'Marked as deleted'
+                            +'</span>'
+                            :'')
+                    +'</div>'+
+
+                    '<div class="review-comment-attachment-audit">'
+                        +'<span>'+escapeHtml(item.name||'Image')+'</span>'
+                        +'<small>'+escapeHtml(uploadedMeta)+'</small>'
+                        +deletedMeta+
+                    '</div>'+
+
+                    (!deleted
+                        ?'<button type="button" class="attachment-remove"'
+                            +' data-attachment-delete="'
+                            +escapeHtml(item.id)
+                            +'" aria-label="Mark image as deleted"'
+                            +' title="Mark image as deleted">×</button>'
+                        :'')
+                +'</div>'
+            );
         }).join('')
         +'</div>';
 }
@@ -2042,7 +2109,8 @@ function renderComments(items,reviewItems){
             id:review.id,
             author_name:review.author_name,
             created_at:review.created_at,
-            decision:review.decision
+            decision:review.decision,
+            decision_only:true
         });
     });
 
@@ -2128,21 +2196,79 @@ function renderComments(items,reviewItems){
                         +'</span>'+
                     '</div>'+
                     '<div class="review-history-copy">'
-                        +(good
-                            ?'Marked this post as Good.'
-                            :'Marked this post as Bad / Needs attention.')
+                        +'<strong>Review saved</strong>'
+                        +'<span>Decision only · '
+                        +(good?'Good':'Bad')
+                        +'</span>'
                     +'</div>'+
                 '</article>'
             );
         }
 
         const comment=activity.comment;
+        const attachments=Array.isArray(comment.attachments)
+            ?comment.attachments
+            :[];
+        const activePhotos=attachments.filter(function(item){
+            return !item.deleted;
+        });
+        const bodyText=$('<div>')
+            .html(comment.body_html||'')
+            .text()
+            .trim();
+
+        let actionLabel='Comment';
+
+        if(bodyText&&activePhotos.length){
+            actionLabel='Comment + '
+                +activePhotos.length
+                +' photo'
+                +(activePhotos.length===1?'':'s');
+        }else if(activePhotos.length){
+            actionLabel=activePhotos.length
+                +' photo'
+                +(activePhotos.length===1?'':'s');
+        }
+
         const edited=comment.edited
             ?'<span class="review-comment-edited">Edited</span>'
             :'';
 
+        const deleted=Boolean(comment.deleted);
+        const deletedAudit=deleted
+            ?'<div class="review-comment-deleted-audit">'
+                +'<strong>Marked as deleted</strong>'
+                +(comment.deleted_by_name
+                    ?' by '+escapeHtml(comment.deleted_by_name)
+                    :'')
+                +(comment.deleted_at
+                    ?' · '+escapeHtml(
+                        commentDateLabel(comment.deleted_at)
+                    )
+                    :'')
+            +'</div>'
+            :'';
+
+        const editAudit=(
+            comment.edited
+            &&comment.updated_by_name
+            &&!deleted
+        )
+            ?'<div class="review-comment-edit-audit">'
+                +'Last edited by '
+                +escapeHtml(comment.updated_by_name)
+                +(comment.updated_at
+                    ?' · '+escapeHtml(
+                        commentDateLabel(comment.updated_at)
+                    )
+                    :'')
+            +'</div>'
+            :'';
+
         return (
-            '<article class="review-comment" data-comment-id="'
+            '<article class="review-comment'
+            +(deleted?' is-deleted':'')
+            +'" data-comment-id="'
             +escapeHtml(comment.id)
             +'">'+
                 '<div class="review-comment-head">'+
@@ -2167,33 +2293,40 @@ function renderComments(items,reviewItems){
                             '</span>'+
                         '</div>'+
                     '</div>'+
-                    '<div class="review-comment-actions">'+
-                        '<button type="button"'
-                        +' class="review-comment-icon"'
-                        +' data-comment-edit'
-                        +' title="Edit note"'
-                        +' aria-label="Edit note">'+
-                            '<svg viewBox="0 0 24 24" aria-hidden="true">'
-                            +'<path d="M4 17.3V20h2.7L17.8 8.9l-2.7-2.7L4 17.3Zm15.9-10.5c.3-.3.3-.8 0-1.1l-1.6-1.6a.8.8 0 0 0-1.1 0l-1.3 1.3 2.7 2.7 1.3-1.3Z"/>'
-                            +'</svg>'+
-                        '</button>'+
-                        '<button type="button"'
-                        +' class="review-comment-icon danger"'
-                        +' data-comment-delete'
-                        +' title="Delete note"'
-                        +' aria-label="Delete note">'+
-                            '<svg viewBox="0 0 24 24" aria-hidden="true">'
-                            +'<path d="M8 4h8l1 2h4v2H3V6h4l1-2Zm1 6h2v7H9v-7Zm4 0h2v7h-2v-7ZM6 9h12l-1 11H7L6 9Z"/>'
-                            +'</svg>'+
-                        '</button>'+
-                    '</div>'+
+                    '<div class="review-comment-head-right">'+
+                        '<span class="review-comment-action-label">'
+                            +escapeHtml(actionLabel)
+                        +'</span>'+
+                        (!deleted
+                            ?'<div class="review-comment-actions">'+
+                                '<button type="button"'
+                                +' class="review-comment-icon"'
+                                +' data-comment-edit'
+                                +' title="Edit note"'
+                                +' aria-label="Edit note">'+
+                                    '<svg viewBox="0 0 24 24" aria-hidden="true">'
+                                    +'<path d="M4 17.3V20h2.7L17.8 8.9l-2.7-2.7L4 17.3Zm15.9-10.5c.3-.3.3-.8 0-1.1l-1.6-1.6a.8.8 0 0 0-1.1 0l-1.3 1.3 2.7 2.7 1.3-1.3Z"/>'
+                                    +'</svg>'+
+                                '</button>'+
+                                '<button type="button"'
+                                +' class="review-comment-icon danger"'
+                                +' data-comment-delete'
+                                +' title="Mark note as deleted"'
+                                +' aria-label="Mark note as deleted">'+
+                                    '<svg viewBox="0 0 24 24" aria-hidden="true">'
+                                    +'<path d="M8 4h8l1 2h4v2H3V6h4l1-2Zm1 6h2v7H9v-7Zm4 0h2v7h-2v-7ZM6 9h12l-1 11H7L6 9Z"/>'
+                                    +'</svg>'+
+                                '</button>'+
+                            '</div>'
+                            :'')
+                    +'</div>'+
                 '</div>'+
                 '<div class="review-comment-body">'
                     +(comment.body_html||'')
                 +'</div>'+
-                renderCommentAttachments(
-                    comment.attachments||[]
-                )+
+                renderCommentAttachments(attachments)+
+                editAudit+
+                deletedAudit+
             '</article>'
         );
     }).join('');
@@ -2234,7 +2367,7 @@ function startCommentEdit(commentId){
         return parseInt(item.id,10)===parseInt(commentId,10);
     });
 
-    if(!comment){
+    if(!comment||comment.deleted){
         return;
     }
 
@@ -2261,20 +2394,71 @@ function startCommentEdit(commentId){
 }
 
 function renderAttachments(items){
-    items=Array.isArray(items)?items:[];
-    const $list=$modalAttachments.find('[data-review-attachment-list]');
-    if(!items.length){
+    currentLegacyAttachments=Array.isArray(items)
+        ?items.slice()
+        :[];
+
+    const $list=$modalAttachments.find(
+        '[data-review-attachment-list]'
+    );
+
+    if(!currentLegacyAttachments.length){
         $list.empty();
         $modalAttachments.addClass('hidden');
         return;
     }
 
-    $list.html(items.map(function(item){
-        return '<div class="legacy-attachment-chip" data-attachment-id="'+escapeHtml(item.id)+'">'
-            +'<a target="_blank" rel="noopener" href="'+escapeHtml(item.url)+'">'+escapeHtml(item.name)+'</a>'
-            +'<button type="button" class="attachment-remove" data-attachment-delete="'+escapeHtml(item.id)+'" aria-label="Delete image" title="Delete image">×</button>'
-            +'</div>';
-    }).join(''));
+    $list.html(
+        currentLegacyAttachments.map(function(item){
+            const deleted=Boolean(item.deleted);
+            const audit=deleted
+                ?'<small>Marked as deleted'
+                    +(item.deleted_by_name
+                        ?' by '+escapeHtml(item.deleted_by_name)
+                        :'')
+                    +(item.deleted_at
+                        ?' · '+escapeHtml(
+                            commentDateLabel(item.deleted_at)
+                        )
+                        :'')
+                +'</small>'
+                :'<small>'
+                    +escapeHtml(
+                        [
+                            item.uploaded_by_name
+                                ?'Uploaded by '+item.uploaded_by_name
+                                :'Uploaded',
+                            item.uploaded_at
+                                ?commentDateLabel(item.uploaded_at)
+                                :''
+                        ].filter(Boolean).join(' · ')
+                    )
+                +'</small>';
+
+            return (
+                '<div class="legacy-attachment-chip'
+                +(deleted?' is-deleted':'')
+                +'" data-attachment-id="'
+                +escapeHtml(item.id)
+                +'">'+
+                    '<a target="_blank" rel="noopener" href="'
+                        +escapeHtml(item.url)
+                        +'">'
+                        +escapeHtml(item.name)
+                    +'</a>'+
+                    audit+
+                    (!deleted
+                        ?'<button type="button" class="attachment-remove"'
+                            +' data-attachment-delete="'
+                            +escapeHtml(item.id)
+                            +'" aria-label="Mark image as deleted"'
+                            +' title="Mark image as deleted">×</button>'
+                        :'')
+                +'</div>'
+            );
+        }).join('')
+    );
+
     $modalAttachments.removeClass('hidden');
 }
 
@@ -2337,6 +2521,7 @@ function syncDecisionVisualState(decision){
         editingCommentId=0;
         currentComments=[];
         currentReviewHistory=[];
+        currentLegacyAttachments=[];
         closeCommentDeletePopover();
         renderComments([],[]);
         clearCommentComposer();
@@ -2765,41 +2950,102 @@ $commentList.on('click','[data-comment-image]',function(){
 
 function deleteAttachment(attachmentId,$source){
     attachmentId=parseInt(attachmentId,10)||0;
-    if(!attachmentId) return;
-    $source.prop('disabled',true).text('…');
+
+    if(!attachmentId){
+        return;
+    }
+
+    $source
+        .prop('disabled',true)
+        .text('…');
 
     $.ajax({
-        url:attachmentDeleteUrl,method:'POST',dataType:'json',
-        data:{_csrf:csrf,attachment_id:attachmentId},
-        headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'}
+        url:attachmentDeleteUrl,
+        method:'POST',
+        dataType:'json',
+        data:{
+            _csrf:csrf,
+            attachment_id:attachmentId
+        },
+        headers:{
+            'X-Requested-With':'XMLHttpRequest',
+            'Accept':'application/json'
+        }
     })
     .done(function(data){
         if(!data||!data.ok){
-            $commentMessage.addClass('error').text((data&&data.message)||'Could not delete image.');
-            $source.prop('disabled',false).text('×');
+            $commentMessage
+                .addClass('error')
+                .text(
+                    (data&&data.message)
+                    ||'Could not mark image as deleted.'
+                );
+
+            $source
+                .prop('disabled',false)
+                .text('×');
             return;
         }
 
+        const updated=data.attachment||null;
+
         if(data.entity_type==='post_comment'){
             currentComments=currentComments.map(function(comment){
-                if(parseInt(comment.id,10)===parseInt(data.entity_id,10)){
-                    comment.attachments=(comment.attachments||[]).filter(function(item){return parseInt(item.id,10)!==attachmentId;});
+                if(
+                    parseInt(comment.id,10)
+                    ===parseInt(data.entity_id,10)
+                ){
+                    comment.attachments=(comment.attachments||[])
+                        .map(function(item){
+                            return parseInt(item.id,10)===attachmentId
+                                ?updated
+                                :item;
+                        });
+
+                    comment.active_attachment_count=(
+                        comment.attachments||[]
+                    ).filter(function(item){
+                        return item&&!item.deleted;
+                    }).length;
                 }
+
                 return comment;
             });
-            renderComments(currentComments,currentReviewHistory);
+
+            renderComments(
+                currentComments,
+                currentReviewHistory
+            );
         }else{
-            $modalAttachments.find('[data-attachment-id="'+attachmentId+'"]').remove();
-            if(!$modalAttachments.find('[data-review-attachment-list]').children().length){
-                $modalAttachments.addClass('hidden');
-            }
+            currentLegacyAttachments=currentLegacyAttachments
+                .map(function(item){
+                    return parseInt(item.id,10)===attachmentId
+                        ?updated
+                        :item;
+                });
+
+            renderAttachments(
+                currentLegacyAttachments
+            );
         }
-        $commentMessage.removeClass('error warning').text('Image deleted.');
+
+        $commentMessage
+            .removeClass('error warning')
+            .text('Image marked as deleted.');
     })
     .fail(function(xhr){
         const data=xhr.responseJSON||{};
-        $commentMessage.addClass('error').text(data.message||'Could not delete image.');
-        $source.prop('disabled',false).text('×');
+
+        $commentMessage
+            .addClass('error')
+            .text(
+                data.message
+                ||'Could not mark image as deleted.'
+            );
+
+        $source
+            .prop('disabled',false)
+            .text('×');
     });
 }
 
@@ -2855,21 +3101,31 @@ $deleteConfirm.on('click',function(){
             $commentMessage.addClass('error').text(
                 (data&&data.message)||'Could not delete note.'
             );
-            $button.prop('disabled',false).text('Delete');
+            $button.prop('disabled',false).text('Mark Deleted');
             return;
         }
 
-        currentComments=currentComments.filter(function(item){
-            return parseInt(item.id,10)!==commentId;
-        });
+        if(data.comment){
+            currentComments=currentComments.map(function(item){
+                return parseInt(item.id,10)===commentId
+                    ?data.comment
+                    :item;
+            });
+        }
 
         if(editingCommentId===commentId){
             clearCommentComposer();
         }
 
         closeCommentDeletePopover();
-        renderComments(currentComments,currentReviewHistory);
-        $commentMessage.removeClass('error warning').text('Note deleted.');
+        renderComments(
+            currentComments,
+            currentReviewHistory
+        );
+
+        $commentMessage
+            .removeClass('error warning')
+            .text('Comment marked as deleted.');
 
         setTimeout(function(){
             if($commentMessage.text()==='Note deleted.')$commentMessage.text('');
@@ -2880,7 +3136,7 @@ $deleteConfirm.on('click',function(){
         $commentMessage.addClass('error').text(
             data.message||'Could not delete note.'
         );
-        $button.prop('disabled',false).text('Delete');
+        $button.prop('disabled',false).text('Mark Deleted');
     });
 });
 
@@ -2979,19 +3235,15 @@ $modalForm.on('submit', function(event){
             syncDecisionVisualState(status);
             syncExpandedSalesCardFromTiles();
 
-            currentReviewHistory.push({
-                id:'local-'+Date.now(),
-                author_name:'Administrator',
-                decision:status,
-                created_at:new Date()
-                    .toISOString()
-                    .slice(0,19)
-                    .replace('T',' ')
-            });
-            renderComments(
-                currentComments,
-                currentReviewHistory
-            );
+            if(data.history_event){
+                currentReviewHistory.push(
+                    data.history_event
+                );
+                renderComments(
+                    currentComments,
+                    currentReviewHistory
+                );
+            }
 
             if(data.upload_warning){
                 $modalMessage

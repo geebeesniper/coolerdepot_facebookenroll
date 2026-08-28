@@ -740,3 +740,18 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - No external API request is performed merely to render the card thumbnail.
 - Requires migration `011_post_review_history`.
 - All border radius remains `4px`.
+
+## v0.1.35 — Full audit history and soft deletion
+
+- Every successful `Save Review` continues to append an immutable Good/Bad event even when the decision is unchanged from the previous save.
+- Review History now explicitly labels those entries as `Review saved · Decision only · Good/Bad` and shows the exact administrator and database timestamp.
+- Comment activity remains in the same chronological History and now labels whether the action contains a comment, photos only, or `Comment + N photos`.
+- Comment rows show author and creation time; edits show the last editor and edit time.
+- Comment attachments show filename, uploader, upload time, and remain associated with the comment.
+- Comment deletion is audit-only: the row is never physically removed. It stays visible in History and is marked `Marked as deleted` with who marked it and when.
+- Attachment deletion is now audit-only. `cdsp_review_attachments` gains `deleted_at` and `deleted_by`; the database row and physical file are preserved.
+- Soft-deleted images stay visible in History with a `Marked as deleted` overlay and deletion audit metadata.
+- Legacy review-level images also use the same soft-delete behavior.
+- The AJAX Save Review response now returns the exact persisted history event instead of inventing a local Administrator/time value.
+- Migration `012_soft_delete_audit` adds attachment deletion audit columns. `scripts/migrate_v0_1_35.php` is idempotent and also ensures/backfills the v0.1.34 review-history table.
+- All border radius remains `4px`.

@@ -244,24 +244,15 @@ class AdminController extends Controller{
 
         $comments=$this->postReviewComments($postId);
         $reviewHistory=$this->postReviewHistory($postId);
-        $attachments=[];
-
-        if($review){
-            foreach(
+        $attachments=$review
+            ? $this->formatAttachments(
                 $this->attachments(
                     'post_review',
-                    (int)$review['id']
-                ) as $attachment
-            ){
-                $attachments[]=[
-                    'id'=>(int)$attachment['id'],
-                    'name'=>(string)$attachment['original_name'],
-                    'url'=>$GLOBALS['config']['app']['base_path']
-                        .'/attachment?id='
-                        .(int)$attachment['id'],
-                ];
-            }
-        }
+                    (int)$review['id'],
+                    true
+                )
+            )
+            : [];
 
         if(session_status()===PHP_SESSION_ACTIVE){
             session_write_close();
@@ -483,11 +474,15 @@ public function dashboardUpdateComment():void{
         $this->json(['ok'=>false,'message'=>'Comment was not found.'],404);
     }
 
-    if(!$this->commentHasContent($body)&&!$hasImages&&empty($existing['attachments'])){
+    if(
+        !$this->commentHasContent($body)
+        && !$hasImages
+        && (int)($existing['active_attachment_count']??0)<1
+    ){
         $this->json([
             'ok'=>false,
             'field'=>'comment_body',
-            'message'=>'A note cannot be empty unless it has an image.',
+            'message'=>'A note cannot be empty unless it has an active image.',
         ],422);
     }
 
@@ -540,50 +535,79 @@ public function dashboardDeleteComment():void{
     if($s->rowCount()<1){
         $this->json([
             'ok'=>false,
-            'message'=>'Comment was not found or was already deleted.',
+            'message'=>'Comment was not found or was already marked as deleted.',
         ],404);
     }
+
+    $comment=$this->postReviewComment(
+        $commentId,
+        true
+    );
 
     $this->json([
         'ok'=>true,
         'comment_id'=>$commentId,
-        'message'=>'Note deleted.',
+        'comment'=>$comment,
+        'message'=>'Comment marked as deleted.',
     ]);
 }
 
 public function dashboardDeleteAttachment():void{
-    Auth::requireRole('admin');
+    $admin=Auth::requireRole('admin');
     $this->verifyAjaxCsrf();
+
     $attachmentId=(int)($_POST['attachment_id']??0);
 
     $s=Database::connection()->prepare(
-        "SELECT * FROM cdsp_review_attachments
-         WHERE id=? AND entity_type IN ('post_comment','post_review')
+        "SELECT *
+         FROM cdsp_review_attachments
+         WHERE id=?
+           AND entity_type IN ('post_comment','post_review')
          LIMIT 1"
     );
     $s->execute([$attachmentId]);
     $attachment=$s->fetch();
 
     if(!$attachment){
-        $this->json(['ok'=>false,'message'=>'Image was not found.'],404);
+        $this->json([
+            'ok'=>false,
+            'message'=>'Image was not found.',
+        ],404);
     }
 
-    $base=realpath(dirname(__DIR__,2).'/storage/uploads');
-    $candidate=dirname(__DIR__,2).'/storage/uploads/'.(string)$attachment['stored_path'];
-    $path=realpath($candidate);
-    $d=Database::connection()->prepare("DELETE FROM cdsp_review_attachments WHERE id=?");
-    $d->execute([$attachmentId]);
-
-    if($base&&$path&&str_starts_with($path,$base)&&is_file($path)){
-        @unlink($path);
+    if(!empty($attachment['deleted_at'])){
+        $this->json([
+            'ok'=>false,
+            'message'=>'Image is already marked as deleted.',
+        ],409);
     }
+
+    $d=Database::connection()->prepare(
+        "UPDATE cdsp_review_attachments
+         SET deleted_at=NOW(),
+             deleted_by=?
+         WHERE id=?
+           AND deleted_at IS NULL"
+    );
+
+    $d->execute([
+        (int)$admin['id'],
+        $attachmentId,
+    ]);
+
+    $updated=$this->attachmentById(
+        $attachmentId
+    );
 
     $this->json([
         'ok'=>true,
         'attachment_id'=>$attachmentId,
         'entity_type'=>(string)$attachment['entity_type'],
         'entity_id'=>(int)$attachment['entity_id'],
-        'message'=>'Image deleted.',
+        'attachment'=>$updated
+            ? $this->formatAttachment($updated)
+            : null,
+        'message'=>'Image marked as deleted.',
     ]);
 }
 
@@ -1058,6 +1082,8 @@ public function savePostReview():void{
             $decision,
         ]);
 
+        $historyId=(int)$pdo->lastInsertId();
+
         $pdo->commit();
     }catch(\Throwable $e){
         if($pdo->inTransaction()){
@@ -1088,25 +1114,21 @@ public function savePostReview():void{
     }
 
     if($isAjax){
-        $attachments=[];
-
-        foreach(
-            $this->attachments('post_review',$rid)
-            as $attachment
-        ){
-            $attachments[]=[
-                'id'=>(int)$attachment['id'],
-                'name'=>(string)$attachment['original_name'],
-                'url'=>$GLOBALS['config']['app']['base_path']
-                    .'/attachment?id='
-                    .(int)$attachment['id'],
-            ];
-        }
+        $attachments=$this->formatAttachments(
+            $this->attachments(
+                'post_review',
+                $rid,
+                true
+            )
+        );
 
         $this->json([
             'ok'=>true,
             'post_id'=>$pid,
             'decision'=>$decision,
+            'history_event'=>$this->postReviewHistoryEvent(
+                $historyId
+            ),
             'attachments'=>$attachments,
             'upload_warning'=>$uploadWarning,
             'message'=>$uploadWarning
@@ -1202,17 +1224,51 @@ private function postReviewHistory(int $postId):array{
     $rows=[];
 
     foreach($s->fetchAll() as $row){
-        $rows[]=[
-            'id'=>(int)$row['id'],
-            'post_id'=>(int)$row['post_id'],
-            'author_id'=>(int)$row['admin_user_id'],
-            'author_name'=>(string)$row['author_name'],
-            'decision'=>(string)$row['decision'],
-            'created_at'=>(string)$row['created_at'],
-        ];
+        $rows[]=$this->formatPostReviewHistoryEvent($row);
     }
 
     return $rows;
+}
+
+private function postReviewHistoryEvent(int $historyId):?array{
+    if($historyId<1){
+        return null;
+    }
+
+    $s=Database::connection()->prepare(
+        "SELECT
+            h.id,
+            h.post_id,
+            h.admin_user_id,
+            h.decision,
+            h.created_at,
+            u.display_name AS author_name
+         FROM cdsp_post_review_history h
+         JOIN cdsp_users u
+           ON u.id=h.admin_user_id
+         WHERE h.id=?
+         LIMIT 1"
+    );
+
+    $s->execute([$historyId]);
+    $row=$s->fetch();
+
+    return $row
+        ? $this->formatPostReviewHistoryEvent($row)
+        : null;
+}
+
+private function formatPostReviewHistoryEvent(array $row):array{
+    return [
+        'id'=>(int)$row['id'],
+        'post_id'=>(int)$row['post_id'],
+        'author_id'=>(int)$row['admin_user_id'],
+        'author_name'=>(string)$row['author_name'],
+        'decision'=>(string)$row['decision'],
+        'created_at'=>(string)$row['created_at'],
+        'activity_type'=>'review_saved',
+        'decision_only'=>true,
+    ];
 }
 
 private function postReviewComments(int $postId):array{
@@ -1225,12 +1281,19 @@ private function postReviewComments(int $postId):array{
             c.created_at,
             c.updated_at,
             c.updated_by,
-            u.display_name AS author_name
+            c.deleted_at,
+            c.deleted_by,
+            u.display_name AS author_name,
+            uu.display_name AS updated_by_name,
+            du.display_name AS deleted_by_name
          FROM cdsp_post_review_comments c
          JOIN cdsp_users u
            ON u.id=c.admin_user_id
+         LEFT JOIN cdsp_users uu
+           ON uu.id=c.updated_by
+         LEFT JOIN cdsp_users du
+           ON du.id=c.deleted_by
          WHERE c.post_id=?
-           AND c.deleted_at IS NULL
          ORDER BY c.created_at ASC,c.id ASC"
     );
 
@@ -1245,8 +1308,11 @@ private function postReviewComments(int $postId):array{
     return $rows;
 }
 
-private function postReviewComment(int $commentId):?array{
-    $s=Database::connection()->prepare(
+private function postReviewComment(
+    int $commentId,
+    bool $includeDeleted=false
+):?array{
+    $sql=
         "SELECT
             c.id,
             c.post_id,
@@ -1255,15 +1321,27 @@ private function postReviewComment(int $commentId):?array{
             c.created_at,
             c.updated_at,
             c.updated_by,
-            u.display_name AS author_name
+            c.deleted_at,
+            c.deleted_by,
+            u.display_name AS author_name,
+            uu.display_name AS updated_by_name,
+            du.display_name AS deleted_by_name
          FROM cdsp_post_review_comments c
          JOIN cdsp_users u
            ON u.id=c.admin_user_id
-         WHERE c.id=?
-           AND c.deleted_at IS NULL
-         LIMIT 1"
-    );
+         LEFT JOIN cdsp_users uu
+           ON uu.id=c.updated_by
+         LEFT JOIN cdsp_users du
+           ON du.id=c.deleted_by
+         WHERE c.id=?";
 
+    if(!$includeDeleted){
+        $sql.=" AND c.deleted_at IS NULL";
+    }
+
+    $sql.=" LIMIT 1";
+
+    $s=Database::connection()->prepare($sql);
     $s->execute([$commentId]);
     $row=$s->fetch();
 
@@ -1275,12 +1353,30 @@ private function postReviewComment(int $commentId):?array{
 private function formatPostReviewComment(array $row):array{
     $created=(string)$row['created_at'];
     $updated=(string)$row['updated_at'];
+    $deletedAt=(string)($row['deleted_at']??'');
+    $attachments=$this->formatAttachments(
+        $this->attachments(
+            'post_comment',
+            (int)$row['id'],
+            true
+        )
+    );
+
+    $activeAttachmentCount=0;
+
+    foreach($attachments as $attachment){
+        if(empty($attachment['deleted'])){
+            $activeAttachmentCount++;
+        }
+    }
+
     $edited=(
         !empty($row['updated_by'])
         || (
             $created!==''
             && $updated!==''
             && $created!==$updated
+            && $deletedAt===''
         )
     );
 
@@ -1292,10 +1388,14 @@ private function formatPostReviewComment(array $row):array{
         'body_html'=>(string)$row['body_html'],
         'created_at'=>$created,
         'updated_at'=>$updated,
+        'updated_by_name'=>(string)($row['updated_by_name']??''),
         'edited'=>$edited,
-        'attachments'=>$this->formatAttachments(
-            $this->attachments('post_comment',(int)$row['id'])
-        ),
+        'deleted'=>$deletedAt!=='',
+        'deleted_at'=>$deletedAt!=='' ? $deletedAt : null,
+        'deleted_by_name'=>(string)($row['deleted_by_name']??''),
+        'attachments'=>$attachments,
+        'active_attachment_count'=>$activeAttachmentCount,
+        'activity_type'=>'comment',
     ];
 }
 
@@ -1317,19 +1417,84 @@ private function hasUploadedFiles(string $field):bool{
     return false;
 }
 
+private function formatAttachment(array $attachment):array{
+    return [
+        'id'=>(int)$attachment['id'],
+        'name'=>(string)$attachment['original_name'],
+        'mime'=>(string)$attachment['mime_type'],
+        'size'=>(int)$attachment['size_bytes'],
+        'url'=>$GLOBALS['config']['app']['base_path']
+            .'/attachment?id='
+            .(int)$attachment['id'],
+        'uploaded_at'=>(string)$attachment['created_at'],
+        'uploaded_by_name'=>(string)($attachment['uploaded_by_name']??''),
+        'deleted'=>!empty($attachment['deleted_at']),
+        'deleted_at'=>!empty($attachment['deleted_at'])
+            ? (string)$attachment['deleted_at']
+            : null,
+        'deleted_by_name'=>(string)($attachment['deleted_by_name']??''),
+    ];
+}
+
 private function formatAttachments(array $items):array{
     $result=[];
+
     foreach($items as $attachment){
-        $result[]=[
-            'id'=>(int)$attachment['id'],
-            'name'=>(string)$attachment['original_name'],
-            'mime'=>(string)$attachment['mime_type'],
-            'size'=>(int)$attachment['size_bytes'],
-            'url'=>$GLOBALS['config']['app']['base_path'].'/attachment?id='.(int)$attachment['id'],
-        ];
+        $result[]=$this->formatAttachment($attachment);
     }
+
     return $result;
 }
 
-    private function attachments(string $type,int $id):array{$s=Database::connection()->prepare("SELECT * FROM cdsp_review_attachments WHERE entity_type=? AND entity_id=? ORDER BY created_at");$s->execute([$type,$id]);return$s->fetchAll();}
+private function attachmentById(int $id):?array{
+    $s=Database::connection()->prepare(
+        "SELECT
+            a.*,
+            up.display_name AS uploaded_by_name,
+            du.display_name AS deleted_by_name
+         FROM cdsp_review_attachments a
+         LEFT JOIN cdsp_users up
+           ON up.id=a.uploaded_by
+         LEFT JOIN cdsp_users du
+           ON du.id=a.deleted_by
+         WHERE a.id=?
+         LIMIT 1"
+    );
+
+    $s->execute([$id]);
+    $row=$s->fetch();
+
+    return $row ?: null;
+}
+
+private function attachments(
+    string $type,
+    int $id,
+    bool $includeDeleted=false
+):array{
+    $sql=
+        "SELECT
+            a.*,
+            up.display_name AS uploaded_by_name,
+            du.display_name AS deleted_by_name
+         FROM cdsp_review_attachments a
+         LEFT JOIN cdsp_users up
+           ON up.id=a.uploaded_by
+         LEFT JOIN cdsp_users du
+           ON du.id=a.deleted_by
+         WHERE a.entity_type=?
+           AND a.entity_id=?";
+
+    if(!$includeDeleted){
+        $sql.=" AND a.deleted_at IS NULL";
+    }
+
+    $sql.=" ORDER BY a.created_at,a.id";
+
+    $s=Database::connection()->prepare($sql);
+    $s->execute([$type,$id]);
+
+    return $s->fetchAll();
+}
+
 }
