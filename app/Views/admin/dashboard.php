@@ -502,6 +502,10 @@ $periodNames = [
                 <legend>
                     Decision
                     <span class="review-required">Required</span>
+                    <span
+                        class="review-decision-saved hidden"
+                        id="dashboardDecisionSaved"
+                    ></span>
                 </legend>
 
                 <label class="review-decision-option good">

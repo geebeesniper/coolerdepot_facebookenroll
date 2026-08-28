@@ -755,3 +755,18 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - The AJAX Save Review response now returns the exact persisted history event instead of inventing a local Administrator/time value.
 - Migration `012_soft_delete_audit` adds attachment deletion audit columns. `scripts/migrate_v0_1_35.php` is idempotent and also ensures/backfills the v0.1.34 review-history table.
 - All border radius remains `4px`.
+
+## v0.1.36 — Compact History thumbnails and authoritative saved Decision
+
+- Comment History images are now fixed evidence thumbnails instead of expanding to the full History width.
+- Desktop thumbnails are 136×96; coarse-pointer devices use 150×106; very narrow screens use 118×84.
+- Multiple comment photos wrap into a compact thumbnail row. Clicking a thumbnail still opens the existing image lightbox.
+- Deleted-image audit overlays and uploader/deletion metadata remain visible inside the compact thumbnail card.
+- Reopening Post Review now treats the latest immutable `cdsp_post_review_history` event as the authoritative saved Decision.
+- Backend returns the latest History decision first, falling back to `cdsp_sales_posts.admin_review_status` and then `cdsp_post_reviews` only when no History event exists.
+- Frontend independently performs the same history-first fallback, protecting the selected Good/Bad state even if an older state field is stale.
+- The saved Good/Bad radio is explicitly checked and receives the existing `is-selected` visual state on every popup open.
+- Decision now shows a compact `Last saved: Good/Bad · administrator · timestamp` line so the persisted database state is visible.
+- A successful Save Review immediately refreshes that Last saved line from the exact history event returned by the server.
+- No database migration is required.
+- All border radius remains `4px`.

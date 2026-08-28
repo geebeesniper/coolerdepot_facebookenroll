@@ -2505,6 +2505,9 @@ function syncDecisionVisualState(decision){
             .removeClass('is-invalid')
             .attr('aria-invalid','false');
         syncDecisionVisualState('');
+        $('#dashboardDecisionSaved')
+            .addClass('hidden')
+            .text('');
         $modalForm
             .find('[data-decision-error]')
             .addClass('hidden');
@@ -2612,27 +2615,71 @@ function syncDecisionVisualState(decision){
                     .attr('href', data.post.canonical_url);
             }
 
-            const savedDecision=
-                data.review
-                && ['good','bad'].includes(data.review.decision)
-                    ?data.review.decision
+            const historyItems=Array.isArray(
+                data.review_history
+            )
+                ?data.review_history
+                :[];
+
+            const latestHistory=historyItems.length
+                ?historyItems[historyItems.length-1]
+                :null;
+
+            const historyDecision=latestHistory
+                &&['good','bad'].includes(
+                    String(latestHistory.decision||'').toLowerCase()
+                )
+                    ?String(latestHistory.decision).toLowerCase()
                     :'';
 
-            $modalForm
-                .find('input[name="decision"]')
-                .prop('checked', false);
+            const responseDecision=data.review
+                &&['good','bad'].includes(
+                    String(data.review.decision||'').toLowerCase()
+                )
+                    ?String(data.review.decision).toLowerCase()
+                    :'';
+
+            // History is the immutable record of each Save Review,
+            // therefore its latest entry wins when the popup reopens.
+            const savedDecision=historyDecision||responseDecision;
+
+            const $decisionInputs=$modalForm.find(
+                'input[name="decision"]'
+            );
+
+            $decisionInputs.prop('checked',false);
 
             if(savedDecision){
-                $modalForm
-                    .find(
-                        'input[name="decision"][value="'
-                        +savedDecision
-                        +'"]'
-                    )
-                    .prop('checked', true);
-            }
+                const $savedInput=$decisionInputs.filter(
+                    '[value="'+savedDecision+'"]'
+                );
 
-            syncDecisionVisualState(savedDecision);
+                $savedInput.prop('checked',true);
+                syncDecisionVisualState(savedDecision);
+
+                const savedAt=latestHistory
+                    ?latestHistory.created_at
+                    :(data.review&&data.review.last_saved_at);
+                const savedBy=latestHistory
+                    ?latestHistory.author_name
+                    :(data.review&&data.review.last_saved_by);
+
+                $('#dashboardDecisionSaved')
+                    .removeClass('hidden')
+                    .text(
+                        'Last saved: '
+                        +(savedDecision==='good'?'Good':'Bad')
+                        +(savedBy?' · '+savedBy:'')
+                        +(savedAt
+                            ?' · '+commentDateLabel(savedAt)
+                            :'')
+                    );
+            }else{
+                syncDecisionVisualState('');
+                $('#dashboardDecisionSaved')
+                    .addClass('hidden')
+                    .text('');
+            }
 
             clearCommentComposer();
             renderComments(
@@ -3236,6 +3283,20 @@ $modalForm.on('submit', function(event){
             syncExpandedSalesCardFromTiles();
 
             if(data.history_event){
+                $('#dashboardDecisionSaved')
+                    .removeClass('hidden')
+                    .text(
+                        'Last saved: '
+                        +(status==='good'?'Good':'Bad')
+                        +(data.history_event.author_name
+                            ?' · '+data.history_event.author_name
+                            :'')
+                        +(data.history_event.created_at
+                            ?' · '+commentDateLabel(
+                                data.history_event.created_at
+                            )
+                            :'')
+                    );
                 currentReviewHistory.push(
                     data.history_event
                 );

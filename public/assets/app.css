@@ -4316,3 +4316,147 @@ body.review-modal-open{
         grid-column:1 / -1;
     }
 }
+
+/* v0.1.36 Compact History thumbnails + persisted Decision state */
+.review-decision-saved{
+    display:inline-flex;
+    align-items:center;
+    margin-left:7px;
+    color:#64748b;
+    font-size:8px;
+    font-weight:800;
+    text-transform:none;
+    letter-spacing:0;
+}
+.review-decision-saved.hidden{
+    display:none;
+}
+
+/* Comment images are evidence thumbnails, not full-size History content. */
+.review-comment-attachments{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:flex-start;
+    gap:8px;
+    margin-top:10px;
+}
+.review-comment-attachment{
+    position:relative;
+    width:136px;
+    min-width:136px;
+    max-width:136px;
+    display:flex;
+    flex-direction:column;
+    gap:0;
+    overflow:hidden;
+    border:1px solid #e2e8f0;
+    border-radius:4px;
+    background:#f8fafc;
+}
+.review-comment-attachment-media{
+    position:relative;
+    width:136px;
+    height:96px;
+    overflow:hidden;
+    background:#e2e8f0;
+}
+.review-comment-image{
+    width:136px;
+    height:96px;
+    display:block;
+    padding:0;
+    border:0;
+    border-radius:4px;
+    background:#e2e8f0;
+    cursor:zoom-in;
+    aspect-ratio:auto;
+}
+.review-comment-image img{
+    width:136px;
+    height:96px;
+    display:block;
+    object-fit:cover;
+}
+.review-comment-attachment-audit{
+    width:100%;
+    min-width:0;
+    padding:6px 7px 7px;
+}
+.review-comment-attachment-audit > span{
+    display:block;
+    overflow:hidden;
+    color:#334155;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    font-size:7px;
+    font-weight:900;
+}
+.review-comment-attachment-audit > small{
+    display:block;
+    margin-top:2px;
+    overflow:hidden;
+    color:#64748b;
+    font-size:7px;
+    line-height:1.35;
+}
+.review-comment-attachment .attachment-remove{
+    top:5px;
+    right:5px;
+}
+.review-comment-attachment.is-deleted{
+    width:136px;
+    min-width:136px;
+    max-width:136px;
+}
+.review-comment-attachment.is-deleted img{
+    opacity:.45;
+}
+.attachment-deleted-overlay{
+    inset:auto 5px 5px 5px;
+    min-height:22px;
+    padding:3px 5px;
+    font-size:7px;
+}
+.attachment-deleted-audit{
+    margin-top:4px;
+    font-size:7px;
+}
+
+/* Strong selected state; this is also set by JS from DB history. */
+.review-decision-option.good.is-selected{
+    border:2px solid #22c55e;
+    background:#ecfdf3;
+}
+.review-decision-option.bad.is-selected{
+    border:2px solid #ef4444;
+    background:#fff1f2;
+}
+
+@media(pointer:coarse){
+    .review-comment-attachment,
+    .review-comment-attachment.is-deleted{
+        width:150px;
+        min-width:150px;
+        max-width:150px;
+    }
+    .review-comment-attachment-media,
+    .review-comment-image,
+    .review-comment-image img{
+        width:150px;
+        height:106px;
+    }
+}
+@media(max-width:420px){
+    .review-comment-attachment,
+    .review-comment-attachment.is-deleted{
+        width:118px;
+        min-width:118px;
+        max-width:118px;
+    }
+    .review-comment-attachment-media,
+    .review-comment-image,
+    .review-comment-image img{
+        width:118px;
+        height:84px;
+    }
+}

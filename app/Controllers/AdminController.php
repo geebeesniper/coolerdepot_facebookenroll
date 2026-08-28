@@ -244,6 +244,20 @@ class AdminController extends Controller{
 
         $comments=$this->postReviewComments($postId);
         $reviewHistory=$this->postReviewHistory($postId);
+
+        $latestReviewHistory=$reviewHistory
+            ? $reviewHistory[count($reviewHistory)-1]
+            : null;
+
+        $historyDecision=$latestReviewHistory
+            && in_array(
+                (string)($latestReviewHistory['decision']??''),
+                ['good','bad'],
+                true
+            )
+                ? (string)$latestReviewHistory['decision']
+                : null;
+
         $attachments=$review
             ? $this->formatAttachments(
                 $this->attachments(
@@ -274,24 +288,46 @@ class AdminController extends Controller{
                 'external_post_id'=>(string)$post['external_post_id'],
                 'canonical_url'=>(string)$post['canonical_url'],
             ],
-            'review'=>[
-                'decision'=>in_array(
-                    (string)($post['admin_review_status']??''),
-                    ['good','bad'],
-                    true
+'review'=>[
+    // The last immutable Save Review event is authoritative
+    // when the popup is reopened.
+    'decision'=>$historyDecision
+        ?: (
+            in_array(
+                (string)($post['admin_review_status']??''),
+                ['good','bad'],
+                true
+            )
+                ? (string)$post['admin_review_status']
+                : (
+                    $review
+                    && in_array(
+                        (string)$review['decision'],
+                        ['good','bad'],
+                        true
+                    )
+                        ? (string)$review['decision']
+                        : null
                 )
-                    ? (string)$post['admin_review_status']
-                    : (
-                        $review
-                        && in_array(
-                            (string)$review['decision'],
-                            ['good','bad'],
-                            true
-                        )
-                            ? (string)$review['decision']
-                            : null
-                    ),
-            ],
+        ),
+    'last_saved_at'=>$latestReviewHistory
+        ? (string)$latestReviewHistory['created_at']
+        : (
+            $review
+                ? (string)($review['reviewed_at']??'')
+                : null
+        ),
+    'last_saved_by'=>$latestReviewHistory
+        ? (string)$latestReviewHistory['author_name']
+        : null,
+    'source'=>$historyDecision
+        ? 'history'
+        : (
+            !empty($post['admin_review_status'])
+                ? 'post'
+                : ($review ? 'review' : null)
+        ),
+],
             'review_history'=>$reviewHistory,
             'comments'=>$comments,
             'content'=>[
