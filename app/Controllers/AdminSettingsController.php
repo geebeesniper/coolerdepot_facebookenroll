@@ -59,12 +59,14 @@ class AdminSettingsController extends Controller
         $admin = Auth::requireRole('admin');
         Csrf::verify($_POST['_csrf'] ?? null);
 
-        $url = trim((string)($_POST['test_url'] ?? ''));
+        $submittedUrl = trim((string)($_POST['test_url'] ?? ''));
+        $url = PlatformUrl::normalize($submittedUrl, 'facebook');
         $testResult = null;
         $testError = null;
 
-        if (!PlatformUrl::allowed($url, 'facebook')) {
+        if (!$url) {
             $testError = 'Enter a valid Facebook Marketplace URL.';
+            $url = $submittedUrl;
         } else {
             try {
                 $testResult = (new BrightDataMarketplaceProvider())->fetch(

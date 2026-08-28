@@ -124,7 +124,7 @@ use App\Core\Util;
                 required
             >
 
-            <button class="btn">Test Bright Data</button>
+            <button class="btn settings-test-button">Test Bright Data</button>
         </form>
 
         <?php if ($testError): ?>
@@ -134,7 +134,7 @@ use App\Core\Util;
             </div>
         <?php elseif ($testResult): ?>
             <div class="settings-test ok">
-                <b>Bright Data returned a listing</b>
+                <b>Marketplace Result</b>
 
                 <dl class="details compact-details">
                     <dt>Item ID</dt>

@@ -24,6 +24,13 @@ class BrightDataMarketplaceProvider
             throw new \RuntimeException('Bright Data is not configured.');
         }
 
+        $normalizedUrl = PlatformUrl::normalize($url, 'facebook');
+
+        if (!$normalizedUrl) {
+            throw new \RuntimeException('Facebook Marketplace URL is malformed.');
+        }
+
+        $url = $normalizedUrl;
         $externalId = PlatformUrl::externalId('facebook', $url);
 
         // Avoid spending another record when Sales re-checks the same listing within 10 minutes.
@@ -126,7 +133,7 @@ class BrightDataMarketplaceProvider
 
                     if (!$record) {
                         FetchJob::setStatus($jobId, 'failed', $download['status'], 'Snapshot contained no listing record.');
-                        throw new \RuntimeException('Bright Data returned an empty Marketplace result.');
+                        throw new \RuntimeException('Bright Data did not return a valid Marketplace listing. Check the URL and try again.');
                     }
 
                     $normalized = $this->normalize($record, $url, $snapshotId);
@@ -220,33 +227,53 @@ class BrightDataMarketplaceProvider
             return null;
         }
 
+        $candidates = [];
+
         if (array_is_list($data)) {
-            foreach ($data as $row) {
-                if (is_array($row)) {
+            $candidates = $data;
+        } else {
+            foreach (['data', 'results', 'records', 'items'] as $key) {
+                if (!empty($data[$key]) && is_array($data[$key])) {
+                    if (array_is_list($data[$key])) {
+                        foreach ($data[$key] as $row) {
+                            $candidates[] = $row;
+                        }
+                    } else {
+                        $candidates[] = $data[$key];
+                    }
+                }
+            }
+
+            $candidates[] = $data;
+        }
+
+        foreach ($candidates as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+
+            // A valid Marketplace record must contain at least one listing-specific
+            // field. Bright Data can return an input/timestamp-only row for a bad
+            // request; that is not a successful listing.
+            $listingFields = [
+                'title',
+                'product_id',
+                'listing_id',
+                'url',
+                'description',
+                'price',
+                'listing_date',
+                'date_posted',
+                'posted_at',
+                'creation_time',
+            ];
+
+            foreach ($listingFields as $field) {
+                if (array_key_exists($field, $row)
+                    && trim((string)($row[$field] ?? '')) !== '') {
                     return $row;
                 }
             }
-            return null;
-        }
-
-        // Some responses may wrap rows.
-        foreach (['data', 'results', 'records', 'items'] as $key) {
-            if (!empty($data[$key]) && is_array($data[$key])) {
-                if (array_is_list($data[$key])) {
-                    foreach ($data[$key] as $row) {
-                        if (is_array($row)) {
-                            return $row;
-                        }
-                    }
-                } elseif (is_array($data[$key])) {
-                    return $data[$key];
-                }
-            }
-        }
-
-        // If the payload itself looks like one Marketplace record, accept it.
-        if (isset($data['title']) || isset($data['product_id']) || isset($data['url'])) {
-            return $data;
         }
 
         return null;

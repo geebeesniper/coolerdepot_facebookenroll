@@ -11,6 +11,33 @@ $(function(){
         return '';
     }
 
+    function normalizePostUrl(url, platform){
+        const raw = (url || '').trim();
+
+        if(platform === 'facebook'){
+            const m = raw.match(/https?:\/\/(?:[a-z0-9-]+\.)?facebook\.com\/marketplace\/item\/(\d+)/i);
+            if(m){
+                return 'https://www.facebook.com/marketplace/item/' + m[1];
+            }
+        }
+
+        if(platform === 'offerup'){
+            const m = raw.match(/https?:\/\/(?:www\.)?offerup\.com\/item\/detail\/([a-z0-9-]+)/i);
+            if(m){
+                return 'https://offerup.com/item/detail/' + m[1];
+            }
+        }
+
+        if(platform === 'craigslist'){
+            const m = raw.match(/https?:\/\/(?:[a-z0-9-]+\.)?craigslist\.org\/[^\s]*?\/\d{8,}\.html/i);
+            if(m){
+                return m[0];
+            }
+        }
+
+        return raw;
+    }
+
     function platformLabel(platform){
         if(platform === 'facebook') return 'Facebook';
         if(platform === 'offerup') return 'OfferUp';
@@ -19,9 +46,14 @@ $(function(){
     }
 
     function updateDetectedPlatform(){
-        const url = $('#postUrl').val() || '';
-        const platform = detectPlatform(url);
+        const originalUrl = $('#postUrl').val() || '';
+        const platform = detectPlatform(originalUrl);
+        const url = platform ? normalizePostUrl(originalUrl, platform) : originalUrl;
         const $label = $('#detectedPlatform');
+
+        if(platform && url && url !== originalUrl.trim()){
+            $('#postUrl').val(url);
+        }
 
         $('#detectedPlatformValue').val(platform);
         $('#inspectButton').prop('disabled', !platform);
@@ -172,5 +204,68 @@ $(function(){
 
         observer.observe(document.getElementById('loadMoreDailyPosts'));
     }
+
+
+
+    function syncHtmlNote($root){
+        const $editor = $root.find('[data-html-editor]');
+        const $source = $root.find('[data-html-source]');
+
+        if(!$editor.hasClass('hidden')){
+            $source.val($editor.html());
+        }
+    }
+
+    $('[data-html-note]').each(function(){
+        const $root = $(this);
+        const $editor = $root.find('[data-html-editor]');
+        const $source = $root.find('[data-html-source]');
+        const $toolbar = $root.find('[data-html-toolbar]');
+        const $toggle = $root.find('[data-html-editor-toggle]');
+
+        $toggle.on('click', function(){
+            const editorOn = !$editor.hasClass('hidden');
+
+            if(editorOn){
+                $source.val($editor.html());
+                $editor.addClass('hidden');
+                $toolbar.addClass('hidden');
+                $source.removeClass('hidden');
+                $toggle.text('Editor On');
+            }else{
+                $editor.html($source.val());
+                $source.addClass('hidden');
+                $editor.removeClass('hidden');
+                $toolbar.removeClass('hidden');
+                $toggle.text('Editor Off');
+                $editor.trigger('focus');
+            }
+        });
+
+        $toolbar.on('click', '[data-cmd]', function(){
+            const cmd = $(this).data('cmd');
+            const value = $(this).data('value') || null;
+
+            $editor.trigger('focus');
+
+            if(cmd === 'createLink'){
+                const href = window.prompt('Link URL');
+                if(href){
+                    document.execCommand('createLink', false, href);
+                }
+                return;
+            }
+
+            document.execCommand(cmd, false, value);
+        });
+
+        $editor.on('input blur', function(){
+            $source.val($editor.html());
+        });
+
+        $root.closest('form').on('submit', function(){
+            syncHtmlNote($root);
+        });
+    });
 
 });

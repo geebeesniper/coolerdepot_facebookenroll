@@ -320,3 +320,27 @@ Every packaged release must increment `VERSION` and use the same version in the 
 - No Sales Dashboard/Admin Dashboard wording is shown on status pages.
 - Apache-level status pages use the same simplified layout.
 - All border radius remains `4px`.
+
+## v0.1.6 — HTML review notes
+
+- Removed the 1–5 star Rating field from post, daily, weekly, and monthly Admin reviews.
+- Review notes are stored as sanitized HTML.
+- Added an inline rich-text editor with an `Editor On / Editor Off` toggle.
+- With the editor off, Admin can edit the raw HTML source directly.
+- Allowed note HTML is intentionally restricted to safe formatting tags and safe links.
+- Bright Data test result heading is now `Test Result`.
+- Added spacing above the `Test Bright Data` button.
+- All border radius remains `4px`.
+
+## v0.1.7 — Facebook URL normalization
+
+- Fixed duplicated pasted Facebook URLs such as
+  `.../item/123https://www.facebook.com/marketplace/item/123`.
+- Facebook Marketplace item URLs are canonicalized to
+  `https://www.facebook.com/marketplace/item/<ID>` before any Bright Data query.
+- URL normalization runs in the browser, Sales API, Admin Bright Data test, and provider layer.
+- Bright Data `input + timestamp` only responses are no longer treated as successful Marketplace listings.
+- A successful provider record must contain at least one listing-specific field.
+- The generic provider `timestamp` remains excluded from Facebook publication-date verification.
+- Added an optional cleanup script for old malformed fetch-job records.
+- All border radius remains `4px`.

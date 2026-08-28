@@ -30,7 +30,16 @@ class ApiController extends Controller
             ], 422);
         }
 
-        $r = (new PostInspector())->inspect((int)$u['id'], $platform, $url);
+        $normalizedUrl = PlatformUrl::normalize($url, $platform);
+
+        if (!$normalizedUrl) {
+            $this->json([
+                'ok' => false,
+                'message' => 'The post URL is malformed. Paste one complete listing URL.'
+            ], 422);
+        }
+
+        $r = (new PostInspector())->inspect((int)$u['id'], $platform, $normalizedUrl);
         $token = Inspection::create($r);
 
         $this->json([
