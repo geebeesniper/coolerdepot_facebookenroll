@@ -589,3 +589,17 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - Responsive Post Grid uses auto-fill desktop layout, two columns on tablet/mobile, and one column on small phones.
 - No database migration is required.
 - All border radius remains `4px`.
+
+## v0.1.24 — Source editor, thumb decisions, and refined Post Grid
+
+- HTML Note mode is now a real source editor rather than a plain textarea.
+- Added line numbers, HTML syntax highlighting, synchronized scrolling, Tab indentation, and live line/column position.
+- Visual and HTML modes continue to edit the same sanitized HTML field.
+- Replaced plain Good/Bad radio rows with large thumbs-up / thumbs-down review controls.
+- Good selection turns green; Bad selection turns red; both show a selected check state.
+- Icons use inline SVG for consistent rendering on Windows, tablets, and phones.
+- Refined Post Grid cards with a review/edit icon in the upper-right.
+- Removed the redundant `Review` word from the bottom of Post cards because the entire card is already clickable.
+- Increased time hierarchy and simplified the card footer to platform + review state.
+- No database migration is required.
+- All border radius remains `4px`.

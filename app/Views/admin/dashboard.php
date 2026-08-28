@@ -416,7 +416,7 @@ $periodNames = [
                 </div>
             </div>
 
-            <fieldset class="review-decision">
+            <fieldset class="review-decision review-decision-modern">
                 <legend>Decision</legend>
 
                 <label class="review-decision-option good">
@@ -425,7 +425,18 @@ $periodNames = [
                         name="decision"
                         value="good"
                     >
-                    <span>Good</span>
+                    <span class="review-decision-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M8.2 10.1 11 4.3c.3-.7 1-1.2 1.8-1.2 1.2 0 2.1 1 2 2.2l-.4 3.2h4.3c1.4 0 2.4 1.3 2 2.6l-2.1 7.2c-.3.9-1.1 1.5-2 1.5H8.2V10.1ZM3 10h3.2v10H3V10Z"/>
+                        </svg>
+                    </span>
+                    <span class="review-decision-copy">
+                        <strong>Good</strong>
+                        <small>Pass review</small>
+                    </span>
+                    <span class="review-decision-check" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="m9.1 16.6-4.2-4.2 1.4-1.4 2.8 2.8 8.6-8.6 1.4 1.4-10 10Z"/></svg>
+                    </span>
                 </label>
 
                 <label class="review-decision-option bad">
@@ -434,7 +445,18 @@ $periodNames = [
                         name="decision"
                         value="bad"
                     >
-                    <span>Bad</span>
+                    <span class="review-decision-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <path d="m8.2 13.9 2.8 5.8c.3.7 1 1.2 1.8 1.2 1.2 0 2.1-1 2-2.2l-.4-3.2h4.3c1.4 0 2.4-1.3 2-2.6l-2.1-7.2c-.3-.9-1.1-1.5-2-1.5H8.2v9.7ZM3 4h3.2v10H3V4Z"/>
+                        </svg>
+                    </span>
+                    <span class="review-decision-copy">
+                        <strong>Bad</strong>
+                        <small>Needs attention</small>
+                    </span>
+                    <span class="review-decision-check" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="m9.1 16.6-4.2-4.2 1.4-1.4 2.8 2.8 8.6-8.6 1.4 1.4-10 10Z"/></svg>
+                    </span>
                 </label>
             </fieldset>
 

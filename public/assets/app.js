@@ -225,6 +225,53 @@ function normalizeEditorBlock(value){
         : 'p';
 }
 
+function escapeCodeHtml(value){
+    return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+function highlightHtmlSource(source){
+    let escaped = escapeCodeHtml(source);
+
+    escaped = escaped.replace(
+        /(&lt;!--[\s\S]*?--&gt;)/g,
+        '<span class="code-comment">$1</span>'
+    );
+
+    escaped = escaped.replace(
+        /(&lt;\/?)([a-zA-Z][\w:-]*)([\s\S]*?)(&gt;)/g,
+        function(_, open, tag, attrs, close){
+            const highlightedAttrs = attrs.replace(
+                /([\w:-]+)(\s*=\s*)(&quot;[^&]*?&quot;|"[^"]*"|'[^']*')/g,
+                '<span class="code-attr">$1</span>$2<span class="code-string">$3</span>'
+            );
+
+            return '<span class="code-punct">'+open+'</span>'
+                +'<span class="code-tag">'+tag+'</span>'
+                +highlightedAttrs
+                +'<span class="code-punct">'+close+'</span>';
+        }
+    );
+
+    return escaped;
+}
+
+function lineNumberText(source){
+    const count = Math.max(
+        1,
+        String(source || '').split('\n').length
+    );
+
+    return Array.from(
+        {length:count},
+        function(_, index){
+            return String(index + 1);
+        }
+    ).join('\n');
+}
+
 $('[data-html-note]').each(function(){
     const $root = $(this);
     const $editor = $root.find('[data-html-editor]');
@@ -233,29 +280,72 @@ $('[data-html-note]').each(function(){
     const $tabs = $root.find('[data-note-mode]');
     const $format = $root.find('[data-note-format]');
     const $status = $root.find('[data-note-status]');
+    const $cursorStatus = $root.find('[data-note-cursor]');
     const $linkbar = $root.find('[data-note-linkbar]');
     const $linkInput = $root.find('[data-note-link-input]');
     const $linkNewTab = $root.find('[data-note-link-newtab]');
+    const $codeEditor = $root.find('[data-code-editor]');
+    const $codeHighlight = $root.find('[data-code-highlight]');
+    const $codeGutter = $root.find('[data-code-gutter]');
 
     let mode = 'visual';
     let savedRange = null;
+
+    function renderSourceEditor(){
+        const value = String($source.val() || '');
+
+        $codeHighlight.html(
+            highlightHtmlSource(value) + '\n'
+        );
+        $codeGutter.text(
+            lineNumberText(value)
+        );
+
+        const sourceEl = $source.get(0);
+
+        if(sourceEl){
+            $codeHighlight.scrollTop(sourceEl.scrollTop);
+            $codeHighlight.scrollLeft(sourceEl.scrollLeft);
+            $codeGutter.scrollTop(sourceEl.scrollTop);
+        }
+    }
+
+    function updateCursorStatus(){
+        const el = $source.get(0);
+
+        if(!el || mode !== 'html'){
+            return;
+        }
+
+        const before = el.value.slice(0, el.selectionStart);
+        const lines = before.split('\n');
+        const line = lines.length;
+        const column = lines[lines.length - 1].length + 1;
+
+        $cursorStatus.text(
+            'Ln ' + line + ', Col ' + column
+        );
+    }
 
     function updateMode(nextMode){
         mode = nextMode === 'html' ? 'html' : 'visual';
 
         if(mode === 'html'){
             syncHtmlNote($root);
+            renderSourceEditor();
             $editor.addClass('hidden');
             $toolbar.addClass('hidden');
             $linkbar.addClass('hidden').attr('aria-hidden', 'true');
-            $source.removeClass('hidden');
+            $codeEditor.removeClass('hidden');
             $status.text('HTML source');
+            updateCursorStatus();
         }else{
             $editor.html($source.val());
-            $source.addClass('hidden');
+            $codeEditor.addClass('hidden');
             $editor.removeClass('hidden');
             $toolbar.removeClass('hidden');
             $status.text('Visual editor');
+            $cursorStatus.text('HTML supported');
         }
 
         $tabs.each(function(){
@@ -266,15 +356,13 @@ $('[data-html-note]').each(function(){
                 .attr('aria-selected', active ? 'true' : 'false');
         });
 
-        if(mode === 'visual'){
-            setTimeout(function(){
+        setTimeout(function(){
+            if(mode === 'visual'){
                 $editor.trigger('focus');
-            }, 0);
-        }else{
-            setTimeout(function(){
+            }else{
                 $source.trigger('focus');
-            }, 0);
-        }
+            }
+        }, 0);
     }
 
     function rememberSelection(){
@@ -294,7 +382,10 @@ $('[data-html-note]').each(function(){
 
         if(
             node === editorNode
-            || $.contains(editorNode, node.nodeType === 1 ? node : node.parentNode)
+            || $.contains(
+                editorNode,
+                node.nodeType === 1 ? node : node.parentNode
+            )
         ){
             savedRange = range.cloneRange();
         }
@@ -411,9 +502,7 @@ $('[data-html-note]').each(function(){
         runCommand(command, value);
     });
 
-    $toolbar.on('click', '[data-note-link]', function(){
-        openLinkbar();
-    });
+    $toolbar.on('click', '[data-note-link]', openLinkbar);
 
     $root.on('click', '[data-note-link-cancel]', function(){
         closeLinkbar();
@@ -429,7 +518,6 @@ $('[data-html-note]').each(function(){
         }
 
         $linkInput.removeClass('field-error');
-
         restoreSelection();
 
         const existingLink = findSelectedLink();
@@ -445,6 +533,7 @@ $('[data-html-note]').each(function(){
                 );
             }else{
                 existingLink.removeAttribute('target');
+                existingLink.removeAttribute('rel');
             }
         }else{
             document.execCommand('createLink', false, href);
@@ -490,7 +579,45 @@ $('[data-html-note]').each(function(){
     $source.on('input', function(){
         if(mode === 'html'){
             $status.text('HTML source · modified');
+            renderSourceEditor();
+            updateCursorStatus();
         }
+    });
+
+    $source.on('scroll', function(){
+        const el = this;
+
+        $codeHighlight.scrollTop(el.scrollTop);
+        $codeHighlight.scrollLeft(el.scrollLeft);
+        $codeGutter.scrollTop(el.scrollTop);
+    });
+
+    $source.on(
+        'click keyup select',
+        updateCursorStatus
+    );
+
+    $source.on('keydown', function(event){
+        if(event.key !== 'Tab'){
+            return;
+        }
+
+        event.preventDefault();
+
+        const el = this;
+        const start = el.selectionStart;
+        const end = el.selectionEnd;
+        const indent = '  ';
+        const value = el.value;
+
+        el.value = value.slice(0, start)
+            + indent
+            + value.slice(end);
+
+        el.selectionStart = el.selectionEnd =
+            start + indent.length;
+
+        $(el).trigger('input');
     });
 
     $root.closest('form').on('submit', function(){
@@ -503,6 +630,7 @@ $('[data-html-note]').each(function(){
 
     updateMode('visual');
 });
+
 
 
     // v0.1.13 Live Provider Jobs
@@ -1453,9 +1581,16 @@ $('[data-html-note]').each(function(){
                     +' aria-label="Review post '
                     +escapeHtml(post.sequence)
                     +'">'+
-                    '<div class="sales-post-tile-sequence">'
-                        +escapeHtml(post.sequence)
-                    +'</div>'+
+                    '<div class="sales-post-tile-top">'+
+                        '<div class="sales-post-tile-sequence">'
+                            +escapeHtml(post.sequence)
+                        +'</div>'+
+                        '<span class="sales-post-review-icon" aria-hidden="true">'+
+                            '<svg viewBox="0 0 24 24">'+
+                                '<path d="M4 17.3V20h2.7L17.8 8.9l-2.7-2.7L4 17.3Zm15.9-10.5c.3-.3.3-.8 0-1.1l-1.6-1.6a.8.8 0 0 0-1.1 0l-1.3 1.3 2.7 2.7 1.3-1.3Z"/>'+
+                            '</svg>'+
+                        '</span>'+
+                    '</div>'+
                     '<div class="sales-post-tile-main">'+
                         '<span class="sales-post-tile-time">'
                             +escapeHtml(time)
@@ -1465,14 +1600,13 @@ $('[data-html-note]').each(function(){
                         +'</span>'+
                     '</div>'+
                     '<div class="sales-post-tile-footer">'+
-                        '<span>'+escapeHtml(post.platform)+'</span>'+
+                        '<span class="sales-post-platform">'
+                            +escapeHtml(post.platform)
+                        +'</span>'+
                         '<span class="sales-post-tile-status '
                             +escapeHtml(status)
                             +'">'
                             +escapeHtml(statusText)
-                        +'</span>'+
-                        '<span class="sales-post-tile-action">'
-                            +'Review'
                         +'</span>'+
                     '</div>'+
                 '</article>'
