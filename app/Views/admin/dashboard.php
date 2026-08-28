@@ -561,8 +561,8 @@ $periodNames = [
             <section class="review-comment-thread">
                 <div class="review-comment-thread-head">
                     <div>
-                        <span class="review-comment-kicker">Comment History</span>
-                        <strong id="dashboardCommentCount">0 notes</strong>
+                        <span class="review-comment-kicker">History</span>
+                        <strong id="dashboardCommentCount">0 activities</strong>
                     </div>
                 </div>
 
@@ -575,7 +575,7 @@ $periodNames = [
                     class="review-comment-empty"
                     id="dashboardCommentEmpty"
                 >
-                    No notes yet.
+                    No review activity yet.
                 </div>
             </section>
 

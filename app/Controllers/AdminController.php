@@ -187,6 +187,11 @@ class AdminController extends Controller{
                 'sequence'=>$sequence,
                 'id'=>(int)$post['id'],
                 'platform'=>ucfirst((string)$post['platform']),
+                'title'=>(string)$post['title'],
+                'description'=>(string)($post['description']??''),
+                'thumbnail_url'=>!empty($post['fetched_image_url'])
+                    ? (string)$post['fetched_image_url']
+                    : null,
                 'published_at'=>(string)$post['published_at'],
                 'published_date'=>(string)$post['published_date'],
                 'status'=>$status,
@@ -238,6 +243,7 @@ class AdminController extends Controller{
         $review=$s->fetch()?:null;
 
         $comments=$this->postReviewComments($postId);
+        $reviewHistory=$this->postReviewHistory($postId);
         $attachments=[];
 
         if($review){
@@ -278,23 +284,24 @@ class AdminController extends Controller{
                 'canonical_url'=>(string)$post['canonical_url'],
             ],
             'review'=>[
-                'decision'=>$review
-                    && in_array(
-                        (string)$review['decision'],
-                        ['good','bad'],
-                        true
-                    )
-                    ? (string)$review['decision']
+                'decision'=>in_array(
+                    (string)($post['admin_review_status']??''),
+                    ['good','bad'],
+                    true
+                )
+                    ? (string)$post['admin_review_status']
                     : (
-                        in_array(
-                            (string)($post['admin_review_status']??''),
+                        $review
+                        && in_array(
+                            (string)$review['decision'],
                             ['good','bad'],
                             true
                         )
-                            ? (string)$post['admin_review_status']
+                            ? (string)$review['decision']
                             : null
                     ),
             ],
+            'review_history'=>$reviewHistory,
             'comments'=>$comments,
             'content'=>[
                 'provider'=>'Saved post',
@@ -1022,7 +1029,9 @@ public function savePostReview():void{
         $s=$pdo->prepare(
             "SELECT id
              FROM cdsp_post_reviews
-             WHERE post_id=?"
+             WHERE post_id=?
+             ORDER BY updated_at DESC,id DESC
+             LIMIT 1"
         );
         $s->execute([$pid]);
         $rid=(int)$s->fetchColumn();
@@ -1032,6 +1041,22 @@ public function savePostReview():void{
                 'Review row could not be resolved after saving.'
             );
         }
+
+        $history=$pdo->prepare(
+            "INSERT INTO cdsp_post_review_history(
+                post_id,
+                admin_user_id,
+                decision,
+                created_at
+             )
+             VALUES(?,?,?,NOW())"
+        );
+
+        $history->execute([
+            $pid,
+            (int)$admin['id'],
+            $decision,
+        ]);
 
         $pdo->commit();
     }catch(\Throwable $e){
@@ -1155,6 +1180,40 @@ public function savePostReview():void{
         $value=trim($value);if($value==='')return 0;$unit=strtolower(substr($value,-1));$number=(float)$value;
         return match($unit){'g'=>(int)round($number*1024*1024*1024),'m'=>(int)round($number*1024*1024),'k'=>(int)round($number*1024),default=>(int)$number};
     }
+
+private function postReviewHistory(int $postId):array{
+    $s=Database::connection()->prepare(
+        "SELECT
+            h.id,
+            h.post_id,
+            h.admin_user_id,
+            h.decision,
+            h.created_at,
+            u.display_name AS author_name
+         FROM cdsp_post_review_history h
+         JOIN cdsp_users u
+           ON u.id=h.admin_user_id
+         WHERE h.post_id=?
+         ORDER BY h.created_at ASC,h.id ASC"
+    );
+
+    $s->execute([$postId]);
+
+    $rows=[];
+
+    foreach($s->fetchAll() as $row){
+        $rows[]=[
+            'id'=>(int)$row['id'],
+            'post_id'=>(int)$row['post_id'],
+            'author_id'=>(int)$row['admin_user_id'],
+            'author_name'=>(string)$row['author_name'],
+            'decision'=>(string)$row['decision'],
+            'created_at'=>(string)$row['created_at'],
+        ];
+    }
+
+    return $rows;
+}
 
 private function postReviewComments(int $postId):array{
     $s=Database::connection()->prepare(

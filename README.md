@@ -725,3 +725,18 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - Review popup layout is now header + scrollable middle body + bottom action bar. Cancel / Save is flush against the bottom edge and does not float above unused padding.
 - No database migration is required.
 - All border radius remains `4px`.
+
+## v0.1.34 — Marketplace cards and persistent Review History
+
+- Expanded Sales Post cards are redesigned around Marketplace content rather than a large timestamp.
+- Each card now shows the first persisted Marketplace thumbnail, Title, Description, compact published date/time, platform identity, sequence, and review status.
+- If no thumbnail has been fetched yet, the card displays a clean platform placeholder without triggering another paid provider request.
+- Added immutable database table `cdsp_post_review_history`.
+- Every successful `Save Review` inserts a separate Good/Bad review-history event while the existing `cdsp_post_reviews` row remains the current-state record.
+- Migration `011_post_review_history` backfills one historical event from every existing saved Post Review, so already-reviewed posts immediately receive visible history.
+- Reopening Review now uses `cdsp_sales_posts.admin_review_status` as the canonical current Good/Bad state and falls back to `cdsp_post_reviews` only for older data.
+- The former Comment History panel is now `History` and combines Review events with editable/deletable notes in chronological order.
+- Review events are immutable audit records; comment notes retain Edit/Delete behavior.
+- No external API request is performed merely to render the card thumbnail.
+- Requires migration `011_post_review_history`.
+- All border radius remains `4px`.

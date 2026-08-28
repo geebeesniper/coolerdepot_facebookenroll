@@ -1061,6 +1061,7 @@ $('[data-html-note]').each(function(){
     const $commentFileSelection = $('#dashboardCommentFileSelection');
     let editingCommentId = 0;
     let currentComments = [];
+    let currentReviewHistory = [];
     let deleteCommentId = 0;
     let deleteAnchorButton = null;
     const $deletePopover = $('#commentDeletePopover');
@@ -1391,98 +1392,175 @@ function syncExpandedSalesCardFromTiles(){
         }
     }
 
-    function renderPostGrid(data){
-        const posts = Array.isArray(data.posts) ? data.posts : [];
+function postDateTimeLabel(value){
+    const raw=String(value||'').trim();
+    const match=raw.match(
+        /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/
+    );
 
-        $expandedTitle.text(
-            data.sales.name
-            + ' · '
-            + data.count
-            + ' post'
-            + (data.count === 1 ? '' : 's')
-        );
-
-        $expandedSubtitle.text(
-            data.period_label
-            + ' · #'
-            + data.sales.sales_id
-            + ' · chronological order'
-        );
-
-        if(!posts.length){
-            $expandedList.html(
-                '<div class="sales-expanded-empty">'+
-                    'No verified posts in this period.'+
-                '</div>'
-            );
-            return;
-        }
-
-        const html = posts.map(function(post){
-            const status = String(post.status || '').toLowerCase();
-            const rowClass =
-                status === 'good'
-                    ? ' review-good'
-                    : (
-                        status === 'bad'
-                            ? ' review-bad'
-                            : ''
-                    );
-
-            const statusText =
-                status === 'good'
-                    ? 'Good'
-                    : (
-                        status === 'bad'
-                            ? 'Issue'
-                            : 'Unreviewed'
-                    );
-
-            const raw = String(post.published_at || '');
-            const parts = raw.split(' ');
-            const time = parts.length > 1 ? parts[1] : raw;
-
-            return (
-                '<article class="sales-post-tile'
-                    +rowClass
-                    +'" data-post-id="'
-                    +escapeHtml(post.id)
-                    +'" data-review-status="'
-                    +escapeHtml(status)
-                    +'" role="button" tabindex="0"'
-                    +' aria-label="Review post '
-                    +escapeHtml(post.sequence)
-                    +'">'+
-                    '<div class="sales-post-tile-top">'+
-                        '<div class="sales-post-tile-sequence">'
-                            +escapeHtml(post.sequence)
-                        +'</div>'+
-                        platformLogoHtml(post.platform)+
-                    '</div>'+
-                    '<div class="sales-post-tile-main">'+
-                        '<span class="sales-post-tile-time">'
-                            +escapeHtml(time)
-                        +'</span>'+
-                        '<span class="sales-post-tile-date">'
-                            +escapeHtml(post.published_date)
-                        +'</span>'+
-                    '</div>'+
-                    '<div class="sales-post-tile-footer">'+
-                        '<span class="sales-post-platform">'
-                            +escapeHtml(post.platform)
-                        +'</span>'+
-                        '<span class="sales-post-tile-status '
-                            +escapeHtml(status)
-                            +'">'
-                            +escapeHtml(statusText)
-                        +'</span>'+
-                    '</div>'+
-                '</article>'
-            );
-        }).join('');
-
-        $expandedList.html(html);
+    if(!match){
+        return raw;
     }
+
+    const monthNames=[
+        'Jan','Feb','Mar','Apr','May','Jun',
+        'Jul','Aug','Sep','Oct','Nov','Dec'
+    ];
+
+    let hour=parseInt(match[4],10);
+    const minute=match[5];
+    const suffix=hour>=12?'PM':'AM';
+
+    hour=hour%12;
+
+    if(hour===0){
+        hour=12;
+    }
+
+    return monthNames[parseInt(match[2],10)-1]
+        +' '
+        +parseInt(match[3],10)
+        +' · '
+        +hour
+        +':'
+        +minute
+        +' '
+        +suffix;
+}
+
+function postThumbnailHtml(post){
+    const url=String(post.thumbnail_url||'').trim();
+
+    if(url){
+        return (
+            '<img class="sales-post-card-image"'
+            +' src="'+escapeHtml(url)+'"'
+            +' loading="lazy"'
+            +' alt="">'
+        );
+    }
+
+    return (
+        '<div class="sales-post-card-placeholder">'
+            +platformLogoHtml(post.platform)
+            +'<span>'+escapeHtml(post.platform)+'</span>'
+        +'</div>'
+    );
+}
+
+function renderPostGrid(data){
+    const posts=Array.isArray(data.posts)
+        ?data.posts
+        :[];
+
+    $expandedTitle.text(
+        data.sales.name
+        +' · '
+        +data.count
+        +' post'
+        +(data.count===1?'':'s')
+    );
+
+    $expandedSubtitle.text(
+        data.period_label
+        +' · #'
+        +data.sales.sales_id
+        +' · chronological order'
+    );
+
+    if(!posts.length){
+        $expandedList.html(
+            '<div class="sales-expanded-empty">'
+            +'No verified posts in this period.'
+            +'</div>'
+        );
+        return;
+    }
+
+    const html=posts.map(function(post){
+        const status=String(
+            post.status||''
+        ).toLowerCase();
+
+        const rowClass=
+            status==='good'
+                ?' review-good'
+                :(
+                    status==='bad'
+                        ?' review-bad'
+                        :''
+                );
+
+        const statusText=
+            status==='good'
+                ?'Good'
+                :(
+                    status==='bad'
+                        ?'Issue'
+                        :'Unreviewed'
+                );
+
+        const title=String(post.title||'').trim()
+            ||post.platform+' Marketplace post';
+
+        const description=String(
+            post.description||''
+        ).trim();
+
+        return (
+            '<article class="sales-post-tile'
+            +rowClass
+            +'" data-post-id="'
+            +escapeHtml(post.id)
+            +'" data-review-status="'
+            +escapeHtml(status)
+            +'" role="button" tabindex="0"'
+            +' aria-label="Review '
+            +escapeHtml(title)
+            +'">'+
+
+                '<div class="sales-post-card-media">'
+                    +postThumbnailHtml(post)+
+                    '<span class="sales-post-card-sequence">'
+                        +escapeHtml(post.sequence)
+                    +'</span>'+
+                    '<span class="sales-post-card-platform">'
+                        +platformLogoHtml(post.platform)
+                    +'</span>'+
+                '</div>'+
+
+                '<div class="sales-post-card-body">'+
+                    '<h3 title="'+escapeHtml(title)+'">'
+                        +escapeHtml(title)
+                    +'</h3>'+
+                    '<p>'
+                        +escapeHtml(
+                            description
+                            ||'No description available.'
+                        )
+                    +'</p>'+
+                '</div>'+
+
+                '<div class="sales-post-card-footer">'+
+                    '<span class="sales-post-card-time">'
+                        +escapeHtml(
+                            postDateTimeLabel(
+                                post.published_at
+                            )
+                        )
+                    +'</span>'+
+                    '<span class="sales-post-tile-status '
+                        +escapeHtml(status)
+                        +'">'
+                        +escapeHtml(statusText)
+                    +'</span>'+
+                '</div>'+
+            '</article>'
+        );
+    }).join('');
+
+    $expandedList.html(html);
+}
 
     function openExpandedPosts($card){
         const salesId = parseInt(
@@ -1947,18 +2025,56 @@ function updateCommentFileSelection(){
     );
 }
 
-function renderComments(items){
+function renderComments(items,reviewItems){
     currentComments=Array.isArray(items)
         ?items.slice()
         :[];
 
+    if(Array.isArray(reviewItems)){
+        currentReviewHistory=reviewItems.slice();
+    }
+
+    const activities=[];
+
+    currentReviewHistory.forEach(function(review){
+        activities.push({
+            activity_type:'review',
+            id:review.id,
+            author_name:review.author_name,
+            created_at:review.created_at,
+            decision:review.decision
+        });
+    });
+
+    currentComments.forEach(function(comment){
+        activities.push({
+            activity_type:'comment',
+            id:comment.id,
+            author_name:comment.author_name,
+            created_at:comment.created_at,
+            comment:comment
+        });
+    });
+
+    activities.sort(function(a,b){
+        const av=String(a.created_at||'');
+        const bv=String(b.created_at||'');
+
+        if(av===bv){
+            return String(a.activity_type)
+                .localeCompare(String(b.activity_type));
+        }
+
+        return av.localeCompare(bv);
+    });
+
     $commentCount.text(
-        currentComments.length
-        +' note'
-        +(currentComments.length===1?'':'s')
+        activities.length
+        +' activit'
+        +(activities.length===1?'y':'ies')
     );
 
-    if(!currentComments.length){
+    if(!activities.length){
         $commentList.empty();
         $commentEmpty.removeClass('hidden');
         return;
@@ -1966,7 +2082,61 @@ function renderComments(items){
 
     $commentEmpty.addClass('hidden');
 
-    const html=currentComments.map(function(comment){
+    const html=activities.map(function(activity){
+        const initial=escapeHtml(
+            String(activity.author_name||'A')
+                .trim()
+                .charAt(0)
+                .toUpperCase()
+        );
+
+        if(activity.activity_type==='review'){
+            const decision=String(
+                activity.decision||''
+            ).toLowerCase();
+            const good=decision==='good';
+
+            return (
+                '<article class="review-history-event '
+                +(good?'good':'bad')
+                +'">'+
+                    '<div class="review-comment-head">'+
+                        '<div class="review-comment-author">'+
+                            '<span class="review-comment-avatar">'
+                                +initial
+                            +'</span>'+
+                            '<div>'+
+                                '<strong>'
+                                    +escapeHtml(
+                                        activity.author_name
+                                        ||'Administrator'
+                                    )
+                                +'</strong>'+
+                                '<span>'
+                                    +escapeHtml(
+                                        commentDateLabel(
+                                            activity.created_at
+                                        )
+                                    )
+                                +'</span>'+
+                            '</div>'+
+                        '</div>'+
+                        '<span class="review-history-decision '
+                            +(good?'good':'bad')
+                            +'">'
+                            +(good?'Good':'Bad')
+                        +'</span>'+
+                    '</div>'+
+                    '<div class="review-history-copy">'
+                        +(good
+                            ?'Marked this post as Good.'
+                            :'Marked this post as Bad / Needs attention.')
+                    +'</div>'+
+                '</article>'
+            );
+        }
+
+        const comment=activity.comment;
         const edited=comment.edited
             ?'<span class="review-comment-edited">Edited</span>'
             :'';
@@ -1978,35 +2148,39 @@ function renderComments(items){
                 '<div class="review-comment-head">'+
                     '<div class="review-comment-author">'+
                         '<span class="review-comment-avatar">'
-                            +escapeHtml(
-                                String(comment.author_name||'A')
-                                    .trim()
-                                    .charAt(0)
-                                    .toUpperCase()
-                            )
+                            +initial
                         +'</span>'+
                         '<div>'+
                             '<strong>'
-                                +escapeHtml(comment.author_name||'Administrator')
+                                +escapeHtml(
+                                    comment.author_name
+                                    ||'Administrator'
+                                )
                             +'</strong>'+
                             '<span>'
                                 +escapeHtml(
-                                    commentDateLabel(comment.created_at)
+                                    commentDateLabel(
+                                        comment.created_at
+                                    )
                                 )
                                 +edited+
                             '</span>'+
                         '</div>'+
                     '</div>'+
                     '<div class="review-comment-actions">'+
-                        '<button type="button" class="review-comment-icon"'
-                        +' data-comment-edit title="Edit note"'
+                        '<button type="button"'
+                        +' class="review-comment-icon"'
+                        +' data-comment-edit'
+                        +' title="Edit note"'
                         +' aria-label="Edit note">'+
                             '<svg viewBox="0 0 24 24" aria-hidden="true">'
                             +'<path d="M4 17.3V20h2.7L17.8 8.9l-2.7-2.7L4 17.3Zm15.9-10.5c.3-.3.3-.8 0-1.1l-1.6-1.6a.8.8 0 0 0-1.1 0l-1.3 1.3 2.7 2.7 1.3-1.3Z"/>'
                             +'</svg>'+
                         '</button>'+
-                        '<button type="button" class="review-comment-icon danger"'
-                        +' data-comment-delete title="Delete note"'
+                        '<button type="button"'
+                        +' class="review-comment-icon danger"'
+                        +' data-comment-delete'
+                        +' title="Delete note"'
                         +' aria-label="Delete note">'+
                             '<svg viewBox="0 0 24 24" aria-hidden="true">'
                             +'<path d="M8 4h8l1 2h4v2H3V6h4l1-2Zm1 6h2v7H9v-7Zm4 0h2v7h-2v-7ZM6 9h12l-1 11H7L6 9Z"/>'
@@ -2017,7 +2191,9 @@ function renderComments(items){
                 '<div class="review-comment-body">'
                     +(comment.body_html||'')
                 +'</div>'+
-                renderCommentAttachments(comment.attachments||[])+
+                renderCommentAttachments(
+                    comment.attachments||[]
+                )+
             '</article>'
         );
     }).join('');
@@ -2160,8 +2336,9 @@ function syncDecisionVisualState(decision){
         window.cdspReviewListingPhotos=[];
         editingCommentId=0;
         currentComments=[];
+        currentReviewHistory=[];
         closeCommentDeletePopover();
-        renderComments([]);
+        renderComments([],[]);
         clearCommentComposer();
         renderAttachments([]);
         renderContentPreview({
@@ -2273,7 +2450,10 @@ function syncDecisionVisualState(decision){
             syncDecisionVisualState(savedDecision);
 
             clearCommentComposer();
-            renderComments(data.comments || []);
+            renderComments(
+                data.comments || [],
+                data.review_history || []
+            );
             renderContentPreview(data.content);
             renderAttachments(data.attachments);
         })
@@ -2544,7 +2724,7 @@ $commentSave.on('click',function(){
         }else{
             currentComments.push(data.comment);
         }
-        renderComments(currentComments);
+        renderComments(currentComments,currentReviewHistory);
         clearCommentComposer();
         if(data.upload_warning){
             $commentMessage.addClass('warning').text('Note saved. Image warning: '+data.upload_warning);
@@ -2607,7 +2787,7 @@ function deleteAttachment(attachmentId,$source){
                 }
                 return comment;
             });
-            renderComments(currentComments);
+            renderComments(currentComments,currentReviewHistory);
         }else{
             $modalAttachments.find('[data-attachment-id="'+attachmentId+'"]').remove();
             if(!$modalAttachments.find('[data-review-attachment-list]').children().length){
@@ -2688,7 +2868,7 @@ $deleteConfirm.on('click',function(){
         }
 
         closeCommentDeletePopover();
-        renderComments(currentComments);
+        renderComments(currentComments,currentReviewHistory);
         $commentMessage.removeClass('error warning').text('Note deleted.');
 
         setTimeout(function(){
@@ -2798,6 +2978,20 @@ $modalForm.on('submit', function(event){
 
             syncDecisionVisualState(status);
             syncExpandedSalesCardFromTiles();
+
+            currentReviewHistory.push({
+                id:'local-'+Date.now(),
+                author_name:'Administrator',
+                decision:status,
+                created_at:new Date()
+                    .toISOString()
+                    .slice(0,19)
+                    .replace('T',' ')
+            });
+            renderComments(
+                currentComments,
+                currentReviewHistory
+            );
 
             if(data.upload_warning){
                 $modalMessage
