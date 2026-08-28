@@ -14,7 +14,7 @@ class AdminController extends Controller{
     }
     public function savePostReview():void{
         $admin=Auth::requireRole('admin');Csrf::verify($_POST['_csrf']??null);$pid=(int)($_POST['post_id']??0);$decision=(string)($_POST['decision']??'');$rating=max(1,min(5,(int)($_POST['rating']??3)));$note=trim((string)($_POST['note']??''));
-        if(!in_array($decision,['approved','rejected'],true)){$_SESSION['flash_error']='Choose Approve or Reject.';$this->redirect('/admin/post?id='.$pid);}
+        if(!in_array($decision,['good','bad'],true)){$_SESSION['flash_error']='Choose Good or Bad.';$this->redirect('/admin/post?id='.$pid);}
         $pdo=Database::connection();$s=$pdo->prepare("INSERT INTO cdsp_post_reviews(post_id,admin_user_id,decision,rating,note,reviewed_at,created_at,updated_at) VALUES(?,?,?,?,?,NOW(),NOW(),NOW())
         ON DUPLICATE KEY UPDATE admin_user_id=VALUES(admin_user_id),decision=VALUES(decision),rating=VALUES(rating),note=VALUES(note),reviewed_at=NOW(),updated_at=NOW()");
         $s->execute([$pid,(int)$admin['id'],$decision,$rating,$note]);$s=$pdo->prepare("UPDATE cdsp_sales_posts SET admin_review_status=?,updated_at=NOW() WHERE id=?");$s->execute([$decision,$pid]);
@@ -38,7 +38,7 @@ class AdminController extends Controller{
         $admin=Auth::requireRole('admin');$period=$_GET['period']??'week';$sid=(int)($_GET['sales_id']??0);$sales=User::allSales();
         if($period==='month'){$start=$_GET['start']??date('Y-m-01');$end=date('Y-m-t',strtotime($start));}else{$period='week';$start=$_GET['start']??date('Y-m-d',strtotime('monday this week'));$end=date('Y-m-d',strtotime($start.' +6 days'));}
         $params=[$start.' 00:00:00',$end.' 23:59:59'];$filter='';if($sid>0){$filter=' AND p.sales_user_id=?';$params[]=$sid;}
-        $sql="SELECT u.id sales_user_id,u.display_name,COUNT(p.id) total_posts,SUM(p.platform='facebook') facebook_posts,SUM(p.platform='offerup') offerup_posts,SUM(p.platform='craigslist') craigslist_posts,SUM(p.admin_review_status='approved') approved_posts,SUM(p.admin_review_status='rejected') rejected_posts,SUM(p.admin_review_status='pending') pending_posts
+        $sql="SELECT u.id sales_user_id,u.display_name,COUNT(p.id) total_posts,SUM(p.platform='facebook') facebook_posts,SUM(p.platform='offerup') offerup_posts,SUM(p.platform='craigslist') craigslist_posts,SUM(p.admin_review_status='good') good_posts,SUM(p.admin_review_status='bad') bad_posts
         FROM cdsp_users u LEFT JOIN cdsp_sales_posts p ON p.sales_user_id=u.id AND p.created_at BETWEEN ? AND ? AND p.deleted_at IS NULL WHERE u.role='sales' AND u.active=1 {$filter} GROUP BY u.id,u.display_name ORDER BY total_posts DESC,u.display_name";
         $s=Database::connection()->prepare($sql);$s->execute($params);$rows=$s->fetchAll();$salesUserId=$sid;$this->render('admin/reports',compact('admin','period','start','end','salesUserId','sales','rows'));
     }

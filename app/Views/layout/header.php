@@ -6,7 +6,7 @@ unset($_SESSION['flash_success'],$_SESSION['flash_error']);
 ?>
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title><?=Util::e($config['app']['name'])?></title>
-<link rel="stylesheet" href="<?=Util::e($base)?>/public/assets/app.css">
+<link rel="stylesheet" href="<?=Util::e($base)?>/public/assets/app.css?v=<?=rawurlencode($config['app']['version'])?>">
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script></head><body>
 <header class="topbar"><a class="brand" href="<?=Util::e($base)?>/">CoolerDepot <span>Sales Posts</span></a>
 <?php if($u):?><div class="nav"><b><?=Util::e($u['display_name']?:$u['username'])?></b>

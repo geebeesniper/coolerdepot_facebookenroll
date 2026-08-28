@@ -1,144 +1,219 @@
--- CoolerDepot Sales Post Tracker demo data
--- DEMO CREDENTIALS
--- Admin: admin / AdminDemo!2026
--- Sales: 100006, 100010, 100013 / SalesDemo!2026
--- Delete these cdsp_users/posts before production use.
+-- CoolerDepot Sales Post Tracker demo data v0.1.1
+-- Uses the 10 real Facebook Marketplace URLs supplied for testing.
+-- Titles/descriptions below are demo labels only; live verification must fetch real metadata.
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS=0;
 
-DELETE FROM cdsp_review_attachments WHERE entity_type IN ('post_review','daily_review','period_review');
-DELETE FROM cdsp_period_sales_reviews;
-DELETE FROM cdsp_daily_sales_reviews;
-DELETE FROM cdsp_post_reviews;
-DELETE FROM cdsp_deletion_requests;
-DELETE FROM cdsp_sales_posts WHERE external_post_id LIKE 'demo-%' OR external_post_id LIKE '90000000000%';
-DELETE FROM cdsp_users WHERE username IN ('admin','100006','100010','100013');
+-- Remove legacy fake demo post/review rows.
+DELETE pr FROM cdsp_post_reviews pr JOIN cdsp_sales_posts p ON p.id=pr.post_id WHERE p.external_post_id IN ('900000000001','900000000002','demo-900000000003','900000000004','900000000005','demo-900000000006');
+DELETE FROM cdsp_sales_posts WHERE external_post_id IN ('900000000001','900000000002','demo-900000000003','900000000004','900000000005','demo-900000000006');
 
+-- Ensure demo Sales account David exists. Existing imported/user data is preserved.
 INSERT INTO cdsp_users
-(sales_id, username, password_hash, display_name, role, active, created_at, updated_at)
+(sales_id, external_user_id, username, password_hash, display_name, role, active, auth_source, created_at, updated_at)
 VALUES
-(NULL, 'admin', '$2y$12$poKqRX2Z7gU084mWHTI/VOzTcZSSaOZOPuSQkoR4wKRILXi5UQlnS', 'Demo Administrator', 'admin', 1, NOW(), NOW()),
-(100006, '100006', '$2y$12$rS2uwR1KbHl/.PWi2M9yN.dRMRRpXl4HG1nx5cwn1/is8rMmvbBzm', 'David', 'sales', 1, NOW(), NOW()),
-(100010, '100010', '$2y$12$rS2uwR1KbHl/.PWi2M9yN.dRMRRpXl4HG1nx5cwn1/is8rMmvbBzm', 'May He (AMY)', 'sales', 1, NOW(), NOW()),
-(100013, '100013', '$2y$12$rS2uwR1KbHl/.PWi2M9yN.dRMRRpXl4HG1nx5cwn1/is8rMmvbBzm', 'Andrew Ramirez', 'sales', 1, NOW(), NOW());
+(100006, NULL, '100006', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.', 'David', 'sales', 1, 'local', NOW(), NOW())
+ON DUPLICATE KEY UPDATE display_name='David', role='sales', active=1, updated_at=NOW();
 
 INSERT INTO cdsp_sales_posts
 (sales_user_id, platform, submitted_url, resolved_url, canonical_url, canonical_url_hash,
  external_post_id, title, normalized_title_hash, description, description_hash,
  published_at, published_date, fetched_at, verification_status, admin_review_status,
  created_at, updated_at)
-SELECT id, 'facebook', 'https://www.facebook.com/marketplace/item/900000000001', 'https://www.facebook.com/marketplace/item/900000000001', 'https://www.facebook.com/marketplace/item/900000000001', '32078bbd609938ad09ad482e3476abeae54006f15e0e7743407a54cea0108fca',
-       '900000000001', 'Commercial Refrigerator Three Door', '14fd412b1ae7f3eb6ff10cffe4573f5996ce101c0eae008e8b310cd0e15ebb6d',
-       'Commercial refrigerator in good working condition ready for pickup.', '20153c150c64dc16c91170e179ebb184ec7fc73314f2e38de690adb62f22455a',
-       DATE_SUB(NOW(), INTERVAL 17 MINUTE), CURDATE(),
-       DATE_SUB(NOW(), INTERVAL 16 MINUTE),
-       'verified', 'pending', DATE_SUB(NOW(), INTERVAL 16 MINUTE), NOW()
-FROM cdsp_users WHERE sales_id=100006 LIMIT 1;
+SELECT id, 'facebook', 'https://www.facebook.com/marketplace/item/1612547780491408', 'https://www.facebook.com/marketplace/item/1612547780491408', 'https://www.facebook.com/marketplace/item/1612547780491408', '4a2bb1179e2b11d1087b31f3d95a1a8b491dbd37235003270abc95c0d51deadc',
+       '1612547780491408', 'Facebook Marketplace Sample #1', 'f4a95c7bd1220134fefecd4ebe5de893eddd98e92a311dd929850f89af643d7c',
+       'Real Facebook Marketplace URL supplied for Sales Post Tracker testing.', 'b94fef7e15d17d443ab70094d9326c4a7cd08afb67431e6fa14a38d0c3584261',
+       DATE_SUB(DATE_SUB(NOW(), INTERVAL 0 DAY), INTERVAL 28 MINUTE),
+       DATE(DATE_SUB(NOW(), INTERVAL 0 DAY)),
+       DATE_SUB(NOW(), INTERVAL 28 MINUTE),
+       'verified', 'good', NOW(), NOW()
+FROM cdsp_users
+WHERE sales_id=100006
+  AND NOT EXISTS (
+      SELECT 1 FROM cdsp_sales_posts x
+      WHERE x.platform='facebook' AND x.external_post_id='1612547780491408'
+  )
+LIMIT 1;
 
 INSERT INTO cdsp_sales_posts
 (sales_user_id, platform, submitted_url, resolved_url, canonical_url, canonical_url_hash,
  external_post_id, title, normalized_title_hash, description, description_hash,
  published_at, published_date, fetched_at, verification_status, admin_review_status,
  created_at, updated_at)
-SELECT id, 'craigslist', 'https://orangecounty.craigslist.org/app/d/demo-refrigerator/900000000002.html', 'https://orangecounty.craigslist.org/app/d/demo-refrigerator/900000000002.html', 'https://orangecounty.craigslist.org/app/d/demo-refrigerator/900000000002.html', 'fe6bdfacc4545799470c5837538f0bed1853050a6cd3460de745a036f360a9e0',
-       '900000000002', 'Restaurant Refrigerator Stainless Steel', '18ed4225127dd2eb7934c22fb0a818021122e490f700c9b7474f4b1bef70a3c0',
-       'Stainless steel restaurant refrigerator available today.', '9994f4fceb5c6dbc8c668b2d40f07014b62912ce247e6e8df870a276a9d05861',
-       DATE_SUB(NOW(), INTERVAL 24 MINUTE), CURDATE(),
-       DATE_SUB(NOW(), INTERVAL 23 MINUTE),
-       'verified', 'pending', DATE_SUB(NOW(), INTERVAL 23 MINUTE), NOW()
-FROM cdsp_users WHERE sales_id=100006 LIMIT 1;
+SELECT id, 'facebook', 'https://www.facebook.com/marketplace/item/1578098323791707', 'https://www.facebook.com/marketplace/item/1578098323791707', 'https://www.facebook.com/marketplace/item/1578098323791707', '2ce11ea7227dc4c9c61f0477ce1a358c75e14c11d79e0b469839905810cdc1ea',
+       '1578098323791707', 'Facebook Marketplace Sample #2', '7869351acd82b9d8b17bb9c93b60cc4317cc53c9f4d1b134e30092dfca3bc51a',
+       'Real Facebook Marketplace URL supplied for Sales Post Tracker testing.', 'b94fef7e15d17d443ab70094d9326c4a7cd08afb67431e6fa14a38d0c3584261',
+       DATE_SUB(DATE_SUB(NOW(), INTERVAL 0 DAY), INTERVAL 36 MINUTE),
+       DATE(DATE_SUB(NOW(), INTERVAL 0 DAY)),
+       DATE_SUB(NOW(), INTERVAL 36 MINUTE),
+       'verified', 'good', NOW(), NOW()
+FROM cdsp_users
+WHERE sales_id=100006
+  AND NOT EXISTS (
+      SELECT 1 FROM cdsp_sales_posts x
+      WHERE x.platform='facebook' AND x.external_post_id='1578098323791707'
+  )
+LIMIT 1;
 
 INSERT INTO cdsp_sales_posts
 (sales_user_id, platform, submitted_url, resolved_url, canonical_url, canonical_url_hash,
  external_post_id, title, normalized_title_hash, description, description_hash,
  published_at, published_date, fetched_at, verification_status, admin_review_status,
  created_at, updated_at)
-SELECT id, 'offerup', 'https://offerup.com/item/detail/demo-900000000003', 'https://offerup.com/item/detail/demo-900000000003', 'https://offerup.com/item/detail/demo-900000000003', 'c8ecba39bde36ec1109c5263667c9a2b641c4943a2b5eb04634b8212c28d9e60',
-       'demo-900000000003', 'Two Door Commercial Freezer', 'cbf06aac9134ab36b835593bafa6a1eab0d1654a1b3c692b4efa8eecc48bf79f',
-       'Two door commercial freezer tested and ready.', '8be5abf6ef8c29a8b435fed4909ecebd95a43f0dd332aa6ca0a567e96a8c365a',
-       DATE_SUB(NOW(), INTERVAL 31 MINUTE), CURDATE(),
-       DATE_SUB(NOW(), INTERVAL 30 MINUTE),
-       'verified', 'pending', DATE_SUB(NOW(), INTERVAL 30 MINUTE), NOW()
-FROM cdsp_users WHERE sales_id=100010 LIMIT 1;
-
-INSERT INTO cdsp_sales_posts
-(sales_user_id, platform, submitted_url, resolved_url, canonical_url, canonical_url_hash,
- external_post_id, title, normalized_title_hash, description, description_hash,
- published_at, published_date, fetched_at, verification_status, admin_review_status,
- created_at, updated_at)
-SELECT id, 'facebook', 'https://www.facebook.com/marketplace/item/900000000004', 'https://www.facebook.com/marketplace/item/900000000004', 'https://www.facebook.com/marketplace/item/900000000004', '85e02896d565fd3bf5529503ab702e791fc83adec524677be3f680009f0bbecd',
-       '900000000004', 'Glass Door Merchandiser Cooler', 'e332a1716e6ef88e757e3421bcb9d91dc746c94dfe2759fe2cecb430a00b7ded',
-       'Glass door merchandiser cooler clean and working.', 'a9b0dcffd8d3338e7c91d01539a7d71d7a890df6158b3dd22f9cd34d8888a1b3',
-       DATE_SUB(NOW(), INTERVAL 38 MINUTE), CURDATE(),
-       DATE_SUB(NOW(), INTERVAL 37 MINUTE),
-       'verified', 'pending', DATE_SUB(NOW(), INTERVAL 37 MINUTE), NOW()
-FROM cdsp_users WHERE sales_id=100010 LIMIT 1;
-
-INSERT INTO cdsp_sales_posts
-(sales_user_id, platform, submitted_url, resolved_url, canonical_url, canonical_url_hash,
- external_post_id, title, normalized_title_hash, description, description_hash,
- published_at, published_date, fetched_at, verification_status, admin_review_status,
- created_at, updated_at)
-SELECT id, 'craigslist', 'https://orangecounty.craigslist.org/bfs/d/demo-freezer/900000000005.html', 'https://orangecounty.craigslist.org/bfs/d/demo-freezer/900000000005.html', 'https://orangecounty.craigslist.org/bfs/d/demo-freezer/900000000005.html', '9de8a299dd65c74f5785a0dbc417912abf5b9d2132cdbe4b5390aaf59fafd636',
-       '900000000005', 'Commercial Chest Freezer', '3b994f4c387a2913d6cc30957773798d335d1f41ab424029e9e0185688253465',
-       'Commercial chest freezer available for local pickup.', '2816d26cb162cee43283186adf9dc790c5d5061b09a337413c82fc52e4f0920c',
-       DATE_SUB(NOW(), INTERVAL 45 MINUTE), CURDATE(),
+SELECT id, 'facebook', 'https://www.facebook.com/marketplace/item/1754865915754719', 'https://www.facebook.com/marketplace/item/1754865915754719', 'https://www.facebook.com/marketplace/item/1754865915754719', 'c04606bf732403940d5b8e4fb3350f79d8629d68cda018d00ba8b4eb7e5a165a',
+       '1754865915754719', 'Facebook Marketplace Sample #3', '7ef65e10c672973f390d9a113d4580e5e6521b1acc56491ba899c531cad2f7b4',
+       'Real Facebook Marketplace URL supplied for Sales Post Tracker testing.', 'b94fef7e15d17d443ab70094d9326c4a7cd08afb67431e6fa14a38d0c3584261',
+       DATE_SUB(DATE_SUB(NOW(), INTERVAL 0 DAY), INTERVAL 44 MINUTE),
+       DATE(DATE_SUB(NOW(), INTERVAL 0 DAY)),
        DATE_SUB(NOW(), INTERVAL 44 MINUTE),
-       'verified', 'pending', DATE_SUB(NOW(), INTERVAL 44 MINUTE), NOW()
-FROM cdsp_users WHERE sales_id=100013 LIMIT 1;
+       'verified', NULL, NOW(), NOW()
+FROM cdsp_users
+WHERE sales_id=100006
+  AND NOT EXISTS (
+      SELECT 1 FROM cdsp_sales_posts x
+      WHERE x.platform='facebook' AND x.external_post_id='1754865915754719'
+  )
+LIMIT 1;
 
 INSERT INTO cdsp_sales_posts
 (sales_user_id, platform, submitted_url, resolved_url, canonical_url, canonical_url_hash,
  external_post_id, title, normalized_title_hash, description, description_hash,
  published_at, published_date, fetched_at, verification_status, admin_review_status,
  created_at, updated_at)
-SELECT id, 'offerup', 'https://offerup.com/item/detail/demo-900000000006', 'https://offerup.com/item/detail/demo-900000000006', 'https://offerup.com/item/detail/demo-900000000006', 'b3cbc1e9b38522661bf4264a229eb7d49d8a01ec3f6db52c102e7e3b2f48747c',
-       'demo-900000000006', 'Prep Table Refrigerator', '0c1715e1e021b859dc91bbe439198e46bba602bd6bac1095d47812f810d10b66',
-       'Prep table refrigerator with stainless work surface.', '15fbefa2bf04173d1683b0a109638d232780b4468b1f3c172713a2d039538521',
-       DATE_SUB(NOW(), INTERVAL 52 MINUTE), CURDATE(),
-       DATE_SUB(NOW(), INTERVAL 51 MINUTE),
-       'verified', 'pending', DATE_SUB(NOW(), INTERVAL 51 MINUTE), NOW()
-FROM cdsp_users WHERE sales_id=100013 LIMIT 1;
-
-INSERT INTO cdsp_post_reviews
-(post_id, admin_user_id, decision, rating, note, reviewed_at, created_at, updated_at)
-SELECT p.id, a.id, 'approved', 5, 'Demo review: verified and approved.', NOW(), NOW(), NOW()
-FROM cdsp_sales_posts p
-JOIN cdsp_users s ON s.id=p.sales_user_id
-JOIN cdsp_users a ON a.username='admin' AND a.role='admin'
-WHERE s.sales_id=100006 AND p.external_post_id='900000000001'
+SELECT id, 'facebook', 'https://www.facebook.com/marketplace/item/1609835460847233', 'https://www.facebook.com/marketplace/item/1609835460847233', 'https://www.facebook.com/marketplace/item/1609835460847233', 'e19552cb9a7bdeb5abfa7ccb0aca209188ecbed05067675ee72cd7b3960b7672',
+       '1609835460847233', 'Facebook Marketplace Sample #4', 'a8ea57fc234e30436a22d7453655473957219aad76e0afc509e9fb9122f61142',
+       'Real Facebook Marketplace URL supplied for Sales Post Tracker testing.', 'b94fef7e15d17d443ab70094d9326c4a7cd08afb67431e6fa14a38d0c3584261',
+       DATE_SUB(DATE_SUB(NOW(), INTERVAL 0 DAY), INTERVAL 52 MINUTE),
+       DATE(DATE_SUB(NOW(), INTERVAL 0 DAY)),
+       DATE_SUB(NOW(), INTERVAL 52 MINUTE),
+       'verified', NULL, NOW(), NOW()
+FROM cdsp_users
+WHERE sales_id=100006
+  AND NOT EXISTS (
+      SELECT 1 FROM cdsp_sales_posts x
+      WHERE x.platform='facebook' AND x.external_post_id='1609835460847233'
+  )
 LIMIT 1;
-UPDATE cdsp_sales_posts
-SET admin_review_status='approved'
-WHERE external_post_id='900000000001';
 
-INSERT INTO cdsp_post_reviews
-(post_id, admin_user_id, decision, rating, note, reviewed_at, created_at, updated_at)
-SELECT p.id, a.id, 'rejected', 2, 'Demo review: needs better listing content.', NOW(), NOW(), NOW()
-FROM cdsp_sales_posts p
-JOIN cdsp_users s ON s.id=p.sales_user_id
-JOIN cdsp_users a ON a.username='admin' AND a.role='admin'
-WHERE s.sales_id=100010 AND p.external_post_id='demo-900000000003'
+INSERT INTO cdsp_sales_posts
+(sales_user_id, platform, submitted_url, resolved_url, canonical_url, canonical_url_hash,
+ external_post_id, title, normalized_title_hash, description, description_hash,
+ published_at, published_date, fetched_at, verification_status, admin_review_status,
+ created_at, updated_at)
+SELECT id, 'facebook', 'https://www.facebook.com/marketplace/item/1546388710570410', 'https://www.facebook.com/marketplace/item/1546388710570410', 'https://www.facebook.com/marketplace/item/1546388710570410', '26b6905b31fc2b3fa9c8cb56e1f20093f393a465789cb7f40dc3993a2f157462',
+       '1546388710570410', 'Facebook Marketplace Sample #5', '167d490ae3828db8a03763d27483000f9228186fe28c023b41e6ebff431a5575',
+       'Real Facebook Marketplace URL supplied for Sales Post Tracker testing.', 'b94fef7e15d17d443ab70094d9326c4a7cd08afb67431e6fa14a38d0c3584261',
+       DATE_SUB(DATE_SUB(NOW(), INTERVAL 1 DAY), INTERVAL 60 MINUTE),
+       DATE(DATE_SUB(NOW(), INTERVAL 1 DAY)),
+       DATE_SUB(NOW(), INTERVAL 60 MINUTE),
+       'verified', 'good', NOW(), NOW()
+FROM cdsp_users
+WHERE sales_id=100006
+  AND NOT EXISTS (
+      SELECT 1 FROM cdsp_sales_posts x
+      WHERE x.platform='facebook' AND x.external_post_id='1546388710570410'
+  )
 LIMIT 1;
-UPDATE cdsp_sales_posts
-SET admin_review_status='rejected'
-WHERE external_post_id='demo-900000000003';
 
-INSERT INTO cdsp_daily_sales_reviews
-(sales_user_id, work_date, admin_user_id, rating, note, reviewed_at, created_at, updated_at)
-SELECT s.id, CURDATE(), a.id, 4, 'Demo daily review: good posting volume.', NOW(), NOW(), NOW()
-FROM cdsp_users s JOIN cdsp_users a ON a.username='admin' AND a.role='admin'
-WHERE s.sales_id=100006 LIMIT 1;
+INSERT INTO cdsp_sales_posts
+(sales_user_id, platform, submitted_url, resolved_url, canonical_url, canonical_url_hash,
+ external_post_id, title, normalized_title_hash, description, description_hash,
+ published_at, published_date, fetched_at, verification_status, admin_review_status,
+ created_at, updated_at)
+SELECT id, 'facebook', 'https://www.facebook.com/marketplace/item/3813795918762562', 'https://www.facebook.com/marketplace/item/3813795918762562', 'https://www.facebook.com/marketplace/item/3813795918762562', '88d3fc5684ba5d7730a63809d3c528eeeb5d6e9ae97e6e3a81eb56507fca8a85',
+       '3813795918762562', 'Facebook Marketplace Sample #6', '7577d285896bcafd43f67b7d23b2640ff685f33642b8159e9b937d1a25bcda55',
+       'Real Facebook Marketplace URL supplied for Sales Post Tracker testing.', 'b94fef7e15d17d443ab70094d9326c4a7cd08afb67431e6fa14a38d0c3584261',
+       DATE_SUB(DATE_SUB(NOW(), INTERVAL 1 DAY), INTERVAL 68 MINUTE),
+       DATE(DATE_SUB(NOW(), INTERVAL 1 DAY)),
+       DATE_SUB(NOW(), INTERVAL 68 MINUTE),
+       'verified', NULL, NOW(), NOW()
+FROM cdsp_users
+WHERE sales_id=100006
+  AND NOT EXISTS (
+      SELECT 1 FROM cdsp_sales_posts x
+      WHERE x.platform='facebook' AND x.external_post_id='3813795918762562'
+  )
+LIMIT 1;
 
-INSERT INTO cdsp_period_sales_reviews
-(sales_user_id, period_type, period_start, period_end, admin_user_id, rating, note,
- reviewed_at, created_at, updated_at)
-SELECT s.id, 'week',
-       DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY),
-       DATE_ADD(DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY), INTERVAL 6 DAY),
-       a.id, 4, 'Demo weekly review.', NOW(), NOW(), NOW()
-FROM cdsp_users s JOIN cdsp_users a ON a.username='admin' AND a.role='admin'
-WHERE s.sales_id=100006 LIMIT 1;
+INSERT INTO cdsp_sales_posts
+(sales_user_id, platform, submitted_url, resolved_url, canonical_url, canonical_url_hash,
+ external_post_id, title, normalized_title_hash, description, description_hash,
+ published_at, published_date, fetched_at, verification_status, admin_review_status,
+ created_at, updated_at)
+SELECT id, 'facebook', 'https://www.facebook.com/marketplace/item/1606074697620900', 'https://www.facebook.com/marketplace/item/1606074697620900', 'https://www.facebook.com/marketplace/item/1606074697620900', '12bb9e74578c719315fb33cb7f41377d1a4fcc0c2414594a04778673b0580050',
+       '1606074697620900', 'Facebook Marketplace Sample #7', 'a49e95b9bfdd1826a8d8928feb9f63a04bb6ae2982970758e93e441e337ab77b',
+       'Real Facebook Marketplace URL supplied for Sales Post Tracker testing.', 'b94fef7e15d17d443ab70094d9326c4a7cd08afb67431e6fa14a38d0c3584261',
+       DATE_SUB(DATE_SUB(NOW(), INTERVAL 1 DAY), INTERVAL 76 MINUTE),
+       DATE(DATE_SUB(NOW(), INTERVAL 1 DAY)),
+       DATE_SUB(NOW(), INTERVAL 76 MINUTE),
+       'verified', 'bad', NOW(), NOW()
+FROM cdsp_users
+WHERE sales_id=100006
+  AND NOT EXISTS (
+      SELECT 1 FROM cdsp_sales_posts x
+      WHERE x.platform='facebook' AND x.external_post_id='1606074697620900'
+  )
+LIMIT 1;
+
+INSERT INTO cdsp_sales_posts
+(sales_user_id, platform, submitted_url, resolved_url, canonical_url, canonical_url_hash,
+ external_post_id, title, normalized_title_hash, description, description_hash,
+ published_at, published_date, fetched_at, verification_status, admin_review_status,
+ created_at, updated_at)
+SELECT id, 'facebook', 'https://www.facebook.com/marketplace/item/970768882088732', 'https://www.facebook.com/marketplace/item/970768882088732', 'https://www.facebook.com/marketplace/item/970768882088732', '57b201621206959fbd7d2305fdeb1e83335bcea74198eded545ea668e416d86f',
+       '970768882088732', 'Facebook Marketplace Sample #8', '29229057108ed200b3cdd13e6493912611981674f54ca13492b02d2c563d8b07',
+       'Real Facebook Marketplace URL supplied for Sales Post Tracker testing.', 'b94fef7e15d17d443ab70094d9326c4a7cd08afb67431e6fa14a38d0c3584261',
+       DATE_SUB(DATE_SUB(NOW(), INTERVAL 2 DAY), INTERVAL 84 MINUTE),
+       DATE(DATE_SUB(NOW(), INTERVAL 2 DAY)),
+       DATE_SUB(NOW(), INTERVAL 84 MINUTE),
+       'verified', NULL, NOW(), NOW()
+FROM cdsp_users
+WHERE sales_id=100006
+  AND NOT EXISTS (
+      SELECT 1 FROM cdsp_sales_posts x
+      WHERE x.platform='facebook' AND x.external_post_id='970768882088732'
+  )
+LIMIT 1;
+
+INSERT INTO cdsp_sales_posts
+(sales_user_id, platform, submitted_url, resolved_url, canonical_url, canonical_url_hash,
+ external_post_id, title, normalized_title_hash, description, description_hash,
+ published_at, published_date, fetched_at, verification_status, admin_review_status,
+ created_at, updated_at)
+SELECT id, 'facebook', 'https://www.facebook.com/marketplace/item/1556421559266266', 'https://www.facebook.com/marketplace/item/1556421559266266', 'https://www.facebook.com/marketplace/item/1556421559266266', 'd0e58293088baf9855784b4f2cf1de685424836bb7f287f880dd789c4b1ede56',
+       '1556421559266266', 'Facebook Marketplace Sample #9', 'd89b798f342575f180f3d2fd127c35d9f2c3bea70e5c76576cf7bd0666687e7a',
+       'Real Facebook Marketplace URL supplied for Sales Post Tracker testing.', 'b94fef7e15d17d443ab70094d9326c4a7cd08afb67431e6fa14a38d0c3584261',
+       DATE_SUB(DATE_SUB(NOW(), INTERVAL 2 DAY), INTERVAL 92 MINUTE),
+       DATE(DATE_SUB(NOW(), INTERVAL 2 DAY)),
+       DATE_SUB(NOW(), INTERVAL 92 MINUTE),
+       'verified', NULL, NOW(), NOW()
+FROM cdsp_users
+WHERE sales_id=100006
+  AND NOT EXISTS (
+      SELECT 1 FROM cdsp_sales_posts x
+      WHERE x.platform='facebook' AND x.external_post_id='1556421559266266'
+  )
+LIMIT 1;
+
+INSERT INTO cdsp_sales_posts
+(sales_user_id, platform, submitted_url, resolved_url, canonical_url, canonical_url_hash,
+ external_post_id, title, normalized_title_hash, description, description_hash,
+ published_at, published_date, fetched_at, verification_status, admin_review_status,
+ created_at, updated_at)
+SELECT id, 'facebook', 'https://www.facebook.com/marketplace/item/1994325934606833', 'https://www.facebook.com/marketplace/item/1994325934606833', 'https://www.facebook.com/marketplace/item/1994325934606833', '09a351591f0f689085ef0f3fece4867fa373b3a01fdc62b2885bd8b0073ff4c1',
+       '1994325934606833', 'Facebook Marketplace Sample #10', '5d7823670a39569b3fcb314c50e43e92845f674ee461017d6841efa5a36a3571',
+       'Real Facebook Marketplace URL supplied for Sales Post Tracker testing.', 'b94fef7e15d17d443ab70094d9326c4a7cd08afb67431e6fa14a38d0c3584261',
+       DATE_SUB(DATE_SUB(NOW(), INTERVAL 2 DAY), INTERVAL 100 MINUTE),
+       DATE(DATE_SUB(NOW(), INTERVAL 2 DAY)),
+       DATE_SUB(NOW(), INTERVAL 100 MINUTE),
+       'verified', NULL, NOW(), NOW()
+FROM cdsp_users
+WHERE sales_id=100006
+  AND NOT EXISTS (
+      SELECT 1 FROM cdsp_sales_posts x
+      WHERE x.platform='facebook' AND x.external_post_id='1994325934606833'
+  )
+LIMIT 1;
 
 SET FOREIGN_KEY_CHECKS=1;
-SELECT 'Demo data installed' AS result;
+SELECT 'Demo data v0.1.1 installed' AS result;

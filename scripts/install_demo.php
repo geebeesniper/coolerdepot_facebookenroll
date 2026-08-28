@@ -8,9 +8,10 @@ if ($sql === false) {
 }
 
 $pdo = Database::connection();
+$sql = preg_replace('/^\s*--.*$/m', '', $sql);
 foreach (preg_split('/;\s*(?:\r?\n|$)/', $sql) as $statement) {
     $statement = trim($statement);
-    if ($statement !== '' && strpos($statement, '--') !== 0) {
+    if ($statement !== '') {
         $pdo->exec($statement);
     }
 }

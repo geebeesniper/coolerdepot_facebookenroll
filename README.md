@@ -237,3 +237,36 @@ Run the bundled real-link test from the PHP container:
 
 It tests the supplied Facebook Marketplace URLs through the same `PostInspector`
 used by the Sales submit workflow, without saving the posts.
+
+## Platform detection and post quality status
+
+Sales no longer selects a platform manually. The submit page detects Facebook,
+OfferUp, or Craigslist from the pasted URL, and the API independently detects it
+again server-side.
+
+Post review quality uses only `good` or `bad`. An unreviewed post has a NULL quality
+status and displays no status badge. This is separate from deletion-request workflow
+statuses, which still use pending/approved/rejected.
+
+
+## Release versioning
+
+Current release: `v0.1.0`
+
+`VERSION` in the project root is the application version source of truth.
+The footer reads this value and displays it on every page.
+
+Release ZIP naming convention:
+
+    sales-posts-vX.Y.Z-<change>.zip
+
+Every packaged release must increment `VERSION` and use the same version in the ZIP filename.
+
+## v0.1.1
+
+- Sales dashboard renamed from a flat Posts area to **Daily Posts**.
+- Posts are grouped by `published_date`, one section per day.
+- Initial dashboard load returns only the newest few dates.
+- Earlier date sections are loaded progressively over AJAX when the Load Earlier control approaches the viewport.
+- Demo data removes the old fake refrigerator/Craigslist rows and uses the 10 Facebook Marketplace URLs supplied for testing.
+- UI border radius remains standardized at `4px`.
