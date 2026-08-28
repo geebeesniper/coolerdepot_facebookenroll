@@ -611,20 +611,34 @@ $periodNames = [
             ></div>
 
             <div class="review-modal-footer">
-                <button
-                    type="button"
-                    class="btn"
-                    id="dashboardReviewCancel"
+                <div
+                    class="review-save-state hidden"
+                    id="dashboardReviewSaveState"
+                    role="status"
+                    aria-live="polite"
                 >
-                    Cancel
-                </button>
-                <button
-                    type="submit"
-                    class="btn primary"
-                    id="dashboardReviewSave"
-                >
-                    Save Review
-                </button>
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m9.1 16.6-4.2-4.2 1.4-1.4 2.8 2.8 8.6-8.6 1.4 1.4-10 10Z"/>
+                    </svg>
+                    <span>Review saved</span>
+                </div>
+
+                <div class="review-modal-footer-actions">
+                    <button
+                        type="button"
+                        class="btn"
+                        id="dashboardReviewCancel"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        class="btn primary"
+                        id="dashboardReviewSave"
+                    >
+                        Save Review
+                    </button>
+                </div>
             </div>
         </form>
 

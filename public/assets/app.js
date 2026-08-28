@@ -1048,6 +1048,8 @@ $('[data-html-note]').each(function(){
     const $modalForm = $('#dashboardReviewForm');
     const $modalLoading = $('#dashboardReviewLoading');
     const $modalMessage = $('#dashboardReviewMessage');
+    const $reviewSaveState = $('#dashboardReviewSaveState');
+    const $reviewCancel = $('#dashboardReviewCancel');
     const $modalAttachments = $('#dashboardReviewAttachments');
     const $commentList = $('#dashboardCommentList');
     const $commentEmpty = $('#dashboardCommentEmpty');
@@ -2010,8 +2012,18 @@ function renderAttachments(items){
 
     function resetReviewModal(){
         $modalMessage
-            .removeClass('error')
+            .removeClass('error warning')
             .text('');
+        $reviewSaveState
+            .addClass('hidden')
+            .removeClass('warning')
+            .find('span')
+            .text('Review saved');
+        $reviewCancel.text('Cancel');
+        $('#dashboardReviewSave')
+            .prop('disabled',false)
+            .removeClass('saved')
+            .text('Save Review');
         $modalForm.get(0).reset();
         $modalForm
             .find('.review-decision-modern')
@@ -2329,6 +2341,19 @@ function showDecisionError(message){
     }
 }
 
+    function markReviewDirty(){
+        $reviewSaveState
+            .addClass('hidden')
+            .removeClass('warning');
+
+        $reviewCancel.text('Cancel');
+
+        $('#dashboardReviewSave')
+            .prop('disabled',false)
+            .removeClass('saved')
+            .text('Save Review');
+    }
+
     $modalForm.on(
         'change',
         'input[name="decision"]',
@@ -2352,6 +2377,8 @@ function showDecisionError(message){
                     .removeClass('error')
                     .text('');
             }
+
+            markReviewDirty();
         }
     );
 
@@ -2645,10 +2672,33 @@ $modalForm.on('submit', function(event){
                 );
 
             if(data.upload_warning){
-                $modalMessage.removeClass('error').addClass('warning').text('Review saved. Image warning: '+data.upload_warning);
+                $modalMessage
+                    .removeClass('error')
+                    .addClass('warning')
+                    .text('Image warning: '+data.upload_warning);
+
+                $reviewSaveState
+                    .removeClass('hidden')
+                    .addClass('warning')
+                    .find('span')
+                    .text('Review saved with image warning');
             }else{
-                $modalMessage.removeClass('error warning').text('Review saved.');
+                $modalMessage
+                    .removeClass('error warning')
+                    .text('');
+
+                $reviewSaveState
+                    .removeClass('hidden warning')
+                    .find('span')
+                    .text('Review saved');
             }
+
+            $save
+                .prop('disabled',true)
+                .addClass('saved')
+                .text('Saved ✓');
+
+            $reviewCancel.text('Close');
 
             // Update the Sales card metrics without closing the popup/grid.
             $.ajax({
@@ -2687,9 +2737,11 @@ $modalForm.on('submit', function(event){
                 );
         })
         .always(function(){
-            $save
-                .prop('disabled', false)
-                .text('Save Review');
+            if(!$save.hasClass('saved')){
+                $save
+                    .prop('disabled',false)
+                    .text('Save Review');
+            }
         });
     });
 

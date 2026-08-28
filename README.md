@@ -700,3 +700,14 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - Review Save no longer owns the comment-image picker; comment images are saved only by Add Note / Update Note.
 - Requires migration `011_comment_attachments`.
 - All border radius remains `4px`.
+## v0.1.32 — Remove Status Pages preview and show Review save completion
+
+- Removed the non-editable `Status Pages` item from Admin navigation and removed its preview route. Branded runtime error handling remains intact.
+- The full release no longer includes the unused Status preview controller/view.
+- The Review footer is sticky so its controls remain visible with long comments or images.
+- After `Save Review` succeeds, a green `Review saved` state is shown, the save button becomes `Saved ✓`, and `Cancel` becomes `Close`.
+- A saved review with an image warning stays visibly saved while showing the warning separately.
+- Changing Good/Bad after a successful save restores `Save Review` and `Cancel`.
+- No database migration is required.
+- All border radius remains `4px`.
+

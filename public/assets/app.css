@@ -3765,3 +3765,75 @@ body.review-modal-open{
 .legacy-attachment-chip a{color:#1d4ed8;font-size:8px;font-weight:800;}
 .legacy-attachment-chip .attachment-remove{top:2px;right:2px;width:26px;height:26px;}
 @media(pointer:coarse){.attachment-remove{width:38px;height:38px}.legacy-attachment-chip{min-height:44px;padding-right:46px}}
+/* v0.1.32 Review save completion + Admin nav cleanup */
+.review-modal-footer{
+    position:sticky;
+    bottom:0;
+    z-index:8;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin:18px -17px -17px;
+    padding:11px 17px;
+    border-top:1px solid #e2e8f0;
+    background:rgba(255,255,255,.96);
+    backdrop-filter:blur(6px);
+}
+.review-modal-footer-actions{
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:8px;
+    margin-left:auto;
+}
+.review-save-state{
+    min-height:34px;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:6px 9px;
+    border:1px solid #bbf7d0;
+    border-radius:4px;
+    background:#f0fdf4;
+    color:#166534;
+    font-size:9px;
+    font-weight:900;
+}
+.review-save-state.hidden{display:none;}
+.review-save-state.warning{
+    border-color:#fde68a;
+    background:#fffbeb;
+    color:#92400e;
+}
+.review-save-state svg{
+    width:15px;
+    height:15px;
+    flex:0 0 15px;
+    fill:currentColor;
+}
+#dashboardReviewSave.saved{
+    border-color:#16a34a;
+    background:#16a34a;
+    color:#fff;
+}
+@media(max-width:560px){
+    .review-modal-footer{
+        align-items:stretch;
+        flex-direction:column;
+        margin-left:-13px;
+        margin-right:-13px;
+        margin-bottom:-13px;
+        padding:10px 13px;
+    }
+    .review-save-state{
+        width:100%;
+        justify-content:center;
+    }
+    .review-modal-footer-actions{
+        width:100%;
+        margin-left:0;
+    }
+    .review-modal-footer-actions .btn{flex:1;}
+}
+
