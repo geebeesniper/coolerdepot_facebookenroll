@@ -1,71 +1,548 @@
 <?php
 namespace App\Services;
-use DOMDocument;use DOMXPath;use DateTime;use DateTimeZone;
+
+use DOMDocument;
+use DOMXPath;
+use DateTime;
+use DateTimeZone;
 use App\Models\Post;
 
-class PostInspector {
-    public function inspect(int $uid,string $platform,string $submitted):array{
+class PostInspector
+{
+    public function inspect(int $uid, string $platform, string $submitted): array
+    {
         global $config;
-        if(!in_array($platform,['facebook','offerup','craigslist'],true))return$this->fail($uid,$platform,$submitted,'PLATFORM_INVALID','Unsupported platform.');
-        if(!PlatformUrl::allowed($submitted,$platform))return$this->fail($uid,$platform,$submitted,'URL_INVALID','URL does not belong to the selected platform.');
-        try{$f=(new SafeFetcher())->fetch($submitted,$platform);}catch(\Throwable $e){return$this->fail($uid,$platform,$submitted,'FETCH_FAILED',$e->getMessage());}
-        $html=$f['html'];$meta=$this->meta($html);
-        if($platform==='craigslist')$meta=array_merge($meta,array_filter($this->craigslist($html),fn($v)=>$v!==null&&$v!==''));
-        if(!$meta['published_at'])$meta['published_at']=$this->embeddedDate($platform,$html)?:$this->relativeDate($html);
-        $canonical=$meta['canonical_url']?:$f['resolved_url'];
-        if(!PlatformUrl::allowed($canonical,$platform))$canonical=$f['resolved_url'];
-        $eid=PlatformUrl::externalId($platform,$canonical,$html);
-        $title=trim((string)($meta['title']??''));$desc=trim((string)($meta['description']??''));
-        if($title==='')return$this->fail($uid,$platform,$submitted,'TITLE_NOT_VERIFIABLE','The post title could not be verified.',$f['resolved_url'],$canonical,$eid,$meta);
-        $dt=$this->date((string)($meta['published_at']??''),$config['app']['timezone']);
-        if(!$dt)return$this->fail($uid,$platform,$submitted,'DATE_NOT_VERIFIABLE','The post date could not be verified.',$f['resolved_url'],$canonical,$eid,$meta+['title'=>$title,'description'=>$desc]);
-        $tz=new DateTimeZone($config['app']['timezone']);$dt->setTimezone($tz);$today=(new DateTime('now',$tz))->format('Y-m-d');$pd=$dt->format('Y-m-d');
-        if($pd!==$today)return$this->fail($uid,$platform,$submitted,'DATE_MISMATCH',"Post date is {$pd}; only today's posts ({$today}) are allowed.",$f['resolved_url'],$canonical,$eid,$meta+['title'=>$title,'description'=>$desc,'published_at'=>$dt->format('Y-m-d H:i:s'),'published_date'=>$pd]);
-        if($dup=Post::duplicate($uid,$platform,$canonical,$eid,$title,$desc))return$this->fail($uid,$platform,$submitted,'DUPLICATE',$dup['reason'],$f['resolved_url'],$canonical,$eid,$meta+['title'=>$title,'description'=>$desc,'published_at'=>$dt->format('Y-m-d H:i:s'),'published_date'=>$pd]);
-        return[
-            'sales_user_id'=>$uid,'platform'=>$platform,'submitted_url'=>$submitted,'resolved_url'=>$f['resolved_url'],'canonical_url'=>$canonical,
-            'external_post_id'=>$eid,'title'=>$title,'description'=>$desc,'published_at'=>$dt->format('Y-m-d H:i:s'),'published_date'=>$pd,
-            'fetched_at'=>date('Y-m-d H:i:s'),'verification_status'=>'verified','failure_code'=>null,'failure_message'=>null,'raw_meta'=>$meta
+
+        if (!in_array($platform, ['facebook','offerup','craigslist'], true)) {
+            return $this->fail($uid, $platform, $submitted, 'PLATFORM_INVALID', 'Unsupported platform.');
+        }
+
+        if (!PlatformUrl::allowed($submitted, $platform)) {
+            return $this->fail(
+                $uid,
+                $platform,
+                $submitted,
+                'URL_INVALID',
+                'URL does not belong to the detected platform.'
+            );
+        }
+
+        if ($platform === 'facebook') {
+            return $this->inspectFacebook($uid, $submitted);
+        }
+
+        try {
+            $f = (new SafeFetcher())->fetch($submitted, $platform);
+        } catch (\Throwable $e) {
+            return $this->fail(
+                $uid,
+                $platform,
+                $submitted,
+                'FETCH_FAILED',
+                $e->getMessage()
+            );
+        }
+
+        $html = $f['html'];
+        $meta = $this->meta($html);
+
+        if ($platform === 'craigslist') {
+            $meta = array_merge(
+                $meta,
+                array_filter($this->craigslist($html), fn($v) => $v !== null && $v !== '')
+            );
+        }
+
+        if (!$meta['published_at']) {
+            $meta['published_at'] = $this->embeddedDate($platform, $html)
+                ?: $this->relativeDate($html);
+        }
+
+        $canonical = $meta['canonical_url'] ?: $f['resolved_url'];
+
+        if (!PlatformUrl::allowed($canonical, $platform)) {
+            $canonical = $f['resolved_url'];
+        }
+
+        $eid = PlatformUrl::externalId($platform, $canonical, $html);
+        $title = trim((string)($meta['title'] ?? ''));
+        $desc = trim((string)($meta['description'] ?? ''));
+
+        return $this->validateAndFinish(
+            $uid,
+            $platform,
+            $submitted,
+            $f['resolved_url'],
+            $canonical,
+            $eid,
+            $title,
+            $desc,
+            (string)($meta['published_at'] ?? ''),
+            $meta
+        );
+    }
+
+    private function inspectFacebook(int $uid, string $submitted): array
+    {
+        $eid = PlatformUrl::externalId('facebook', $submitted);
+
+        // Do the cheap duplicate check before consuming a Bright Data query.
+        if ($eid) {
+            $dup = Post::duplicate($uid, 'facebook', $submitted, $eid, null, null);
+
+            if ($dup) {
+                return $this->fail(
+                    $uid,
+                    'facebook',
+                    $submitted,
+                    'DUPLICATE',
+                    $dup['reason'],
+                    $submitted,
+                    $submitted,
+                    $eid
+                );
+            }
+        }
+
+        $provider = new BrightDataMarketplaceProvider();
+
+        if (!$provider->configured()) {
+            return $this->fail(
+                $uid,
+                'facebook',
+                $submitted,
+                'FACEBOOK_PROVIDER_NOT_CONFIGURED',
+                'Facebook verification is not configured. Contact Admin.',
+                $submitted,
+                $submitted,
+                $eid
+            );
+        }
+
+        try {
+            $item = $provider->fetch($submitted, $uid);
+        } catch (\Throwable $e) {
+            return $this->fail(
+                $uid,
+                'facebook',
+                $submitted,
+                'FACEBOOK_PROVIDER_FAILED',
+                'Facebook verification is temporarily unavailable. Please try again.',
+                $submitted,
+                $submitted,
+                $eid,
+                [
+                    'provider' => 'brightdata',
+                    'provider_error' => $e->getMessage(),
+                ]
+            );
+        }
+
+        $canonical = (string)($item['canonical_url'] ?? $submitted);
+
+        if (!PlatformUrl::allowed($canonical, 'facebook')) {
+            $canonical = $submitted;
+        }
+
+        $eid = (string)($item['external_post_id'] ?? $eid ?? '');
+        $title = trim((string)($item['title'] ?? ''));
+        $desc = trim((string)($item['description'] ?? ''));
+        $publishedRaw = trim((string)($item['published_raw'] ?? ''));
+
+        $raw = [
+            'provider' => 'brightdata',
+            'provider_job_id' => $item['provider_job_id'] ?? null,
+            'provider_cache' => !empty($item['_provider_cache']),
+            'provider_record' => $item['raw'] ?? [],
+        ];
+
+        if ($publishedRaw === '') {
+            return $this->fail(
+                $uid,
+                'facebook',
+                $submitted,
+                'DATE_NOT_VERIFIABLE',
+                'Facebook returned the listing, but its posting date could not be verified.',
+                $canonical,
+                $canonical,
+                $eid ?: null,
+                $raw + [
+                    'title' => $title,
+                    'description' => $desc,
+                ]
+            );
+        }
+
+        return $this->validateAndFinish(
+            $uid,
+            'facebook',
+            $submitted,
+            $canonical,
+            $canonical,
+            $eid ?: null,
+            $title,
+            $desc,
+            $publishedRaw,
+            $raw
+        );
+    }
+
+    private function validateAndFinish(
+        int $uid,
+        string $platform,
+        string $submitted,
+        string $resolved,
+        string $canonical,
+        ?string $eid,
+        string $title,
+        string $desc,
+        string $publishedRaw,
+        array $meta
+    ): array {
+        global $config;
+
+        if ($title === '') {
+            return $this->fail(
+                $uid,
+                $platform,
+                $submitted,
+                'TITLE_NOT_VERIFIABLE',
+                'The post title could not be verified.',
+                $resolved,
+                $canonical,
+                $eid,
+                $meta
+            );
+        }
+
+        $dt = $this->date($publishedRaw, $config['app']['timezone']);
+
+        if (!$dt) {
+            return $this->fail(
+                $uid,
+                $platform,
+                $submitted,
+                'DATE_NOT_VERIFIABLE',
+                'The post date could not be verified.',
+                $resolved,
+                $canonical,
+                $eid,
+                $meta + [
+                    'title' => $title,
+                    'description' => $desc,
+                ]
+            );
+        }
+
+        $tz = new DateTimeZone($config['app']['timezone']);
+        $dt->setTimezone($tz);
+
+        $today = (new DateTime('now', $tz))->format('Y-m-d');
+        $pd = $dt->format('Y-m-d');
+
+        if ($pd !== $today) {
+            return $this->fail(
+                $uid,
+                $platform,
+                $submitted,
+                'DATE_MISMATCH',
+                "Post date is {$pd}; only today's posts ({$today}) are allowed.",
+                $resolved,
+                $canonical,
+                $eid,
+                $meta + [
+                    'title' => $title,
+                    'description' => $desc,
+                    'published_at' => $dt->format('Y-m-d H:i:s'),
+                    'published_date' => $pd,
+                ]
+            );
+        }
+
+        if ($dup = Post::duplicate($uid, $platform, $canonical, $eid, $title, $desc)) {
+            return $this->fail(
+                $uid,
+                $platform,
+                $submitted,
+                'DUPLICATE',
+                $dup['reason'],
+                $resolved,
+                $canonical,
+                $eid,
+                $meta + [
+                    'title' => $title,
+                    'description' => $desc,
+                    'published_at' => $dt->format('Y-m-d H:i:s'),
+                    'published_date' => $pd,
+                ]
+            );
+        }
+
+        return [
+            'sales_user_id' => $uid,
+            'platform' => $platform,
+            'submitted_url' => $submitted,
+            'resolved_url' => $resolved,
+            'canonical_url' => $canonical,
+            'external_post_id' => $eid,
+            'title' => $title,
+            'description' => $desc,
+            'published_at' => $dt->format('Y-m-d H:i:s'),
+            'published_date' => $pd,
+            'fetched_at' => date('Y-m-d H:i:s'),
+            'verification_status' => 'verified',
+            'failure_code' => null,
+            'failure_message' => null,
+            'raw_meta' => $meta,
         ];
     }
-    private function meta(string $html):array{
-        $r=['title'=>null,'description'=>null,'published_at'=>null,'canonical_url'=>null];
-        libxml_use_internal_errors(true);$d=new DOMDocument();
-        if(@$d->loadHTML($html)){$x=new DOMXPath($d);
-            $q=[
-                'title'=>["//meta[@property='og:title']/@content","//meta[@name='twitter:title']/@content","//title/text()"],
-                'description'=>["//meta[@property='og:description']/@content","//meta[@name='description']/@content"],
-                'published_at'=>["//meta[@property='article:published_time']/@content","//meta[@itemprop='datePosted']/@content","//meta[@itemprop='datePublished']/@content","//time[@datetime]/@datetime"],
-                'canonical_url'=>["//link[@rel='canonical']/@href","//meta[@property='og:url']/@content"]
+
+    private function meta(string $html): array
+    {
+        $r = [
+            'title' => null,
+            'description' => null,
+            'published_at' => null,
+            'canonical_url' => null,
+        ];
+
+        libxml_use_internal_errors(true);
+        $d = new DOMDocument();
+
+        if (@$d->loadHTML($html)) {
+            $x = new DOMXPath($d);
+            $q = [
+                'title' => [
+                    "//meta[@property='og:title']/@content",
+                    "//meta[@name='twitter:title']/@content",
+                    "//title/text()"
+                ],
+                'description' => [
+                    "//meta[@property='og:description']/@content",
+                    "//meta[@name='description']/@content"
+                ],
+                'published_at' => [
+                    "//meta[@property='article:published_time']/@content",
+                    "//meta[@itemprop='datePosted']/@content",
+                    "//meta[@itemprop='datePublished']/@content",
+                    "//time[@datetime]/@datetime"
+                ],
+                'canonical_url' => [
+                    "//link[@rel='canonical']/@href",
+                    "//meta[@property='og:url']/@content"
+                ]
             ];
-            foreach($q as $k=>$qs)foreach($qs as $qq){$n=$x->query($qq);if($n&&$n->length){$v=trim($n->item(0)->nodeValue);if($v!==''){$r[$k]=html_entity_decode($v,ENT_QUOTES|ENT_HTML5,'UTF-8');break;}}}
-            foreach($x->query("//script[@type='application/ld+json']")?:[] as $node){$j=json_decode(trim($node->nodeValue),true);if(!is_array($j))continue;$items=isset($j[0])?$j:[$j];
-                foreach($items as $it){if(!$r['title']&&!empty($it['name'])&&is_string($it['name']))$r['title']=$it['name'];if(!$r['description']&&!empty($it['description'])&&is_string($it['description']))$r['description']=$it['description'];
-                    if(!$r['published_at'])foreach(['datePosted','datePublished','dateCreated'] as $k)if(!empty($it[$k])&&is_string($it[$k])){$r['published_at']=$it[$k];break;}
-                    if(!$r['canonical_url']&&!empty($it['url'])&&is_string($it['url']))$r['canonical_url']=$it['url'];
-                }}
-        }libxml_clear_errors();return$r;
+
+            foreach ($q as $k => $qs) {
+                foreach ($qs as $qq) {
+                    $n = $x->query($qq);
+
+                    if ($n && $n->length) {
+                        $v = trim($n->item(0)->nodeValue);
+
+                        if ($v !== '') {
+                            $r[$k] = html_entity_decode(
+                                $v,
+                                ENT_QUOTES | ENT_HTML5,
+                                'UTF-8'
+                            );
+                            break;
+                        }
+                    }
+                }
+            }
+
+            foreach ($x->query("//script[@type='application/ld+json']") ?: [] as $node) {
+                $j = json_decode(trim($node->nodeValue), true);
+
+                if (!is_array($j)) {
+                    continue;
+                }
+
+                $items = isset($j[0]) ? $j : [$j];
+
+                foreach ($items as $it) {
+                    if (!$r['title'] && !empty($it['name']) && is_string($it['name'])) {
+                        $r['title'] = $it['name'];
+                    }
+
+                    if (!$r['description']
+                        && !empty($it['description'])
+                        && is_string($it['description'])) {
+                        $r['description'] = $it['description'];
+                    }
+
+                    if (!$r['published_at']) {
+                        foreach (['datePosted','datePublished','dateCreated'] as $k) {
+                            if (!empty($it[$k]) && is_string($it[$k])) {
+                                $r['published_at'] = $it[$k];
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!$r['canonical_url'] && !empty($it['url']) && is_string($it['url'])) {
+                        $r['canonical_url'] = $it['url'];
+                    }
+                }
+            }
+        }
+
+        libxml_clear_errors();
+
+        return $r;
     }
-    private function craigslist(string $html):array{
-        $r=[];libxml_use_internal_errors(true);$d=new DOMDocument();if(!@$d->loadHTML($html))return$r;$x=new DOMXPath($d);
-        $map=['title'=>["//*[@id='titletextonly']/text()"],'description'=>["//*[@id='postingbody']"],'published_at'=>["//time[contains(@class,'date')]/@datetime","//time/@datetime"]];
-        foreach($map as $k=>$qs)foreach($qs as $q){$n=$x->query($q);if($n&&$n->length){$v=trim(preg_replace('/\s+/u',' ',$n->item(0)->textContent?:$n->item(0)->nodeValue));if($v!==''){$r[$k]=$v;break;}}}
-        libxml_clear_errors();return$r;
+
+    private function craigslist(string $html): array
+    {
+        $r = [];
+        libxml_use_internal_errors(true);
+        $d = new DOMDocument();
+
+        if (!@$d->loadHTML($html)) {
+            return $r;
+        }
+
+        $x = new DOMXPath($d);
+        $map = [
+            'title' => ["//*[@id='titletextonly']/text()"],
+            'description' => ["//*[@id='postingbody']"],
+            'published_at' => [
+                "//time[contains(@class,'date')]/@datetime",
+                "//time/@datetime"
+            ],
+        ];
+
+        foreach ($map as $k => $qs) {
+            foreach ($qs as $q) {
+                $n = $x->query($q);
+
+                if ($n && $n->length) {
+                    $v = trim(preg_replace(
+                        '/\s+/u',
+                        ' ',
+                        $n->item(0)->textContent ?: $n->item(0)->nodeValue
+                    ));
+
+                    if ($v !== '') {
+                        $r[$k] = $v;
+                        break;
+                    }
+                }
+            }
+        }
+
+        libxml_clear_errors();
+
+        return $r;
     }
-    private function embeddedDate(string $p,string $html):?string{
-        $keys=$p==='facebook'?['creation_time','publish_time','created_time']:($p==='offerup'?['datePosted','datePublished','createdAt','created_at']:[]);
-        foreach($keys as $k)if(preg_match('~["\']'.preg_quote($k,'~').'["\']\s*:\s*(?:"([^"]+)"|(\d{9,13}))~i',$html,$m)){ $v=$m[1]!==''?$m[1]:$m[2];if(ctype_digit((string)$v)){ $n=(int)$v;if($n>9999999999)$n=(int)floor($n/1000);return'@'.$n;}return html_entity_decode($v,ENT_QUOTES|ENT_HTML5,'UTF-8');}
+
+    private function embeddedDate(string $p, string $html): ?string
+    {
+        $keys = $p === 'offerup'
+            ? ['datePosted','datePublished','createdAt','created_at']
+            : [];
+
+        foreach ($keys as $k) {
+            if (preg_match(
+                '~["\']' . preg_quote($k, '~') . '["\']\s*:\s*(?:"([^"]+)"|(\d{9,13}))~i',
+                $html,
+                $m
+            )) {
+                $v = $m[1] !== '' ? $m[1] : $m[2];
+
+                if (ctype_digit((string)$v)) {
+                    $n = (int)$v;
+
+                    if ($n > 9999999999) {
+                        $n = (int)floor($n / 1000);
+                    }
+
+                    return '@' . $n;
+                }
+
+                return html_entity_decode(
+                    $v,
+                    ENT_QUOTES | ENT_HTML5,
+                    'UTF-8'
+                );
+            }
+        }
+
         return null;
     }
-    private function relativeDate(string $html):?string{
-        $t=strip_tags(html_entity_decode($html,ENT_QUOTES|ENT_HTML5,'UTF-8'));
-        if(preg_match('/Posted\s+(\d+)\s+(minute|hour|day)s?\s+ago/i',$t,$m))return'-'.(int)$m[1].' '.strtolower($m[2]).((int)$m[1]===1?'':'s');
-        if(preg_match('/Posted\s+(just now|today)/i',$t))return'now';return null;
+
+    private function relativeDate(string $html): ?string
+    {
+        $t = strip_tags(html_entity_decode(
+            $html,
+            ENT_QUOTES | ENT_HTML5,
+            'UTF-8'
+        ));
+
+        if (preg_match(
+            '/Posted\s+(\d+)\s+(minute|hour|day)s?\s+ago/i',
+            $t,
+            $m
+        )) {
+            return '-' . (int)$m[1] . ' ' . strtolower($m[2])
+                . ((int)$m[1] === 1 ? '' : 's');
+        }
+
+        if (preg_match('/Posted\s+(just now|today)/i', $t)) {
+            return 'now';
+        }
+
+        return null;
     }
-    private function date(string $raw,string $tz):?DateTime{
-        if($raw==='')return null;try{$z=new DateTimeZone($tz);$d=new DateTime($raw,$z);if($raw[0]==='@')$d->setTimezone($z);return$d;}catch(\Throwable $e){return null;}
+
+    private function date(string $raw, string $tz): ?DateTime
+    {
+        if ($raw === '') {
+            return null;
+        }
+
+        try {
+            $z = new DateTimeZone($tz);
+            $d = new DateTime($raw, $z);
+
+            if ($raw[0] === '@') {
+                $d->setTimezone($z);
+            }
+
+            return $d;
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
-    private function fail(int $uid,string $p,string $s,string $code,string $msg,?string $resolved=null,?string $canonical=null,?string $eid=null,array $meta=[]):array{
-        return['sales_user_id'=>$uid,'platform'=>$p,'submitted_url'=>$s,'resolved_url'=>$resolved,'canonical_url'=>$canonical,'external_post_id'=>$eid,'title'=>$meta['title']??null,'description'=>$meta['description']??null,'published_at'=>$meta['published_at']??null,'published_date'=>$meta['published_date']??null,'fetched_at'=>date('Y-m-d H:i:s'),'verification_status'=>'failed','failure_code'=>$code,'failure_message'=>$msg,'raw_meta'=>$meta];
+
+    private function fail(
+        int $uid,
+        string $p,
+        string $s,
+        string $code,
+        string $msg,
+        ?string $resolved = null,
+        ?string $canonical = null,
+        ?string $eid = null,
+        array $meta = []
+    ): array {
+        return [
+            'sales_user_id' => $uid,
+            'platform' => $p,
+            'submitted_url' => $s,
+            'resolved_url' => $resolved,
+            'canonical_url' => $canonical,
+            'external_post_id' => $eid,
+            'title' => $meta['title'] ?? null,
+            'description' => $meta['description'] ?? null,
+            'published_at' => $meta['published_at'] ?? null,
+            'published_date' => $meta['published_date'] ?? null,
+            'fetched_at' => date('Y-m-d H:i:s'),
+            'verification_status' => 'failed',
+            'failure_code' => $code,
+            'failure_message' => $msg,
+            'raw_meta' => $meta,
+        ];
     }
 }

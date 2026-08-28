@@ -270,3 +270,18 @@ Every packaged release must increment `VERSION` and use the same version in the 
 - Earlier date sections are loaded progressively over AJAX when the Load Earlier control approaches the viewport.
 - Demo data removes the old fake refrigerator/Craigslist rows and uses the 10 Facebook Marketplace URLs supplied for testing.
 - UI border radius remains standardized at `4px`.
+
+## v0.1.2 — Bright Data Facebook provider
+
+- Added Admin → Settings for Bright Data.
+- Bright Data API token is entered in the Admin UI and encrypted before storage in `cdsp_settings`.
+- The token is never rendered back into HTML after it is saved.
+- Facebook Marketplace checks use Bright Data async flow automatically:
+  trigger → snapshot progress → snapshot download.
+- Bright Data snapshot IDs are stored only in `cdsp_fetch_jobs` for diagnostics.
+- Sales never sees or manually copies snapshot IDs.
+- Re-checking the same Facebook item within 10 minutes can reuse a successful provider result to avoid another query.
+- Existing external Facebook post ID duplicate checks run before Bright Data is called.
+- Generic Bright Data `timestamp` is intentionally NOT treated as the Facebook listing date.
+  A semantic listing/post creation field such as `listing_date` must be present or the post is blocked.
+- UI border radius remains standardized to `4px`.

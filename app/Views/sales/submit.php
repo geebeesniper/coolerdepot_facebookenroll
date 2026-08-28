@@ -4,7 +4,7 @@
     <div>
         <div class="eyebrow">New Post</div>
         <h1>Verify before saving</h1>
-        <p>Detect platform → resolve URL → fetch metadata → verify today's date → duplicate check → save.</p>
+        <p>Detect platform → fetch verified metadata → verify today's date → duplicate check → save.</p>
     </div>
 </div>
 
@@ -34,8 +34,8 @@
 
         <div id="inspectionProgress" class="steps hidden">
             <div>Detecting platform...</div>
-            <div>Resolving share URL...</div>
-            <div>Fetching post information...</div>
+            <div>Checking duplicates...</div>
+            <div>Fetching verified post information...</div>
             <div>Checking date...</div>
             <div>Checking duplicates...</div>
         </div>
