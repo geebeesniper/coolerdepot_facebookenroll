@@ -268,4 +268,389 @@ $(function(){
         });
     });
 
+
+    // v0.1.12 Provider Manager
+    (function(){
+        const $composer = $('#providerComposer');
+        const $form = $('#providerDraftForm');
+
+        if(!$composer.length || !$form.length){
+            return;
+        }
+
+        $form.on('submit', function(e){
+            e.preventDefault();
+        });
+
+        const defaults = {
+            brightdata: {
+                name: 'Bright Data',
+                website: 'https://brightdata.com/'
+            },
+            apify: {
+                name: 'Apify',
+                website: 'https://apify.com/'
+            },
+            scrapecreators: {
+                name: 'ScrapeCreators',
+                website: 'https://scrapecreators.com/'
+            },
+            generic_json: {
+                name: 'Custom API',
+                website: ''
+            }
+        };
+
+        function pageNotice(message, ok){
+            const $n = $('#providerPageNotice');
+            $n
+                .removeClass('hidden ok bad')
+                .addClass(ok ? 'ok' : 'bad')
+                .text(message);
+        }
+
+        function invalidateProviderTest(){
+            $('#providerTestTicket').val('');
+            $('#providerAddButton').prop('disabled', true);
+            $('#providerDraftResult')
+                .addClass('hidden')
+                .removeClass('ok bad')
+                .empty();
+        }
+
+        function syncProviderType(){
+            const type = $('#providerType').val();
+            const d = defaults[type] || defaults.generic_json;
+
+            $('[data-provider-settings]')
+                .addClass('hidden')
+                .find(':input')
+                .prop('disabled', true);
+
+            $('[data-provider-settings="'+type+'"]')
+                .removeClass('hidden')
+                .find(':input')
+                .prop('disabled', false);
+
+            $('.provider-custom-only')
+                .toggleClass('hidden', type !== 'generic_json')
+                .find(':input')
+                .prop('disabled', type !== 'generic_json');
+
+            if(!$('#providerName').data('user-edited')){
+                $('#providerName').val(d.name);
+            }
+
+            if(!$('#providerWebsite').data('user-edited')){
+                $('#providerWebsite').val(d.website);
+            }
+
+            invalidateProviderTest();
+        }
+
+        $('#providerAddOpen').on('click', function(){
+            $composer.removeClass('hidden');
+            $composer.get(0).scrollIntoView({behavior:'smooth', block:'start'});
+        });
+
+        $('#providerAddClose').on('click', function(){
+            $composer.addClass('hidden');
+        });
+
+        $('#providerType').on('change', function(){
+            $('#providerName').data('user-edited', false);
+            $('#providerWebsite').data('user-edited', false);
+            syncProviderType();
+        });
+
+        $('#providerName, #providerWebsite').on('input', function(){
+            $(this).data('user-edited', true);
+        });
+
+        $('#providerAuthMode').on('change', function(){
+            const v = $(this).val();
+            $('#providerAuthNameWrap').toggleClass(
+                'hidden',
+                !(v === 'header' || v === 'query')
+            );
+        }).trigger('change');
+
+        $form.on('input change', 'input,select,textarea', function(e){
+            if(e.target.id !== 'providerTestTicket'){
+                invalidateProviderTest();
+            }
+        });
+
+        $('#providerTestButton').on('click', function(){
+            const $button = $(this);
+            const $result = $('#providerDraftResult');
+
+            $button.prop('disabled', true).text('Testing...');
+            $('#providerAddButton').prop('disabled', true);
+
+            $.ajax({
+                url: $button.data('test-url'),
+                method: 'POST',
+                data: $form.serialize(),
+                dataType: 'json'
+            })
+            .done(function(d){
+                if(!d || !d.ok){
+                    $result
+                        .removeClass('hidden ok')
+                        .addClass('bad')
+                        .text((d && d.message) || 'Provider test failed.');
+                    return;
+                }
+
+                $('#providerTestTicket').val(d.ticket || '');
+                $('#providerAddButton').prop('disabled', !d.ticket);
+
+                const r = d.result || {};
+                const esc = function(v){
+                    return $('<div>').text(v == null ? '—' : String(v)).html();
+                };
+
+                $result
+                    .removeClass('hidden bad')
+                    .addClass('ok')
+                    .html(
+                        '<strong>'+esc(d.message || 'Test passed.')+'</strong>'+
+                        '<dl>'+
+                            '<dt>Provider</dt><dd>'+esc(r.provider)+'</dd>'+
+                            '<dt>Item ID</dt><dd>'+esc(r.item_id)+'</dd>'+
+                            '<dt>Title</dt><dd>'+esc(r.title)+'</dd>'+
+                            '<dt>Listing date</dt><dd>'+esc(r.listing_date)+'</dd>'+
+                            '<dt>Description</dt><dd>'+esc(r.description)+'</dd>'+
+                        '</dl>'
+                    );
+            })
+            .fail(function(x){
+                const message =
+                    (x.responseJSON && x.responseJSON.message)
+                    || 'Provider test failed.';
+
+                $result
+                    .removeClass('hidden ok')
+                    .addClass('bad')
+                    .text(message);
+            })
+            .always(function(){
+                $button.prop('disabled', false).text('Test Provider');
+            });
+        });
+
+        $('#providerAddButton').on('click', function(){
+            const $button = $(this);
+
+            if(!$('#providerTestTicket').val()){
+                return;
+            }
+
+            $button.prop('disabled', true).text('Adding...');
+
+            $.ajax({
+                url: $button.data('add-url'),
+                method: 'POST',
+                data: $form.serialize(),
+                dataType: 'json'
+            })
+            .done(function(d){
+                if(d && d.ok){
+                    window.location.reload();
+                    return;
+                }
+                pageNotice((d && d.message) || 'Could not add provider.', false);
+            })
+            .fail(function(x){
+                pageNotice(
+                    (x.responseJSON && x.responseJSON.message)
+                    || 'Could not add provider.',
+                    false
+                );
+            })
+            .always(function(){
+                $button.text('Add Provider');
+                if($('#providerTestTicket').val()){
+                    $button.prop('disabled', false);
+                }
+            });
+        });
+
+        $(document).on('change', '.provider-toggle', function(){
+            const $toggle = $(this);
+            const $card = $toggle.closest('.provider-card');
+            const enabled = $toggle.is(':checked');
+
+            $toggle.prop('disabled', true);
+
+            $.post($toggle.data('toggle-url'), {
+                _csrf: $form.find('[name="_csrf"]').val(),
+                id: $card.data('provider-id'),
+                enabled: enabled ? '1' : '0'
+            })
+            .done(function(d){
+                if(!d || !d.ok){
+                    $toggle.prop('checked', !enabled);
+                    pageNotice((d && d.message) || 'Could not update provider.', false);
+                    return;
+                }
+
+                $card
+                    .toggleClass('is-enabled', enabled)
+                    .toggleClass('is-disabled', !enabled);
+
+                $toggle.next('span').text(enabled ? 'Enabled' : 'Disabled');
+                pageNotice(d.message, true);
+            })
+            .fail(function(x){
+                $toggle.prop('checked', !enabled);
+                pageNotice(
+                    (x.responseJSON && x.responseJSON.message)
+                    || 'Could not update provider.',
+                    false
+                );
+            })
+            .always(function(){
+                $toggle.prop('disabled', false);
+            });
+        });
+
+        $(document).on('click', '.provider-delete', function(){
+            const $button = $(this);
+            const $card = $button.closest('.provider-card');
+
+            if(!$button.hasClass('confirming')){
+                $button
+                    .addClass('confirming')
+                    .text('Remove?');
+                setTimeout(function(){
+                    $button.removeClass('confirming').text('Remove');
+                }, 3500);
+                return;
+            }
+
+            $button.prop('disabled', true).text('Removing...');
+
+            $.post($button.data('delete-url'), {
+                _csrf: $form.find('[name="_csrf"]').val(),
+                id: $card.data('provider-id')
+            })
+            .done(function(d){
+                if(d && d.ok){
+                    $card.remove();
+                    refreshPriorityNumbers();
+                    pageNotice(d.message, true);
+                    return;
+                }
+
+                pageNotice((d && d.message) || 'Could not remove provider.', false);
+            })
+            .fail(function(x){
+                pageNotice(
+                    (x.responseJSON && x.responseJSON.message)
+                    || 'Could not remove provider.',
+                    false
+                );
+            })
+            .always(function(){
+                $button.prop('disabled', false).removeClass('confirming').text('Remove');
+            });
+        });
+
+        function refreshPriorityNumbers(){
+            $('#providerSortable .provider-card').each(function(index){
+                $(this).find('[data-provider-priority]').text(index + 1);
+            });
+        }
+
+        function saveProviderOrder(){
+            const ids = $('#providerSortable .provider-card').map(function(){
+                return $(this).data('provider-id');
+            }).get();
+
+            if(!ids.length){
+                return;
+            }
+
+            $.post($('#providerSortable').data('reorder-url'), {
+                _csrf: $form.find('[name="_csrf"]').val(),
+                ids: JSON.stringify(ids)
+            })
+            .done(function(d){
+                if(d && d.ok){
+                    pageNotice(d.message, true);
+                }else{
+                    pageNotice((d && d.message) || 'Could not save provider order.', false);
+                }
+            })
+            .fail(function(x){
+                pageNotice(
+                    (x.responseJSON && x.responseJSON.message)
+                    || 'Could not save provider order.',
+                    false
+                );
+            });
+        }
+
+        let dragging = null;
+
+        $(document).on('dragstart', '.provider-drag', function(e){
+            dragging = $(this).closest('.provider-card').get(0);
+
+            if(!dragging){
+                return;
+            }
+
+            $(dragging).addClass('dragging');
+
+            if(e.originalEvent && e.originalEvent.dataTransfer){
+                e.originalEvent.dataTransfer.effectAllowed = 'move';
+                e.originalEvent.dataTransfer.setData(
+                    'text/plain',
+                    String($(dragging).data('provider-id'))
+                );
+            }
+        });
+
+        $(document).on('dragover', '.provider-card', function(e){
+            e.preventDefault();
+
+            if(!dragging || dragging === this){
+                return;
+            }
+
+            $('.provider-card').removeClass('drag-over');
+            $(this).addClass('drag-over');
+
+            const targetRect = this.getBoundingClientRect();
+            const before = e.originalEvent.clientY < targetRect.top + targetRect.height / 2;
+
+            if(before){
+                this.parentNode.insertBefore(dragging, this);
+            }else{
+                this.parentNode.insertBefore(dragging, this.nextSibling);
+            }
+
+            refreshPriorityNumbers();
+        });
+
+        $(document).on('drop', '.provider-card', function(e){
+            e.preventDefault();
+        });
+
+        $(document).on('dragend', '.provider-drag', function(){
+            if(dragging){
+                $(dragging).removeClass('dragging');
+            }
+
+            $('.provider-card').removeClass('drag-over');
+            dragging = null;
+            refreshPriorityNumbers();
+            saveProviderOrder();
+        });
+
+        syncProviderType();
+    })();
+
 });

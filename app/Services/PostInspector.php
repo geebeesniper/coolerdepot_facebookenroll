@@ -104,23 +104,11 @@ class PostInspector
             }
         }
 
-        $provider = new BrightDataMarketplaceProvider();
-
-        if (!$provider->configured()) {
-            return $this->fail(
-                $uid,
-                'facebook',
-                $submitted,
-                'FACEBOOK_PROVIDER_NOT_CONFIGURED',
-                'Facebook verification is not configured. Contact Admin.',
-                $submitted,
-                $submitted,
-                $eid
-            );
-        }
-
         try {
-            $item = $provider->fetch($submitted, $uid);
+            $item = (new FacebookMarketplaceProviderChain())->fetch(
+                $submitted,
+                $uid
+            );
         } catch (\Throwable $e) {
             return $this->fail(
                 $uid,
@@ -132,7 +120,7 @@ class PostInspector
                 $submitted,
                 $eid,
                 [
-                    'provider' => 'brightdata',
+                    'provider' => 'facebook_provider_chain',
                     'provider_error' => $e->getMessage(),
                 ]
             );
@@ -150,9 +138,19 @@ class PostInspector
         $publishedRaw = trim((string)($item['published_raw'] ?? ''));
 
         $raw = [
-            'provider' => 'brightdata',
+            'provider' => (string)($item['provider'] ?? 'unknown'),
             'provider_job_id' => $item['provider_job_id'] ?? null,
             'provider_cache' => !empty($item['_provider_cache']),
+            'provider_chain' => $item['_provider_chain'] ?? [],
+            'fallback_used' => !empty($item['_fallback_used']),
+            'fallback_level' => $item['_fallback_level'] ?? 0,
+            'fallback_reason' => $item['_fallback_reason'] ?? null,
+            'provider_profile_id' => $item['_provider_profile_id']
+                ?? $item['provider_profile_id']
+                ?? null,
+            'provider_profile_name' => $item['_provider_profile_name']
+                ?? $item['provider_name']
+                ?? null,
             'provider_record' => $item['raw'] ?? [],
         ];
 

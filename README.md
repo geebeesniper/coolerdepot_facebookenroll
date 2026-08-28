@@ -350,3 +350,95 @@ Every packaged release must increment `VERSION` and use the same version in the 
 - Fixed vertical spacing above the `Test Bright Data` button.
 - Button is now block-level with a 14px top margin.
 - All border radius remains `4px`.
+
+
+## v0.1.9 — Facebook provider fallback
+
+- Bright Data remains the primary Facebook Marketplace provider.
+- Added ScrapeCreators Marketplace Item as automatic fallback.
+- ScrapeCreators uses `creation_time` as the preferred listing timestamp.
+- Fallback occurs only when the primary provider fails or returns incomplete required metadata.
+- A valid Bright Data listing with an old posting date is NOT sent to the fallback provider.
+  Business date validation happens after provider selection.
+- Provider cache is provider-specific to prevent one provider's cached response from being mistaken for another.
+- ScrapeCreators API key is never embedded in source code or release ZIPs.
+- Added one-time encrypted key installer scripts.
+- All border radius remains `4px`.
+
+## v0.1.10 — Three-provider Facebook failover
+
+Provider order:
+
+1. Bright Data — primary
+2. Apify official `apify/facebook-marketplace-scraper` — first fallback
+3. ScrapeCreators — second fallback
+
+Apify input uses one canonical Marketplace item URL, `resultsLimit=1`, and
+`includeListingDetails=true`. The provider sends the API token using the
+Authorization header, requests at most one dataset item, and caps the run charge.
+
+For the official Apify Actor, `timestamp` is accepted as the listing timestamp
+because detailed listing output exposes that field and the project test on item
+`1609835460847233` matched Bright Data exactly:
+`2026-08-27 23:54:00 UTC`.
+
+Fallback is only triggered when a provider fails or returns incomplete required
+metadata. A successful provider result whose listing date is old is returned to
+business validation and does not consume another fallback provider request.
+
+API tokens are not stored in source code or release ZIP files. They are encrypted
+in `cdsp_settings`.
+
+All border radius remains `4px`.
+
+## v0.1.11 — Dual Bright Data credential failover
+
+Facebook Marketplace verification order:
+
+1. Bright Data primary API token
+2. Bright Data secondary API token
+3. Apify
+4. ScrapeCreators
+
+The second Bright Data credential is attempted automatically when the first
+Bright Data attempt fails due to provider/API failure, HTTP 401/402/403/429,
+timeout, Bright Data job status `failed`, empty result, snapshot failure, or
+incomplete required Marketplace metadata.
+
+A valid complete listing is returned immediately. If its verified publication
+date is old, that is a business-validation result rather than an API failure,
+so the secondary key and other providers are not consumed.
+
+Primary and secondary Bright Data tokens are encrypted independently in
+`cdsp_settings`. Neither token is written into source code, logs, release ZIPs,
+or Git.
+
+Admin Settings now supports Primary API Token and Secondary API Token fields
+and the Bright Data test displays which credential succeeded.
+
+All border radius remains `4px`.
+
+## v0.1.12 — Dynamic Provider Manager
+
+Admin API Settings is now a provider registry instead of hard-coded Bright Data fields.
+
+- `+ Add Provider` supports Bright Data, Apify, ScrapeCreators, and a Custom JSON API.
+- New providers are not saved until a real Facebook Marketplace test succeeds.
+- The successful test ticket expires after 10 minutes and is invalidated if the form changes.
+- Provider cards can be dragged to change live failover order.
+- Providers can be enabled/disabled or removed without editing code.
+- Each API credential is its own provider card, so multiple Bright Data keys can be ordered independently.
+- Custom JSON APIs support GET/POST, Bearer/header/query/no auth, query/JSON listing URL input, and dot-path response mapping.
+- Custom endpoints must be HTTPS and resolve to public IP space; redirects are disabled to reduce SSRF risk.
+- API tokens are encrypted in `cdsp_provider_profiles.token_encrypted` and are never rendered back to the browser.
+- Migration `005_provider_registry.sql` plus `scripts/migrate_provider_registry.php` imports existing Bright Data / Apify / ScrapeCreators credentials in their existing failover order.
+- Runtime provider order is now database-driven; the first complete successful result wins.
+- A provider returning a valid old listing date is a successful provider result and is handled by business date validation, so lower-priority providers are not consumed.
+- All border radius remains `4px`.
+
+Migration:
+
+```bash
+cd /opt/coolerdepot
+docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_registry.php
+```

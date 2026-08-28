@@ -214,6 +214,32 @@ CREATE TABLE IF NOT EXISTS cdsp_settings (
  CONSTRAINT fk_setting_updated_by FOREIGN KEY(updated_by) REFERENCES cdsp_users(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS cdsp_provider_profiles (
+ id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+ source_key VARCHAR(100) NULL,
+ provider_type VARCHAR(50) NOT NULL,
+ name VARCHAR(100) NOT NULL,
+ website_url VARCHAR(500) NULL,
+ api_endpoint VARCHAR(1000) NULL,
+ token_encrypted MEDIUMTEXT NULL,
+ config_json MEDIUMTEXT NOT NULL,
+ enabled TINYINT(1) NOT NULL DEFAULT 1,
+ sort_order INT NOT NULL DEFAULT 10,
+ verified_at DATETIME NULL,
+ last_tested_at DATETIME NULL,
+ last_test_ok TINYINT(1) NULL,
+ last_test_message VARCHAR(1000) NULL,
+ created_by INT UNSIGNED NOT NULL,
+ updated_by INT UNSIGNED NOT NULL,
+ created_at DATETIME NOT NULL,
+ updated_at DATETIME NOT NULL,
+ PRIMARY KEY(id),
+ UNIQUE KEY uq_provider_source(source_key),
+ KEY idx_provider_chain(enabled,verified_at,sort_order,id),
+ CONSTRAINT fk_provider_created_by FOREIGN KEY(created_by) REFERENCES cdsp_users(id),
+ CONSTRAINT fk_provider_updated_by FOREIGN KEY(updated_by) REFERENCES cdsp_users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS cdsp_fetch_jobs (
  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
  requested_by_user_id INT UNSIGNED NOT NULL,

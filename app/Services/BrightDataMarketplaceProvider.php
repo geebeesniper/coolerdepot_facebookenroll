@@ -12,16 +12,26 @@ class BrightDataMarketplaceProvider
     {
         try {
             return Setting::get('brightdata_enabled', '0') === '1'
-                && trim((string)Setting::get('brightdata_api_token', '')) !== '';
+                && count($this->credentials()) > 0;
         } catch (\Throwable $e) {
             return false;
         }
     }
 
+    public function credentialStatus(): array
+    {
+        $credentials = $this->credentials();
+
+        return [
+            'primary' => isset($credentials['primary']),
+            'secondary' => isset($credentials['secondary']),
+        ];
+    }
+
     public function fetch(string $url, int $requestedByUserId): array
     {
-        if (!$this->configured()) {
-            throw new \RuntimeException('Bright Data is not configured.');
+        if (Setting::get('brightdata_enabled', '0') !== '1') {
+            throw new \RuntimeException('Bright Data is disabled.');
         }
 
         $normalizedUrl = PlatformUrl::normalize($url, 'facebook');
@@ -33,25 +43,142 @@ class BrightDataMarketplaceProvider
         $url = $normalizedUrl;
         $externalId = PlatformUrl::externalId('facebook', $url);
 
-        // Avoid spending another record when Sales re-checks the same listing within 10 minutes.
-        $cached = FetchJob::recentReady('facebook', $externalId, 10);
-        if ($cached) {
+        // Cache is shared across both Bright Data credentials. Only return a
+        // complete cached listing. An incomplete older result must not skip
+        // credential failover.
+        $cached = FetchJob::recentReady(
+            'facebook',
+            $externalId,
+            10,
+            'brightdata'
+        );
+
+        if ($cached && $this->complete($cached)) {
             $cached['_provider_cache'] = true;
             return $cached;
         }
 
-        $token = trim((string)Setting::get('brightdata_api_token', ''));
+        $credentials = $this->credentials();
+
+        if (!$credentials) {
+            throw new \RuntimeException('No Bright Data API token is configured.');
+        }
+
         $datasetId = trim((string)Setting::get(
             'brightdata_marketplace_dataset_id',
             self::DEFAULT_DATASET_ID
         ));
-        $timeout = max(15, min(90, (int)Setting::get('brightdata_timeout_seconds', '45')));
-        $pollSeconds = max(2, min(10, (int)Setting::get('brightdata_poll_seconds', '3')));
+
+        $timeout = max(
+            15,
+            min(
+                90,
+                (int)Setting::get('brightdata_timeout_seconds', '45')
+            )
+        );
+
+        $pollSeconds = max(
+            2,
+            min(
+                10,
+                (int)Setting::get('brightdata_poll_seconds', '3')
+            )
+        );
 
         if (!preg_match('/^gd_[A-Za-z0-9]+$/', $datasetId)) {
-            throw new \RuntimeException('Bright Data Marketplace dataset ID is invalid.');
+            throw new \RuntimeException(
+                'Bright Data Marketplace dataset ID is invalid.'
+            );
         }
 
+        $failures = [];
+        $attempt = 0;
+
+        // PHP arrays retain insertion order: primary is always attempted first.
+        foreach ($credentials as $slot => $token) {
+            $attempt++;
+
+            try {
+                $item = $this->fetchWithCredential(
+                    $url,
+                    $externalId,
+                    $requestedByUserId,
+                    $datasetId,
+                    $timeout,
+                    $pollSeconds,
+                    $slot,
+                    $token
+                );
+
+                // A provider response that cannot satisfy our Marketplace
+                // verification contract is treated as a failed credential
+                // attempt so the second Bright Data key is tried BEFORE Apify.
+                if (!$this->complete($item)) {
+                    throw new \RuntimeException(
+                        'Bright Data returned incomplete listing metadata.'
+                    );
+                }
+
+                $item['_brightdata_attempt'] = $attempt;
+                $item['_brightdata_credential'] = $slot;
+                $item['_brightdata_failover_used'] = $attempt > 1;
+
+                if ($failures) {
+                    $item['_brightdata_failover_reason'] =
+                        implode(' | ', $failures);
+                }
+
+                return $item;
+            } catch (\Throwable $e) {
+                $failures[] =
+                    'Key #' . $attempt . ' (' . $slot . '): '
+                    . $e->getMessage();
+
+                // Continue automatically to the next configured Bright Data key.
+            }
+        }
+
+        throw new \RuntimeException(
+            'All Bright Data credentials failed. '
+            . implode(' | ', $failures)
+        );
+    }
+
+    private function credentials(): array
+    {
+        $credentials = [];
+
+        $primary = trim((string)Setting::get(
+            'brightdata_api_token',
+            ''
+        ));
+
+        if ($primary !== '') {
+            $credentials['primary'] = $primary;
+        }
+
+        $secondary = trim((string)Setting::get(
+            'brightdata_api_token_secondary',
+            ''
+        ));
+
+        if ($secondary !== '') {
+            $credentials['secondary'] = $secondary;
+        }
+
+        return $credentials;
+    }
+
+    private function fetchWithCredential(
+        string $url,
+        ?string $externalId,
+        int $requestedByUserId,
+        string $datasetId,
+        int $timeout,
+        int $pollSeconds,
+        string $slot,
+        string $token
+    ): array {
         $jobId = FetchJob::create(
             $requestedByUserId,
             'facebook',
@@ -76,95 +203,227 @@ class BrightDataMarketplaceProvider
                 ? (string)($triggerData['snapshot_id'] ?? '')
                 : '';
 
-            if ($trigger['status'] < 200 || $trigger['status'] >= 300 || $snapshotId === '') {
-                $message = $this->providerMessage($triggerData, $trigger['body']);
-                FetchJob::setStatus($jobId, 'failed', $trigger['status'], $message);
-                throw new \RuntimeException('Bright Data trigger failed: ' . $message);
+            if ($trigger['status'] < 200
+                || $trigger['status'] >= 300
+                || $snapshotId === '') {
+                $message = $this->providerMessage(
+                    $triggerData,
+                    $trigger['body']
+                );
+
+                $this->failJob(
+                    $jobId,
+                    $trigger['status'],
+                    $slot,
+                    'Trigger failed: ' . $message
+                );
+
+                throw new \RuntimeException(
+                    'trigger failed: ' . $message
+                );
             }
 
-            FetchJob::setSnapshot($jobId, $snapshotId, $trigger['status']);
+            FetchJob::setSnapshot(
+                $jobId,
+                $snapshotId,
+                $trigger['status']
+            );
 
             $deadline = microtime(true) + $timeout;
 
             while (microtime(true) < $deadline) {
                 $progress = $this->request(
                     'GET',
-                    'https://api.brightdata.com/datasets/v3/progress/' . rawurlencode($snapshotId),
+                    'https://api.brightdata.com/datasets/v3/progress/'
+                        . rawurlencode($snapshotId),
                     $token,
                     null,
                     15
                 );
 
-                $progressData = json_decode($progress['body'], true);
+                $progressData = json_decode(
+                    $progress['body'],
+                    true
+                );
+
                 $status = strtolower((string)(
-                    is_array($progressData) ? ($progressData['status'] ?? '') : ''
+                    is_array($progressData)
+                        ? ($progressData['status'] ?? '')
+                        : ''
                 ));
 
-                if ($progress['status'] === 401) {
-                    FetchJob::setStatus($jobId, 'failed', 401, 'Bright Data token was rejected.');
-                    throw new \RuntimeException('Bright Data token was rejected.');
+                // Any HTTP/provider failure is a failed credential attempt.
+                // This includes invalid/expired/exhausted/rate-limited keys.
+                if ($progress['status'] === 401
+                    || $progress['status'] === 403
+                    || $progress['status'] === 402
+                    || $progress['status'] === 429) {
+                    $message = $this->providerMessage(
+                        $progressData,
+                        $progress['body']
+                    );
+
+                    $this->failJob(
+                        $jobId,
+                        $progress['status'],
+                        $slot,
+                        'Credential rejected or unavailable: ' . $message
+                    );
+
+                    throw new \RuntimeException(
+                        'credential rejected/unavailable: ' . $message
+                    );
                 }
 
                 if ($status === 'failed') {
-                    $message = $this->providerMessage($progressData, $progress['body']);
-                    FetchJob::setStatus($jobId, 'failed', $progress['status'], $message);
-                    throw new \RuntimeException('Bright Data job failed: ' . $message);
+                    $message = $this->providerMessage(
+                        $progressData,
+                        $progress['body']
+                    );
+
+                    $this->failJob(
+                        $jobId,
+                        $progress['status'],
+                        $slot,
+                        'Job failed: ' . $message
+                    );
+
+                    throw new \RuntimeException(
+                        'job returned failure: ' . $message
+                    );
                 }
 
                 if ($status === 'ready') {
                     $download = $this->request(
                         'GET',
                         'https://api.brightdata.com/datasets/v3/snapshot/'
-                            . rawurlencode($snapshotId) . '?format=json',
+                            . rawurlencode($snapshotId)
+                            . '?format=json',
                         $token,
                         null,
                         20
                     );
 
-                    $downloadData = json_decode($download['body'], true);
+                    $downloadData = json_decode(
+                        $download['body'],
+                        true
+                    );
 
-                    if ($download['status'] < 200 || $download['status'] >= 300) {
-                        $message = $this->providerMessage($downloadData, $download['body']);
-                        FetchJob::setStatus($jobId, 'failed', $download['status'], $message);
-                        throw new \RuntimeException('Bright Data snapshot download failed: ' . $message);
+                    if ($download['status'] < 200
+                        || $download['status'] >= 300) {
+                        $message = $this->providerMessage(
+                            $downloadData,
+                            $download['body']
+                        );
+
+                        $this->failJob(
+                            $jobId,
+                            $download['status'],
+                            $slot,
+                            'Snapshot download failed: ' . $message
+                        );
+
+                        throw new \RuntimeException(
+                            'snapshot download failed: ' . $message
+                        );
                     }
 
                     $record = $this->firstRecord($downloadData);
 
                     if (!$record) {
-                        FetchJob::setStatus($jobId, 'failed', $download['status'], 'Snapshot contained no listing record.');
-                        throw new \RuntimeException('Bright Data did not return a valid Marketplace listing. Check the URL and try again.');
+                        $this->failJob(
+                            $jobId,
+                            $download['status'],
+                            $slot,
+                            'Snapshot contained no valid listing record.'
+                        );
+
+                        throw new \RuntimeException(
+                            'no valid Marketplace listing was returned.'
+                        );
                     }
 
-                    $normalized = $this->normalize($record, $url, $snapshotId);
-                    FetchJob::setReady($jobId, $normalized, $download['status']);
+                    $normalized = $this->normalize(
+                        $record,
+                        $url,
+                        $snapshotId,
+                        $slot
+                    );
+
+                    if (!$this->complete($normalized)) {
+                        $this->failJob(
+                            $jobId,
+                            $download['status'],
+                            $slot,
+                            'Listing metadata was incomplete.'
+                        );
+
+                        throw new \RuntimeException(
+                            'listing metadata was incomplete.'
+                        );
+                    }
+
+                    FetchJob::setReady(
+                        $jobId,
+                        $normalized,
+                        $download['status']
+                    );
 
                     return $normalized;
                 }
 
-                if (!in_array($status, ['', 'starting', 'running', 'building'], true)
+                if (!in_array(
+                        $status,
+                        ['', 'starting', 'running', 'building'],
+                        true
+                    )
                     && $progress['status'] >= 400) {
-                    $message = $this->providerMessage($progressData, $progress['body']);
-                    FetchJob::setStatus($jobId, 'failed', $progress['status'], $message);
-                    throw new \RuntimeException('Bright Data progress check failed: ' . $message);
+                    $message = $this->providerMessage(
+                        $progressData,
+                        $progress['body']
+                    );
+
+                    $this->failJob(
+                        $jobId,
+                        $progress['status'],
+                        $slot,
+                        'Progress check failed: ' . $message
+                    );
+
+                    throw new \RuntimeException(
+                        'progress check failed: ' . $message
+                    );
                 }
 
-                FetchJob::setStatus($jobId, 'running', $progress['status']);
+                FetchJob::setStatus(
+                    $jobId,
+                    'running',
+                    $progress['status']
+                );
+
                 sleep($pollSeconds);
             }
 
-            FetchJob::setStatus(
+            $this->failJob(
                 $jobId,
-                'failed',
                 null,
-                'Bright Data did not finish within ' . $timeout . ' seconds.'
+                $slot,
+                'Timed out after ' . $timeout . ' seconds.'
             );
 
-            throw new \RuntimeException('Bright Data timed out while fetching the Facebook listing.');
+            throw new \RuntimeException(
+                'timed out while fetching the Facebook listing.'
+            );
         } catch (\Throwable $e) {
-            // If the failure happened before a status update, make sure the job is still diagnosable.
+            // Guarantee every failed attempt is diagnosable. The token itself
+            // is never recorded.
             try {
-                FetchJob::setStatus($jobId, 'failed', null, $e->getMessage());
+                $this->failJob(
+                    $jobId,
+                    null,
+                    $slot,
+                    $e->getMessage()
+                );
             } catch (\Throwable $ignored) {
             }
 
@@ -172,27 +431,58 @@ class BrightDataMarketplaceProvider
         }
     }
 
-    private function normalize(array $record, string $submittedUrl, string $snapshotId): array
+    private function complete(array $item): bool
     {
+        return trim((string)($item['external_post_id'] ?? '')) !== ''
+            && trim((string)($item['title'] ?? '')) !== ''
+            && trim((string)($item['description'] ?? '')) !== ''
+            && trim((string)($item['published_raw'] ?? '')) !== '';
+    }
+
+    private function failJob(
+        int $jobId,
+        ?int $httpStatus,
+        string $slot,
+        string $message
+    ): void {
+        FetchJob::setStatus(
+            $jobId,
+            'failed',
+            $httpStatus,
+            ucfirst($slot) . ' key: ' . $message
+        );
+    }
+
+    private function normalize(
+        array $record,
+        string $submittedUrl,
+        string $snapshotId,
+        string $credentialSlot
+    ): array {
         $title = trim((string)($record['title'] ?? ''));
         $description = trim((string)($record['description'] ?? ''));
+
         $productId = trim((string)(
             $record['product_id']
             ?? $record['listing_id']
-            ?? PlatformUrl::externalId('facebook', $submittedUrl)
+            ?? PlatformUrl::externalId(
+                'facebook',
+                $submittedUrl
+            )
             ?? ''
         ));
 
-        $canonicalUrl = trim((string)($record['url'] ?? $submittedUrl));
+        $canonicalUrl = trim((string)(
+            $record['url'] ?? $submittedUrl
+        ));
 
         if (!PlatformUrl::allowed($canonicalUrl, 'facebook')) {
             $canonicalUrl = $submittedUrl;
         }
 
-        // IMPORTANT: Bright Data may return a generic crawl "timestamp".
-        // That is not accepted as the Facebook listing publish date.
-        // Only semantically listing/post creation fields are used here.
+        // Generic Bright Data crawl timestamp is NOT a Facebook publish time.
         $publishedRaw = null;
+
         foreach ([
             'listing_date',
             'date_posted',
@@ -201,7 +491,8 @@ class BrightDataMarketplaceProvider
             'created_at',
             'date_created',
         ] as $field) {
-            if (isset($record[$field]) && trim((string)$record[$field]) !== '') {
+            if (isset($record[$field])
+                && trim((string)$record[$field]) !== '') {
                 $publishedRaw = trim((string)$record[$field]);
                 break;
             }
@@ -210,10 +501,12 @@ class BrightDataMarketplaceProvider
         return [
             'provider' => 'brightdata',
             'provider_job_id' => $snapshotId,
+            'credential_slot' => $credentialSlot,
             'submitted_url' => $submittedUrl,
             'resolved_url' => $canonicalUrl,
             'canonical_url' => $canonicalUrl,
-            'external_post_id' => $productId !== '' ? $productId : null,
+            'external_post_id' =>
+                $productId !== '' ? $productId : null,
             'title' => $title,
             'description' => $description,
             'published_raw' => $publishedRaw,
@@ -232,8 +525,14 @@ class BrightDataMarketplaceProvider
         if (array_is_list($data)) {
             $candidates = $data;
         } else {
-            foreach (['data', 'results', 'records', 'items'] as $key) {
-                if (!empty($data[$key]) && is_array($data[$key])) {
+            foreach ([
+                'data',
+                'results',
+                'records',
+                'items',
+            ] as $key) {
+                if (!empty($data[$key])
+                    && is_array($data[$key])) {
                     if (array_is_list($data[$key])) {
                         foreach ($data[$key] as $row) {
                             $candidates[] = $row;
@@ -252,10 +551,7 @@ class BrightDataMarketplaceProvider
                 continue;
             }
 
-            // A valid Marketplace record must contain at least one listing-specific
-            // field. Bright Data can return an input/timestamp-only row for a bad
-            // request; that is not a successful listing.
-            $listingFields = [
+            foreach ([
                 'title',
                 'product_id',
                 'listing_id',
@@ -266,9 +562,7 @@ class BrightDataMarketplaceProvider
                 'date_posted',
                 'posted_at',
                 'creation_time',
-            ];
-
-            foreach ($listingFields as $field) {
+            ] as $field) {
                 if (array_key_exists($field, $row)
                     && trim((string)($row[$field] ?? '')) !== '') {
                     return $row;
@@ -282,16 +576,30 @@ class BrightDataMarketplaceProvider
     private function providerMessage($json, string $raw): string
     {
         if (is_array($json)) {
-            foreach (['error_message', 'message', 'error', 'detail'] as $key) {
-                if (isset($json[$key]) && is_scalar($json[$key])) {
-                    return substr(trim((string)$json[$key]), 0, 500);
+            foreach ([
+                'error_message',
+                'message',
+                'error',
+                'detail',
+            ] as $key) {
+                if (isset($json[$key])
+                    && is_scalar($json[$key])) {
+                    return substr(
+                        trim((string)$json[$key]),
+                        0,
+                        500
+                    );
                 }
             }
         }
 
-        $clean = trim(preg_replace('/\s+/u', ' ', strip_tags($raw)));
+        $clean = trim(
+            preg_replace('/\s+/u', ' ', strip_tags($raw))
+        );
 
-        return $clean !== '' ? substr($clean, 0, 500) : 'Unknown provider error.';
+        return $clean !== ''
+            ? substr($clean, 0, 500)
+            : 'Unknown provider error.';
     }
 
     private function request(
@@ -304,7 +612,9 @@ class BrightDataMarketplaceProvider
         $ch = curl_init($url);
 
         if ($ch === false) {
-            throw new \RuntimeException('Could not initialize HTTP client.');
+            throw new \RuntimeException(
+                'Could not initialize HTTP client.'
+            );
         }
 
         $headers = [
@@ -319,14 +629,23 @@ class BrightDataMarketplaceProvider
             CURLOPT_TIMEOUT => $timeout,
             CURLOPT_CUSTOMREQUEST => $method,
             CURLOPT_HTTPHEADER => $headers,
-            CURLOPT_USERAGENT => 'CoolerDepot-SalesPosts/' . (string)($GLOBALS['config']['app']['version'] ?? 'dev'),
+            CURLOPT_USERAGENT => 'CoolerDepot-SalesPosts/'
+                . (string)(
+                    $GLOBALS['config']['app']['version'] ?? 'dev'
+                ),
         ];
 
         if ($jsonBody !== null) {
-            $payload = json_encode($jsonBody, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            $payload = json_encode(
+                $jsonBody,
+                JSON_UNESCAPED_SLASHES
+                | JSON_UNESCAPED_UNICODE
+            );
 
             if ($payload === false) {
-                throw new \RuntimeException('Could not encode Bright Data request.');
+                throw new \RuntimeException(
+                    'Could not encode Bright Data request.'
+                );
             }
 
             $headers[] = 'Content-Type: application/json';
@@ -338,11 +657,18 @@ class BrightDataMarketplaceProvider
 
         $body = curl_exec($ch);
         $error = curl_error($ch);
-        $status = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+        $status = (int)curl_getinfo(
+            $ch,
+            CURLINFO_RESPONSE_CODE
+        );
+
         curl_close($ch);
 
         if ($body === false) {
-            throw new \RuntimeException('Bright Data network error: ' . ($error ?: 'unknown error'));
+            throw new \RuntimeException(
+                'Bright Data network error: '
+                . ($error ?: 'unknown error')
+            );
         }
 
         return [
