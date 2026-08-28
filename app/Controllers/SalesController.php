@@ -18,8 +18,8 @@ class SalesController extends Controller{
     }
     public function requestDelete():void{
         $u=Auth::requireRole('sales');Csrf::verify($_POST['_csrf']??null);$pid=(int)($_POST['post_id']??0);$reason=trim((string)($_POST['reason']??''));
-        $s=Database::connection()->prepare("INSERT INTO deletion_requests(post_id,requested_by,reason,status,created_at,updated_at)
-        SELECT id,?,?,'pending',NOW(),NOW() FROM sales_posts WHERE id=? AND sales_user_id=? AND deleted_at IS NULL");
+        $s=Database::connection()->prepare("INSERT INTO cdsp_deletion_requests(post_id,requested_by,reason,status,created_at,updated_at)
+        SELECT id,?,?,'pending',NOW(),NOW() FROM cdsp_sales_posts WHERE id=? AND sales_user_id=? AND deleted_at IS NULL");
         $s->execute([(int)$u['id'],$reason,$pid,(int)$u['id']]);$_SESSION['flash_success']='Deletion request sent to Admin.';$this->redirect('/sales');
     }
 }

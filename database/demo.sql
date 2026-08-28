@@ -2,19 +2,19 @@
 -- DEMO CREDENTIALS
 -- Admin: admin / AdminDemo!2026
 -- Sales: 100006, 100010, 100013 / SalesDemo!2026
--- Delete these users/posts before production use.
+-- Delete these cdsp_users/posts before production use.
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS=0;
 
-DELETE FROM review_attachments WHERE entity_type IN ('post_review','daily_review','period_review');
-DELETE FROM period_sales_reviews;
-DELETE FROM daily_sales_reviews;
-DELETE FROM post_reviews;
-DELETE FROM deletion_requests;
-DELETE FROM sales_posts WHERE external_post_id LIKE 'demo-%' OR external_post_id LIKE '90000000000%';
-DELETE FROM users WHERE username IN ('admin','100006','100010','100013');
+DELETE FROM cdsp_review_attachments WHERE entity_type IN ('post_review','daily_review','period_review');
+DELETE FROM cdsp_period_sales_reviews;
+DELETE FROM cdsp_daily_sales_reviews;
+DELETE FROM cdsp_post_reviews;
+DELETE FROM cdsp_deletion_requests;
+DELETE FROM cdsp_sales_posts WHERE external_post_id LIKE 'demo-%' OR external_post_id LIKE '90000000000%';
+DELETE FROM cdsp_users WHERE username IN ('admin','100006','100010','100013');
 
-INSERT INTO users
+INSERT INTO cdsp_users
 (sales_id, username, password_hash, display_name, role, active, created_at, updated_at)
 VALUES
 (NULL, 'admin', '$2y$12$poKqRX2Z7gU084mWHTI/VOzTcZSSaOZOPuSQkoR4wKRILXi5UQlnS', 'Demo Administrator', 'admin', 1, NOW(), NOW()),
@@ -22,7 +22,7 @@ VALUES
 (100010, '100010', '$2y$12$rS2uwR1KbHl/.PWi2M9yN.dRMRRpXl4HG1nx5cwn1/is8rMmvbBzm', 'May He (AMY)', 'sales', 1, NOW(), NOW()),
 (100013, '100013', '$2y$12$rS2uwR1KbHl/.PWi2M9yN.dRMRRpXl4HG1nx5cwn1/is8rMmvbBzm', 'Andrew Ramirez', 'sales', 1, NOW(), NOW());
 
-INSERT INTO sales_posts
+INSERT INTO cdsp_sales_posts
 (sales_user_id, platform, submitted_url, resolved_url, canonical_url, canonical_url_hash,
  external_post_id, title, normalized_title_hash, description, description_hash,
  published_at, published_date, fetched_at, verification_status, admin_review_status,
@@ -33,9 +33,9 @@ SELECT id, 'facebook', 'https://www.facebook.com/marketplace/item/900000000001',
        DATE_SUB(NOW(), INTERVAL 17 MINUTE), CURDATE(),
        DATE_SUB(NOW(), INTERVAL 16 MINUTE),
        'verified', 'pending', DATE_SUB(NOW(), INTERVAL 16 MINUTE), NOW()
-FROM users WHERE sales_id=100006 LIMIT 1;
+FROM cdsp_users WHERE sales_id=100006 LIMIT 1;
 
-INSERT INTO sales_posts
+INSERT INTO cdsp_sales_posts
 (sales_user_id, platform, submitted_url, resolved_url, canonical_url, canonical_url_hash,
  external_post_id, title, normalized_title_hash, description, description_hash,
  published_at, published_date, fetched_at, verification_status, admin_review_status,
@@ -46,9 +46,9 @@ SELECT id, 'craigslist', 'https://orangecounty.craigslist.org/app/d/demo-refrige
        DATE_SUB(NOW(), INTERVAL 24 MINUTE), CURDATE(),
        DATE_SUB(NOW(), INTERVAL 23 MINUTE),
        'verified', 'pending', DATE_SUB(NOW(), INTERVAL 23 MINUTE), NOW()
-FROM users WHERE sales_id=100006 LIMIT 1;
+FROM cdsp_users WHERE sales_id=100006 LIMIT 1;
 
-INSERT INTO sales_posts
+INSERT INTO cdsp_sales_posts
 (sales_user_id, platform, submitted_url, resolved_url, canonical_url, canonical_url_hash,
  external_post_id, title, normalized_title_hash, description, description_hash,
  published_at, published_date, fetched_at, verification_status, admin_review_status,
@@ -59,9 +59,9 @@ SELECT id, 'offerup', 'https://offerup.com/item/detail/demo-900000000003', 'http
        DATE_SUB(NOW(), INTERVAL 31 MINUTE), CURDATE(),
        DATE_SUB(NOW(), INTERVAL 30 MINUTE),
        'verified', 'pending', DATE_SUB(NOW(), INTERVAL 30 MINUTE), NOW()
-FROM users WHERE sales_id=100010 LIMIT 1;
+FROM cdsp_users WHERE sales_id=100010 LIMIT 1;
 
-INSERT INTO sales_posts
+INSERT INTO cdsp_sales_posts
 (sales_user_id, platform, submitted_url, resolved_url, canonical_url, canonical_url_hash,
  external_post_id, title, normalized_title_hash, description, description_hash,
  published_at, published_date, fetched_at, verification_status, admin_review_status,
@@ -72,9 +72,9 @@ SELECT id, 'facebook', 'https://www.facebook.com/marketplace/item/900000000004',
        DATE_SUB(NOW(), INTERVAL 38 MINUTE), CURDATE(),
        DATE_SUB(NOW(), INTERVAL 37 MINUTE),
        'verified', 'pending', DATE_SUB(NOW(), INTERVAL 37 MINUTE), NOW()
-FROM users WHERE sales_id=100010 LIMIT 1;
+FROM cdsp_users WHERE sales_id=100010 LIMIT 1;
 
-INSERT INTO sales_posts
+INSERT INTO cdsp_sales_posts
 (sales_user_id, platform, submitted_url, resolved_url, canonical_url, canonical_url_hash,
  external_post_id, title, normalized_title_hash, description, description_hash,
  published_at, published_date, fetched_at, verification_status, admin_review_status,
@@ -85,9 +85,9 @@ SELECT id, 'craigslist', 'https://orangecounty.craigslist.org/bfs/d/demo-freezer
        DATE_SUB(NOW(), INTERVAL 45 MINUTE), CURDATE(),
        DATE_SUB(NOW(), INTERVAL 44 MINUTE),
        'verified', 'pending', DATE_SUB(NOW(), INTERVAL 44 MINUTE), NOW()
-FROM users WHERE sales_id=100013 LIMIT 1;
+FROM cdsp_users WHERE sales_id=100013 LIMIT 1;
 
-INSERT INTO sales_posts
+INSERT INTO cdsp_sales_posts
 (sales_user_id, platform, submitted_url, resolved_url, canonical_url, canonical_url_hash,
  external_post_id, title, normalized_title_hash, description, description_hash,
  published_at, published_date, fetched_at, verification_status, admin_review_status,
@@ -98,46 +98,46 @@ SELECT id, 'offerup', 'https://offerup.com/item/detail/demo-900000000006', 'http
        DATE_SUB(NOW(), INTERVAL 52 MINUTE), CURDATE(),
        DATE_SUB(NOW(), INTERVAL 51 MINUTE),
        'verified', 'pending', DATE_SUB(NOW(), INTERVAL 51 MINUTE), NOW()
-FROM users WHERE sales_id=100013 LIMIT 1;
+FROM cdsp_users WHERE sales_id=100013 LIMIT 1;
 
-INSERT INTO post_reviews
+INSERT INTO cdsp_post_reviews
 (post_id, admin_user_id, decision, rating, note, reviewed_at, created_at, updated_at)
 SELECT p.id, a.id, 'approved', 5, 'Demo review: verified and approved.', NOW(), NOW(), NOW()
-FROM sales_posts p
-JOIN users s ON s.id=p.sales_user_id
-JOIN users a ON a.username='admin' AND a.role='admin'
+FROM cdsp_sales_posts p
+JOIN cdsp_users s ON s.id=p.sales_user_id
+JOIN cdsp_users a ON a.username='admin' AND a.role='admin'
 WHERE s.sales_id=100006 AND p.external_post_id='900000000001'
 LIMIT 1;
-UPDATE sales_posts
+UPDATE cdsp_sales_posts
 SET admin_review_status='approved'
 WHERE external_post_id='900000000001';
 
-INSERT INTO post_reviews
+INSERT INTO cdsp_post_reviews
 (post_id, admin_user_id, decision, rating, note, reviewed_at, created_at, updated_at)
 SELECT p.id, a.id, 'rejected', 2, 'Demo review: needs better listing content.', NOW(), NOW(), NOW()
-FROM sales_posts p
-JOIN users s ON s.id=p.sales_user_id
-JOIN users a ON a.username='admin' AND a.role='admin'
+FROM cdsp_sales_posts p
+JOIN cdsp_users s ON s.id=p.sales_user_id
+JOIN cdsp_users a ON a.username='admin' AND a.role='admin'
 WHERE s.sales_id=100010 AND p.external_post_id='demo-900000000003'
 LIMIT 1;
-UPDATE sales_posts
+UPDATE cdsp_sales_posts
 SET admin_review_status='rejected'
 WHERE external_post_id='demo-900000000003';
 
-INSERT INTO daily_sales_reviews
+INSERT INTO cdsp_daily_sales_reviews
 (sales_user_id, work_date, admin_user_id, rating, note, reviewed_at, created_at, updated_at)
 SELECT s.id, CURDATE(), a.id, 4, 'Demo daily review: good posting volume.', NOW(), NOW(), NOW()
-FROM users s JOIN users a ON a.username='admin' AND a.role='admin'
+FROM cdsp_users s JOIN cdsp_users a ON a.username='admin' AND a.role='admin'
 WHERE s.sales_id=100006 LIMIT 1;
 
-INSERT INTO period_sales_reviews
+INSERT INTO cdsp_period_sales_reviews
 (sales_user_id, period_type, period_start, period_end, admin_user_id, rating, note,
  reviewed_at, created_at, updated_at)
 SELECT s.id, 'week',
        DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY),
        DATE_ADD(DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY), INTERVAL 6 DAY),
        a.id, 4, 'Demo weekly review.', NOW(), NOW(), NOW()
-FROM users s JOIN users a ON a.username='admin' AND a.role='admin'
+FROM cdsp_users s JOIN cdsp_users a ON a.username='admin' AND a.role='admin'
 WHERE s.sales_id=100006 LIMIT 1;
 
 SET FOREIGN_KEY_CHECKS=1;

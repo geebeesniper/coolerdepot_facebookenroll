@@ -2,7 +2,7 @@
 
 The module is now designed to receive the logged-in user from the parent CoolerDepot portal. The parent passes `role=admin` or `role=sales` together with user identity in a signed handoff. A raw `?role=admin` is never trusted.
 
-On successful handoff, user identity/role is persisted in `users`, the handoff is recorded in `auth_handoffs`, and the active server-side login is persisted in `auth_sessions`. Post metadata, inspections, duplicate results, saved posts, reviews, daily reviews, weekly/monthly reviews, deletion requests, and attachment metadata are stored in MySQL.
+On successful handoff, user identity/role is persisted in `cdsp_users`, the handoff is recorded in `cdsp_auth_handoffs`, and the active server-side login is persisted in `cdsp_auth_sessions`. Post metadata, inspections, duplicate results, saved posts, reviews, daily reviews, weekly/monthly reviews, deletion requests, and attachment metadata are stored in MySQL.
 
 Current path mode: `http://144.126.218.94/sales-posts/`. Subdomain mode is configurable with `APP_BASE_PATH=` and `APP_HOST=salesposts.YOURDOMAIN.com`. See `deploy/SUBDOMAIN.md`.
 
@@ -11,6 +11,24 @@ Current path mode: `http://144.126.218.94/sales-posts/`. Subdomain mode is confi
 # CoolerDepot Sales Post Tracker
 
 PHP 8.1 / MySQL 5.6 MVC module for CoolerDepot sales-post verification and admin review.
+
+## Database table prefix
+
+All Sales Post Tracker tables use the `cdsp_` prefix so this module can safely share the CoolerDepot `app` database with other modules.
+
+Fresh install creates:
+
+- `cdsp_users`
+- `cdsp_auth_handoffs`
+- `cdsp_auth_sessions`
+- `cdsp_post_inspections`
+- `cdsp_sales_posts`
+- `cdsp_post_reviews`
+- `cdsp_daily_sales_reviews`
+- `cdsp_period_sales_reviews`
+- `cdsp_review_attachments`
+- `cdsp_deletion_requests`
+
 
 ## Features
 
