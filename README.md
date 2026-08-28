@@ -572,3 +572,20 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - Date controls wrap cleanly on mobile and `Back to today` moves to its own line when needed.
 - No database migration is required.
 - All border radius remains `4px`.
+
+## v0.1.23 — AJAX dashboard, Post Grid, and review popup
+
+- Dashboard date changes no longer reload the page. Date picker, View, and Back to today now update the Sales grid through AJAX and keep browser history in sync.
+- SaaS activity `Refresh` also refreshes through AJAX instead of reloading the document.
+- Expanded Sales posts are now a responsive Post Grid instead of a long list.
+- Each post tile shows sequence, time, date, platform, and review state; title and description remain hidden from the grid.
+- Entire post tiles are clickable/tappable/keyboard-accessible and open a review popup.
+- Removed per-post navigation to the separate review page from the dashboard flow.
+- Review popup supports Good/Bad, the Visual/HTML rich note editor, image uploads, existing attachments, Open original, and AJAX Save.
+- Saving a review immediately recolors the post tile and refreshes Sales Good/Issue/Unreviewed counts without closing the popup or reloading the page.
+- Good post tiles are green, Bad tiles are red, and unreviewed tiles remain neutral.
+- Post Grid Close is now a compact `×` control.
+- Modal closes with `×`, Cancel, backdrop click, or Escape.
+- Responsive Post Grid uses auto-fill desktop layout, two columns on tablet/mobile, and one column on small phones.
+- No database migration is required.
+- All border radius remains `4px`.

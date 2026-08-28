@@ -214,6 +214,79 @@ class AdminController extends Controller{
         ]);
     }
 
+    public function dashboardPostReview():void{
+        Auth::requireRole('admin');
+
+        $postId=(int)($_GET['id']??0);
+        $post=Post::find($postId);
+
+        if(!$post){
+            $this->json([
+                'ok'=>false,
+                'message'=>'Post was not found.',
+            ],404);
+        }
+
+        $s=Database::connection()->prepare(
+            "SELECT *
+             FROM cdsp_post_reviews
+             WHERE post_id=?
+             LIMIT 1"
+        );
+        $s->execute([$postId]);
+        $review=$s->fetch()?:null;
+
+        $attachments=[];
+
+        if($review){
+            foreach(
+                $this->attachments(
+                    'post_review',
+                    (int)$review['id']
+                ) as $attachment
+            ){
+                $attachments[]=[
+                    'id'=>(int)$attachment['id'],
+                    'name'=>(string)$attachment['original_name'],
+                    'url'=>$GLOBALS['config']['app']['base_path']
+                        .'/attachment?id='
+                        .(int)$attachment['id'],
+                ];
+            }
+        }
+
+        if(session_status()===PHP_SESSION_ACTIVE){
+            session_write_close();
+        }
+
+        header(
+            'Cache-Control: no-store, no-cache, must-revalidate, max-age=0'
+        );
+
+        $this->json([
+            'ok'=>true,
+            'post'=>[
+                'id'=>(int)$post['id'],
+                'sales_name'=>(string)$post['display_name'],
+                'sales_id'=>(string)$post['sales_id'],
+                'platform'=>ucfirst((string)$post['platform']),
+                'published_at'=>(string)$post['published_at'],
+                'published_date'=>(string)$post['published_date'],
+                'external_post_id'=>(string)$post['external_post_id'],
+                'canonical_url'=>(string)$post['canonical_url'],
+            ],
+            'review'=>[
+                'decision'=>$review
+                    ? (string)$review['decision']
+                    : null,
+                'note'=>$review
+                    ? (string)$review['note']
+                    : '',
+            ],
+            'attachments'=>$attachments,
+        ]);
+    }
+
     public function saveSalesTarget():void{
         $admin=Auth::requireRole('admin');
         Csrf::verify($_POST['_csrf']??null);
@@ -411,14 +484,146 @@ class AdminController extends Controller{
         $attachments=$review?$this->attachments('post_review',(int)$review['id']):[];$this->render('admin/post_review',compact('admin','post','review','attachments'));
     }
     public function savePostReview():void{
-        $admin=Auth::requireRole('admin');Csrf::verify($_POST['_csrf']??null);$pid=(int)($_POST['post_id']??0);$decision=(string)($_POST['decision']??'');$note = HtmlNoteSanitizer::clean((string)($_POST['note'] ?? ''));
-        if(!in_array($decision,['good','bad'],true)){$_SESSION['flash_error']='Choose Good or Bad.';$this->redirect('/admin/post?id='.$pid);}
-        $pdo=Database::connection();$s=$pdo->prepare("INSERT INTO cdsp_post_reviews(post_id,admin_user_id,decision,rating,note,reviewed_at,created_at,updated_at) VALUES(?,?,?,NULL,?,NOW(),NOW(),NOW())
-        ON DUPLICATE KEY UPDATE admin_user_id=VALUES(admin_user_id),decision=VALUES(decision),rating=NULL,note=VALUES(note),reviewed_at=NOW(),updated_at=NOW()");
-        $s->execute([$pid,(int)$admin['id'],$decision,$note]);$s=$pdo->prepare("UPDATE cdsp_sales_posts SET admin_review_status=?,updated_at=NOW() WHERE id=?");$s->execute([$decision,$pid]);
-        $s=$pdo->prepare("SELECT id FROM cdsp_post_reviews WHERE post_id=?");$s->execute([$pid]);$rid=(int)$s->fetchColumn();(new UploadService())->save('post_review',$rid,(int)$admin['id']);
-        $_SESSION['flash_success']='Post review saved.';$this->redirect('/admin/post?id='.$pid);
+        $admin=Auth::requireRole('admin');
+        $isAjax=strtolower(
+            (string)($_SERVER['HTTP_X_REQUESTED_WITH']??'')
+        )==='xmlhttprequest'
+            || str_contains(
+                strtolower((string)($_SERVER['HTTP_ACCEPT']??'')),
+                'application/json'
+            );
+
+        try{
+            Csrf::verify($_POST['_csrf']??null);
+
+            $pid=(int)($_POST['post_id']??0);
+            $decision=(string)($_POST['decision']??'');
+            $note=HtmlNoteSanitizer::clean(
+                (string)($_POST['note']??'')
+            );
+
+            if(!in_array($decision,['good','bad'],true)){
+                if($isAjax){
+                    $this->json([
+                        'ok'=>false,
+                        'field'=>'decision',
+                        'message'=>'Choose Good or Bad.',
+                    ],422);
+                }
+
+                $_SESSION['flash_error']='Choose Good or Bad.';
+                $this->redirect('/admin/post?id='.$pid);
+            }
+
+            $post=Post::find($pid);
+
+            if(!$post){
+                if($isAjax){
+                    $this->json([
+                        'ok'=>false,
+                        'message'=>'Post was not found.',
+                    ],404);
+                }
+
+                http_response_code(404);
+                exit('Post not found');
+            }
+
+            $pdo=Database::connection();
+
+            $s=$pdo->prepare(
+                "INSERT INTO cdsp_post_reviews(
+                    post_id,
+                    admin_user_id,
+                    decision,
+                    rating,
+                    note,
+                    reviewed_at,
+                    created_at,
+                    updated_at
+                )
+                VALUES(?,?,?,NULL,?,NOW(),NOW(),NOW())
+                ON DUPLICATE KEY UPDATE
+                    admin_user_id=VALUES(admin_user_id),
+                    decision=VALUES(decision),
+                    rating=NULL,
+                    note=VALUES(note),
+                    reviewed_at=NOW(),
+                    updated_at=NOW()"
+            );
+            $s->execute([
+                $pid,
+                (int)$admin['id'],
+                $decision,
+                $note,
+            ]);
+
+            $s=$pdo->prepare(
+                "UPDATE cdsp_sales_posts
+                 SET admin_review_status=?,
+                     updated_at=NOW()
+                 WHERE id=?"
+            );
+            $s->execute([$decision,$pid]);
+
+            $s=$pdo->prepare(
+                "SELECT id
+                 FROM cdsp_post_reviews
+                 WHERE post_id=?"
+            );
+            $s->execute([$pid]);
+            $rid=(int)$s->fetchColumn();
+
+            (new UploadService())->save(
+                'post_review',
+                $rid,
+                (int)$admin['id']
+            );
+
+            if($isAjax){
+                $attachments=[];
+
+                foreach(
+                    $this->attachments(
+                        'post_review',
+                        $rid
+                    ) as $attachment
+                ){
+                    $attachments[]=[
+                        'id'=>(int)$attachment['id'],
+                        'name'=>(string)$attachment['original_name'],
+                        'url'=>$GLOBALS['config']['app']['base_path']
+                            .'/attachment?id='
+                            .(int)$attachment['id'],
+                    ];
+                }
+
+                $this->json([
+                    'ok'=>true,
+                    'post_id'=>$pid,
+                    'decision'=>$decision,
+                    'note'=>$note,
+                    'attachments'=>$attachments,
+                    'message'=>'Review saved.',
+                ]);
+            }
+
+            $_SESSION['flash_success']='Post review saved.';
+            $this->redirect('/admin/post?id='.$pid);
+        }catch(\Throwable $e){
+            if($isAjax){
+                $this->json([
+                    'ok'=>false,
+                    'message'=>$e->getMessage()!=='' 
+                        ? $e->getMessage()
+                        : 'Could not save review.',
+                ],422);
+            }
+
+            throw $e;
+        }
     }
+
     public function dailyReview():void{
         $admin=Auth::requireRole('admin');$sid=(int)($_GET['sales_id']??0);$date=$_GET['date']??date('Y-m-d');$salesUser=User::find($sid);
         if(!$salesUser||$salesUser['role']!=='sales'){http_response_code(404);exit('Sales user not found');}

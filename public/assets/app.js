@@ -1155,7 +1155,7 @@ $('[data-html-note]').each(function(){
     })();
 
 
-// v0.1.21 Date-synced Sales progress + ordered post list
+// v0.1.23 AJAX dashboard + Post Grid + Review Modal
 (function(){
     const $grid = $('#salesProgressGrid');
     const $live = $('#adminDashboardLive');
@@ -1168,12 +1168,13 @@ $('[data-html-note]').each(function(){
     const progressUrl = $live.data('progress-url');
     const updatesUrl = $live.data('updates-url');
     const salesPostsUrl = $live.data('sales-posts-url');
+    const postReviewUrl = $live.data('post-review-url');
+    const reviewSaveUrl = $live.data('review-save-url');
+    const today = String($live.data('today') || '');
     const csrf = $('#adminDashboardCsrf').val();
-    const date = String($live.data('date') || '');
 
-    let currentPeriod = String(
-        $live.attr('data-period') || 'day'
-    );
+    let currentDate = String($live.data('date') || '');
+    let currentPeriod = String($live.attr('data-period') || 'day');
     let currentPeriodDays = parseInt(
         $live.attr('data-period-days'),
         10
@@ -1193,6 +1194,8 @@ $('[data-html-note]').each(function(){
     let noticeShown = false;
     let expandedSalesId = 0;
     let expandedRequest = null;
+    let reviewRequest = null;
+    let activePostId = 0;
 
     const $notice = $('#dashboardRefreshNotice');
     const $noticeTitle = $('#dashboardRefreshTitle');
@@ -1203,10 +1206,22 @@ $('[data-html-note]').each(function(){
     const $expandedList = $('#salesExpandedList');
     const $expandedLoading = $('#salesExpandedLoading');
 
+    const $modal = $('#dashboardReviewModal');
+    const $modalForm = $('#dashboardReviewForm');
+    const $modalLoading = $('#dashboardReviewLoading');
+    const $modalMessage = $('#dashboardReviewMessage');
+    const $modalAttachments = $('#dashboardReviewAttachments');
+
     function escapeHtml(value){
         return $('<div>').text(
             value == null ? '' : String(value)
         ).html();
+    }
+
+    function periodName(period){
+        if(period === 'week') return 'Weekly';
+        if(period === 'month') return 'Monthly';
+        return 'Daily';
     }
 
     function setTargetMessage($card, message, error){
@@ -1226,14 +1241,12 @@ $('[data-html-note]').each(function(){
         }
 
         const start = performance.now();
-        const duration = 320;
+        const duration = 300;
 
         function frame(now){
             const raw = Math.min(1, (now - start) / duration);
             const eased = 1 - Math.pow(1 - raw, 3);
-            const value = Math.round(
-                from + (to - from) * eased
-            );
+            const value = Math.round(from + (to - from) * eased);
 
             $element.text(value);
 
@@ -1245,22 +1258,25 @@ $('[data-html-note]').each(function(){
         requestAnimationFrame(frame);
     }
 
-    function periodName(period){
-        if(period === 'week') return 'Weekly';
-        if(period === 'month') return 'Monthly';
-        return 'Daily';
-    }
-
-    function updateUrlPeriod(period){
+    function updateHistory(){
         if(!window.history || !window.history.replaceState){
             return;
         }
 
         const url = new URL(window.location.href);
-        url.searchParams.set('date', date);
-        url.searchParams.set('period', period);
+        url.searchParams.set('date', currentDate);
+        url.searchParams.set('period', currentPeriod);
         url.searchParams.delete('sales_id');
+
         window.history.replaceState({}, '', url.toString());
+    }
+
+    function updateBackToday(){
+        $('#dashboardBackToday')
+            .toggleClass(
+                'hidden',
+                !today || currentDate === today
+            );
     }
 
     function updatePeriodButtons(period){
@@ -1312,21 +1328,20 @@ $('[data-html-note]').each(function(){
         $card.find('[data-period-days]').text(days);
         $card.find('[data-target-input]').val(dailyTarget);
 
-        $card
-            .find('[data-good-count]')
-            .text(parseInt(row.good_count, 10) || 0);
+        $card.find('[data-good-count]').text(
+            parseInt(row.good_count, 10) || 0
+        );
+        $card.find('[data-bad-count]').text(
+            parseInt(row.bad_count, 10) || 0
+        );
+        $card.find('[data-unreviewed-count]').text(
+            parseInt(row.unreviewed_count, 10) || 0
+        );
 
-        $card
-            .find('[data-bad-count]')
-            .text(parseInt(row.bad_count, 10) || 0);
-
-        $card
-            .find('[data-unreviewed-count]')
-            .text(parseInt(row.unreviewed_count, 10) || 0);
-
-        $card
-            .find('[data-progress-fill]')
-            .css('width', percent + '%');
+        $card.find('[data-progress-fill]').css(
+            'width',
+            percent + '%'
+        );
 
         $card
             .find('.sales-progress-track')
@@ -1356,7 +1371,7 @@ $('[data-html-note]').each(function(){
 
         setTimeout(function(){
             $card.removeClass('period-updated');
-        }, 700);
+        }, 650);
     }
 
     function closeExpandedPosts(){
@@ -1367,10 +1382,7 @@ $('[data-html-note]').each(function(){
             .removeClass('expanded')
             .attr('aria-expanded', 'false');
 
-        $expanded
-            .addClass('hidden')
-            .removeAttr('data-sales-id');
-
+        $expanded.addClass('hidden');
         $expandedList.empty();
         $expandedLoading.addClass('hidden');
 
@@ -1379,28 +1391,14 @@ $('[data-html-note]').each(function(){
         }
     }
 
-    function formatPostTime(post){
-        const raw = String(post.published_at || '');
-        const pieces = raw.split(' ');
-
-        if(currentPeriod === 'day'){
-            return {
-                main: pieces.length > 1 ? pieces[1] : raw,
-                sub: post.platform || ''
-            };
-        }
-
-        return {
-            main: raw,
-            sub: post.platform || ''
-        };
-    }
-
-    function renderExpandedPosts(data){
+    function renderPostGrid(data){
         const posts = Array.isArray(data.posts) ? data.posts : [];
 
         $expandedTitle.text(
-            data.sales.name + ' · ' + data.count + ' post'
+            data.sales.name
+            + ' · '
+            + data.count
+            + ' post'
             + (data.count === 1 ? '' : 's')
         );
 
@@ -1413,14 +1411,14 @@ $('[data-html-note]').each(function(){
 
         if(!posts.length){
             $expandedList.html(
-                '<li class="sales-expanded-empty">'+
+                '<div class="sales-expanded-empty">'+
                     'No verified posts in this period.'+
-                '</li>'
+                '</div>'
             );
             return;
         }
 
-        const html = posts.map(function(post, index){
+        const html = posts.map(function(post){
             const status = String(post.status || '').toLowerCase();
             const rowClass =
                 status === 'good'
@@ -1430,36 +1428,54 @@ $('[data-html-note]').each(function(){
                             ? ' review-bad'
                             : ''
                     );
+
             const statusText =
                 status === 'good'
                     ? 'Good'
                     : (
                         status === 'bad'
                             ? 'Issue'
-                            : '—'
+                            : 'Unreviewed'
                     );
-            const time = formatPostTime(post);
+
+            const raw = String(post.published_at || '');
+            const parts = raw.split(' ');
+            const time = parts.length > 1 ? parts[1] : raw;
 
             return (
-                '<li class="sales-expanded-post-item'
+                '<article class="sales-post-tile'
                     +rowClass
+                    +'" data-post-id="'
+                    +escapeHtml(post.id)
+                    +'" data-review-status="'
+                    +escapeHtml(status)
+                    +'" role="button" tabindex="0"'
+                    +' aria-label="Review post '
+                    +escapeHtml(post.sequence)
                     +'">'+
-                    '<div class="sales-expanded-post-time">'+
-                        '<strong>'+escapeHtml(time.main)+'</strong>'+
-                        '<small>'+escapeHtml(time.sub)+'</small>'+
+                    '<div class="sales-post-tile-sequence">'
+                        +escapeHtml(post.sequence)
+                    +'</div>'+
+                    '<div class="sales-post-tile-main">'+
+                        '<span class="sales-post-tile-time">'
+                            +escapeHtml(time)
+                        +'</span>'+
+                        '<span class="sales-post-tile-date">'
+                            +escapeHtml(post.published_date)
+                        +'</span>'+
                     '</div>'+
-                    '<div class="sales-expanded-post-platform">'+
-                        escapeHtml(post.published_date || '')+
+                    '<div class="sales-post-tile-footer">'+
+                        '<span>'+escapeHtml(post.platform)+'</span>'+
+                        '<span class="sales-post-tile-status '
+                            +escapeHtml(status)
+                            +'">'
+                            +escapeHtml(statusText)
+                        +'</span>'+
+                        '<span class="sales-post-tile-action">'
+                            +'Review'
+                        +'</span>'+
                     '</div>'+
-                    '<div class="sales-expanded-post-status '
-                        +escapeHtml(status)
-                        +'">'+
-                        escapeHtml(statusText)+
-                    '</div>'+
-                    '<a class="sales-expanded-review" href="'
-                        +escapeHtml(post.review_url)
-                        +'">Review</a>'+
-                '</li>'
+                '</article>'
             );
         }).join('');
 
@@ -1496,10 +1512,7 @@ $('[data-html-note]').each(function(){
             .addClass('expanded')
             .attr('aria-expanded', 'true');
 
-        $expanded
-            .removeClass('hidden')
-            .attr('data-sales-id', salesId);
-
+        $expanded.removeClass('hidden');
         $expandedTitle.text(
             String($card.attr('data-sales-name') || 'Sales')
             + ' · Loading'
@@ -1517,21 +1530,19 @@ $('[data-html-note]').each(function(){
             cache: false,
             data: {
                 sales_id: salesId,
-                date: date,
+                date: currentDate,
                 period: currentPeriod,
                 _: Date.now()
             }
         })
         .done(function(data){
             if(
-                !data
-                || !data.ok
-                || expandedSalesId !== salesId
+                data
+                && data.ok
+                && expandedSalesId === salesId
             ){
-                return;
+                renderPostGrid(data);
             }
-
-            renderExpandedPosts(data);
         })
         .fail(function(xhr, status){
             if(status === 'abort' || expandedSalesId !== salesId){
@@ -1541,11 +1552,11 @@ $('[data-html-note]').each(function(){
             const data = xhr.responseJSON || {};
 
             $expandedList.html(
-                '<li class="sales-expanded-error">'+
+                '<div class="sales-expanded-error">'+
                     escapeHtml(
                         data.message || 'Could not load Sales posts.'
                     )+
-                '</li>'
+                '</div>'
             );
         })
         .always(function(){
@@ -1564,13 +1575,16 @@ $('[data-html-note]').each(function(){
         $notice.addClass('hidden');
 
         $live
+            .attr('data-date', currentDate)
             .attr('data-period', currentPeriod)
             .attr('data-period-days', currentPeriodDays)
             .attr('data-post-count', baselineCount)
             .attr('data-max-post-id', baselineMaxId);
 
+        $('#dashboardDateInput').val(currentDate);
         updatePeriodButtons(currentPeriod);
-        updateUrlPeriod(currentPeriod);
+        updateBackToday();
+        updateHistory();
 
         $('#dashboardPeriodLabel').text(
             data.period_label || ''
@@ -1609,7 +1623,12 @@ $('[data-html-note]').each(function(){
         });
     }
 
-    function loadPeriod(period, initial){
+    function loadProgress(options){
+        options = options || {};
+        const date = options.date || currentDate;
+        const period = options.period || currentPeriod;
+        const initial = !!options.initial;
+
         closeExpandedPosts();
 
         if(periodRequest && periodRequest.readyState !== 4){
@@ -1619,6 +1638,7 @@ $('[data-html-note]').each(function(){
         $('#dashboardPeriodSwitch [data-period]')
             .prop('disabled', true);
 
+        $('body').addClass('dashboard-ajax-loading');
         $grid.addClass(
             initial ? 'dashboard-date-syncing' : 'period-loading'
         );
@@ -1635,11 +1655,16 @@ $('[data-html-note]').each(function(){
             }
         })
         .done(function(data){
-            if(data && data.ok){
-                applyProgress(data);
+            if(!data || !data.ok){
+                return;
             }
+
+            currentDate = data.date || date;
+            currentPeriod = data.period || period;
+            applyProgress(data);
         })
         .always(function(){
+            $('body').removeClass('dashboard-ajax-loading');
             $grid.removeClass(
                 'dashboard-date-syncing period-loading'
             );
@@ -1660,22 +1685,46 @@ $('[data-html-note]').each(function(){
                 return;
             }
 
-            loadPeriod(period, false);
+            loadProgress({
+                date: currentDate,
+                period: period
+            });
         }
     );
 
-    $('#dashboardDateInput').on('change', function(){
-        const nextDate = String($(this).val() || '');
+    $('#dashboardDateView').on('click', function(){
+        const nextDate = String(
+            $('#dashboardDateInput').val() || ''
+        );
 
         if(!/^\d{4}-\d{2}-\d{2}$/.test(nextDate)){
             return;
         }
 
-        const form = $('#dashboardDateForm').get(0);
+        loadProgress({
+            date: nextDate,
+            period: currentPeriod
+        });
+    });
 
-        if(form){
-            form.submit();
+    $('#dashboardDateForm').on('submit', function(event){
+        event.preventDefault();
+        $('#dashboardDateView').trigger('click');
+    });
+
+    $('#dashboardDateInput').on('change', function(){
+        $('#dashboardDateView').trigger('click');
+    });
+
+    $('#dashboardBackToday').on('click', function(){
+        if(!today){
+            return;
         }
+
+        loadProgress({
+            date: today,
+            period: currentPeriod
+        });
     });
 
     $grid.on('click', '[data-card-toggle]', function(event){
@@ -1709,6 +1758,323 @@ $('[data-html-note]').each(function(){
 
     $('#salesExpandedClose').on('click', function(){
         closeExpandedPosts();
+    });
+
+    function setModalEditorHtml(html){
+        const $note = $modal.find('[data-html-note]').first();
+        const $editor = $note.find('[data-html-editor]');
+        const $source = $note.find('[data-html-source]');
+
+        $source.val(html || '');
+        $editor.html(html || '');
+
+        $note
+            .find('[data-note-mode="visual"]')
+            .trigger('click');
+    }
+
+    function renderAttachments(items){
+        items = Array.isArray(items) ? items : [];
+
+        if(!items.length){
+            $modalAttachments
+                .addClass('hidden')
+                .empty();
+            return;
+        }
+
+        const html = items.map(function(item){
+            return '<a target="_blank" rel="noopener" href="'
+                +escapeHtml(item.url)
+                +'">'
+                +escapeHtml(item.name)
+                +'</a>';
+        }).join('');
+
+        $modalAttachments
+            .html(html)
+            .removeClass('hidden');
+    }
+
+    function resetReviewModal(){
+        $modalMessage
+            .removeClass('error')
+            .text('');
+        $modalForm.get(0).reset();
+        $('#dashboardReviewPostId').val('');
+        $('#dashboardReviewModalTitle').text('Review Post');
+        $('#dashboardReviewModalSubtitle').text('');
+        $('#dashboardReviewPublished').text('—');
+        $('#dashboardReviewPlatform').text('—');
+        $('#dashboardReviewItemId').text('—');
+        $('#dashboardReviewOriginal')
+            .addClass('hidden')
+            .attr('href', '#');
+        renderAttachments([]);
+        setModalEditorHtml('');
+    }
+
+    function closeReviewModal(){
+        if(reviewRequest && reviewRequest.readyState !== 4){
+            reviewRequest.abort();
+        }
+
+        activePostId = 0;
+        $modal.addClass('hidden').attr('aria-hidden', 'true');
+        $('body').removeClass('review-modal-open');
+        resetReviewModal();
+    }
+
+    function openReviewModal(postId){
+        postId = parseInt(postId, 10) || 0;
+
+        if(!postId){
+            return;
+        }
+
+        if(reviewRequest && reviewRequest.readyState !== 4){
+            reviewRequest.abort();
+        }
+
+        activePostId = postId;
+        resetReviewModal();
+
+        $modal
+            .removeClass('hidden')
+            .attr('aria-hidden', 'false');
+        $('body').addClass('review-modal-open');
+        $modalForm.addClass('hidden');
+        $modalLoading.removeClass('hidden');
+
+        reviewRequest = $.ajax({
+            url: postReviewUrl,
+            method: 'GET',
+            dataType: 'json',
+            cache: false,
+            data: {
+                id: postId,
+                _: Date.now()
+            }
+        })
+        .done(function(data){
+            if(
+                !data
+                || !data.ok
+                || activePostId !== postId
+            ){
+                return;
+            }
+
+            $('#dashboardReviewPostId').val(data.post.id);
+            $('#dashboardReviewModalTitle').text(
+                data.post.sales_name + ' · Post Review'
+            );
+            $('#dashboardReviewModalSubtitle').text(
+                '#'
+                + data.post.sales_id
+                + ' · '
+                + data.post.platform
+            );
+            $('#dashboardReviewPublished').text(
+                data.post.published_at || '—'
+            );
+            $('#dashboardReviewPlatform').text(
+                data.post.platform || '—'
+            );
+            $('#dashboardReviewItemId').text(
+                data.post.external_post_id || '—'
+            );
+
+            if(data.post.canonical_url){
+                $('#dashboardReviewOriginal')
+                    .removeClass('hidden')
+                    .attr('href', data.post.canonical_url);
+            }
+
+            $modalForm
+                .find('input[name="decision"]')
+                .prop('checked', false);
+
+            if(
+                data.review
+                && ['good','bad'].includes(data.review.decision)
+            ){
+                $modalForm
+                    .find(
+                        'input[name="decision"][value="'
+                        +data.review.decision
+                        +'"]'
+                    )
+                    .prop('checked', true);
+            }
+
+            setModalEditorHtml(
+                data.review ? data.review.note : ''
+            );
+            renderAttachments(data.attachments);
+        })
+        .fail(function(xhr, status){
+            if(status === 'abort'){
+                return;
+            }
+
+            const data = xhr.responseJSON || {};
+            $modalMessage
+                .addClass('error')
+                .text(
+                    data.message || 'Could not load review.'
+                );
+        })
+        .always(function(){
+            if(activePostId === postId){
+                $modalLoading.addClass('hidden');
+                $modalForm.removeClass('hidden');
+            }
+        });
+    }
+
+    $expandedList.on('click', '.sales-post-tile', function(){
+        openReviewModal($(this).data('post-id'));
+    });
+
+    $expandedList.on('keydown', '.sales-post-tile', function(event){
+        if(event.key !== 'Enter' && event.key !== ' '){
+            return;
+        }
+
+        event.preventDefault();
+        openReviewModal($(this).data('post-id'));
+    });
+
+    $('#dashboardReviewClose,#dashboardReviewCancel').on(
+        'click',
+        closeReviewModal
+    );
+
+    $modal.on('click', function(event){
+        if(event.target === this){
+            closeReviewModal();
+        }
+    });
+
+    $(document).on('keydown', function(event){
+        if(
+            event.key === 'Escape'
+            && !$modal.hasClass('hidden')
+        ){
+            closeReviewModal();
+        }
+    });
+
+    $modalForm.on('submit', function(event){
+        event.preventDefault();
+
+        const decision = String(
+            $modalForm
+                .find('input[name="decision"]:checked')
+                .val() || ''
+        );
+
+        if(!['good','bad'].includes(decision)){
+            $modalMessage
+                .addClass('error')
+                .text('Choose Good or Bad.');
+            return;
+        }
+
+        const form = $modalForm.get(0);
+        const formData = new FormData(form);
+        const $save = $('#dashboardReviewSave');
+
+        $modalMessage
+            .removeClass('error')
+            .text('');
+        $save.prop('disabled', true).text('Saving...');
+
+        $.ajax({
+            url: reviewSaveUrl,
+            method: 'POST',
+            dataType: 'json',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .done(function(data){
+            if(!data || !data.ok){
+                $modalMessage
+                    .addClass('error')
+                    .text(
+                        (data && data.message)
+                        || 'Could not save review.'
+                    );
+                return;
+            }
+
+            renderAttachments(data.attachments);
+
+            const status = String(data.decision || '');
+            const $tile = $expandedList.find(
+                '.sales-post-tile[data-post-id="'
+                +data.post_id
+                +'"]'
+            );
+
+            $tile
+                .removeClass('review-good review-bad')
+                .addClass(
+                    status === 'good'
+                        ? 'review-good'
+                        : 'review-bad'
+                )
+                .attr('data-review-status', status);
+
+            $tile
+                .find('.sales-post-tile-status')
+                .removeClass('good bad')
+                .addClass(status)
+                .text(
+                    status === 'good' ? 'Good' : 'Issue'
+                );
+
+            $modalMessage
+                .removeClass('error')
+                .text('Saved');
+
+            // Update the Sales card metrics without closing the popup/grid.
+            $.ajax({
+                url: progressUrl,
+                method: 'GET',
+                dataType: 'json',
+                cache: false,
+                data: {
+                    date: currentDate,
+                    period: currentPeriod,
+                    _: Date.now()
+                }
+            }).done(function(progress){
+                if(progress && progress.ok){
+                    applyProgress(progress);
+                }
+            });
+        })
+        .fail(function(xhr){
+            const data = xhr.responseJSON || {};
+
+            $modalMessage
+                .addClass('error')
+                .text(
+                    data.message || 'Could not save review.'
+                );
+        })
+        .always(function(){
+            $save
+                .prop('disabled', false)
+                .text('Save Review');
+        });
     });
 
     function redrawAfterDailyTargetSave($card, dailyTarget){
@@ -1856,7 +2222,7 @@ $('[data-html-note]').each(function(){
             dataType: 'json',
             cache: false,
             data: {
-                date: date,
+                date: currentDate,
                 period: currentPeriod,
                 _: Date.now()
             }
@@ -1879,7 +2245,10 @@ $('[data-html-note]').each(function(){
     }
 
     $('#dashboardRefreshButton').on('click', function(){
-        window.location.reload();
+        loadProgress({
+            date: currentDate,
+            period: currentPeriod
+        });
     });
 
     document.addEventListener('visibilitychange', function(){
@@ -1888,13 +2257,17 @@ $('[data-html-note]').each(function(){
         }
     });
 
-    // Reconcile the cards with the URL-selected date on every page load.
-    // This prevents stale rendered card counts from surviving a date change.
-    loadPeriod(currentPeriod, true);
+    updateBackToday();
+    loadProgress({
+        date: currentDate,
+        period: currentPeriod,
+        initial: true
+    });
 
     checkDashboardActivity();
     activityTimer = setInterval(checkDashboardActivity, 5000);
 })();
+
 
 ;
 });

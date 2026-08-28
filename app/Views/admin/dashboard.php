@@ -18,6 +18,9 @@ $periodNames = [
     data-updates-url="<?= Util::e($base) ?>/admin/dashboard/updates"
     data-progress-url="<?= Util::e($base) ?>/admin/dashboard/progress"
     data-sales-posts-url="<?= Util::e($base) ?>/admin/dashboard/sales-posts"
+    data-post-review-url="<?= Util::e($base) ?>/admin/dashboard/post-review"
+    data-review-save-url="<?= Util::e($base) ?>/admin/post/review"
+    data-today="<?= Util::e($today) ?>"
     data-date="<?= Util::e($date) ?>"
     data-period="<?= Util::e($period) ?>"
     data-period-days="<?= (int)$periodInfo['days'] ?>"
@@ -68,20 +71,21 @@ $periodNames = [
                 aria-label="Dashboard date"
             >
 
-            <button class="btn dashboard-date-view">View</button>
+            <button
+                type="button"
+                class="btn dashboard-date-view"
+                id="dashboardDateView"
+            >
+                View
+            </button>
 
-            <?php if ($date !== $today): ?>
-                <a
-                    class="dashboard-back-today"
-                    href="<?= Util::e(
-                        $base
-                        . '/admin?date=' . rawurlencode($today)
-                        . '&period=' . rawurlencode($period)
-                    ) ?>"
-                >
-                    Back to today
-                </a>
-            <?php endif; ?>
+            <button
+                type="button"
+                class="dashboard-back-today<?= $date === $today ? ' hidden' : '' ?>"
+                id="dashboardBackToday"
+            >
+                Back to today
+            </button>
         </div>
     </form>
 </div>
@@ -314,11 +318,12 @@ $periodNames = [
 
             <button
                 type="button"
-                class="tiny sales-expanded-close"
+                class="sales-expanded-close icon-close"
                 id="salesExpandedClose"
-                aria-label="Close Sales post list"
+                aria-label="Close Sales post grid"
+                title="Close"
             >
-                Close
+                ×
             </button>
         </div>
 
@@ -331,12 +336,163 @@ $periodNames = [
             <span></span>
         </div>
 
-        <ol
-            class="sales-expanded-list"
+        <div
+            class="sales-expanded-grid"
             id="salesExpandedList"
-        ></ol>
+        ></div>
     </section>
 </section>
+
+
+<div
+    class="review-modal-backdrop hidden"
+    id="dashboardReviewModal"
+    aria-hidden="true"
+>
+    <section
+        class="review-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="dashboardReviewModalTitle"
+    >
+        <div class="review-modal-head">
+            <div>
+                <div class="eyebrow">Post Review</div>
+                <h2 id="dashboardReviewModalTitle">Review Post</h2>
+                <p id="dashboardReviewModalSubtitle"></p>
+            </div>
+
+            <div class="review-modal-head-actions">
+                <a
+                    class="review-modal-original hidden"
+                    id="dashboardReviewOriginal"
+                    target="_blank"
+                    rel="noopener"
+                    href="#"
+                >
+                    Open original
+                </a>
+                <button
+                    type="button"
+                    class="icon-close"
+                    id="dashboardReviewClose"
+                    aria-label="Close review"
+                    title="Close"
+                >
+                    ×
+                </button>
+            </div>
+        </div>
+
+        <form
+            id="dashboardReviewForm"
+            class="review-modal-form"
+            enctype="multipart/form-data"
+        >
+            <input
+                type="hidden"
+                name="_csrf"
+                value="<?= Util::e($csrf) ?>"
+            >
+            <input
+                type="hidden"
+                name="post_id"
+                id="dashboardReviewPostId"
+                value=""
+            >
+
+            <div class="review-modal-meta">
+                <div>
+                    <span>Published</span>
+                    <strong id="dashboardReviewPublished">—</strong>
+                </div>
+                <div>
+                    <span>Platform</span>
+                    <strong id="dashboardReviewPlatform">—</strong>
+                </div>
+                <div>
+                    <span>Item ID</span>
+                    <strong id="dashboardReviewItemId">—</strong>
+                </div>
+            </div>
+
+            <fieldset class="review-decision">
+                <legend>Decision</legend>
+
+                <label class="review-decision-option good">
+                    <input
+                        type="radio"
+                        name="decision"
+                        value="good"
+                    >
+                    <span>Good</span>
+                </label>
+
+                <label class="review-decision-option bad">
+                    <input
+                        type="radio"
+                        name="decision"
+                        value="bad"
+                    >
+                    <span>Bad</span>
+                </label>
+            </fieldset>
+
+            <?php
+            $fieldName = 'note';
+            $fieldId = 'dashboard-review-note';
+            $noteValue = '';
+            require __DIR__ . '/_html_note_editor.php';
+            ?>
+
+            <div class="review-modal-upload">
+                <label for="dashboardReviewImages">Images</label>
+                <input
+                    id="dashboardReviewImages"
+                    type="file"
+                    name="images[]"
+                    accept="image/jpeg,image/png,image/webp"
+                    multiple
+                >
+            </div>
+
+            <div
+                class="review-modal-attachments hidden"
+                id="dashboardReviewAttachments"
+            ></div>
+
+            <div
+                class="review-modal-message"
+                id="dashboardReviewMessage"
+                aria-live="polite"
+            ></div>
+
+            <div class="review-modal-footer">
+                <button
+                    type="button"
+                    class="btn"
+                    id="dashboardReviewCancel"
+                >
+                    Cancel
+                </button>
+                <button
+                    type="submit"
+                    class="btn primary"
+                    id="dashboardReviewSave"
+                >
+                    Save Review
+                </button>
+            </div>
+        </form>
+
+        <div
+            class="review-modal-loading hidden"
+            id="dashboardReviewLoading"
+        >
+            Loading review…
+        </div>
+    </section>
+</div>
 
 <?php if ($deletionRequests): ?>
     <section class="panel">
