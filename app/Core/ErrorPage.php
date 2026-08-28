@@ -8,7 +8,7 @@ class ErrorPage
         302 => ['Redirecting', 'You are being redirected to another page.'],
         400 => ['Bad Request', 'The request could not be understood.'],
         401 => ['Sign In Required', 'Please sign in to continue.'],
-        403 => ['Access Denied', 'You do not have permission to view this page.'],
+        403 => ['Access Denied', 'Your account does not have access to this area.'],
         404 => ['Page Not Found', 'The page you requested could not be found.'],
         405 => ['Method Not Allowed', 'This action is not available for this request method.'],
         408 => ['Request Timeout', 'The request took too long to complete.'],
@@ -34,15 +34,9 @@ class ErrorPage
         $base = rtrim((string)($config['app']['base_path'] ?? ''), '/');
         $version = (string)($config['app']['version'] ?? 'dev');
 
-        if ($primaryPath === null) {
-            $primaryPath = '/';
-        }
-
-        if ($primaryLabel === null) {
-            $primaryLabel = 'Go to Home';
-        }
-
-        $primaryUrl = self::url($base, $primaryPath);
+        // Status pages always return through the application root.
+        // The root route decides whether the logged-in user goes to Admin or Sales dashboard.
+        $primaryUrl = self::url($base, '/');
 
         if ($location !== null && $location !== '') {
             header('Location: ' . $location, true, $status);
@@ -56,9 +50,7 @@ class ErrorPage
         $safeTitle = self::e($title);
         $safeBody = self::e($body);
         $safePrimaryUrl = self::e($primaryUrl);
-        $safePrimaryLabel = self::e($primaryLabel);
         $safeBase = self::e($base);
-        $safeVersion = self::e($version);
         $safeLocation = $location ? self::e($location) : '';
         $statusText = self::e((string)$status);
         $isRedirect = in_array($status, [301, 302], true) && $location;
@@ -72,10 +64,8 @@ class ErrorPage
             echo '</head><body class="status-page-body">';
             echo '<main class="status-page"><section class="status-card">';
             echo '<div class="status-code">' . $statusText . '</div>';
-            echo '<div class="eyebrow">CoolerDepot Sales Post Tracker</div>';
             echo '<h1>' . $safeTitle . '</h1><p>' . $safeBody . '</p>';
             echo '<div class="status-actions"><a class="btn primary" href="' . $safeLocation . '">Continue</a></div>';
-            echo '<div class="status-version">v' . $safeVersion . '</div>';
             echo '</section></main></body></html>';
             exit;
         }
@@ -87,14 +77,10 @@ class ErrorPage
         echo '</head><body class="status-page-body">';
         echo '<main class="status-page"><section class="status-card">';
         echo '<div class="status-code">' . $statusText . '</div>';
-        echo '<div class="eyebrow">CoolerDepot Sales Post Tracker</div>';
         echo '<h1>' . $safeTitle . '</h1><p>' . $safeBody . '</p>';
         echo '<div class="status-actions">';
-        echo '<a class="btn primary" href="' . $safePrimaryUrl . '">' . $safePrimaryLabel . '</a>';
-        echo '<button type="button" class="btn" onclick="history.back()">Go Back</button>';
+        echo '<a class="btn primary" href="' . $safePrimaryUrl . '">Go Back</a>';
         echo '</div>';
-        echo '<div class="status-help">If this keeps happening, contact your administrator.</div>';
-        echo '<div class="status-version">v' . $safeVersion . '</div>';
         echo '</section></main></body></html>';
         exit;
     }

@@ -298,3 +298,25 @@ Every packaged release must increment `VERSION` and use the same version in the 
 - 301/302 redirects include a branded HTML fallback while still sending the correct Location header/status.
 - Added Admin → Status Pages overview.
 - All border radius remains `4px`.
+
+## v0.1.4 — Apache-level status pages
+
+- Added a standalone `http-status.php` page that does not depend on MySQL or login sessions.
+- Added Apache `ErrorDocument` mappings for 400, 403, 404, 405, 408, 421, 429, 500, 502, and 503.
+- Root-level missing URLs such as `/admin` now use the same CoolerDepot-branded status UI instead of Apache's default white page.
+- Apache Basic Auth 401 remains Apache-managed so the browser login challenge continues to work correctly.
+- 301/302 remain real redirects; application redirects already include a branded fallback page.
+- Added `scripts/install_apache_status_pages.sh` for the current `/opt/coolerdepot` Docker deployment.
+- All border radius remains `4px`.
+
+## v0.1.5 — Simplified status pages
+
+- Removed application name from HTTP status pages.
+- Removed version text from HTTP status pages.
+- Removed administrator help copy.
+- Removed the browser-history Go Back button.
+- Status pages now show only status code, title, message, and one `Go Back` action.
+- `Go Back` always links to the application root, which routes the signed-in user to the correct dashboard.
+- No Sales Dashboard/Admin Dashboard wording is shown on status pages.
+- Apache-level status pages use the same simplified layout.
+- All border radius remains `4px`.

@@ -480,19 +480,6 @@
     flex-wrap:wrap;
     margin-top:20px;
 }
-.status-help{
-    margin-top:18px;
-    padding-top:12px;
-    border-top:1px solid var(--line);
-    color:#98a2b3;
-    font-size:10px;
-}
-.status-version{
-    margin-top:8px;
-    color:#98a2b3;
-    font-size:9px;
-    font-weight:800;
-}
 @media (max-width:560px){
     .status-page{padding:14px}
     .status-card{padding:20px}
