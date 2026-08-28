@@ -168,7 +168,7 @@ class Post {
              WHERE p.sales_user_id=?
                AND p.deleted_at IS NULL
                AND p.published_date BETWEEN ? AND ?
-             ORDER BY p.published_at DESC,p.id DESC"
+             ORDER BY p.published_at ASC,p.id ASC"
         );
 
         $s->execute([$salesUserId,$from,$to]);

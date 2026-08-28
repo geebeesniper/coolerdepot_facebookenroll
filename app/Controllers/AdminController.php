@@ -169,7 +169,11 @@ class AdminController extends Controller{
 
         $items=[];
 
+        $sequence=0;
+
         foreach ($posts as $post) {
+            $sequence++;
+
             $status=in_array(
                 ($post['admin_review_status']??null),
                 ['good','bad'],
@@ -179,8 +183,8 @@ class AdminController extends Controller{
                 : null;
 
             $items[]=[
+                'sequence'=>$sequence,
                 'id'=>(int)$post['id'],
-                'title'=>(string)$post['title'],
                 'platform'=>ucfirst((string)$post['platform']),
                 'published_at'=>(string)$post['published_at'],
                 'published_date'=>(string)$post['published_date'],
@@ -375,6 +379,11 @@ class AdminController extends Controller{
                 )
                 : 0;
             $row['target_met']=$postCount >= $periodTarget;
+            $row['daily_review_url']=
+                $GLOBALS['config']['app']['base_path']
+                .'/admin/daily?sales_id='
+                .(int)$row['sales_user_id']
+                .'&date='.rawurlencode($from);
 
             if ($period==='day') {
                 $row['view_url']=

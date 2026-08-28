@@ -1809,3 +1809,181 @@
         width:100%;
     }
 }
+
+/* v0.1.21 Date-synced progress + ordered review list */
+.sales-card-admin-actions{
+    display:flex;
+    align-items:flex-end;
+    gap:8px;
+    min-height:44px;
+}
+.sales-daily-review{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-height:36px;
+    padding:7px 9px;
+    border:1px solid var(--card-soft-strong);
+    border-radius:4px;
+    background:var(--card-soft);
+    color:var(--card-accent);
+    font-size:9px;
+    font-weight:900;
+    white-space:nowrap;
+}
+.sales-daily-review.hidden{
+    display:none;
+}
+.sales-daily-review:hover,
+.sales-daily-review:focus{
+    border-color:var(--card-accent);
+    outline:none;
+}
+.sales-expanded-list{
+    margin:0;
+    padding:8px;
+    list-style:none;
+    counter-reset:post-sequence;
+}
+.sales-expanded-post-item{
+    counter-increment:post-sequence;
+    display:grid;
+    grid-template-columns:42px minmax(120px,1.2fr) 105px 90px 70px;
+    gap:10px;
+    align-items:center;
+    min-height:54px;
+    margin:0 0 6px;
+    padding:8px 10px;
+    border:1px solid #e5e7eb;
+    border-radius:4px;
+    background:#fff;
+    transition:
+        border-color .15s ease,
+        background .15s ease,
+        transform .15s ease;
+}
+.sales-expanded-post-item:last-child{
+    margin-bottom:0;
+}
+.sales-expanded-post-item::before{
+    content:counter(post-sequence);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:30px;
+    height:30px;
+    border-radius:4px;
+    background:#f2f4f7;
+    color:#475467;
+    font-size:10px;
+    font-weight:900;
+}
+.sales-expanded-post-item.review-good{
+    border-color:#bbf7d0;
+    background:#f0fdf4;
+}
+.sales-expanded-post-item.review-good::before{
+    background:#dcfce7;
+    color:#166534;
+}
+.sales-expanded-post-item.review-bad{
+    border-color:#fecaca;
+    background:#fff1f2;
+}
+.sales-expanded-post-item.review-bad::before{
+    background:#fee2e2;
+    color:#991b1b;
+}
+.sales-expanded-post-item:hover{
+    transform:translateY(-1px);
+}
+.sales-expanded-post-time{
+    min-width:0;
+}
+.sales-expanded-post-time strong{
+    display:block;
+    color:#101828;
+    font-size:11px;
+}
+.sales-expanded-post-time small{
+    display:block;
+    margin-top:2px;
+    color:#667085;
+    font-size:9px;
+}
+.sales-expanded-post-platform,
+.sales-expanded-post-status{
+    color:#475467;
+    font-size:9px;
+    font-weight:700;
+}
+.sales-expanded-post-status.good{
+    color:#166534;
+}
+.sales-expanded-post-status.bad{
+    color:#991b1b;
+}
+.sales-expanded-review{
+    justify-self:end;
+    min-height:36px;
+}
+.dashboard-date-syncing .sales-progress-card{
+    opacity:.55;
+    pointer-events:none;
+}
+@media(pointer:coarse){
+    .sales-daily-review{
+        min-height:44px;
+    }
+    .sales-expanded-post-item{
+        min-height:62px;
+    }
+}
+@media(max-width:760px){
+    .sales-card-admin-actions{
+        width:100%;
+        align-items:stretch;
+        flex-wrap:wrap;
+    }
+    .sales-daily-review{
+        flex:1 1 110px;
+    }
+    .sales-target-editor{
+        flex:1 1 150px;
+    }
+    .sales-expanded-post-item{
+        grid-template-columns:38px minmax(0,1fr) auto;
+        gap:5px 8px;
+        padding:10px;
+    }
+    .sales-expanded-post-item::before{
+        grid-column:1;
+        grid-row:1 / span 2;
+    }
+    .sales-expanded-post-time{
+        grid-column:2;
+        grid-row:1;
+    }
+    .sales-expanded-post-platform{
+        grid-column:2;
+        grid-row:2;
+    }
+    .sales-expanded-post-status{
+        grid-column:3;
+        grid-row:1;
+        justify-self:end;
+    }
+    .sales-expanded-review{
+        grid-column:3;
+        grid-row:2;
+    }
+}
+@media(max-width:430px){
+    .sales-card-admin-actions{
+        flex-direction:column;
+    }
+    .sales-daily-review,
+    .sales-target-editor{
+        width:100%;
+    }
+}

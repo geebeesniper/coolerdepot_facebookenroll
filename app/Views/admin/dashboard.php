@@ -46,24 +46,19 @@ $periodNames = [
         </p>
     </div>
 
-    <form class="filters" method="get">
+    <form class="filters" method="get" id="dashboardDateForm">
         <input
             type="hidden"
             name="period"
             value="<?= Util::e($period) ?>"
             id="dashboardPeriodFormValue"
         >
-        <?php if ($salesFilter > 0): ?>
-            <input
-                type="hidden"
-                name="sales_id"
-                value="<?= (int)$salesFilter ?>"
-            >
-        <?php endif; ?>
         <input
             type="date"
             name="date"
+            id="dashboardDateInput"
             value="<?= Util::e($date) ?>"
+            aria-label="Dashboard date"
         >
         <button class="btn">View</button>
     </form>
@@ -113,7 +108,11 @@ $periodNames = [
         </div>
     </div>
 
-    <input type="hidden" id="adminDashboardCsrf" value="<?= Util::e($csrf) ?>">
+    <input
+        type="hidden"
+        id="adminDashboardCsrf"
+        value="<?= Util::e($csrf) ?>"
+    >
 
     <div
         class="sales-progress-grid"
@@ -146,6 +145,7 @@ $periodNames = [
                             )
                         ) ?>
                     </div>
+
                     <div class="sales-progress-person">
                         <strong><?= Util::e($row['display_name']) ?></strong>
                         <span>#<?= Util::e($row['sales_id']) ?></span>
@@ -220,25 +220,38 @@ $periodNames = [
                         <span class="sales-card-chevron" aria-hidden="true">⌄</span>
                     </div>
 
-                    <div class="sales-target-editor" data-card-control>
-                        <label>
-                            Daily Target
-                            <input
-                                type="number"
-                                min="1"
-                                max="999"
-                                value="<?= (int)$row['daily_target'] ?>"
-                                data-target-input
-                                aria-label="Daily target for <?= Util::e($row['display_name']) ?>"
-                            >
-                        </label>
-                        <button
-                            type="button"
-                            class="tiny sales-target-save"
-                            data-target-save
+                    <div
+                        class="sales-card-admin-actions"
+                        data-card-control
+                    >
+                        <a
+                            class="sales-daily-review<?= $period === 'day' ? '' : ' hidden' ?>"
+                            data-daily-review
+                            href="<?= Util::e($row['daily_review_url']) ?>"
                         >
-                            Save
-                        </button>
+                            Daily Review
+                        </a>
+
+                        <div class="sales-target-editor">
+                            <label>
+                                Daily Target
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max="999"
+                                    value="<?= (int)$row['daily_target'] ?>"
+                                    data-target-input
+                                    aria-label="Daily target for <?= Util::e($row['display_name']) ?>"
+                                >
+                            </label>
+                            <button
+                                type="button"
+                                class="tiny sales-target-save"
+                                data-target-save
+                            >
+                                Save
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -264,12 +277,11 @@ $periodNames = [
     >
         <div class="sales-expanded-head">
             <div>
-                <div class="eyebrow" id="salesExpandedEyebrow">
-                    Sales Posts
-                </div>
+                <div class="eyebrow">Post List</div>
                 <h3 id="salesExpandedTitle">Posts</h3>
                 <p id="salesExpandedSubtitle"></p>
             </div>
+
             <button
                 type="button"
                 class="tiny sales-expanded-close"
@@ -280,115 +292,24 @@ $periodNames = [
             </button>
         </div>
 
-        <div class="sales-expanded-loading hidden" id="salesExpandedLoading">
+        <div
+            class="sales-expanded-loading hidden"
+            id="salesExpandedLoading"
+        >
             <span></span>
             <span></span>
             <span></span>
         </div>
 
-        <div
+        <ol
             class="sales-expanded-list"
             id="salesExpandedList"
-        ></div>
+        ></ol>
     </section>
 </section>
 
-<section class="panel daily-posts-panel" id="daily-posts">
-    <div class="panel-head">
-        <div>
-            <h2>
-                Posts — <?= Util::e($date) ?>
-                <?php if ($salesFilter > 0): ?>
-                    · <?= Util::e($selectedSalesName) ?>
-                <?php endif; ?>
-            </h2>
-            <p class="panel-subtitle">
-                This table stays on the selected calendar day.
-            </p>
-        </div>
-
-    </div>
-
-    <div class="tablewrap">
-        <table>
-            <thead>
-                <tr>
-                    <th>Sales</th>
-                    <th>Platform</th>
-                    <th>Title</th>
-                    <th>Published</th>
-                    <th>Status</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($posts as $post): ?>
-                    <tr>
-                        <td>
-                            <?= Util::e($post['display_name']) ?>
-                            <small>#<?= Util::e($post['sales_id']) ?></small>
-                        </td>
-                        <td><?= Util::e(ucfirst($post['platform'])) ?></td>
-                        <td><?= Util::e($post['title']) ?></td>
-                        <td><?= Util::e($post['published_at']) ?></td>
-                        <td>
-                            <?php if (in_array(
-                                ($post['admin_review_status'] ?? null),
-                                ['good','bad'],
-                                true
-                            )): ?>
-                                <span
-                                    class="status <?= Util::e(
-                                        $post['admin_review_status']
-                                    ) ?>"
-                                >
-                                    <?= Util::e(
-                                        ucfirst($post['admin_review_status'])
-                                    ) ?>
-                                </span>
-                            <?php else: ?>
-                                —
-                            <?php endif; ?>
-                        </td>
-                        <td>
-                            <a href="<?= $base ?>/admin/post?id=<?= (int)$post['id'] ?>">
-                                Review
-                            </a>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-
-                <?php if (!$posts): ?>
-                    <tr>
-                        <td colspan="6">
-                            No verified posts for this date/filter.
-                        </td>
-                    </tr>
-                <?php endif; ?>
-            </tbody>
-        </table>
-    </div>
-</section>
-
-<div class="panel">
-    <h2>Daily Sales Reviews</h2>
-
-    <div class="sales-grid">
-        <?php foreach ($sales as $salesUser): ?>
-            <a
-                class="sales-card"
-                href="<?= $base ?>/admin/daily?sales_id=<?= (int)$salesUser['id'] ?>&date=<?= Util::e($date) ?>"
-            >
-                <b><?= Util::e($salesUser['display_name']) ?></b>
-                <span>#<?= Util::e($salesUser['sales_id']) ?></span>
-                <em>Review day →</em>
-            </a>
-        <?php endforeach; ?>
-    </div>
-</div>
-
 <?php if ($deletionRequests): ?>
-    <div class="panel">
+    <section class="panel">
         <h2>Deletion Requests</h2>
 
         <?php foreach ($deletionRequests as $request): ?>
@@ -432,5 +353,5 @@ $periodNames = [
                 </form>
             </div>
         <?php endforeach; ?>
-    </div>
+    </section>
 <?php endif; ?>

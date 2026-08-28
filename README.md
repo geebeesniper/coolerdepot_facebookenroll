@@ -544,3 +544,19 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - Mobile expanded post rows collapse into a compact two-column layout.
 - No database migration is required.
 - All border radius remains `4px`.
+
+## v0.1.21 — Date-synced Sales progress and ordered Post List
+
+- Fixed the Admin date flow so the selected date is the single source of truth for Sales progress.
+- Changing the date now submits immediately, and the grid also performs an initial AJAX reconciliation against that exact selected date.
+- Removed the redundant standalone Daily Posts table from the Admin dashboard.
+- Removed the standalone `Daily Sales Reviews` panel.
+- Added `Daily Review` directly inside each Sales card while the Daily period is selected.
+- Clicking/tapping a Sales card opens one ordered Post List below the grid.
+- Post List rows are chronological and numbered `1, 2, 3, 4...`.
+- Post List no longer shows title or description.
+- Reviewed `Good` posts use a green row, reviewed `Bad` posts use a red row, and unreviewed posts remain neutral/white.
+- Weekly and Monthly expanded lists use the same chronological numbered format.
+- Corrected malformed duplicate `<section>` markup left by the prior dashboard revision.
+- No database migration is required.
+- All border radius remains `4px`.

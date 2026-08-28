@@ -1155,7 +1155,7 @@ $('[data-html-note]').each(function(){
     })();
 
 
-// v0.1.18 Dynamic Sales progress grid
+// v0.1.21 Date-synced Sales progress + ordered post list
 (function(){
     const $grid = $('#salesProgressGrid');
     const $live = $('#adminDashboardLive');
@@ -1195,13 +1195,19 @@ $('[data-html-note]').each(function(){
     let expandedRequest = null;
 
     const $notice = $('#dashboardRefreshNotice');
+    const $noticeTitle = $('#dashboardRefreshTitle');
+    const $noticeText = $('#dashboardRefreshText');
     const $expanded = $('#salesExpandedPosts');
     const $expandedTitle = $('#salesExpandedTitle');
     const $expandedSubtitle = $('#salesExpandedSubtitle');
     const $expandedList = $('#salesExpandedList');
     const $expandedLoading = $('#salesExpandedLoading');
-    const $noticeTitle = $('#dashboardRefreshTitle');
-    const $noticeText = $('#dashboardRefreshText');
+
+    function escapeHtml(value){
+        return $('<div>').text(
+            value == null ? '' : String(value)
+        ).html();
+    }
 
     function setTargetMessage($card, message, error){
         $card
@@ -1220,12 +1226,14 @@ $('[data-html-note]').each(function(){
         }
 
         const start = performance.now();
-        const duration = 360;
+        const duration = 320;
 
         function frame(now){
             const raw = Math.min(1, (now - start) / duration);
             const eased = 1 - Math.pow(1 - raw, 3);
-            const value = Math.round(from + (to - from) * eased);
+            const value = Math.round(
+                from + (to - from) * eased
+            );
 
             $element.text(value);
 
@@ -1249,13 +1257,16 @@ $('[data-html-note]').each(function(){
         }
 
         const url = new URL(window.location.href);
+        url.searchParams.set('date', date);
         url.searchParams.set('period', period);
+        url.searchParams.delete('sales_id');
         window.history.replaceState({}, '', url.toString());
     }
 
     function updatePeriodButtons(period){
         $('#dashboardPeriodSwitch [data-period]').each(function(){
             const active = $(this).data('period') === period;
+
             $(this)
                 .toggleClass('active', active)
                 .attr('aria-pressed', active ? 'true' : 'false');
@@ -1326,16 +1337,222 @@ $('[data-html-note]').each(function(){
             .find('[data-target-badge]')
             .toggleClass('hidden', !met);
 
-        $card
-            .removeClass('period-updated');
+        const $dailyReview = $card.find('[data-daily-review]');
 
+        if(period === 'day'){
+            $dailyReview
+                .removeClass('hidden')
+                .attr(
+                    'href',
+                    row.daily_review_url || '#'
+                );
+        }else{
+            $dailyReview.addClass('hidden');
+        }
+
+        $card.removeClass('period-updated');
         void $card.get(0).offsetWidth;
-
         $card.addClass('period-updated');
 
         setTimeout(function(){
             $card.removeClass('period-updated');
-        }, 800);
+        }, 700);
+    }
+
+    function closeExpandedPosts(){
+        expandedSalesId = 0;
+
+        $grid
+            .find('.sales-progress-card.expanded')
+            .removeClass('expanded')
+            .attr('aria-expanded', 'false');
+
+        $expanded
+            .addClass('hidden')
+            .removeAttr('data-sales-id');
+
+        $expandedList.empty();
+        $expandedLoading.addClass('hidden');
+
+        if(expandedRequest && expandedRequest.readyState !== 4){
+            expandedRequest.abort();
+        }
+    }
+
+    function formatPostTime(post){
+        const raw = String(post.published_at || '');
+        const pieces = raw.split(' ');
+
+        if(currentPeriod === 'day'){
+            return {
+                main: pieces.length > 1 ? pieces[1] : raw,
+                sub: post.platform || ''
+            };
+        }
+
+        return {
+            main: raw,
+            sub: post.platform || ''
+        };
+    }
+
+    function renderExpandedPosts(data){
+        const posts = Array.isArray(data.posts) ? data.posts : [];
+
+        $expandedTitle.text(
+            data.sales.name + ' · ' + data.count + ' post'
+            + (data.count === 1 ? '' : 's')
+        );
+
+        $expandedSubtitle.text(
+            data.period_label
+            + ' · #'
+            + data.sales.sales_id
+            + ' · chronological order'
+        );
+
+        if(!posts.length){
+            $expandedList.html(
+                '<li class="sales-expanded-empty">'+
+                    'No verified posts in this period.'+
+                '</li>'
+            );
+            return;
+        }
+
+        const html = posts.map(function(post, index){
+            const status = String(post.status || '').toLowerCase();
+            const rowClass =
+                status === 'good'
+                    ? ' review-good'
+                    : (
+                        status === 'bad'
+                            ? ' review-bad'
+                            : ''
+                    );
+            const statusText =
+                status === 'good'
+                    ? 'Good'
+                    : (
+                        status === 'bad'
+                            ? 'Issue'
+                            : '—'
+                    );
+            const time = formatPostTime(post);
+
+            return (
+                '<li class="sales-expanded-post-item'
+                    +rowClass
+                    +'">'+
+                    '<div class="sales-expanded-post-time">'+
+                        '<strong>'+escapeHtml(time.main)+'</strong>'+
+                        '<small>'+escapeHtml(time.sub)+'</small>'+
+                    '</div>'+
+                    '<div class="sales-expanded-post-platform">'+
+                        escapeHtml(post.published_date || '')+
+                    '</div>'+
+                    '<div class="sales-expanded-post-status '
+                        +escapeHtml(status)
+                        +'">'+
+                        escapeHtml(statusText)+
+                    '</div>'+
+                    '<a class="sales-expanded-review" href="'
+                        +escapeHtml(post.review_url)
+                        +'">Review</a>'+
+                '</li>'
+            );
+        }).join('');
+
+        $expandedList.html(html);
+    }
+
+    function openExpandedPosts($card){
+        const salesId = parseInt(
+            $card.attr('data-sales-id'),
+            10
+        ) || 0;
+
+        if(!salesId){
+            return;
+        }
+
+        if(expandedSalesId === salesId){
+            closeExpandedPosts();
+            return;
+        }
+
+        if(expandedRequest && expandedRequest.readyState !== 4){
+            expandedRequest.abort();
+        }
+
+        expandedSalesId = salesId;
+
+        $grid
+            .find('.sales-progress-card')
+            .removeClass('expanded')
+            .attr('aria-expanded', 'false');
+
+        $card
+            .addClass('expanded')
+            .attr('aria-expanded', 'true');
+
+        $expanded
+            .removeClass('hidden')
+            .attr('data-sales-id', salesId);
+
+        $expandedTitle.text(
+            String($card.attr('data-sales-name') || 'Sales')
+            + ' · Loading'
+        );
+        $expandedSubtitle.text(
+            periodName(currentPeriod) + ' posts'
+        );
+        $expandedList.empty();
+        $expandedLoading.removeClass('hidden');
+
+        expandedRequest = $.ajax({
+            url: salesPostsUrl,
+            method: 'GET',
+            dataType: 'json',
+            cache: false,
+            data: {
+                sales_id: salesId,
+                date: date,
+                period: currentPeriod,
+                _: Date.now()
+            }
+        })
+        .done(function(data){
+            if(
+                !data
+                || !data.ok
+                || expandedSalesId !== salesId
+            ){
+                return;
+            }
+
+            renderExpandedPosts(data);
+        })
+        .fail(function(xhr, status){
+            if(status === 'abort' || expandedSalesId !== salesId){
+                return;
+            }
+
+            const data = xhr.responseJSON || {};
+
+            $expandedList.html(
+                '<li class="sales-expanded-error">'+
+                    escapeHtml(
+                        data.message || 'Could not load Sales posts.'
+                    )+
+                '</li>'
+            );
+        })
+        .always(function(){
+            if(expandedSalesId === salesId){
+                $expandedLoading.addClass('hidden');
+            }
+        });
     }
 
     function applyProgress(data){
@@ -1380,12 +1597,11 @@ $('[data-html-note]').each(function(){
         $grid.find('.sales-progress-card').each(function(){
             const $card = $(this);
             const id = String($card.data('sales-id'));
-            const row = byId[id];
 
-            if(row){
+            if(byId[id]){
                 updateCard(
                     $card,
-                    row,
+                    byId[id],
                     currentPeriodDays,
                     currentPeriod
                 );
@@ -1393,7 +1609,7 @@ $('[data-html-note]').each(function(){
         });
     }
 
-    function loadPeriod(period){
+    function loadPeriod(period, initial){
         closeExpandedPosts();
 
         if(periodRequest && periodRequest.readyState !== 4){
@@ -1403,7 +1619,9 @@ $('[data-html-note]').each(function(){
         $('#dashboardPeriodSwitch [data-period]')
             .prop('disabled', true);
 
-        $grid.addClass('period-loading');
+        $grid.addClass(
+            initial ? 'dashboard-date-syncing' : 'period-loading'
+        );
 
         periodRequest = $.ajax({
             url: progressUrl,
@@ -1417,14 +1635,14 @@ $('[data-html-note]').each(function(){
             }
         })
         .done(function(data){
-            if(!data || !data.ok){
-                return;
+            if(data && data.ok){
+                applyProgress(data);
             }
-
-            applyProgress(data);
         })
         .always(function(){
-            $grid.removeClass('period-loading');
+            $grid.removeClass(
+                'dashboard-date-syncing period-loading'
+            );
             $('#dashboardPeriodSwitch [data-period]')
                 .prop('disabled', false);
         });
@@ -1434,15 +1652,64 @@ $('[data-html-note]').each(function(){
         'click',
         '[data-period]',
         function(){
-            const period = String($(this).data('period') || 'day');
+            const period = String(
+                $(this).data('period') || 'day'
+            );
 
             if(period === currentPeriod){
                 return;
             }
 
-            loadPeriod(period);
+            loadPeriod(period, false);
         }
     );
+
+    $('#dashboardDateInput').on('change', function(){
+        const nextDate = String($(this).val() || '');
+
+        if(!/^\d{4}-\d{2}-\d{2}$/.test(nextDate)){
+            return;
+        }
+
+        const form = $('#dashboardDateForm').get(0);
+
+        if(form){
+            form.submit();
+        }
+    });
+
+    $grid.on('click', '[data-card-toggle]', function(event){
+        if(
+            $(event.target).closest(
+                '[data-card-control],a,button,input,select,textarea'
+            ).length
+        ){
+            return;
+        }
+
+        openExpandedPosts($(this));
+    });
+
+    $grid.on('keydown', '[data-card-toggle]', function(event){
+        if(event.key !== 'Enter' && event.key !== ' '){
+            return;
+        }
+
+        if(
+            $(event.target).closest(
+                '[data-card-control],input,button,a'
+            ).length
+        ){
+            return;
+        }
+
+        event.preventDefault();
+        openExpandedPosts($(this));
+    });
+
+    $('#salesExpandedClose').on('click', function(){
+        closeExpandedPosts();
+    });
 
     function redrawAfterDailyTargetSave($card, dailyTarget){
         const count = parseInt(
@@ -1474,230 +1741,6 @@ $('[data-html-note]').each(function(){
             .find('[data-target-badge]')
             .toggleClass('hidden', !met);
     }
-
-
-function escapeHtml(value){
-    return $('<div>').text(
-        value == null ? '' : String(value)
-    ).html();
-}
-
-function statusHtml(status){
-    status = String(status || '').toLowerCase();
-
-    if(status === 'good'){
-        return '<span class="status good">Good</span>';
-    }
-
-    if(status === 'bad'){
-        return '<span class="status bad">Bad</span>';
-    }
-
-    return '<span class="sales-expanded-cell">Unreviewed</span>';
-}
-
-function closeExpandedPosts(){
-    expandedSalesId = 0;
-
-    $grid
-        .find('.sales-progress-card.expanded')
-        .removeClass('expanded')
-        .attr('aria-expanded', 'false');
-
-    $expanded
-        .addClass('hidden')
-        .removeAttr('data-sales-id');
-
-    $expandedList.empty();
-    $expandedLoading.addClass('hidden');
-
-    if(expandedRequest && expandedRequest.readyState !== 4){
-        expandedRequest.abort();
-    }
-}
-
-function renderExpandedPosts(data){
-    const posts = Array.isArray(data.posts) ? data.posts : [];
-
-    $expandedTitle.text(
-        data.sales.name + ' · ' + data.count + ' post'
-        + (data.count === 1 ? '' : 's')
-    );
-
-    $expandedSubtitle.text(
-        data.period_label
-        + ' · #'
-        + data.sales.sales_id
-    );
-
-    if(!posts.length){
-        $expandedList.html(
-            '<div class="sales-expanded-empty">'+
-                'No verified posts in this period.'+
-            '</div>'
-        );
-        return;
-    }
-
-    const html = posts.map(function(post){
-        return (
-            '<div class="sales-expanded-row">'+
-                '<div class="sales-expanded-title">'+
-                    '<strong>'+escapeHtml(post.title)+'</strong>'+
-                    '<small>'+escapeHtml(post.platform)+'</small>'+
-                '</div>'+
-                '<div class="sales-expanded-cell">'+
-                    escapeHtml(post.published_date)+
-                '</div>'+
-                '<div class="sales-expanded-cell">'+
-                    escapeHtml(post.published_at)+
-                '</div>'+
-                '<div class="sales-expanded-status">'+
-                    statusHtml(post.status)+
-                '</div>'+
-                '<a class="sales-expanded-review" href="'
-                    +escapeHtml(post.review_url)
-                    +'">Review</a>'+
-            '</div>'
-        );
-    }).join('');
-
-    $expandedList.html(html);
-}
-
-function openExpandedPosts($card){
-    const salesId = parseInt(
-        $card.attr('data-sales-id'),
-        10
-    ) || 0;
-
-    if(!salesId){
-        return;
-    }
-
-    if(expandedSalesId === salesId){
-        closeExpandedPosts();
-        return;
-    }
-
-    if(expandedRequest && expandedRequest.readyState !== 4){
-        expandedRequest.abort();
-    }
-
-    expandedSalesId = salesId;
-
-    $grid
-        .find('.sales-progress-card')
-        .removeClass('expanded')
-        .attr('aria-expanded', 'false');
-
-    $card
-        .addClass('expanded')
-        .attr('aria-expanded', 'true');
-
-    $expanded
-        .removeClass('hidden')
-        .attr('data-sales-id', salesId);
-
-    $expandedTitle.text(
-        String($card.attr('data-sales-name') || 'Sales') + ' · Loading'
-    );
-    $expandedSubtitle.text(
-        periodName(currentPeriod) + ' posts'
-    );
-    $expandedList.empty();
-    $expandedLoading.removeClass('hidden');
-
-    const expandedEl = $expanded.get(0);
-
-    if(expandedEl){
-        const rect = expandedEl.getBoundingClientRect();
-
-        if(rect.top < 0 || rect.top > window.innerHeight * .82){
-            expandedEl.scrollIntoView({
-                behavior:'smooth',
-                block:'nearest'
-            });
-        }
-    }
-
-    expandedRequest = $.ajax({
-        url: salesPostsUrl,
-        method: 'GET',
-        dataType: 'json',
-        cache: false,
-        data: {
-            sales_id: salesId,
-            date: date,
-            period: currentPeriod,
-            _: Date.now()
-        }
-    })
-    .done(function(data){
-        if(
-            !data
-            || !data.ok
-            || expandedSalesId !== salesId
-        ){
-            return;
-        }
-
-        renderExpandedPosts(data);
-    })
-    .fail(function(xhr, status){
-        if(status === 'abort' || expandedSalesId !== salesId){
-            return;
-        }
-
-        const data = xhr.responseJSON || {};
-
-        $expandedList.html(
-            '<div class="sales-expanded-error">'+
-                escapeHtml(
-                    data.message || 'Could not load Sales posts.'
-                )+
-            '</div>'
-        );
-    })
-    .always(function(){
-        if(expandedSalesId === salesId){
-            $expandedLoading.addClass('hidden');
-        }
-    });
-}
-
-$grid.on('click', '[data-card-toggle]', function(event){
-    if(
-        $(event.target).closest(
-            '[data-card-control],a,button,input,select,textarea'
-        ).length
-    ){
-        return;
-    }
-
-    openExpandedPosts($(this));
-});
-
-$grid.on('keydown', '[data-card-toggle]', function(event){
-    if(event.key !== 'Enter' && event.key !== ' '){
-        return;
-    }
-
-    if(
-        $(event.target).closest(
-            '[data-card-control],input,button'
-        ).length
-    ){
-        return;
-    }
-
-    event.preventDefault();
-    openExpandedPosts($(this));
-});
-
-$('#salesExpandedClose').on('click', function(){
-    closeExpandedPosts();
-});
 
     $(document).on('click', '[data-target-save]', function(){
         const $button = $(this);
@@ -1845,8 +1888,13 @@ $('#salesExpandedClose').on('click', function(){
         }
     });
 
+    // Reconcile the cards with the URL-selected date on every page load.
+    // This prevents stale rendered card counts from surviving a date change.
+    loadPeriod(currentPeriod, true);
+
     checkDashboardActivity();
     activityTimer = setInterval(checkDashboardActivity, 5000);
 })();
+
 ;
 });
