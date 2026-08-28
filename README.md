@@ -344,3 +344,9 @@ Every packaged release must increment `VERSION` and use the same version in the 
 - The generic provider `timestamp` remains excluded from Facebook publication-date verification.
 - Added an optional cleanup script for old malformed fetch-job records.
 - All border radius remains `4px`.
+
+## v0.1.8 — Bright Data test button spacing
+
+- Fixed vertical spacing above the `Test Bright Data` button.
+- Button is now block-level with a 14px top margin.
+- All border radius remains `4px`.

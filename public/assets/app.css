@@ -509,3 +509,63 @@
     color:var(--muted);
     font-size:10px;
 }
+
+
+/* HTML note editor */
+.html-note{
+    margin-top:12px;
+}
+.html-note-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:7px;
+}
+.html-note-head label{
+    margin:0;
+}
+.html-editor-toolbar{
+    display:flex;
+    align-items:center;
+    gap:4px;
+    flex-wrap:wrap;
+    padding:7px;
+    border:1px solid var(--line);
+    border-bottom:0;
+    border-radius:4px;
+    background:#f8fafc;
+}
+.html-editor{
+    min-height:190px;
+    padding:11px 12px;
+    border:1px solid var(--line);
+    border-radius:4px;
+    background:#fff;
+    outline:none;
+    font-size:12px;
+    line-height:1.55;
+}
+.html-editor:focus{
+    border-color:#98a2b3;
+}
+.html-editor p:first-child,
+.html-editor h3:first-child,
+.html-editor h4:first-child{
+    margin-top:0;
+}
+.html-editor p:last-child{
+    margin-bottom:0;
+}
+.html-source{
+    min-height:190px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:11px;
+    line-height:1.5;
+    white-space:pre-wrap;
+}
+.settings-test-button{
+    display:block;
+    width:max-content;
+    margin-top:14px;
+}
