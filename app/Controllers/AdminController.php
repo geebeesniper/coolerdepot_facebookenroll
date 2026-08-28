@@ -1,11 +1,111 @@
 <?php
 namespace App\Controllers;
+
+use App\Services\HtmlNoteSanitizer;
 use App\Core\Controller;use App\Core\Auth;use App\Core\Csrf;use App\Core\Database;use App\Models\Post;use App\Models\User;use App\Services\UploadService;
 class AdminController extends Controller{
     public function dashboard():void{
-        $admin=Auth::requireRole('admin');$date=$_GET['date']??date('Y-m-d');$posts=Post::adminQueue($date);$sales=User::allSales();
-        $s=Database::connection()->query("SELECT d.*,p.title,u.display_name FROM cdsp_deletion_requests d JOIN cdsp_sales_posts p ON p.id=d.post_id JOIN cdsp_users u ON u.id=p.sales_user_id WHERE d.status='pending' ORDER BY d.created_at");
-        $deletionRequests=$s->fetchAll();$this->render('admin/dashboard',compact('admin','date','posts','sales','deletionRequests'));
+        $admin=Auth::requireRole('admin');
+        $date=(string)($_GET['date']??date('Y-m-d'));
+
+        if (!preg_match('/^\\d{4}-\\d{2}-\\d{2}$/', $date)) {
+            $date=date('Y-m-d');
+        }
+
+        $chartPeriod=(string)($_GET['chart_period']??'day');
+
+        if (!in_array($chartPeriod,['day','week','month'],true)) {
+            $chartPeriod='day';
+        }
+
+        $salesFilter=(int)($_GET['sales_id']??0);
+        $sales=User::allSales();
+
+        if ($salesFilter > 0) {
+            $validSales=false;
+
+            foreach ($sales as $salesUser) {
+                if ((int)$salesUser['id']===$salesFilter) {
+                    $validSales=true;
+                    break;
+                }
+            }
+
+            if (!$validSales) {
+                $salesFilter=0;
+            }
+        }
+
+        $anchor=strtotime($date.' 12:00:00');
+
+        if ($chartPeriod==='month') {
+            $chartFrom=date('Y-m-01',$anchor);
+            $chartTo=date('Y-m-t',$anchor);
+            $chartLabel=date('F Y',$anchor);
+        } elseif ($chartPeriod==='week') {
+            $daysFromMonday=(int)date('N',$anchor)-1;
+            $chartFrom=date('Y-m-d',strtotime('-'.$daysFromMonday.' days',$anchor));
+            $chartTo=date('Y-m-d',strtotime($chartFrom.' +6 days'));
+            $chartLabel=$chartFrom.' — '.$chartTo;
+        } else {
+            $chartFrom=$date;
+            $chartTo=$date;
+            $chartLabel=date('F j, Y',$anchor);
+        }
+
+        $chartRows=Post::adminProgressStats(
+            $chartFrom,
+            $chartTo,
+            $salesFilter
+        );
+
+        $chartTotals=[
+            'posts'=>0,
+            'good'=>0,
+            'bad'=>0,
+            'unreviewed'=>0,
+        ];
+
+        foreach ($chartRows as $row) {
+            $total=(int)$row['total_posts'];
+            $good=(int)$row['good_posts'];
+            $bad=(int)$row['bad_posts'];
+
+            $chartTotals['posts'] += $total;
+            $chartTotals['good'] += $good;
+            $chartTotals['bad'] += $bad;
+            $chartTotals['unreviewed'] += max(0,$total-$good-$bad);
+        }
+
+        $posts=Post::adminQueue($date,$salesFilter);
+
+        $s=Database::connection()->query(
+            "SELECT d.*,p.title,u.display_name
+             FROM cdsp_deletion_requests d
+             JOIN cdsp_sales_posts p ON p.id=d.post_id
+             JOIN cdsp_users u ON u.id=p.sales_user_id
+             WHERE d.status='pending'
+             ORDER BY d.created_at"
+        );
+        $deletionRequests=$s->fetchAll();
+
+        $this->render(
+            'admin/dashboard',
+            compact(
+                'admin',
+                'date',
+                'posts',
+                'sales',
+                'salesFilter',
+                'chartPeriod',
+                'chartFrom',
+                'chartTo',
+                'chartLabel',
+                'chartRows',
+                'chartTotals',
+                'deletionRequests'
+            )
+        );
     }
     public function postReview():void{
         $admin=Auth::requireRole('admin');$post=Post::find((int)($_GET['id']??0));if(!$post){http_response_code(404);exit('Post not found');}
@@ -13,11 +113,11 @@ class AdminController extends Controller{
         $attachments=$review?$this->attachments('post_review',(int)$review['id']):[];$this->render('admin/post_review',compact('admin','post','review','attachments'));
     }
     public function savePostReview():void{
-        $admin=Auth::requireRole('admin');Csrf::verify($_POST['_csrf']??null);$pid=(int)($_POST['post_id']??0);$decision=(string)($_POST['decision']??'');$rating=max(1,min(5,(int)($_POST['rating']??3)));$note=trim((string)($_POST['note']??''));
+        $admin=Auth::requireRole('admin');Csrf::verify($_POST['_csrf']??null);$pid=(int)($_POST['post_id']??0);$decision=(string)($_POST['decision']??'');$note = HtmlNoteSanitizer::clean((string)($_POST['note'] ?? ''));
         if(!in_array($decision,['good','bad'],true)){$_SESSION['flash_error']='Choose Good or Bad.';$this->redirect('/admin/post?id='.$pid);}
-        $pdo=Database::connection();$s=$pdo->prepare("INSERT INTO cdsp_post_reviews(post_id,admin_user_id,decision,rating,note,reviewed_at,created_at,updated_at) VALUES(?,?,?,?,?,NOW(),NOW(),NOW())
-        ON DUPLICATE KEY UPDATE admin_user_id=VALUES(admin_user_id),decision=VALUES(decision),rating=VALUES(rating),note=VALUES(note),reviewed_at=NOW(),updated_at=NOW()");
-        $s->execute([$pid,(int)$admin['id'],$decision,$rating,$note]);$s=$pdo->prepare("UPDATE cdsp_sales_posts SET admin_review_status=?,updated_at=NOW() WHERE id=?");$s->execute([$decision,$pid]);
+        $pdo=Database::connection();$s=$pdo->prepare("INSERT INTO cdsp_post_reviews(post_id,admin_user_id,decision,rating,note,reviewed_at,created_at,updated_at) VALUES(?,?,?,NULL,?,NOW(),NOW(),NOW())
+        ON DUPLICATE KEY UPDATE admin_user_id=VALUES(admin_user_id),decision=VALUES(decision),rating=NULL,note=VALUES(note),reviewed_at=NOW(),updated_at=NOW()");
+        $s->execute([$pid,(int)$admin['id'],$decision,$note]);$s=$pdo->prepare("UPDATE cdsp_sales_posts SET admin_review_status=?,updated_at=NOW() WHERE id=?");$s->execute([$decision,$pid]);
         $s=$pdo->prepare("SELECT id FROM cdsp_post_reviews WHERE post_id=?");$s->execute([$pid]);$rid=(int)$s->fetchColumn();(new UploadService())->save('post_review',$rid,(int)$admin['id']);
         $_SESSION['flash_success']='Post review saved.';$this->redirect('/admin/post?id='.$pid);
     }
@@ -28,10 +128,10 @@ class AdminController extends Controller{
         $attachments=$review?$this->attachments('daily_review',(int)$review['id']):[];$this->render('admin/daily_review',compact('admin','salesUser','date','posts','review','attachments'));
     }
     public function saveDailyReview():void{
-        $admin=Auth::requireRole('admin');Csrf::verify($_POST['_csrf']??null);$sid=(int)$_POST['sales_user_id'];$date=(string)$_POST['work_date'];$rating=max(1,min(5,(int)$_POST['rating']));$note=trim((string)($_POST['note']??''));
-        $pdo=Database::connection();$s=$pdo->prepare("INSERT INTO cdsp_daily_sales_reviews(sales_user_id,work_date,admin_user_id,rating,note,reviewed_at,created_at,updated_at) VALUES(?,?,?,?,?,NOW(),NOW(),NOW())
-        ON DUPLICATE KEY UPDATE admin_user_id=VALUES(admin_user_id),rating=VALUES(rating),note=VALUES(note),reviewed_at=NOW(),updated_at=NOW()");
-        $s->execute([$sid,$date,(int)$admin['id'],$rating,$note]);$s=$pdo->prepare("SELECT id FROM cdsp_daily_sales_reviews WHERE sales_user_id=? AND work_date=?");$s->execute([$sid,$date]);$rid=(int)$s->fetchColumn();(new UploadService())->save('daily_review',$rid,(int)$admin['id']);
+        $admin=Auth::requireRole('admin');Csrf::verify($_POST['_csrf']??null);$sid=(int)$_POST['sales_user_id'];$date=(string)$_POST['work_date'];$note = HtmlNoteSanitizer::clean((string)($_POST['note'] ?? ''));
+        $pdo=Database::connection();$s=$pdo->prepare("INSERT INTO cdsp_daily_sales_reviews(sales_user_id,work_date,admin_user_id,rating,note,reviewed_at,created_at,updated_at) VALUES(?,?,?,NULL,?,NOW(),NOW(),NOW())
+        ON DUPLICATE KEY UPDATE admin_user_id=VALUES(admin_user_id),rating=NULL,note=VALUES(note),reviewed_at=NOW(),updated_at=NOW()");
+        $s->execute([$sid,$date,(int)$admin['id'],$note]);$s=$pdo->prepare("SELECT id FROM cdsp_daily_sales_reviews WHERE sales_user_id=? AND work_date=?");$s->execute([$sid,$date]);$rid=(int)$s->fetchColumn();(new UploadService())->save('daily_review',$rid,(int)$admin['id']);
         $_SESSION['flash_success']='Daily review saved.';$this->redirect('/admin/daily?sales_id='.$sid.'&date='.urlencode($date));
     }
     public function reports():void{
@@ -43,10 +143,10 @@ class AdminController extends Controller{
         $s=Database::connection()->prepare($sql);$s->execute($params);$rows=$s->fetchAll();$salesUserId=$sid;$this->render('admin/reports',compact('admin','period','start','end','salesUserId','sales','rows'));
     }
     public function savePeriodReview():void{
-        $admin=Auth::requireRole('admin');Csrf::verify($_POST['_csrf']??null);$sid=(int)$_POST['sales_user_id'];$type=(string)$_POST['period_type'];$start=(string)$_POST['period_start'];$end=(string)$_POST['period_end'];$rating=max(1,min(5,(int)$_POST['rating']));$note=trim((string)($_POST['note']??''));
-        $s=Database::connection()->prepare("INSERT INTO cdsp_period_sales_reviews(sales_user_id,period_type,period_start,period_end,admin_user_id,rating,note,reviewed_at,created_at,updated_at) VALUES(?,?,?,?,?,?,?,NOW(),NOW(),NOW())
-        ON DUPLICATE KEY UPDATE period_end=VALUES(period_end),admin_user_id=VALUES(admin_user_id),rating=VALUES(rating),note=VALUES(note),reviewed_at=NOW(),updated_at=NOW()");
-        $s->execute([$sid,$type,$start,$end,(int)$admin['id'],$rating,$note]);$s=Database::connection()->prepare("SELECT id FROM cdsp_period_sales_reviews WHERE sales_user_id=? AND period_type=? AND period_start=?");$s->execute([$sid,$type,$start]);$rid=(int)$s->fetchColumn();(new UploadService())->save('period_review',$rid,(int)$admin['id']);
+        $admin=Auth::requireRole('admin');Csrf::verify($_POST['_csrf']??null);$sid=(int)$_POST['sales_user_id'];$type=(string)$_POST['period_type'];$start=(string)$_POST['period_start'];$end=(string)$_POST['period_end'];$note = HtmlNoteSanitizer::clean((string)($_POST['note'] ?? ''));
+        $s=Database::connection()->prepare("INSERT INTO cdsp_period_sales_reviews(sales_user_id,period_type,period_start,period_end,admin_user_id,rating,note,reviewed_at,created_at,updated_at) VALUES(?,?,?,?,?,NULL,?,NOW(),NOW(),NOW())
+        ON DUPLICATE KEY UPDATE period_end=VALUES(period_end),admin_user_id=VALUES(admin_user_id),rating=NULL,note=VALUES(note),reviewed_at=NOW(),updated_at=NOW()");
+        $s->execute([$sid,$type,$start,$end,(int)$admin['id'],$note]);$s=Database::connection()->prepare("SELECT id FROM cdsp_period_sales_reviews WHERE sales_user_id=? AND period_type=? AND period_start=?");$s->execute([$sid,$type,$start]);$rid=(int)$s->fetchColumn();(new UploadService())->save('period_review',$rid,(int)$admin['id']);
         $_SESSION['flash_success']=ucfirst($type).' review saved.';$this->redirect('/admin/reports?period='.$type.'&start='.urlencode($start).'&sales_id='.$sid);
     }
     public function handleDeleteRequest():void{

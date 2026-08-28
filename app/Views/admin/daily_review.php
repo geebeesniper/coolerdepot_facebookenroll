@@ -60,24 +60,19 @@ foreach ($posts as $p) {
     </div>
 
     <div class="panel">
-        <h2>Daily Rating & Note</h2>
+        <h2>Daily Admin Note</h2>
 
         <form method="post" enctype="multipart/form-data" action="<?= $config['app']['base_path'] ?>/admin/daily/review">
             <input type="hidden" name="_csrf" value="<?= Util::e(Csrf::token()) ?>">
             <input type="hidden" name="sales_user_id" value="<?= (int)$salesUser['id'] ?>">
             <input type="hidden" name="work_date" value="<?= Util::e($date) ?>">
+<?php
+$fieldName = 'note';
+$fieldId = 'admin-note';
+$noteValue = (string)($review['note'] ?? '');
+require __DIR__ . '/_html_note_editor.php';
+?>
 
-            <label>Rating</label>
-            <select name="rating">
-                <?php for ($i=5; $i>=1; $i--): ?>
-                    <option value="<?= $i ?>" <?= ((int)($review['rating'] ?? 5) === $i) ? 'selected' : '' ?>>
-                        <?= str_repeat('★',$i) ?> (<?= $i ?>)
-                    </option>
-                <?php endfor; ?>
-            </select>
-
-            <label>Daily Note</label>
-            <textarea name="note" rows="8"><?= Util::e($review['note'] ?? '') ?></textarea>
 
             <label>Images</label>
             <input type="file" name="images[]" accept="image/jpeg,image/png,image/webp" multiple>

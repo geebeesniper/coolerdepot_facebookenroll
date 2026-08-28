@@ -46,8 +46,8 @@ Fresh install creates:
 - Server-side duplicate re-check immediately before INSERT.
 - Sales dashboard with daily counts and list/grid views.
 - Saved posts cannot be deleted by Sales; Sales submits deletion requests.
-- Admin per-post approve/reject, rating, note, and image attachments.
-- Admin per-day Sales review, rating, note, and image attachments.
+- Admin per-post Good/Bad decision, HTML note, and image attachments.
+- Admin per-day Sales HTML note and image attachments.
 - Weekly/monthly progress report and period review.
 - Review images are stored outside the public asset directory and served through an authenticated route.
 
@@ -472,4 +472,17 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - Provider Test converts parser/runtime PHP warnings into a clean JSON error instead of allowing warning output to break the AJAX response.
 - The tested item `1609835460847233` now normalizes description as `3 door refrigerator freezer`.
 - No database migration is required.
+- All border radius remains `4px`.
+
+## v0.1.16 — Admin posting-performance dashboard
+
+- Added a top-of-page Admin posting-performance chart.
+- Daily / Weekly / Monthly period switching uses the verified `published_date`.
+- Sales filter can show all Sales or one salesperson; clicking a Sales bar filters the dashboard.
+- Each vertical bar scales to total posting volume. Good/Pass is green from the bottom, Bad/Issue is red immediately above it, and the remaining neutral track represents unreviewed posts.
+- Added Total Posts / Pass / Issues / Unreviewed summary metrics.
+- The daily post table now follows the verified publication date instead of submission timestamp and follows the selected Sales filter.
+- Removed Rating from post, daily, weekly, and monthly review logic.
+- Legacy rating database columns remain nullable for safe backwards compatibility; new reviews always store NULL.
+- HTML Note editor remains enabled and now includes H3/H4 toolbar controls plus HTML source toggle.
 - All border radius remains `4px`.

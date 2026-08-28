@@ -18,7 +18,7 @@
         <input type="date" name="start" value="<?= Util::e($start) ?>">
 
         <select name="sales_id">
-            <option value="0">All Sales</option>
+            
             <?php foreach ($sales as $s): ?>
                 <option value="<?= (int)$s['id'] ?>" <?= $salesUserId===(int)$s['id']?'selected':'' ?>>
                     <?= Util::e($s['display_name']) ?>
@@ -71,16 +71,13 @@
         <input type="hidden" name="period_type" value="<?= Util::e($period) ?>">
         <input type="hidden" name="period_start" value="<?= Util::e($start) ?>">
         <input type="hidden" name="period_end" value="<?= Util::e($end) ?>">
+<?php
+$fieldName = 'note';
+$fieldId = 'admin-note';
+$noteValue = '';
+require __DIR__ . '/_html_note_editor.php';
+?>
 
-        <label>Rating</label>
-        <select name="rating">
-            <?php for ($i=5; $i>=1; $i--): ?>
-                <option value="<?= $i ?>"><?= str_repeat('★',$i) ?></option>
-            <?php endfor; ?>
-        </select>
-
-        <label>Note</label>
-        <textarea name="note" rows="7"></textarea>
 
         <label>Images</label>
         <input type="file" name="images[]" multiple accept="image/jpeg,image/png,image/webp">

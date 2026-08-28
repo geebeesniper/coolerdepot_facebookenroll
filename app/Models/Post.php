@@ -21,16 +21,67 @@ class Post {
         return(int)Database::connection()->lastInsertId();
     }
     public static function forSales(int $uid,string $from,string $to):array{
-        $s=Database::connection()->prepare("SELECT p.*,r.decision review_decision,r.rating review_rating FROM cdsp_sales_posts p LEFT JOIN cdsp_post_reviews r ON r.post_id=p.id WHERE p.sales_user_id=? AND p.created_at>=? AND p.created_at<DATE_ADD(?,INTERVAL 1 DAY) AND p.deleted_at IS NULL ORDER BY p.created_at DESC");
+        $s=Database::connection()->prepare("SELECT p.*,r.decision review_decision FROM cdsp_sales_posts p LEFT JOIN cdsp_post_reviews r ON r.post_id=p.id WHERE p.sales_user_id=? AND p.created_at>=? AND p.created_at<DATE_ADD(?,INTERVAL 1 DAY) AND p.deleted_at IS NULL ORDER BY p.created_at DESC");
         $s->execute([$uid,$from.' 00:00:00',$to.' 00:00:00']);return$s->fetchAll();
     }
     public static function find(int $id):?array{
         $s=Database::connection()->prepare("SELECT p.*,u.display_name,u.sales_id FROM cdsp_sales_posts p JOIN cdsp_users u ON u.id=p.sales_user_id WHERE p.id=? LIMIT 1");
         $s->execute([$id]);return$s->fetch()?:null;
     }
-    public static function adminQueue(string $date):array{
-        $s=Database::connection()->prepare("SELECT p.*,u.display_name,u.sales_id,r.decision,r.rating FROM cdsp_sales_posts p JOIN cdsp_users u ON u.id=p.sales_user_id LEFT JOIN cdsp_post_reviews r ON r.post_id=p.id WHERE DATE(p.created_at)=? AND p.deleted_at IS NULL ORDER BY u.display_name,p.created_at DESC");
-        $s->execute([$date]);return$s->fetchAll();
+    public static function adminQueue(string $date, int $salesUserId = 0):array{
+        $sql = "SELECT p.*,u.display_name,u.sales_id,r.decision
+                FROM cdsp_sales_posts p
+                JOIN cdsp_users u ON u.id=p.sales_user_id
+                LEFT JOIN cdsp_post_reviews r ON r.post_id=p.id
+                WHERE p.published_date=?
+                  AND p.deleted_at IS NULL";
+        $params = [$date];
+
+        if ($salesUserId > 0) {
+            $sql .= " AND p.sales_user_id=?";
+            $params[] = $salesUserId;
+        }
+
+        $sql .= " ORDER BY u.display_name,p.published_at DESC,p.id DESC";
+
+        $s=Database::connection()->prepare($sql);
+        $s->execute($params);
+        return $s->fetchAll();
+    }
+
+    public static function adminProgressStats(
+        string $from,
+        string $to,
+        int $salesUserId = 0
+    ): array {
+        $sql = "SELECT
+                    u.id AS sales_user_id,
+                    u.sales_id,
+                    u.display_name,
+                    COUNT(p.id) AS total_posts,
+                    COALESCE(SUM(p.admin_review_status='good'),0) AS good_posts,
+                    COALESCE(SUM(p.admin_review_status='bad'),0) AS bad_posts
+                FROM cdsp_users u
+                LEFT JOIN cdsp_sales_posts p
+                  ON p.sales_user_id=u.id
+                 AND p.deleted_at IS NULL
+                 AND p.published_date BETWEEN ? AND ?
+                WHERE u.role='sales'
+                  AND u.active=1";
+        $params = [$from, $to];
+
+        if ($salesUserId > 0) {
+            $sql .= " AND u.id=?";
+            $params[] = $salesUserId;
+        }
+
+        $sql .= " GROUP BY u.id,u.sales_id,u.display_name
+                  ORDER BY total_posts DESC,u.display_name";
+
+        $s = Database::connection()->prepare($sql);
+        $s->execute($params);
+
+        return $s->fetchAll();
     }
     public static function dailyCounts(int $uid,string $from,string $to):array{
         $s=Database::connection()->prepare("SELECT DATE(created_at) work_date,platform,COUNT(*) cnt FROM cdsp_sales_posts WHERE sales_user_id=? AND created_at>=? AND created_at<DATE_ADD(?,INTERVAL 1 DAY) AND deleted_at IS NULL GROUP BY DATE(created_at),platform ORDER BY work_date DESC");
