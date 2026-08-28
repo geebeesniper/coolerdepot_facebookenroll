@@ -4,11 +4,12 @@ use App\Core\Util;
 $fieldName = $fieldName ?? 'note';
 $fieldId = $fieldId ?? 'note-' . bin2hex(random_bytes(3));
 $noteValue = (string)($noteValue ?? '');
+$fieldLabel = (string)($fieldLabel ?? 'Note');
 $enableImageUpload = (bool)($enableImageUpload ?? false);
 ?>
 <div class="prose-editor" data-html-note>
     <div class="prose-editor-label">
-        <label for="<?= Util::e($fieldId) ?>-source">Note</label>
+        <label for="<?= Util::e($fieldId) ?>-source"><?= Util::e($fieldLabel) ?></label>
     </div>
 
     <div class="prose-editor-shell">

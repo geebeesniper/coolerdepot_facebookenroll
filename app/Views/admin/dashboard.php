@@ -22,6 +22,9 @@ $periodNames = [
     data-review-save-url="<?= Util::e($base) ?>/admin/post/review"
     data-get-content-url="<?= Util::e($base) ?>/admin/dashboard/get-content"
     data-editor-image-url="<?= Util::e($base) ?>/admin/dashboard/editor-image"
+    data-comment-add-url="<?= Util::e($base) ?>/admin/dashboard/comment/add"
+    data-comment-update-url="<?= Util::e($base) ?>/admin/dashboard/comment/update"
+    data-comment-delete-url="<?= Util::e($base) ?>/admin/dashboard/comment/delete"
     data-today="<?= Util::e($today) ?>"
     data-date="<?= Util::e($date) ?>"
     data-period="<?= Util::e($period) ?>"
@@ -522,13 +525,59 @@ $periodNames = [
                 </div>
             </fieldset>
 
+            <section class="review-comment-thread">
+                <div class="review-comment-thread-head">
+                    <div>
+                        <span class="review-comment-kicker">Comment History</span>
+                        <strong id="dashboardCommentCount">0 notes</strong>
+                    </div>
+                </div>
+
+                <div
+                    class="review-comment-list"
+                    id="dashboardCommentList"
+                ></div>
+
+                <div
+                    class="review-comment-empty"
+                    id="dashboardCommentEmpty"
+                >
+                    No notes yet.
+                </div>
+            </section>
+
             <?php
-            $fieldName = 'note';
+            $fieldName = 'comment_body';
+            $fieldLabel = 'Add Note';
             $fieldId = 'dashboard-review-note';
             $noteValue = '';
             $enableImageUpload = true;
             require __DIR__ . '/_html_note_editor.php';
             ?>
+
+            <div class="review-comment-composer-actions">
+                <button
+                    type="button"
+                    class="btn hidden"
+                    id="dashboardCommentCancelEdit"
+                >
+                    Cancel Edit
+                </button>
+
+                <button
+                    type="button"
+                    class="btn primary"
+                    id="dashboardCommentSave"
+                >
+                    Add Note
+                </button>
+            </div>
+
+            <div
+                class="review-comment-message"
+                id="dashboardCommentMessage"
+                aria-live="polite"
+            ></div>
 
             <div class="review-modal-upload">
                 <label for="dashboardReviewImages">Images</label>

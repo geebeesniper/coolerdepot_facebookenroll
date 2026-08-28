@@ -138,6 +138,30 @@ CREATE TABLE IF NOT EXISTS cdsp_post_reviews (
  CONSTRAINT fk_review_admin FOREIGN KEY(admin_user_id) REFERENCES cdsp_users(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS cdsp_post_review_comments (
+ id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+ post_id BIGINT UNSIGNED NOT NULL,
+ admin_user_id INT UNSIGNED NOT NULL,
+ body_html MEDIUMTEXT NOT NULL,
+ legacy_review_id BIGINT UNSIGNED NULL,
+ updated_by INT UNSIGNED NULL,
+ deleted_by INT UNSIGNED NULL,
+ created_at DATETIME NOT NULL,
+ updated_at DATETIME NOT NULL,
+ deleted_at DATETIME NULL,
+ PRIMARY KEY(id),
+ UNIQUE KEY uq_post_comment_legacy(legacy_review_id),
+ KEY idx_post_comment_post(post_id,deleted_at,created_at),
+ CONSTRAINT fk_post_comment_post
+   FOREIGN KEY(post_id) REFERENCES cdsp_sales_posts(id),
+ CONSTRAINT fk_post_comment_admin
+   FOREIGN KEY(admin_user_id) REFERENCES cdsp_users(id),
+ CONSTRAINT fk_post_comment_updated_by
+   FOREIGN KEY(updated_by) REFERENCES cdsp_users(id),
+ CONSTRAINT fk_post_comment_deleted_by
+   FOREIGN KEY(deleted_by) REFERENCES cdsp_users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS cdsp_daily_sales_reviews (
  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
  sales_user_id INT UNSIGNED NOT NULL,

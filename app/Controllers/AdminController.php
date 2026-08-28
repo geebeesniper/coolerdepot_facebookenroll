@@ -237,6 +237,7 @@ class AdminController extends Controller{
         $s->execute([$postId]);
         $review=$s->fetch()?:null;
 
+        $comments=$this->postReviewComments($postId);
         $attachments=[];
 
         if($review){
@@ -280,10 +281,8 @@ class AdminController extends Controller{
                 'decision'=>$review
                     ? (string)$review['decision']
                     : null,
-                'note'=>$review
-                    ? (string)$review['note']
-                    : '',
             ],
+            'comments'=>$comments,
             'content'=>[
                 'provider'=>'Saved post',
                 'title'=>(string)$post['title'],
@@ -386,6 +385,140 @@ class AdminController extends Controller{
             ],422);
         }
     }
+
+public function dashboardAddComment():void{
+    $admin=Auth::requireRole('admin');
+    $this->verifyAjaxCsrf();
+
+    $postId=(int)($_POST['post_id']??0);
+    $body=HtmlNoteSanitizer::clean(
+        (string)($_POST['comment_body']??'')
+    );
+
+    if(!Post::find($postId)){
+        $this->json([
+            'ok'=>false,
+            'message'=>'Post was not found.',
+        ],404);
+    }
+
+    if(!$this->commentHasContent($body)){
+        $this->json([
+            'ok'=>false,
+            'field'=>'comment_body',
+            'message'=>'Write a note before adding it.',
+        ],422);
+    }
+
+    $s=Database::connection()->prepare(
+        "INSERT INTO cdsp_post_review_comments(
+            post_id,
+            admin_user_id,
+            body_html,
+            created_at,
+            updated_at
+         )
+         VALUES(?,?,?,NOW(),NOW())"
+    );
+
+    $s->execute([
+        $postId,
+        (int)$admin['id'],
+        $body,
+    ]);
+
+    $commentId=(int)Database::connection()->lastInsertId();
+
+    $this->json([
+        'ok'=>true,
+        'comment'=>$this->postReviewComment($commentId),
+        'message'=>'Note added.',
+    ]);
+}
+
+public function dashboardUpdateComment():void{
+    $admin=Auth::requireRole('admin');
+    $this->verifyAjaxCsrf();
+
+    $commentId=(int)($_POST['comment_id']??0);
+    $body=HtmlNoteSanitizer::clean(
+        (string)($_POST['comment_body']??'')
+    );
+
+    if(!$this->commentHasContent($body)){
+        $this->json([
+            'ok'=>false,
+            'field'=>'comment_body',
+            'message'=>'A note cannot be empty.',
+        ],422);
+    }
+
+    $s=Database::connection()->prepare(
+        "UPDATE cdsp_post_review_comments
+         SET body_html=?,
+             updated_by=?,
+             updated_at=NOW()
+         WHERE id=?
+           AND deleted_at IS NULL"
+    );
+
+    $s->execute([
+        $body,
+        (int)$admin['id'],
+        $commentId,
+    ]);
+
+    if($s->rowCount()<1){
+        $exists=$this->postReviewComment($commentId);
+
+        if(!$exists){
+            $this->json([
+                'ok'=>false,
+                'message'=>'Comment was not found.',
+            ],404);
+        }
+    }
+
+    $this->json([
+        'ok'=>true,
+        'comment'=>$this->postReviewComment($commentId),
+        'message'=>'Note updated.',
+    ]);
+}
+
+public function dashboardDeleteComment():void{
+    $admin=Auth::requireRole('admin');
+    $this->verifyAjaxCsrf();
+
+    $commentId=(int)($_POST['comment_id']??0);
+
+    $s=Database::connection()->prepare(
+        "UPDATE cdsp_post_review_comments
+         SET deleted_at=NOW(),
+             deleted_by=?,
+             updated_at=NOW()
+         WHERE id=?
+           AND deleted_at IS NULL"
+    );
+
+    $s->execute([
+        (int)$admin['id'],
+        $commentId,
+    ]);
+
+    if($s->rowCount()<1){
+        $this->json([
+            'ok'=>false,
+            'message'=>'Comment was not found or was already deleted.',
+        ],404);
+    }
+
+    $this->json([
+        'ok'=>true,
+        'comment_id'=>$commentId,
+        'message'=>'Note deleted.',
+    ]);
+}
 
     public function dashboardEditorImage():void{
         $admin=Auth::requireRole('admin');
@@ -739,68 +872,170 @@ private function extractMarketplacePhotos(array $raw):array{
         $s=Database::connection()->prepare("SELECT * FROM cdsp_post_reviews WHERE post_id=? LIMIT 1");$s->execute([$post['id']]);$review=$s->fetch()?:null;
         $attachments=$review?$this->attachments('post_review',(int)$review['id']):[];$this->render('admin/post_review',compact('admin','post','review','attachments'));
     }
-    public function savePostReview():void{
-        $admin=Auth::requireRole('admin');
-        $isAjax=$this->isAjaxRequest();
+public function savePostReview():void{
+    $admin=Auth::requireRole('admin');
+    $isAjax=$this->isAjaxRequest();
 
-        if($isAjax&&$this->requestExceedsPostMaxSize()){
-            $this->json(['ok'=>false,'message'=>'Upload request exceeds PHP post_max_size ('.ini_get('post_max_size').'). Choose a smaller image.'],413);
-        }
+    if($isAjax&&$this->requestExceedsPostMaxSize()){
+        $this->json([
+            'ok'=>false,
+            'message'=>'Upload request exceeds PHP post_max_size ('
+                .ini_get('post_max_size')
+                .'). Choose a smaller image.',
+        ],413);
+    }
 
-        if($isAjax){$this->verifyAjaxCsrf();}else{Csrf::verify($_POST['_csrf']??null);}
+    if($isAjax){
+        $this->verifyAjaxCsrf();
+    }else{
+        Csrf::verify($_POST['_csrf']??null);
+    }
 
-        $pid=(int)($_POST['post_id']??0);
-        $decision=(string)($_POST['decision']??'');
-        $note=HtmlNoteSanitizer::clean((string)($_POST['note']??''));
+    $pid=(int)($_POST['post_id']??0);
+    $decision=(string)($_POST['decision']??'');
 
-        if(!in_array($decision,['good','bad'],true)){
-            if($isAjax){$this->json(['ok'=>false,'field'=>'decision','message'=>'Choose Good or Bad.'],422);}
-            $_SESSION['flash_error']='Choose Good or Bad.';$this->redirect('/admin/post?id='.$pid);
-        }
-
-        $post=Post::find($pid);
-        if(!$post){
-            if($isAjax){$this->json(['ok'=>false,'message'=>'Post was not found.'],404);}
-            http_response_code(404);exit('Post not found');
-        }
-
-        $pdo=Database::connection();$pdo->beginTransaction();
-        try{
-            $s=$pdo->prepare("INSERT INTO cdsp_post_reviews(post_id,admin_user_id,decision,rating,note,reviewed_at,created_at,updated_at) VALUES(?,?,?,NULL,?,NOW(),NOW(),NOW()) ON DUPLICATE KEY UPDATE admin_user_id=VALUES(admin_user_id),decision=VALUES(decision),rating=NULL,note=VALUES(note),reviewed_at=NOW(),updated_at=NOW()");
-            $s->execute([$pid,(int)$admin['id'],$decision,$note]);
-            $s=$pdo->prepare("UPDATE cdsp_sales_posts SET admin_review_status=?,updated_at=NOW() WHERE id=?");$s->execute([$decision,$pid]);
-            $s=$pdo->prepare("SELECT id FROM cdsp_post_reviews WHERE post_id=?");$s->execute([$pid]);$rid=(int)$s->fetchColumn();
-            if($rid<1) throw new \RuntimeException('Review row could not be resolved after saving.');
-            $pdo->commit();
-        }catch(\Throwable $e){
-            if($pdo->inTransaction())$pdo->rollBack();
-            if($isAjax){$this->json(['ok'=>false,'message'=>'Review database save failed: '.$e->getMessage()],422);}
-            throw $e;
-        }
-
-        $uploadWarning=null;
-        try{(new UploadService())->save('post_review',$rid,(int)$admin['id']);}
-        catch(\Throwable $e){$uploadWarning=$e->getMessage();}
-
+    if(!in_array($decision,['good','bad'],true)){
         if($isAjax){
-            $attachments=[];
-            foreach($this->attachments('post_review',$rid) as $attachment){
-                $attachments[]=[
-                    'id'=>(int)$attachment['id'],
-                    'name'=>(string)$attachment['original_name'],
-                    'url'=>$GLOBALS['config']['app']['base_path'].'/attachment?id='.(int)$attachment['id'],
-                ];
-            }
             $this->json([
-                'ok'=>true,'post_id'=>$pid,'decision'=>$decision,'note'=>$note,
-                'attachments'=>$attachments,'upload_warning'=>$uploadWarning,
-                'message'=>$uploadWarning?'Review saved, but an image could not be uploaded.':'Review saved.',
-            ]);
+                'ok'=>false,
+                'field'=>'decision',
+                'message'=>'Choose Good or Bad.',
+            ],422);
         }
 
-        $_SESSION['flash_success']=$uploadWarning?'Review saved. Image upload warning: '.$uploadWarning:'Post review saved.';
+        $_SESSION['flash_error']='Choose Good or Bad.';
         $this->redirect('/admin/post?id='.$pid);
     }
+
+    $post=Post::find($pid);
+
+    if(!$post){
+        if($isAjax){
+            $this->json([
+                'ok'=>false,
+                'message'=>'Post was not found.',
+            ],404);
+        }
+
+        http_response_code(404);
+        exit('Post not found');
+    }
+
+    $pdo=Database::connection();
+    $pdo->beginTransaction();
+
+    try{
+        $s=$pdo->prepare(
+            "INSERT INTO cdsp_post_reviews(
+                post_id,
+                admin_user_id,
+                decision,
+                rating,
+                note,
+                reviewed_at,
+                created_at,
+                updated_at
+             )
+             VALUES(?,?,?,NULL,NULL,NOW(),NOW(),NOW())
+             ON DUPLICATE KEY UPDATE
+                admin_user_id=VALUES(admin_user_id),
+                decision=VALUES(decision),
+                rating=NULL,
+                reviewed_at=NOW(),
+                updated_at=NOW()"
+        );
+
+        $s->execute([
+            $pid,
+            (int)$admin['id'],
+            $decision,
+        ]);
+
+        $s=$pdo->prepare(
+            "UPDATE cdsp_sales_posts
+             SET admin_review_status=?,
+                 updated_at=NOW()
+             WHERE id=?"
+        );
+        $s->execute([$decision,$pid]);
+
+        $s=$pdo->prepare(
+            "SELECT id
+             FROM cdsp_post_reviews
+             WHERE post_id=?"
+        );
+        $s->execute([$pid]);
+        $rid=(int)$s->fetchColumn();
+
+        if($rid<1){
+            throw new \RuntimeException(
+                'Review row could not be resolved after saving.'
+            );
+        }
+
+        $pdo->commit();
+    }catch(\Throwable $e){
+        if($pdo->inTransaction()){
+            $pdo->rollBack();
+        }
+
+        if($isAjax){
+            $this->json([
+                'ok'=>false,
+                'message'=>'Review database save failed: '
+                    .$e->getMessage(),
+            ],422);
+        }
+
+        throw $e;
+    }
+
+    $uploadWarning=null;
+
+    try{
+        (new UploadService())->save(
+            'post_review',
+            $rid,
+            (int)$admin['id']
+        );
+    }catch(\Throwable $e){
+        $uploadWarning=$e->getMessage();
+    }
+
+    if($isAjax){
+        $attachments=[];
+
+        foreach(
+            $this->attachments('post_review',$rid)
+            as $attachment
+        ){
+            $attachments[]=[
+                'id'=>(int)$attachment['id'],
+                'name'=>(string)$attachment['original_name'],
+                'url'=>$GLOBALS['config']['app']['base_path']
+                    .'/attachment?id='
+                    .(int)$attachment['id'],
+            ];
+        }
+
+        $this->json([
+            'ok'=>true,
+            'post_id'=>$pid,
+            'decision'=>$decision,
+            'attachments'=>$attachments,
+            'upload_warning'=>$uploadWarning,
+            'message'=>$uploadWarning
+                ? 'Review saved, but an image could not be uploaded.'
+                : 'Review saved.',
+        ]);
+    }
+
+    $_SESSION['flash_success']=$uploadWarning
+        ? 'Review saved. Image upload warning: '.$uploadWarning
+        : 'Post review saved.';
+
+    $this->redirect('/admin/post?id='.$pid);
+}
 
     public function dailyReview():void{
         $admin=Auth::requireRole('admin');$sid=(int)($_GET['sales_id']??0);$date=$_GET['date']??date('Y-m-d');$salesUser=User::find($sid);
@@ -860,6 +1095,95 @@ private function extractMarketplacePhotos(array $raw):array{
         $value=trim($value);if($value==='')return 0;$unit=strtolower(substr($value,-1));$number=(float)$value;
         return match($unit){'g'=>(int)round($number*1024*1024*1024),'m'=>(int)round($number*1024*1024),'k'=>(int)round($number*1024),default=>(int)$number};
     }
+
+private function postReviewComments(int $postId):array{
+    $s=Database::connection()->prepare(
+        "SELECT
+            c.id,
+            c.post_id,
+            c.admin_user_id,
+            c.body_html,
+            c.created_at,
+            c.updated_at,
+            c.updated_by,
+            u.display_name AS author_name
+         FROM cdsp_post_review_comments c
+         JOIN cdsp_users u
+           ON u.id=c.admin_user_id
+         WHERE c.post_id=?
+           AND c.deleted_at IS NULL
+         ORDER BY c.created_at ASC,c.id ASC"
+    );
+
+    $s->execute([$postId]);
+
+    $rows=[];
+
+    foreach($s->fetchAll() as $row){
+        $rows[]=$this->formatPostReviewComment($row);
+    }
+
+    return $rows;
+}
+
+private function postReviewComment(int $commentId):?array{
+    $s=Database::connection()->prepare(
+        "SELECT
+            c.id,
+            c.post_id,
+            c.admin_user_id,
+            c.body_html,
+            c.created_at,
+            c.updated_at,
+            c.updated_by,
+            u.display_name AS author_name
+         FROM cdsp_post_review_comments c
+         JOIN cdsp_users u
+           ON u.id=c.admin_user_id
+         WHERE c.id=?
+           AND c.deleted_at IS NULL
+         LIMIT 1"
+    );
+
+    $s->execute([$commentId]);
+    $row=$s->fetch();
+
+    return $row
+        ? $this->formatPostReviewComment($row)
+        : null;
+}
+
+private function formatPostReviewComment(array $row):array{
+    $created=(string)$row['created_at'];
+    $updated=(string)$row['updated_at'];
+    $edited=(
+        !empty($row['updated_by'])
+        || (
+            $created!==''
+            && $updated!==''
+            && $created!==$updated
+        )
+    );
+
+    return [
+        'id'=>(int)$row['id'],
+        'post_id'=>(int)$row['post_id'],
+        'author_id'=>(int)$row['admin_user_id'],
+        'author_name'=>(string)$row['author_name'],
+        'body_html'=>(string)$row['body_html'],
+        'created_at'=>$created,
+        'updated_at'=>$updated,
+        'edited'=>$edited,
+    ];
+}
+
+private function commentHasContent(string $html):bool{
+    if(trim(strip_tags($html))!==''){
+        return true;
+    }
+
+    return stripos($html,'<img')!==false;
+}
 
     private function attachments(string $type,int $id):array{$s=Database::connection()->prepare("SELECT * FROM cdsp_review_attachments WHERE entity_type=? AND entity_id=? ORDER BY created_at");$s->execute([$type,$id]);return$s->fetchAll();}
 }

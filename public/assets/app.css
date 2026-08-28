@@ -3478,3 +3478,228 @@ body.review-modal-open{
         transform:translateX(0);
     }
 }
+
+/* v0.1.29 Post Review comment history */
+.review-comment-thread{
+    margin:15px 0 4px;
+    border:1px solid #dbe3ee;
+    border-radius:4px;
+    background:#fff;
+}
+.review-comment-thread-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:10px 12px;
+    border-bottom:1px solid #e5e7eb;
+    background:#f8fafc;
+}
+.review-comment-kicker{
+    display:block;
+    color:#64748b;
+    font-size:8px;
+    font-weight:900;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+}
+.review-comment-thread-head strong{
+    display:block;
+    margin-top:2px;
+    color:#334155;
+    font-size:10px;
+}
+.review-comment-list{
+    padding:8px;
+}
+.review-comment{
+    position:relative;
+    padding:11px 12px;
+    border:1px solid #e2e8f0;
+    border-radius:4px;
+    background:#fff;
+}
+.review-comment + .review-comment{
+    margin-top:7px;
+}
+.review-comment-head{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:8px;
+}
+.review-comment-author{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    min-width:0;
+}
+.review-comment-avatar{
+    width:30px;
+    height:30px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex:0 0 30px;
+    border-radius:4px;
+    background:#eef2ff;
+    color:#4338ca;
+    font-size:10px;
+    font-weight:900;
+}
+.review-comment-author strong{
+    display:block;
+    color:#0f172a;
+    font-size:10px;
+}
+.review-comment-author span:not(.review-comment-avatar){
+    display:flex;
+    align-items:center;
+    gap:5px;
+    margin-top:2px;
+    color:#64748b;
+    font-size:8px;
+    font-weight:700;
+}
+.review-comment-edited{
+    display:inline-flex;
+    align-items:center;
+    padding:1px 4px;
+    border-radius:4px;
+    background:#f1f5f9;
+    color:#64748b;
+    font-size:7px;
+    font-weight:900;
+}
+.review-comment-actions{
+    display:flex;
+    align-items:center;
+    gap:4px;
+}
+.review-comment-icon{
+    width:30px;
+    height:30px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding:0;
+    border:1px solid #e2e8f0;
+    border-radius:4px;
+    background:#fff;
+    color:#64748b;
+    cursor:pointer;
+}
+.review-comment-icon svg{
+    width:14px;
+    height:14px;
+    fill:currentColor;
+}
+.review-comment-icon:hover,
+.review-comment-icon:focus{
+    border-color:#94a3b8;
+    background:#f8fafc;
+    color:#0f172a;
+    outline:none;
+}
+.review-comment-icon.danger:hover,
+.review-comment-icon.danger:focus{
+    border-color:#fecaca;
+    background:#fff1f2;
+    color:#b91c1c;
+}
+.review-comment-body{
+    color:#334155;
+    font-size:10px;
+    line-height:1.6;
+    overflow-wrap:anywhere;
+}
+.review-comment-body p:first-child{
+    margin-top:0;
+}
+.review-comment-body p:last-child{
+    margin-bottom:0;
+}
+.review-comment-body img{
+    max-width:100%;
+    height:auto;
+    display:block;
+    margin:8px 0;
+    border:1px solid #e2e8f0;
+    border-radius:4px;
+}
+.review-comment-delete-confirm{
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:6px;
+    margin-top:9px;
+    padding-top:8px;
+    border-top:1px solid #fee2e2;
+    color:#991b1b;
+    font-size:9px;
+    font-weight:900;
+}
+.review-comment-delete-confirm.hidden{
+    display:none;
+}
+.review-comment-empty{
+    padding:20px 12px;
+    text-align:center;
+    color:#94a3b8;
+    font-size:9px;
+    font-weight:700;
+}
+.review-comment-empty.hidden{
+    display:none;
+}
+.review-comment-composer-actions{
+    display:flex;
+    justify-content:flex-end;
+    gap:7px;
+    margin-top:8px;
+}
+.review-comment-composer-actions .hidden{
+    display:none;
+}
+.review-comment-message{
+    min-height:18px;
+    margin-top:5px;
+    color:#15803d;
+    font-size:9px;
+    font-weight:800;
+}
+.review-comment-message.error{
+    color:#b42318;
+}
+.review-comment-message.warning{
+    color:#b45309;
+}
+
+/* Keep Review decision and comment actions visually separate. */
+.review-modal-footer{
+    margin-top:18px;
+}
+
+@media(pointer:coarse){
+    .review-comment-icon{
+        width:44px;
+        height:44px;
+    }
+    .review-comment-composer-actions .btn{
+        min-height:44px;
+    }
+}
+@media(max-width:560px){
+    .review-comment-head{
+        align-items:center;
+    }
+    .review-comment-author{
+        align-items:flex-start;
+    }
+    .review-comment-composer-actions{
+        flex-direction:column-reverse;
+    }
+    .review-comment-composer-actions .btn{
+        width:100%;
+    }
+}

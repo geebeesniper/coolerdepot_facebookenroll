@@ -1004,6 +1004,9 @@ $('[data-html-note]').each(function(){
     const reviewSaveUrl = $live.data('review-save-url');
     const getContentUrl = $live.data('get-content-url');
     const editorImageUrl = $live.data('editor-image-url');
+    const commentAddUrl = $live.data('comment-add-url');
+    const commentUpdateUrl = $live.data('comment-update-url');
+    const commentDeleteUrl = $live.data('comment-delete-url');
     const today = String($live.data('today') || '');
     const csrf = $('#adminDashboardCsrf').val();
 
@@ -1045,6 +1048,14 @@ $('[data-html-note]').each(function(){
     const $modalLoading = $('#dashboardReviewLoading');
     const $modalMessage = $('#dashboardReviewMessage');
     const $modalAttachments = $('#dashboardReviewAttachments');
+    const $commentList = $('#dashboardCommentList');
+    const $commentEmpty = $('#dashboardCommentEmpty');
+    const $commentCount = $('#dashboardCommentCount');
+    const $commentSave = $('#dashboardCommentSave');
+    const $commentCancelEdit = $('#dashboardCommentCancelEdit');
+    const $commentMessage = $('#dashboardCommentMessage');
+    let editingCommentId = 0;
+    let currentComments = [];
     const $contentPreview = $('#dashboardContentPreview');
     const $contentProvider = $('#dashboardContentProvider');
     const $contentFetched = $('#dashboardContentFetched');
@@ -1702,6 +1713,170 @@ function renderContentPreview(content){
     $('#listingImageClose').on('click',closeListingImage);
     $('#listingImageLightbox').on('click',function(event){if(event.target===this)closeListingImage();});
 
+function commentDateLabel(value){
+    const raw=String(value||'');
+
+    if(!raw){
+        return '';
+    }
+
+    const normalized=raw.replace(' ','T');
+    const dateObj=new Date(normalized);
+
+    if(Number.isNaN(dateObj.getTime())){
+        return raw;
+    }
+
+    return dateObj.toLocaleString([],{
+        year:'numeric',
+        month:'short',
+        day:'numeric',
+        hour:'numeric',
+        minute:'2-digit'
+    });
+}
+
+function renderComments(items){
+    currentComments=Array.isArray(items)
+        ?items.slice()
+        :[];
+
+    $commentCount.text(
+        currentComments.length
+        +' note'
+        +(currentComments.length===1?'':'s')
+    );
+
+    if(!currentComments.length){
+        $commentList.empty();
+        $commentEmpty.removeClass('hidden');
+        return;
+    }
+
+    $commentEmpty.addClass('hidden');
+
+    const html=currentComments.map(function(comment){
+        const edited=comment.edited
+            ?'<span class="review-comment-edited">Edited</span>'
+            :'';
+
+        return (
+            '<article class="review-comment" data-comment-id="'
+            +escapeHtml(comment.id)
+            +'">'+
+                '<div class="review-comment-head">'+
+                    '<div class="review-comment-author">'+
+                        '<span class="review-comment-avatar">'
+                            +escapeHtml(
+                                String(comment.author_name||'A')
+                                    .trim()
+                                    .charAt(0)
+                                    .toUpperCase()
+                            )
+                        +'</span>'+
+                        '<div>'+
+                            '<strong>'
+                                +escapeHtml(comment.author_name||'Administrator')
+                            +'</strong>'+
+                            '<span>'
+                                +escapeHtml(
+                                    commentDateLabel(comment.created_at)
+                                )
+                                +edited+
+                            '</span>'+
+                        '</div>'+
+                    '</div>'+
+                    '<div class="review-comment-actions">'+
+                        '<button type="button" class="review-comment-icon"'
+                        +' data-comment-edit title="Edit note"'
+                        +' aria-label="Edit note">'+
+                            '<svg viewBox="0 0 24 24" aria-hidden="true">'
+                            +'<path d="M4 17.3V20h2.7L17.8 8.9l-2.7-2.7L4 17.3Zm15.9-10.5c.3-.3.3-.8 0-1.1l-1.6-1.6a.8.8 0 0 0-1.1 0l-1.3 1.3 2.7 2.7 1.3-1.3Z"/>'
+                            +'</svg>'+
+                        '</button>'+
+                        '<button type="button" class="review-comment-icon danger"'
+                        +' data-comment-delete title="Delete note"'
+                        +' aria-label="Delete note">'+
+                            '<svg viewBox="0 0 24 24" aria-hidden="true">'
+                            +'<path d="M8 4h8l1 2h4v2H3V6h4l1-2Zm1 6h2v7H9v-7Zm4 0h2v7h-2v-7ZM6 9h12l-1 11H7L6 9Z"/>'
+                            +'</svg>'+
+                        '</button>'+
+                    '</div>'+
+                '</div>'+
+                '<div class="review-comment-body">'
+                    +(comment.body_html||'')
+                +'</div>'+
+                '<div class="review-comment-delete-confirm hidden">'+
+                    '<span>Delete this note?</span>'+
+                    '<button type="button" class="tiny badbtn"'
+                    +' data-comment-delete-confirm>Delete</button>'+
+                    '<button type="button" class="tiny"'
+                    +' data-comment-delete-cancel>Cancel</button>'+
+                '</div>'+
+            '</article>'
+        );
+    }).join('');
+
+    $commentList.html(html);
+}
+
+function getCommentEditorHtml(){
+    const $note=$modal.find('[data-html-note]').first();
+
+    if(!$note.length){
+        return '';
+    }
+
+    syncHtmlNote($note);
+
+    return String(
+        $note.find('[data-html-source]').val()||''
+    );
+}
+
+function clearCommentComposer(){
+    editingCommentId=0;
+    setModalEditorHtml('');
+    $commentSave
+        .prop('disabled',false)
+        .text('Add Note');
+    $commentCancelEdit.addClass('hidden');
+    $commentMessage
+        .removeClass('error warning')
+        .text('');
+}
+
+function startCommentEdit(commentId){
+    const comment=currentComments.find(function(item){
+        return parseInt(item.id,10)===parseInt(commentId,10);
+    });
+
+    if(!comment){
+        return;
+    }
+
+    editingCommentId=parseInt(comment.id,10)||0;
+    setModalEditorHtml(comment.body_html||'');
+
+    $commentSave.text('Update Note');
+    $commentCancelEdit.removeClass('hidden');
+    $commentMessage
+        .removeClass('error warning')
+        .text('Editing existing note.');
+
+    const editorEl=$modal
+        .find('[data-html-note]')
+        .first()
+        .get(0);
+
+    if(editorEl){
+        editorEl.scrollIntoView({
+            behavior:'smooth',
+            block:'center'
+        });
+    }
+}
+
     function renderAttachments(items){
         items = Array.isArray(items) ? items : [];
 
@@ -1747,6 +1922,10 @@ function renderContentPreview(content){
             .addClass('hidden')
             .attr('href', '#');
         window.cdspReviewListingPhotos=[];
+        editingCommentId=0;
+        currentComments=[];
+        renderComments([]);
+        clearCommentComposer();
         renderAttachments([]);
         renderContentPreview({
             provider:'Saved post',
@@ -1851,9 +2030,8 @@ function renderContentPreview(content){
                     .prop('checked', true);
             }
 
-            setModalEditorHtml(
-                data.review ? data.review.note : ''
-            );
+            clearCommentComposer();
+            renderComments(data.comments || []);
             renderContentPreview(data.content);
             renderAttachments(data.attachments);
         })
@@ -2057,6 +2235,225 @@ function showDecisionError(message){
             }
         }
     );
+
+$commentSave.on('click',function(){
+    const postId=parseInt(
+        $('#dashboardReviewPostId').val(),
+        10
+    )||0;
+
+    const body=getCommentEditorHtml();
+
+    if(!postId){
+        return;
+    }
+
+    const isEditing=editingCommentId>0;
+    const url=isEditing
+        ?commentUpdateUrl
+        :commentAddUrl;
+
+    const payload={
+        _csrf:csrf,
+        post_id:postId,
+        comment_body:body
+    };
+
+    if(isEditing){
+        payload.comment_id=editingCommentId;
+    }
+
+    $commentMessage
+        .removeClass('error warning')
+        .text(isEditing?'Updating note…':'Adding note…');
+
+    $commentSave
+        .prop('disabled',true)
+        .text(isEditing?'Updating…':'Adding…');
+
+    $.ajax({
+        url:url,
+        method:'POST',
+        dataType:'json',
+        data:payload,
+        headers:{
+            'X-Requested-With':'XMLHttpRequest',
+            'Accept':'application/json'
+        }
+    })
+    .done(function(data){
+        if(!data||!data.ok){
+            $commentMessage
+                .addClass('error')
+                .text(
+                    (data&&data.message)
+                    ||'Could not save note.'
+                );
+            return;
+        }
+
+        if(isEditing){
+            currentComments=currentComments.map(function(item){
+                return parseInt(item.id,10)===parseInt(data.comment.id,10)
+                    ?data.comment
+                    :item;
+            });
+        }else{
+            currentComments.push(data.comment);
+        }
+
+        renderComments(currentComments);
+        clearCommentComposer();
+
+        $commentMessage
+            .removeClass('error warning')
+            .text(
+                isEditing
+                    ?'Note updated.'
+                    :'Note added.'
+            );
+
+        setTimeout(function(){
+            if(
+                $commentMessage.text()==='Note added.'
+                ||$commentMessage.text()==='Note updated.'
+            ){
+                $commentMessage.text('');
+            }
+        },1800);
+    })
+    .fail(function(xhr){
+        const data=xhr.responseJSON||{};
+        const raw=String(xhr.responseText||'').trim();
+
+        $commentMessage
+            .addClass('error')
+            .text(
+                data.message
+                ||raw
+                ||'Could not save note.'
+            );
+    })
+    .always(function(){
+        $commentSave.prop('disabled',false);
+
+        if(editingCommentId>0){
+            $commentSave.text('Update Note');
+        }else{
+            $commentSave.text('Add Note');
+        }
+    });
+});
+
+$commentCancelEdit.on('click',function(){
+    clearCommentComposer();
+});
+
+$commentList.on('click','[data-comment-edit]',function(){
+    const commentId=parseInt(
+        $(this)
+            .closest('[data-comment-id]')
+            .data('comment-id'),
+        10
+    )||0;
+
+    startCommentEdit(commentId);
+});
+
+$commentList.on('click','[data-comment-delete]',function(){
+    const $comment=$(this).closest('[data-comment-id]');
+
+    $comment
+        .find('.review-comment-delete-confirm')
+        .removeClass('hidden');
+});
+
+$commentList.on('click','[data-comment-delete-cancel]',function(){
+    $(this)
+        .closest('.review-comment-delete-confirm')
+        .addClass('hidden');
+});
+
+$commentList.on(
+    'click',
+    '[data-comment-delete-confirm]',
+    function(){
+        const $comment=$(this).closest('[data-comment-id]');
+        const commentId=parseInt(
+            $comment.data('comment-id'),
+            10
+        )||0;
+        const $button=$(this);
+
+        if(!commentId){
+            return;
+        }
+
+        $button
+            .prop('disabled',true)
+            .text('Deleting…');
+
+        $.ajax({
+            url:commentDeleteUrl,
+            method:'POST',
+            dataType:'json',
+            data:{
+                _csrf:csrf,
+                comment_id:commentId
+            },
+            headers:{
+                'X-Requested-With':'XMLHttpRequest',
+                'Accept':'application/json'
+            }
+        })
+        .done(function(data){
+            if(!data||!data.ok){
+                $commentMessage
+                    .addClass('error')
+                    .text(
+                        (data&&data.message)
+                        ||'Could not delete note.'
+                    );
+                return;
+            }
+
+            currentComments=currentComments.filter(function(item){
+                return parseInt(item.id,10)!==commentId;
+            });
+
+            renderComments(currentComments);
+
+            if(editingCommentId===commentId){
+                clearCommentComposer();
+            }
+
+            $commentMessage
+                .removeClass('error warning')
+                .text('Note deleted.');
+
+            setTimeout(function(){
+                if($commentMessage.text()==='Note deleted.'){
+                    $commentMessage.text('');
+                }
+            },1800);
+        })
+        .fail(function(xhr){
+            const data=xhr.responseJSON||{};
+
+            $commentMessage
+                .addClass('error')
+                .text(
+                    data.message
+                    ||'Could not delete note.'
+                );
+        })
+        .always(function(){
+            $button
+                .prop('disabled',false)
+                .text('Delete');
+        });
+    }
+);
 
     $modalForm.on('submit', function(event){
         event.preventDefault();

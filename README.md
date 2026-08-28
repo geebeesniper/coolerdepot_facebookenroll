@@ -656,3 +656,19 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - Selecting Good or Bad clears the custom error immediately.
 - No database migration is required.
 - All border radius remains `4px`.
+
+## v0.1.29 — Persistent Post Review comments
+
+- Replaced the single overwritten Post Review `note` behavior with a persistent comment history.
+- Added `cdsp_post_review_comments` with soft-delete and audit fields.
+- Migration `010_post_review_comments` automatically copies existing non-empty `cdsp_post_reviews.note` values into the new comment history without duplicating them on rerun.
+- Opening a Post Review now returns and renders every existing note in chronological order.
+- The rich editor is now an `Add Note` composer. Adding a note appends a new comment and never overwrites previous comments.
+- Each comment shows author, timestamp, and Edited state.
+- Each comment has AJAX Edit and Delete actions.
+- Edit reuses the existing rich Visual/HTML composer and changes `Add Note` to `Update Note`; Cancel Edit restores a clean composer.
+- Delete uses an inline confirmation row rather than browser `confirm()`. Deleted comments are soft-deleted for auditability and disappear immediately from the UI.
+- Saving Good/Bad no longer overwrites the legacy `cdsp_post_reviews.note` column.
+- Existing review attachments and review decision AJAX behavior remain unchanged.
+- Requires migration `010_post_review_comments`.
+- All border radius remains `4px`.
