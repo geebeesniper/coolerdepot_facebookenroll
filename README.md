@@ -464,3 +464,12 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - Generic remote provider failures still appear in the provider test result box because they are not tied to one input field.
 - No database migration is required.
 - All border radius remains `4px`.
+
+## v0.1.15 — Apify detailed-description fix
+
+- Fixed Apify Marketplace detailed output where `description` is an object such as `{"text":"..."}`.
+- Apify now normalizes nested text values without PHP `Array to string conversion` warnings.
+- Provider Test converts parser/runtime PHP warnings into a clean JSON error instead of allowing warning output to break the AJAX response.
+- The tested item `1609835460847233` now normalizes description as `3 door refrigerator freezer`.
+- No database migration is required.
+- All border radius remains `4px`.

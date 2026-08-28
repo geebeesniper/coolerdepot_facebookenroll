@@ -119,11 +119,36 @@ class AdminSettingsController extends Controller
                 session_write_close();
             }
 
-            $result = MarketplaceProviderFactory::make($profile)->fetch(
-                $testUrl,
-                (int)$admin['id'],
-                true
+            $previousErrorHandler = set_error_handler(
+                static function (
+                    int $severity,
+                    string $message,
+                    string $file,
+                    int $line
+                ): bool {
+                    if (!(error_reporting() & $severity)) {
+                        return false;
+                    }
+
+                    throw new \ErrorException(
+                        $message,
+                        0,
+                        $severity,
+                        $file,
+                        $line
+                    );
+                }
             );
+
+            try {
+                $result = MarketplaceProviderFactory::make($profile)->fetch(
+                    $testUrl,
+                    (int)$admin['id'],
+                    true
+                );
+            } finally {
+                restore_error_handler();
+            }
 
             foreach ([
                 'external_post_id',
@@ -199,7 +224,9 @@ class AdminSettingsController extends Controller
         } catch (\Throwable $e) {
             $this->json([
                 'ok' => false,
-                'message' => $e->getMessage(),
+                'message' => $e->getMessage() !== ''
+                    ? $e->getMessage()
+                    : 'Provider test failed during response validation.',
             ], 422);
         }
     }

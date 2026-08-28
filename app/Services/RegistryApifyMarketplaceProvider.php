@@ -158,10 +158,41 @@ class RegistryApifyMarketplaceProvider
         $id = trim((string)(
             $record['id'] ?? $record['listingId'] ?? $expectedId ?? ''
         ));
+
+        $canonicalSource =
+            $record['itemUrl']
+            ?? $record['facebookUrl']
+            ?? $submittedUrl;
+
         $canonical = PlatformUrl::normalize(
-            (string)($record['itemUrl'] ?? $record['facebookUrl'] ?? $submittedUrl),
+            is_scalar($canonicalSource)
+                ? (string)$canonicalSource
+                : $submittedUrl,
             'facebook'
         ) ?: $submittedUrl;
+
+        $title = $this->textValue(
+            $record['listingTitle']
+            ?? $record['title']
+            ?? ''
+        );
+
+        // Apify's detailed Marketplace response currently returns:
+        // "description": {"text": "..."}
+        // Do not cast the array itself to string; doing so emits a PHP warning
+        // and can corrupt an AJAX JSON response.
+        $description = $this->textValue(
+            $record['description']
+            ?? $record['listingDescription']
+            ?? ''
+        );
+
+        $publishedRaw = $this->textValue(
+            $record['timestamp']
+            ?? $record['listingDate']
+            ?? $record['creation_time']
+            ?? ''
+        );
 
         return [
             'provider' => 'apify',
@@ -172,17 +203,32 @@ class RegistryApifyMarketplaceProvider
             'resolved_url' => $canonical,
             'canonical_url' => $canonical,
             'external_post_id' => $id !== '' ? $id : null,
-            'title' => trim((string)(
-                $record['listingTitle'] ?? $record['title'] ?? ''
-            )),
-            'description' => trim((string)(
-                $record['description'] ?? $record['listingDescription'] ?? ''
-            )),
-            'published_raw' => trim((string)(
-                $record['timestamp'] ?? $record['listingDate'] ?? $record['creation_time'] ?? ''
-            )) ?: null,
+            'title' => $title,
+            'description' => $description,
+            'published_raw' => $publishedRaw !== '' ? $publishedRaw : null,
             'raw' => $record,
         ];
+    }
+
+    private function textValue($value): string
+    {
+        if (is_string($value) || is_numeric($value)) {
+            return trim((string)$value);
+        }
+
+        if (!is_array($value)) {
+            return '';
+        }
+
+        // Common social-scraper shapes.
+        foreach (['text', 'value', 'label', 'description', 'title'] as $key) {
+            if (isset($value[$key])
+                && (is_string($value[$key]) || is_numeric($value[$key]))) {
+                return trim((string)$value[$key]);
+            }
+        }
+
+        return '';
     }
 
     private function message($json, string $raw): string
