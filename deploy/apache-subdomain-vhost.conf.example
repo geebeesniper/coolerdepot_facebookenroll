@@ -1,0 +1,16 @@
+# Replace salesposts.YOURDOMAIN.com with the real subdomain.
+<VirtualHost *:80>
+ ServerName salesposts.YOURDOMAIN.com
+ DocumentRoot "/usr/local/apache2/htdocs/sales-posts"
+ <Directory "/usr/local/apache2/htdocs/sales-posts">
+  Options -Indexes
+  AllowOverride All
+  Require all granted
+  DirectoryIndex index.php
+ </Directory>
+ <FilesMatch "\.php$">
+  SetHandler "proxy:fcgi://php:9000"
+ </FilesMatch>
+ ErrorLog /proc/self/fd/2
+ CustomLog /proc/self/fd/1 combined
+</VirtualHost>

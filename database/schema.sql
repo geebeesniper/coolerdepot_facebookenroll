@@ -1,0 +1,202 @@
+SET NAMES utf8mb4;
+SET FOREIGN_KEY_CHECKS=0;
+
+CREATE TABLE IF NOT EXISTS users (
+ id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+ sales_id INT UNSIGNED NULL,
+ external_user_id VARCHAR(191) NULL,
+ username VARCHAR(100) NOT NULL,
+ password_hash VARCHAR(255) NULL,
+ display_name VARCHAR(150) NOT NULL DEFAULT '',
+ role ENUM('sales','admin') NOT NULL DEFAULT 'sales',
+ active TINYINT(1) NOT NULL DEFAULT 1,
+ auth_source VARCHAR(50) NOT NULL DEFAULT 'local',
+ last_handoff_at DATETIME NULL,
+ created_at DATETIME NOT NULL,
+ updated_at DATETIME NOT NULL,
+ PRIMARY KEY(id),
+ UNIQUE KEY uq_users_username(username),
+ UNIQUE KEY uq_users_sales_id(sales_id),
+ UNIQUE KEY uq_users_external_user_id(external_user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+CREATE TABLE IF NOT EXISTS auth_handoffs (
+ id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+ nonce VARCHAR(128) NOT NULL,
+ user_id INT UNSIGNED NULL,
+ external_user_id VARCHAR(191) NOT NULL,
+ sales_id INT UNSIGNED NULL,
+ display_name VARCHAR(150) NOT NULL,
+ role ENUM('sales','admin') NOT NULL,
+ source_ip VARCHAR(45) NULL,
+ payload_json TEXT NULL,
+ accepted_at DATETIME NOT NULL,
+ PRIMARY KEY(id),
+ UNIQUE KEY uq_auth_handoff_nonce(nonce),
+ KEY idx_auth_handoff_user(user_id),
+ KEY idx_auth_handoff_external(external_user_id),
+ CONSTRAINT fk_auth_handoff_user FOREIGN KEY(user_id) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS auth_sessions (
+ id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+ user_id INT UNSIGNED NOT NULL,
+ token_hash CHAR(64) NOT NULL,
+ source VARCHAR(50) NOT NULL,
+ ip_address VARCHAR(45) NULL,
+ user_agent VARCHAR(500) NULL,
+ created_at DATETIME NOT NULL,
+ last_seen_at DATETIME NOT NULL,
+ expires_at DATETIME NOT NULL,
+ revoked_at DATETIME NULL,
+ PRIMARY KEY(id),
+ UNIQUE KEY uq_auth_session_token(token_hash),
+ KEY idx_auth_session_user(user_id),
+ KEY idx_auth_session_expiry(expires_at,revoked_at),
+ CONSTRAINT fk_auth_session_user FOREIGN KEY(user_id) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS post_inspections (
+ id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+ token CHAR(64) NOT NULL,
+ sales_user_id INT UNSIGNED NOT NULL,
+ platform ENUM('facebook','offerup','craigslist') NOT NULL,
+ submitted_url TEXT NOT NULL,
+ resolved_url TEXT NULL,
+ canonical_url TEXT NULL,
+ external_post_id VARCHAR(120) NULL,
+ title VARCHAR(500) NULL,
+ description MEDIUMTEXT NULL,
+ published_at DATETIME NULL,
+ published_date DATE NULL,
+ fetched_at DATETIME NULL,
+ verification_status ENUM('verified','failed') NOT NULL,
+ failure_code VARCHAR(80) NULL,
+ failure_message VARCHAR(500) NULL,
+ raw_meta_json MEDIUMTEXT NULL,
+ created_at DATETIME NOT NULL,
+ expires_at DATETIME NOT NULL,
+ consumed_at DATETIME NULL,
+ PRIMARY KEY(id),
+ UNIQUE KEY uq_inspection_token(token),
+ KEY idx_inspection_user(sales_user_id,verification_status),
+ CONSTRAINT fk_inspection_user FOREIGN KEY(sales_user_id) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS sales_posts (
+ id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+ sales_user_id INT UNSIGNED NOT NULL,
+ platform ENUM('facebook','offerup','craigslist') NOT NULL,
+ submitted_url TEXT NOT NULL,
+ resolved_url TEXT NOT NULL,
+ canonical_url TEXT NOT NULL,
+ canonical_url_hash CHAR(64) NOT NULL,
+ external_post_id VARCHAR(120) NULL,
+ title VARCHAR(500) NOT NULL,
+ normalized_title_hash CHAR(64) NOT NULL,
+ description MEDIUMTEXT NULL,
+ description_hash CHAR(64) NOT NULL,
+ published_at DATETIME NOT NULL,
+ published_date DATE NOT NULL,
+ fetched_at DATETIME NOT NULL,
+ verification_status ENUM('verified','failed') NOT NULL DEFAULT 'verified',
+ admin_review_status ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+ created_at DATETIME NOT NULL,
+ updated_at DATETIME NOT NULL,
+ deleted_at DATETIME NULL,
+ deleted_by INT UNSIGNED NULL,
+ PRIMARY KEY(id),
+ UNIQUE KEY uq_post_canonical(canonical_url_hash),
+ UNIQUE KEY uq_post_external(platform,external_post_id),
+ KEY idx_post_sales_date(sales_user_id,created_at),
+ KEY idx_post_title(sales_user_id,platform,normalized_title_hash),
+ KEY idx_post_desc(sales_user_id,platform,description_hash),
+ KEY idx_post_review(admin_review_status,created_at),
+ CONSTRAINT fk_post_sales FOREIGN KEY(sales_user_id) REFERENCES users(id),
+ CONSTRAINT fk_post_deleted_by FOREIGN KEY(deleted_by) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS post_reviews (
+ id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+ post_id BIGINT UNSIGNED NOT NULL,
+ admin_user_id INT UNSIGNED NOT NULL,
+ decision ENUM('approved','rejected') NOT NULL,
+ rating TINYINT UNSIGNED NOT NULL,
+ note TEXT NULL,
+ reviewed_at DATETIME NOT NULL,
+ created_at DATETIME NOT NULL,
+ updated_at DATETIME NOT NULL,
+ PRIMARY KEY(id),
+ UNIQUE KEY uq_post_review(post_id),
+ CONSTRAINT fk_review_post FOREIGN KEY(post_id) REFERENCES sales_posts(id),
+ CONSTRAINT fk_review_admin FOREIGN KEY(admin_user_id) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS daily_sales_reviews (
+ id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+ sales_user_id INT UNSIGNED NOT NULL,
+ work_date DATE NOT NULL,
+ admin_user_id INT UNSIGNED NOT NULL,
+ rating TINYINT UNSIGNED NOT NULL,
+ note TEXT NULL,
+ reviewed_at DATETIME NOT NULL,
+ created_at DATETIME NOT NULL,
+ updated_at DATETIME NOT NULL,
+ PRIMARY KEY(id),
+ UNIQUE KEY uq_daily_review(sales_user_id,work_date),
+ CONSTRAINT fk_daily_sales FOREIGN KEY(sales_user_id) REFERENCES users(id),
+ CONSTRAINT fk_daily_admin FOREIGN KEY(admin_user_id) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS period_sales_reviews (
+ id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+ sales_user_id INT UNSIGNED NOT NULL,
+ period_type ENUM('week','month') NOT NULL,
+ period_start DATE NOT NULL,
+ period_end DATE NOT NULL,
+ admin_user_id INT UNSIGNED NOT NULL,
+ rating TINYINT UNSIGNED NOT NULL,
+ note TEXT NULL,
+ reviewed_at DATETIME NOT NULL,
+ created_at DATETIME NOT NULL,
+ updated_at DATETIME NOT NULL,
+ PRIMARY KEY(id),
+ UNIQUE KEY uq_period_review(sales_user_id,period_type,period_start),
+ CONSTRAINT fk_period_sales FOREIGN KEY(sales_user_id) REFERENCES users(id),
+ CONSTRAINT fk_period_admin FOREIGN KEY(admin_user_id) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS review_attachments (
+ id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+ entity_type ENUM('post_review','daily_review','period_review') NOT NULL,
+ entity_id BIGINT UNSIGNED NOT NULL,
+ uploaded_by INT UNSIGNED NOT NULL,
+ original_name VARCHAR(255) NOT NULL,
+ stored_path VARCHAR(500) NOT NULL,
+ mime_type VARCHAR(100) NOT NULL,
+ size_bytes INT UNSIGNED NOT NULL,
+ created_at DATETIME NOT NULL,
+ PRIMARY KEY(id),
+ KEY idx_attachment_entity(entity_type,entity_id),
+ CONSTRAINT fk_attachment_user FOREIGN KEY(uploaded_by) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS deletion_requests (
+ id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+ post_id BIGINT UNSIGNED NOT NULL,
+ requested_by INT UNSIGNED NOT NULL,
+ reason VARCHAR(1000) NOT NULL,
+ status ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+ reviewed_by INT UNSIGNED NULL,
+ reviewed_at DATETIME NULL,
+ created_at DATETIME NOT NULL,
+ updated_at DATETIME NOT NULL,
+ PRIMARY KEY(id),
+ KEY idx_deletion_status(status,created_at),
+ CONSTRAINT fk_delete_post FOREIGN KEY(post_id) REFERENCES sales_posts(id),
+ CONSTRAINT fk_delete_requester FOREIGN KEY(requested_by) REFERENCES users(id),
+ CONSTRAINT fk_delete_reviewer FOREIGN KEY(reviewed_by) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+SET FOREIGN_KEY_CHECKS=1;
