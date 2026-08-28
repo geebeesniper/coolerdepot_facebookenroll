@@ -711,3 +711,17 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - No database migration is required.
 - All border radius remains `4px`.
 
+## v0.1.33 — Review-state progress and save-flow synchronization
+
+- Sales progress bars now show review state instead of the Sales card accent color.
+- Good is green, Bad/Issue is red, and Unreviewed is gray.
+- If there are no Good/Bad reviews yet, the filled portion stays gray even when the card border is purple, blue, teal, or another identity color.
+- Saving a Post Review immediately recomputes the expanded Sales card's Good / Issues / Unreviewed counts from the visible Post Grid.
+- The existing dashboard progress AJAX call remains the authoritative server refresh after that immediate UI update.
+- Saved Good/Bad state is restored with an explicit selected class as well as the radio checked state.
+- The review API falls back to the persisted `admin_review_status` when an older post has status but no matching review-row decision.
+- A successful Review save shows `Saved ✓` and automatically closes the popup after 650ms.
+- If the save contains an image warning, the popup stays open so the warning remains visible.
+- Review popup layout is now header + scrollable middle body + bottom action bar. Cancel / Save is flush against the bottom edge and does not float above unused padding.
+- No database migration is required.
+- All border radius remains `4px`.

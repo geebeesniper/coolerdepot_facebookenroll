@@ -216,6 +216,26 @@ $periodNames = [
                     </span>
                 </div>
 
+                <?php
+                $progressDenominator = max(
+                    1,
+                    (int)$row['period_target'],
+                    (int)$row['post_count']
+                );
+                $goodProgress = round(
+                    ((int)$row['good_count'] / $progressDenominator) * 100,
+                    3
+                );
+                $badProgress = round(
+                    ((int)$row['bad_count'] / $progressDenominator) * 100,
+                    3
+                );
+                $unreviewedProgress = round(
+                    ((int)$row['unreviewed_count'] / $progressDenominator) * 100,
+                    3
+                );
+                ?>
+
                 <div
                     class="sales-progress-track"
                     role="progressbar"
@@ -224,11 +244,21 @@ $periodNames = [
                     aria-valuemax="<?= (int)$row['period_target'] ?>"
                     aria-valuenow="<?= (int)$row['post_count'] ?>"
                 >
-                    <div
-                        class="sales-progress-fill"
-                        data-progress-fill
-                        style="width:<?= (int)$row['percent'] ?>%"
-                    ></div>
+                    <span
+                        class="sales-progress-segment good"
+                        data-progress-good
+                        style="width:<?= $goodProgress ?>%"
+                    ></span>
+                    <span
+                        class="sales-progress-segment bad"
+                        data-progress-bad
+                        style="width:<?= $badProgress ?>%"
+                    ></span>
+                    <span
+                        class="sales-progress-segment unreviewed"
+                        data-progress-unreviewed
+                        style="width:<?= $unreviewedProgress ?>%"
+                    ></span>
                 </div>
 
                 <div class="sales-progress-meta">
@@ -420,6 +450,8 @@ $periodNames = [
                 value=""
             >
 
+            <div class="review-modal-scroll">
+
             <div class="review-modal-meta">
                 <div>
                     <span>Published</span>
@@ -609,6 +641,8 @@ $periodNames = [
                 id="dashboardReviewMessage"
                 aria-live="polite"
             ></div>
+
+            </div><!-- /.review-modal-scroll -->
 
             <div class="review-modal-footer">
                 <div

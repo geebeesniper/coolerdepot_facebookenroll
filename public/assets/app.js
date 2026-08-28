@@ -1199,6 +1199,90 @@ function platformLogoHtml(platform){
         $('#dashboardPeriodFormValue').val(period);
     }
 
+function updateReviewProgressSegments(
+    $card,
+    postCount,
+    periodTarget,
+    goodCount,
+    badCount,
+    unreviewedCount
+){
+    postCount=Math.max(0,parseInt(postCount,10)||0);
+    periodTarget=Math.max(1,parseInt(periodTarget,10)||1);
+    goodCount=Math.max(0,parseInt(goodCount,10)||0);
+    badCount=Math.max(0,parseInt(badCount,10)||0);
+    unreviewedCount=Math.max(
+        0,
+        parseInt(unreviewedCount,10)||0
+    );
+
+    const denominator=Math.max(
+        1,
+        periodTarget,
+        postCount
+    );
+
+    $card.find('[data-progress-good]').css(
+        'width',
+        ((goodCount/denominator)*100)+'%'
+    );
+    $card.find('[data-progress-bad]').css(
+        'width',
+        ((badCount/denominator)*100)+'%'
+    );
+    $card.find('[data-progress-unreviewed]').css(
+        'width',
+        ((unreviewedCount/denominator)*100)+'%'
+    );
+}
+
+function syncExpandedSalesCardFromTiles(){
+    if(!expandedSalesId){
+        return;
+    }
+
+    const $card=$grid.find(
+        '.sales-progress-card[data-sales-id="'
+        +expandedSalesId
+        +'"]'
+    );
+
+    if(!$card.length){
+        return;
+    }
+
+    const $tiles=$expandedList.find('.sales-post-tile');
+    const goodCount=$tiles.filter('.review-good').length;
+    const badCount=$tiles.filter('.review-bad').length;
+    const postCount=$tiles.length;
+    const unreviewedCount=Math.max(
+        0,
+        postCount-goodCount-badCount
+    );
+    const periodTarget=Math.max(
+        1,
+        parseInt(
+            $card.find('[data-progress-target]').text(),
+            10
+        )||1
+    );
+
+    $card.find('[data-good-count]').text(goodCount);
+    $card.find('[data-bad-count]').text(badCount);
+    $card.find('[data-unreviewed-count]').text(
+        unreviewedCount
+    );
+
+    updateReviewProgressSegments(
+        $card,
+        postCount,
+        periodTarget,
+        goodCount,
+        badCount,
+        unreviewedCount
+    );
+}
+
     function updateCard($card, row, days, period){
         const oldCount = parseInt(
             $card.attr('data-post-count'),
@@ -1246,9 +1330,17 @@ function platformLogoHtml(platform){
             parseInt(row.unreviewed_count, 10) || 0
         );
 
-        $card.find('[data-progress-fill]').css(
-            'width',
-            percent + '%'
+        const goodCount=parseInt(row.good_count,10)||0;
+        const badCount=parseInt(row.bad_count,10)||0;
+        const unreviewedCount=parseInt(row.unreviewed_count,10)||0;
+
+        updateReviewProgressSegments(
+            $card,
+            count,
+            periodTarget,
+            goodCount,
+            badCount,
+            unreviewedCount
         );
 
         $card
@@ -2010,6 +2102,29 @@ function renderAttachments(items){
     $modalAttachments.removeClass('hidden');
 }
 
+function syncDecisionVisualState(decision){
+    const normalized=['good','bad'].includes(
+        String(decision||'')
+    )
+        ?String(decision)
+        :'';
+
+    const $options=$modalForm.find(
+        '.review-decision-option'
+    );
+
+    $options.removeClass('is-selected');
+
+    if(normalized){
+        $modalForm
+            .find(
+                '.review-decision-option.'
+                +normalized
+            )
+            .addClass('is-selected');
+    }
+}
+
     function resetReviewModal(){
         $modalMessage
             .removeClass('error warning')
@@ -2029,6 +2144,7 @@ function renderAttachments(items){
             .find('.review-decision-modern')
             .removeClass('is-invalid')
             .attr('aria-invalid','false');
+        syncDecisionVisualState('');
         $modalForm
             .find('[data-decision-error]')
             .addClass('hidden');
@@ -2134,22 +2250,27 @@ function renderAttachments(items){
                     .attr('href', data.post.canonical_url);
             }
 
+            const savedDecision=
+                data.review
+                && ['good','bad'].includes(data.review.decision)
+                    ?data.review.decision
+                    :'';
+
             $modalForm
                 .find('input[name="decision"]')
                 .prop('checked', false);
 
-            if(
-                data.review
-                && ['good','bad'].includes(data.review.decision)
-            ){
+            if(savedDecision){
                 $modalForm
                     .find(
                         'input[name="decision"][value="'
-                        +data.review.decision
+                        +savedDecision
                         +'"]'
                     )
                     .prop('checked', true);
             }
+
+            syncDecisionVisualState(savedDecision);
 
             clearCommentComposer();
             renderComments(data.comments || []);
@@ -2360,6 +2481,10 @@ function showDecisionError(message){
         function(){
             const $decisionBlock=$modalForm.find(
                 '.review-decision-modern'
+            );
+
+            syncDecisionVisualState(
+                String($(this).val()||'')
             );
 
             $decisionBlock
@@ -2671,6 +2796,9 @@ $modalForm.on('submit', function(event){
                     status === 'good' ? 'Good' : 'Issue'
                 );
 
+            syncDecisionVisualState(status);
+            syncExpandedSalesCardFromTiles();
+
             if(data.upload_warning){
                 $modalMessage
                     .removeClass('error')
@@ -2716,6 +2844,19 @@ $modalForm.on('submit', function(event){
                     applyProgress(progress);
                 }
             });
+
+            if(!data.upload_warning){
+                const savedPostId=parseInt(data.post_id,10)||0;
+
+                setTimeout(function(){
+                    if(
+                        activePostId===savedPostId
+                        &&$save.hasClass('saved')
+                    ){
+                        closeReviewModal();
+                    }
+                },650);
+            }
         })
         .fail(function(xhr){
             const data=xhr.responseJSON||{};
@@ -2763,9 +2904,26 @@ $modalForm.on('submit', function(event){
 
         $card.find('[data-daily-target-label]').text(dailyTarget);
         $card.find('[data-progress-target]').text(periodTarget);
-        $card.find('[data-progress-fill]').css(
-            'width',
-            percent + '%'
+        const goodCount=parseInt(
+            $card.find('[data-good-count]').text(),
+            10
+        )||0;
+        const badCount=parseInt(
+            $card.find('[data-bad-count]').text(),
+            10
+        )||0;
+        const unreviewedCount=parseInt(
+            $card.find('[data-unreviewed-count]').text(),
+            10
+        )||0;
+
+        updateReviewProgressSegments(
+            $card,
+            count,
+            periodTarget,
+            goodCount,
+            badCount,
+            unreviewedCount
         );
         $card
             .find('.sales-progress-track')

@@ -3837,3 +3837,101 @@ body.review-modal-open{
     .review-modal-footer-actions .btn{flex:1;}
 }
 
+/* v0.1.33 Review-state progress + persistent decision + flush modal footer */
+.sales-progress-track{
+    display:flex;
+    align-items:stretch;
+    overflow:hidden;
+    background:#e5e7eb;
+}
+.sales-progress-segment{
+    display:block;
+    height:100%;
+    flex:0 0 auto;
+    width:0;
+    transition:width .28s ease;
+}
+.sales-progress-segment.good{
+    background:#22c55e;
+}
+.sales-progress-segment.bad{
+    background:#ef4444;
+}
+.sales-progress-segment.unreviewed{
+    background:#94a3b8;
+}
+
+/* Card accent identifies the Sales card only; progress is review state. */
+.sales-progress-fill,
+.sales-progress-card.target-met .sales-progress-fill{
+    background:transparent;
+}
+
+.review-decision-option.good.is-selected{
+    border-color:#22c55e;
+    background:#f0fdf4;
+    color:#166534;
+    box-shadow:0 0 0 1px rgba(34,197,94,.12);
+}
+.review-decision-option.good.is-selected .review-decision-icon{
+    background:#dcfce7;
+    color:#15803d;
+}
+.review-decision-option.good.is-selected .review-decision-check{
+    display:flex;
+    background:#16a34a;
+}
+.review-decision-option.bad.is-selected{
+    border-color:#ef4444;
+    background:#fff1f2;
+    color:#991b1b;
+    box-shadow:0 0 0 1px rgba(239,68,68,.12);
+}
+.review-decision-option.bad.is-selected .review-decision-icon{
+    background:#fee2e2;
+    color:#b91c1c;
+}
+.review-decision-option.bad.is-selected .review-decision-check{
+    display:flex;
+    background:#dc2626;
+}
+
+/* Only the middle content scrolls; the action bar is the modal bottom edge. */
+.review-modal-form{
+    flex:1 1 auto;
+    min-height:0;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    padding:0;
+}
+.review-modal-scroll{
+    flex:1 1 auto;
+    min-height:0;
+    overflow:auto;
+    padding:16px 17px 14px;
+}
+.review-modal-footer{
+    position:relative;
+    bottom:auto;
+    flex:0 0 auto;
+    margin:0;
+    padding:11px 17px;
+    border-top:1px solid #e2e8f0;
+    background:#fff;
+    backdrop-filter:none;
+}
+.review-modal-loading{
+    flex:1 1 auto;
+    min-height:0;
+    overflow:auto;
+}
+@media(max-width:560px){
+    .review-modal-scroll{
+        padding:13px 13px 10px;
+    }
+    .review-modal-footer{
+        margin:0;
+        padding:10px 13px;
+    }
+}

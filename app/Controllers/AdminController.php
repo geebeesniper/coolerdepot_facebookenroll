@@ -279,8 +279,21 @@ class AdminController extends Controller{
             ],
             'review'=>[
                 'decision'=>$review
+                    && in_array(
+                        (string)$review['decision'],
+                        ['good','bad'],
+                        true
+                    )
                     ? (string)$review['decision']
-                    : null,
+                    : (
+                        in_array(
+                            (string)($post['admin_review_status']??''),
+                            ['good','bad'],
+                            true
+                        )
+                            ? (string)$post['admin_review_status']
+                            : null
+                    ),
             ],
             'comments'=>$comments,
             'content'=>[
