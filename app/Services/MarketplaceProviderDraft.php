@@ -20,11 +20,11 @@ class MarketplaceProviderDraft
         );
 
         if (!in_array($type, self::TYPES, true)) {
-            throw new \RuntimeException('Choose a supported provider type.');
+            throw new ProviderValidationException('provider_type', 'Choose a supported provider type.');
         }
 
         if ($name === '' || strlen($name) > 300) {
-            throw new \RuntimeException('Provider name is required and must be 100 characters or less.');
+            throw new ProviderValidationException('provider_name', 'Provider name is required and must be 100 characters or less.');
         }
 
         $profile = [
@@ -41,7 +41,7 @@ class MarketplaceProviderDraft
 
         if ($type === 'brightdata') {
             if ($token === '') {
-                throw new \RuntimeException('Bright Data API token is required.');
+                throw new ProviderValidationException('api_token', 'Bright Data API token is required.');
             }
 
             $dataset = trim((string)(
@@ -50,7 +50,7 @@ class MarketplaceProviderDraft
             ));
 
             if (!preg_match('/^gd_[A-Za-z0-9]+$/', $dataset)) {
-                throw new \RuntimeException('Bright Data Dataset ID must start with gd_.');
+                throw new ProviderValidationException('brightdata_dataset_id', 'Bright Data Dataset ID must start with gd_.');
             }
 
             $profile['website_url'] = $website ?: 'https://brightdata.com/';
@@ -62,7 +62,7 @@ class MarketplaceProviderDraft
             ];
         } elseif ($type === 'apify') {
             if ($token === '') {
-                throw new \RuntimeException('Apify API token is required.');
+                throw new ProviderValidationException('api_token', 'Apify API token is required.');
             }
 
             $profile['website_url'] = $website ?: 'https://apify.com/';
@@ -73,7 +73,7 @@ class MarketplaceProviderDraft
             ];
         } elseif ($type === 'scrapecreators') {
             if ($token === '') {
-                throw new \RuntimeException('ScrapeCreators API key is required.');
+                throw new ProviderValidationException('api_token', 'ScrapeCreators API key is required.');
             }
 
             $profile['website_url'] = $website ?: 'https://scrapecreators.com/';
@@ -93,32 +93,32 @@ class MarketplaceProviderDraft
             $authName = trim((string)($input['auth_name'] ?? ''));
 
             if (!in_array($method, ['GET', 'POST'], true)) {
-                throw new \RuntimeException('Custom API method must be GET or POST.');
+                throw new ProviderValidationException('request_method', 'Custom API method must be GET or POST.');
             }
 
             if (!in_array($authMode, ['none', 'bearer', 'header', 'query'], true)) {
-                throw new \RuntimeException('Choose a valid authentication mode.');
+                throw new ProviderValidationException('auth_mode', 'Choose a valid authentication mode.');
             }
 
             if (!in_array($inputMode, ['query', 'json'], true)) {
-                throw new \RuntimeException('Custom API input mode must be Query or JSON.');
+                throw new ProviderValidationException('input_mode', 'Custom API input mode must be Query or JSON.');
             }
 
             if ($method === 'GET' && $inputMode === 'json') {
-                throw new \RuntimeException('GET requests cannot use JSON input mode.');
+                throw new ProviderValidationException('input_mode', 'GET requests cannot use JSON input mode.');
             }
 
             if ($inputKey === '' || !preg_match('/^[A-Za-z0-9_.-]{1,80}$/', $inputKey)) {
-                throw new \RuntimeException('Input field name is invalid.');
+                throw new ProviderValidationException('input_key', 'Input field name is invalid.');
             }
 
             if ($authMode !== 'none' && $token === '') {
-                throw new \RuntimeException('API token/key is required for the selected auth mode.');
+                throw new ProviderValidationException('api_token', 'API token/key is required for the selected auth mode.');
             }
 
             if (in_array($authMode, ['header', 'query'], true)) {
                 if ($authName === '' || !preg_match('/^[A-Za-z0-9_.-]{1,80}$/', $authName)) {
-                    throw new \RuntimeException('Auth header/query parameter name is invalid.');
+                    throw new ProviderValidationException('auth_name', 'Auth header/query parameter name is invalid.');
                 }
             }
 
@@ -132,7 +132,7 @@ class MarketplaceProviderDraft
 
             foreach (['id_path','title_path','description_path','date_path'] as $requiredPath) {
                 if ($paths[$requiredPath] === '') {
-                    throw new \RuntimeException('Custom API JSON paths for ID, title, description, and date are required.');
+                    throw new ProviderValidationException($requiredPath, 'This response JSON path is required.');
                 }
             }
 

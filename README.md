@@ -442,3 +442,25 @@ Migration:
 cd /opt/coolerdepot
 docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_registry.php
 ```
+
+## v0.1.13 — Live Provider Jobs
+
+- `Recent Provider Jobs` now refreshes automatically every 2 seconds.
+- Provider tests show live `Starting -> Running -> Ready/Failed` transitions without page reload.
+- Polling pauses while the browser tab is hidden and resumes immediately when visible.
+- Added a Live / Paused / Reconnect status indicator.
+- Provider test requests release the PHP session lock during long external API calls so the same Admin session can poll job status concurrently.
+- Added read-only `/admin/providers/jobs` JSON endpoint with `no-store` caching.
+- No database migration is required.
+- All border radius remains `4px`.
+
+## v0.1.14 — Field-level Provider validation
+
+- Provider form validation now marks the exact invalid input with a red border.
+- The error message is rendered immediately below the invalid field.
+- The form automatically scrolls to and focuses the invalid field.
+- Facebook Marketplace test URLs are validated in the browser before an API credit is consumed.
+- Server validation responses now include a field identifier for provider type, name, token, Dataset ID, custom API mapping, auth, and request settings.
+- Generic remote provider failures still appear in the provider test result box because they are not tied to one input field.
+- No database migration is required.
+- All border radius remains `4px`.

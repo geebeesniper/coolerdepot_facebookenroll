@@ -269,6 +269,154 @@ $(function(){
     });
 
 
+    // v0.1.13 Live Provider Jobs
+    (function(){
+        const $monitor = $('#providerJobsMonitor');
+        const $body = $('#providerJobsBody');
+        const $live = $('#providerJobsLive');
+        const $liveText = $('#providerJobsLiveText');
+
+        if(!$monitor.length || !$body.length){
+            return;
+        }
+
+        let timer = null;
+        let request = null;
+        let lastSignature = '';
+
+        function esc(value){
+            return $('<div>').text(
+                value == null || value === '' ? '—' : String(value)
+            ).html();
+        }
+
+        function safeStatus(value){
+            const status = String(value || '').toLowerCase();
+            return ['starting','running','ready','failed'].includes(status)
+                ? status
+                : 'starting';
+        }
+
+        function statusLabel(status){
+            if(status === 'ready') return 'Ready';
+            if(status === 'failed') return 'Failed';
+            if(status === 'running') return 'Running';
+            return 'Starting';
+        }
+
+        function renderJobs(jobs){
+            jobs = Array.isArray(jobs) ? jobs : [];
+
+            const signature = JSON.stringify(jobs.map(function(job){
+                return [
+                    job.id,
+                    job.updated_at,
+                    job.status,
+                    job.http,
+                    job.error
+                ];
+            }));
+
+            if(signature === lastSignature){
+                return;
+            }
+
+            lastSignature = signature;
+
+            if(!jobs.length){
+                $body.html(
+                    '<tr class="provider-jobs-empty">'+
+                        '<td colspan="7">No provider jobs yet.</td>'+
+                    '</tr>'
+                );
+                return;
+            }
+
+            const html = jobs.map(function(job){
+                const status = safeStatus(job.status);
+
+                return '<tr data-job-id="'+esc(job.id)+'">'+
+                    '<td>'+esc(job.created_at)+'</td>'+
+                    '<td>'+esc(job.user)+'</td>'+
+                    '<td>'+esc(job.provider)+'</td>'+
+                    '<td>'+esc(job.item)+'</td>'+
+                    '<td><span class="provider-job '+status+'">'+
+                        statusLabel(status)+
+                    '</span></td>'+
+                    '<td>'+esc(job.http)+'</td>'+
+                    '<td class="job-error">'+esc(job.error)+'</td>'+
+                '</tr>';
+            }).join('');
+
+            $body.html(html);
+        }
+
+        function setLiveState(state){
+            $live
+                .removeClass('is-live is-paused is-error')
+                .addClass(state);
+
+            if(state === 'is-error'){
+                $liveText.text('Reconnect');
+            }else if(state === 'is-paused'){
+                $liveText.text('Paused');
+            }else{
+                $liveText.text('Live');
+            }
+        }
+
+        function refreshProviderJobs(){
+            if(document.hidden){
+                setLiveState('is-paused');
+                return;
+            }
+
+            if(request && request.readyState !== 4){
+                return;
+            }
+
+            request = $.ajax({
+                url: $monitor.data('jobs-url'),
+                method: 'GET',
+                dataType: 'json',
+                cache: false
+            })
+            .done(function(d){
+                if(d && d.ok){
+                    renderJobs(d.jobs);
+                    setLiveState('is-live');
+                }else{
+                    setLiveState('is-error');
+                }
+            })
+            .fail(function(){
+                setLiveState('is-error');
+            });
+        }
+
+        function startProviderJobsPolling(){
+            if(timer){
+                clearInterval(timer);
+            }
+
+            refreshProviderJobs();
+            timer = setInterval(refreshProviderJobs, 2000);
+        }
+
+        window.refreshProviderJobs = refreshProviderJobs;
+
+        document.addEventListener('visibilitychange', function(){
+            if(document.hidden){
+                setLiveState('is-paused');
+                return;
+            }
+
+            refreshProviderJobs();
+        });
+
+        startProviderJobsPolling();
+    })();
+
     // v0.1.12 Provider Manager
     (function(){
         const $composer = $('#providerComposer');
@@ -300,6 +448,85 @@ $(function(){
                 website: ''
             }
         };
+
+        function clearProviderFieldError(target){
+            const $field = typeof target === 'string'
+                ? $form.find('[name="'+target+'"]:enabled').first()
+                : $(target);
+
+            if(!$field.length){
+                return;
+            }
+
+            const $wrap = $field.closest('label');
+            $field.removeAttr('aria-invalid');
+            $wrap.removeClass('provider-field-has-error');
+            $wrap.children('.provider-field-error').remove();
+        }
+
+        function clearAllProviderFieldErrors(){
+            $form
+                .find('.provider-field-has-error')
+                .removeClass('provider-field-has-error')
+                .children('.provider-field-error')
+                .remove();
+
+            $form.find('[aria-invalid="true"]').removeAttr('aria-invalid');
+        }
+
+        function showProviderFieldError(field, message){
+            const $field = $form.find('[name="'+field+'"]:enabled').first();
+
+            if(!$field.length){
+                return false;
+            }
+
+            clearProviderFieldError($field);
+
+            const $wrap = $field.closest('label');
+            $field.attr('aria-invalid', 'true');
+            $wrap.addClass('provider-field-has-error');
+
+            $('<small class="provider-field-error" role="alert"></small>')
+                .text(message)
+                .appendTo($wrap);
+
+            const el = $field.get(0);
+            if(el){
+                el.scrollIntoView({
+                    behavior:'smooth',
+                    block:'center'
+                });
+
+                setTimeout(function(){
+                    try{
+                        el.focus({preventScroll:true});
+                    }catch(e){
+                        el.focus();
+                    }
+                }, 250);
+            }
+
+            return true;
+        }
+
+        function validateProviderTestUrl(){
+            const value = String($('#providerTestUrl').val() || '').trim();
+            const match = value.match(
+                /^https?:\/\/(?:[a-z0-9-]+\.)?facebook\.com\/marketplace\/item\/(\d+)(?:[/?#].*)?$/i
+            );
+
+            if(!match){
+                showProviderFieldError(
+                    'test_url',
+                    'Enter a complete Facebook Marketplace item URL with its numeric Item ID.'
+                );
+                return false;
+            }
+
+            clearProviderFieldError('test_url');
+            return true;
+        }
 
         function pageNotice(message, ok){
             const $n = $('#providerPageNotice');
@@ -377,6 +604,7 @@ $(function(){
 
         $form.on('input change', 'input,select,textarea', function(e){
             if(e.target.id !== 'providerTestTicket'){
+                clearProviderFieldError(e.target);
                 invalidateProviderTest();
             }
         });
@@ -385,8 +613,23 @@ $(function(){
             const $button = $(this);
             const $result = $('#providerDraftResult');
 
+            clearAllProviderFieldErrors();
+
+            if(!validateProviderTestUrl()){
+                $result
+                    .addClass('hidden')
+                    .removeClass('ok bad')
+                    .empty();
+                return;
+            }
+
             $button.prop('disabled', true).text('Testing...');
             $('#providerAddButton').prop('disabled', true);
+
+            if(typeof window.refreshProviderJobs === 'function'){
+                window.refreshProviderJobs();
+                setTimeout(window.refreshProviderJobs, 250);
+            }
 
             $.ajax({
                 url: $button.data('test-url'),
@@ -396,10 +639,20 @@ $(function(){
             })
             .done(function(d){
                 if(!d || !d.ok){
-                    $result
-                        .removeClass('hidden ok')
-                        .addClass('bad')
-                        .text((d && d.message) || 'Provider test failed.');
+                    const message =
+                        (d && d.message) || 'Provider test failed.';
+
+                    if(d && d.field && showProviderFieldError(d.field, message)){
+                        $result
+                            .addClass('hidden')
+                            .removeClass('ok bad')
+                            .empty();
+                    }else{
+                        $result
+                            .removeClass('hidden ok')
+                            .addClass('bad')
+                            .text(message);
+                    }
                     return;
                 }
 
@@ -426,17 +679,29 @@ $(function(){
                     );
             })
             .fail(function(x){
+                const data = x.responseJSON || {};
                 const message =
-                    (x.responseJSON && x.responseJSON.message)
-                    || 'Provider test failed.';
+                    data.message || 'Provider test failed.';
 
-                $result
-                    .removeClass('hidden ok')
-                    .addClass('bad')
-                    .text(message);
+                if(data.field && showProviderFieldError(data.field, message)){
+                    $result
+                        .addClass('hidden')
+                        .removeClass('ok bad')
+                        .empty();
+                }else{
+                    $result
+                        .removeClass('hidden ok')
+                        .addClass('bad')
+                        .text(message);
+                }
             })
             .always(function(){
                 $button.prop('disabled', false).text('Test Provider');
+
+                if(typeof window.refreshProviderJobs === 'function'){
+                    window.refreshProviderJobs();
+                    setTimeout(window.refreshProviderJobs, 500);
+                }
             });
         });
 

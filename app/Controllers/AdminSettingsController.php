@@ -9,6 +9,7 @@ use App\Models\ProviderProfile;
 use App\Services\MarketplaceProviderDraft;
 use App\Services\MarketplaceProviderFactory;
 use App\Services\PlatformUrl;
+use App\Services\ProviderValidationException;
 
 class AdminSettingsController extends Controller
 {
@@ -37,6 +38,57 @@ class AdminSettingsController extends Controller
         ));
     }
 
+    public function providerJobs(): void
+    {
+        Auth::requireRole('admin');
+
+        // The poll endpoint is read-only. Release the PHP session lock
+        // immediately so it never blocks a provider test or another poll.
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_write_close();
+        }
+
+        $providers = ProviderProfile::allAdmin();
+        $providerNames = [];
+
+        foreach ($providers as $provider) {
+            $providerNames['profile_' . (int)$provider['id']] =
+                (string)$provider['name'];
+        }
+
+        $jobs = FetchJob::recent(20);
+        $out = [];
+
+        foreach ($jobs as $job) {
+            $providerKey = (string)$job['provider'];
+
+            $out[] = [
+                'id' => (int)$job['id'],
+                'created_at' => (string)$job['created_at'],
+                'updated_at' => (string)$job['updated_at'],
+                'user' => (string)$job['display_name'],
+                'provider' => (string)(
+                    $providerNames[$providerKey]
+                    ?? ucwords(str_replace('_', ' ', $providerKey))
+                ),
+                'item' => (string)($job['external_post_id'] ?: '—'),
+                'status' => strtolower((string)$job['status']),
+                'http' => $job['provider_http_status'] !== null
+                    ? (int)$job['provider_http_status']
+                    : null,
+                'error' => (string)($job['error_message'] ?: '—'),
+            ];
+        }
+
+        header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+
+        $this->json([
+            'ok' => true,
+            'jobs' => $out,
+            'server_time' => date('Y-m-d H:i:s'),
+        ]);
+    }
+
     public function testProvider(): void
     {
         $admin = Auth::requireRole('admin');
@@ -49,12 +101,24 @@ class AdminSettingsController extends Controller
             );
 
             if (!$testUrl) {
-                throw new \RuntimeException(
-                    'Enter a valid Facebook Marketplace item URL for testing.'
+                throw new ProviderValidationException(
+                    'test_url',
+                    'Enter a complete Facebook Marketplace item URL, for example: https://www.facebook.com/marketplace/item/1609835460847233'
                 );
             }
 
             $profile = MarketplaceProviderDraft::fromPost($_POST);
+
+            // Provider tests can take tens of seconds. PHP normally locks the
+            // session for the whole request, which would block this admin's
+            // live jobs polling. We no longer need session state while the
+            // provider runs, so release the lock first.
+            $sessionId = session_id();
+
+            if (session_status() === PHP_SESSION_ACTIVE) {
+                session_write_close();
+            }
+
             $result = MarketplaceProviderFactory::make($profile)->fetch(
                 $testUrl,
                 (int)$admin['id'],
@@ -94,6 +158,18 @@ class AdminSettingsController extends Controller
             $fingerprint = MarketplaceProviderDraft::fingerprint($profile);
             $ticket = bin2hex(random_bytes(24));
 
+            if (session_status() !== PHP_SESSION_ACTIVE) {
+                if ($sessionId !== '') {
+                    session_id($sessionId);
+                }
+
+                if (!session_start()) {
+                    throw new \RuntimeException(
+                        'Provider test passed, but the Admin session could not be reopened.'
+                    );
+                }
+            }
+
             $_SESSION['provider_test_tickets'][$ticket] = [
                 'fingerprint' => $fingerprint,
                 'expires_at' => time() + self::TEST_TTL,
@@ -114,6 +190,12 @@ class AdminSettingsController extends Controller
                 'message' => 'Test passed. This provider can now be added.',
                 'result' => $_SESSION['provider_test_tickets'][$ticket]['summary'],
             ]);
+        } catch (ProviderValidationException $e) {
+            $this->json([
+                'ok' => false,
+                'field' => $e->field(),
+                'message' => $e->getMessage(),
+            ], 422);
         } catch (\Throwable $e) {
             $this->json([
                 'ok' => false,
