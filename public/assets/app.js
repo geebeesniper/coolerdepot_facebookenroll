@@ -1988,6 +1988,50 @@ $getContent.on('click', function(){
     });
 });
 
+function showDecisionError(message){
+    const $decisionBlock=$modalForm.find(
+        '.review-decision-modern'
+    );
+
+    $decisionBlock
+        .addClass('is-invalid')
+        .attr('aria-invalid','true');
+
+    $decisionBlock
+        .find('[data-decision-error]')
+        .removeClass('hidden')
+        .text(
+            message || 'Select Good or Bad before saving.'
+        );
+
+    $modalMessage
+        .removeClass('warning')
+        .addClass('error')
+        .text('Choose Good or Bad.');
+
+    const decisionEl=$decisionBlock.get(0);
+
+    if(decisionEl){
+        decisionEl.scrollIntoView({
+            behavior:'smooth',
+            block:'center'
+        });
+    }
+
+    // Make the first choice the keyboard focus target without selecting it.
+    const firstChoice=$decisionBlock
+        .find('input[name="decision"]')
+        .get(0);
+
+    if(firstChoice){
+        setTimeout(function(){
+            firstChoice.focus({
+                preventScroll:true
+            });
+        },220);
+    }
+}
+
     $modalForm.on(
         'change',
         'input[name="decision"]',
@@ -2024,32 +2068,9 @@ $getContent.on('click', function(){
         );
 
         if(!['good','bad'].includes(decision)){
-            const $decisionBlock=$modalForm.find(
-                '.review-decision-modern'
+            showDecisionError(
+                'Select Good or Bad before saving.'
             );
-
-            $decisionBlock
-                .addClass('is-invalid')
-                .attr('aria-invalid','true');
-
-            $decisionBlock
-                .find('[data-decision-error]')
-                .removeClass('hidden');
-
-            $modalMessage
-                .removeClass('warning')
-                .addClass('error')
-                .text('Choose Good or Bad.');
-
-            const decisionEl=$decisionBlock.get(0);
-
-            if(decisionEl){
-                decisionEl.scrollIntoView({
-                    behavior:'smooth',
-                    block:'center'
-                });
-            }
-
             return;
         }
 
@@ -2139,17 +2160,9 @@ $getContent.on('click', function(){
             const raw=String(xhr.responseText||'').trim();
 
             if(data.field==='decision'){
-                const $decisionBlock=$modalForm.find(
-                    '.review-decision-modern'
+                showDecisionError(
+                    data.message || 'Select Good or Bad before saving.'
                 );
-
-                $decisionBlock
-                    .addClass('is-invalid')
-                    .attr('aria-invalid','true');
-
-                $decisionBlock
-                    .find('[data-decision-error]')
-                    .removeClass('hidden');
             }
 
             $modalMessage

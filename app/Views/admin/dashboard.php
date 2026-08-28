@@ -402,6 +402,7 @@ $periodNames = [
             id="dashboardReviewForm"
             class="review-modal-form"
             enctype="multipart/form-data"
+            novalidate
         >
             <input
                 type="hidden"
@@ -461,7 +462,7 @@ $periodNames = [
                 </div>
             </section>
 
-            <fieldset class="review-decision review-decision-modern">
+            <fieldset class="review-decision review-decision-modern" aria-required="true">
                 <legend>
                     Decision
                     <span class="review-required">Required</span>
@@ -472,7 +473,7 @@ $periodNames = [
                         type="radio"
                         name="decision"
                         value="good"
-                        required
+                        aria-required="true"
                         aria-describedby="dashboardDecisionError"
                     >
                     <span class="review-decision-icon" aria-hidden="true">
@@ -494,7 +495,7 @@ $periodNames = [
                         type="radio"
                         name="decision"
                         value="bad"
-                        required
+                        aria-required="true"
                         aria-describedby="dashboardDecisionError"
                     >
                     <span class="review-decision-icon" aria-hidden="true">

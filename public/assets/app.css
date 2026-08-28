@@ -3435,3 +3435,46 @@ body.review-modal-open{
     text-transform:uppercase;
     letter-spacing:.03em;
 }
+
+/* v0.1.28 Custom Decision validation */
+.review-decision-modern.is-invalid{
+    position:relative;
+    border:2px solid #dc2626;
+    background:#fff5f5;
+    box-shadow:
+        0 0 0 3px rgba(220,38,38,.10);
+    animation:decisionInvalidPulse .22s ease both;
+}
+.review-decision-modern.is-invalid .review-decision-option{
+    border:2px solid #ef4444;
+    background:#fff;
+}
+.review-decision-modern.is-invalid .review-decision-option.good,
+.review-decision-modern.is-invalid .review-decision-option.bad{
+    color:#991b1b;
+}
+.review-decision-modern.is-invalid .review-decision-icon{
+    background:#fee2e2;
+    color:#b91c1c;
+}
+.review-decision-modern.is-invalid .review-decision-error{
+    display:flex;
+    align-items:center;
+    min-height:30px;
+    padding:6px 8px;
+    border:1px solid #fecaca;
+    border-radius:4px;
+    background:#fee2e2;
+    color:#991b1b;
+}
+@keyframes decisionInvalidPulse{
+    from{
+        transform:translateX(-3px);
+    }
+    50%{
+        transform:translateX(3px);
+    }
+    to{
+        transform:translateX(0);
+    }
+}

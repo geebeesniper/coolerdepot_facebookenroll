@@ -645,3 +645,14 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - The image insertion panel now uses a responsive grid with equal-height controls and a dedicated full-width message row.
 - Image insertion still supports URL, the first fetched listing photo, and local JPG/PNG/WEBP upload.
 - All border radius remains `4px`.
+
+## v0.1.28 — Custom Decision validation fix
+
+- Disabled native browser constraint validation on the Review popup with `novalidate`.
+- Removed native radio `required` attributes that caused Chrome/Edge to intercept submission before the custom dashboard validation could run.
+- Preserved accessibility using `aria-required`.
+- Good/Bad validation is now fully controlled by the dashboard UI.
+- Submitting without a decision highlights the entire Decision fieldset in red, gives both Good and Bad cards red borders, shows an inline red message, scrolls the field into view, and places keyboard focus on the first decision control.
+- Selecting Good or Bad clears the custom error immediately.
+- No database migration is required.
+- All border radius remains `4px`.
