@@ -285,3 +285,16 @@ Every packaged release must increment `VERSION` and use the same version in the 
 - Generic Bright Data `timestamp` is intentionally NOT treated as the Facebook listing date.
   A semantic listing/post creation field such as `listing_date` must be present or the post is blocked.
 - UI border radius remains standardized to `4px`.
+
+## v0.1.3 — Unified HTTP status pages
+
+- Replaced raw `Forbidden` and raw `404 Not Found` responses with branded application pages.
+- Added unified UI handling for 301, 302, 400, 401, 403, 404, 405, 408, 421, 429, 500, 502, and 503.
+- Sales users who open Admin-only routes now receive a friendly 403 with a Sales Dashboard action.
+- Admin users receive an Admin Dashboard action when access is denied.
+- HEAD requests use GET routing, so health checks no longer get false 404 responses.
+- A known path requested with the wrong HTTP method returns 405 rather than 404.
+- API errors remain JSON instead of rendering HTML status pages.
+- 301/302 redirects include a branded HTML fallback while still sending the correct Location header/status.
+- Added Admin → Status Pages overview.
+- All border radius remains `4px`.

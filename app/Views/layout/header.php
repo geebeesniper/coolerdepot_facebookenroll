@@ -11,6 +11,6 @@ unset($_SESSION['flash_success'],$_SESSION['flash_error']);
 <header class="topbar"><a class="brand" href="<?=Util::e($base)?>/">CoolerDepot <span>Sales Posts</span></a>
 <?php if($u):?><div class="nav"><b><?=Util::e($u['display_name']?:$u['username'])?></b>
 <?php if($u['role']==='sales'):?><a href="<?=$base?>/sales">Dashboard</a><a href="<?=$base?>/sales/submit">Submit</a>
-<?php else:?><a href="<?=$base?>/admin">Admin</a><a href="<?=$base?>/admin/reports">Reports</a><a href="<?=$base?>/admin/settings">Settings</a><?php endif;?>
+<?php else:?><a href="<?=$base?>/admin">Admin</a><a href="<?=$base?>/admin/reports">Reports</a><a href="<?=$base?>/admin/settings">Settings</a><a href="<?=$base?>/admin/status-pages">Status Pages</a><?php endif;?>
 <form method="post" action="<?=$base?>/logout"><input type="hidden" name="_csrf" value="<?=Util::e(Csrf::token())?>"><button>Sign out</button></form></div><?php endif;?></header>
 <main class="container"><?php if($ok):?><div class="notice ok"><?=Util::e($ok)?></div><?php endif;?><?php if($bad):?><div class="notice bad"><?=Util::e($bad)?></div><?php endif;?>

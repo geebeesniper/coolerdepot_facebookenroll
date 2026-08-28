@@ -1,7 +1,67 @@
 <?php
-$config=require __DIR__.'/config.php';
+$config = require __DIR__ . '/config.php';
+
 date_default_timezone_set($config['app']['timezone']);
-spl_autoload_register(function($class){$prefix='App\\';if(strncmp($class,$prefix,strlen($prefix))!==0)return;$relative=substr($class,strlen($prefix));$file=dirname(__DIR__).'/app/'.str_replace('\\','/',$relative).'.php';if(is_file($file))require$file;});
-if($config['app']['enforce_host']&&$config['app']['host']){$requestHost=strtolower(preg_replace('/:\\d+$/','',$_SERVER['HTTP_HOST']??''));if($requestHost!==strtolower($config['app']['host'])){http_response_code(421);exit('Wrong application host.');}}
-if(session_status()!==PHP_SESSION_ACTIVE){session_name($config['security']['session_name']);$cookie=['httponly'=>true,'samesite'=>'Lax','secure'=>(!empty($_SERVER['HTTPS'])&&$_SERVER['HTTPS']!=='off'),'path'=>$config['app']['base_path']?:'/'];if($config['security']['cookie_domain']!=='')$cookie['domain']=$config['security']['cookie_domain'];session_set_cookie_params($cookie);session_start();}
-return$config;
+
+spl_autoload_register(function ($class) {
+    $prefix = 'App\\';
+
+    if (strncmp($class, $prefix, strlen($prefix)) !== 0) {
+        return;
+    }
+
+    $relative = substr($class, strlen($prefix));
+    $file = dirname(__DIR__) . '/app/' . str_replace('\\', '/', $relative) . '.php';
+
+    if (is_file($file)) {
+        require $file;
+    }
+});
+
+set_exception_handler(function (\Throwable $e) {
+    error_log(sprintf(
+        '[CDSP] Uncaught exception %s: %s in %s:%d',
+        get_class($e),
+        $e->getMessage(),
+        $e->getFile(),
+        $e->getLine()
+    ));
+
+    if (class_exists(\App\Core\ErrorPage::class)) {
+        if (\App\Core\ErrorPage::isApiRequest()) {
+            \App\Core\ErrorPage::renderJson(500);
+        }
+        \App\Core\ErrorPage::render(500);
+    }
+
+    http_response_code(500);
+    echo 'Server Error';
+    exit;
+});
+
+if ($config['app']['enforce_host'] && $config['app']['host']) {
+    $requestHost = strtolower(preg_replace('/:\\d+$/', '', $_SERVER['HTTP_HOST'] ?? ''));
+
+    if ($requestHost !== strtolower($config['app']['host'])) {
+        \App\Core\ErrorPage::render(421);
+    }
+}
+
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_name($config['security']['session_name']);
+    $cookie = [
+        'httponly' => true,
+        'samesite' => 'Lax',
+        'secure' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
+        'path' => $config['app']['base_path'] ?: '/',
+    ];
+
+    if ($config['security']['cookie_domain'] !== '') {
+        $cookie['domain'] = $config['security']['cookie_domain'];
+    }
+
+    session_set_cookie_params($cookie);
+    session_start();
+}
+
+return $config;
