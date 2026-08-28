@@ -629,6 +629,26 @@ $periodNames = [
 </div>
 
 
+<div
+    class="comment-delete-popover hidden"
+    id="commentDeletePopover"
+    role="dialog"
+    aria-hidden="true"
+    aria-label="Delete note confirmation"
+>
+    <div class="comment-delete-popover-copy">
+        <strong>Delete this note?</strong>
+        <span>This removes it from the visible review history.</span>
+    </div>
+
+    <div class="comment-delete-popover-actions">
+        <button type="button" class="tiny badbtn" id="commentDeleteConfirm">Delete</button>
+        <button type="button" class="tiny" id="commentDeleteCancel">Cancel</button>
+    </div>
+
+    <span class="comment-delete-popover-arrow" aria-hidden="true"></span>
+</div>
+
 <div class="listing-image-lightbox hidden" id="listingImageLightbox" aria-hidden="true">
     <div class="listing-image-dialog" role="dialog" aria-modal="true">
         <button type="button" class="icon-close listing-image-close" id="listingImageClose" aria-label="Close image">×</button>

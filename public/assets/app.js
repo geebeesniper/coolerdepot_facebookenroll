@@ -1056,6 +1056,11 @@ $('[data-html-note]').each(function(){
     const $commentMessage = $('#dashboardCommentMessage');
     let editingCommentId = 0;
     let currentComments = [];
+    let deleteCommentId = 0;
+    let deleteAnchorButton = null;
+    const $deletePopover = $('#commentDeletePopover');
+    const $deleteConfirm = $('#commentDeleteConfirm');
+    const $deleteCancel = $('#commentDeleteCancel');
     const $contentPreview = $('#dashboardContentPreview');
     const $contentProvider = $('#dashboardContentProvider');
     const $contentFetched = $('#dashboardContentFetched');
@@ -1713,6 +1718,89 @@ function renderContentPreview(content){
     $('#listingImageClose').on('click',closeListingImage);
     $('#listingImageLightbox').on('click',function(event){if(event.target===this)closeListingImage();});
 
+
+function closeCommentDeletePopover(){
+    deleteCommentId=0;
+    deleteAnchorButton=null;
+
+    $deletePopover
+        .addClass('hidden')
+        .attr('aria-hidden','true')
+        .removeClass('place-left place-right place-below place-above')
+        .css({left:'',top:''});
+
+    $deleteConfirm
+        .prop('disabled',false)
+        .text('Delete');
+}
+
+function positionCommentDeletePopover(){
+    if(!deleteAnchorButton||$deletePopover.hasClass('hidden')){
+        return;
+    }
+
+    const anchorRect=deleteAnchorButton.getBoundingClientRect();
+    const popoverEl=$deletePopover.get(0);
+    if(!popoverEl)return;
+
+    const margin=10;
+    const edge=10;
+    const vw=window.innerWidth;
+    const vh=window.innerHeight;
+    const popRect=popoverEl.getBoundingClientRect();
+    const width=popRect.width;
+    const height=popRect.height;
+
+    let placement='left';
+    let left=anchorRect.left-width-margin;
+    let top=anchorRect.top+(anchorRect.height-height)/2;
+
+    if(left<edge){
+        placement='right';
+        left=anchorRect.right+margin;
+    }
+
+    if(left+width>vw-edge){
+        placement='below';
+        left=Math.min(Math.max(edge,anchorRect.right-width),vw-width-edge);
+        top=anchorRect.bottom+margin;
+    }
+
+    if(top<edge)top=edge;
+
+    if(top+height>vh-edge){
+        const above=anchorRect.top-height-margin;
+        if(above>=edge){
+            placement='above';
+            top=above;
+            left=Math.min(Math.max(edge,anchorRect.right-width),vw-width-edge);
+        }else{
+            top=Math.max(edge,vh-height-edge);
+        }
+    }
+
+    $deletePopover
+        .removeClass('place-left place-right place-below place-above')
+        .addClass('place-'+placement)
+        .css({left:Math.round(left)+'px',top:Math.round(top)+'px'});
+}
+
+function openCommentDeletePopover(button,commentId){
+    deleteCommentId=parseInt(commentId,10)||0;
+    deleteAnchorButton=button||null;
+
+    if(!deleteCommentId||!deleteAnchorButton)return;
+
+    $deletePopover
+        .removeClass('hidden')
+        .attr('aria-hidden','false');
+
+    requestAnimationFrame(function(){
+        positionCommentDeletePopover();
+        $deleteCancel.trigger('focus');
+    });
+}
+
 function commentDateLabel(value){
     const raw=String(value||'');
 
@@ -1806,13 +1894,7 @@ function renderComments(items){
                 '<div class="review-comment-body">'
                     +(comment.body_html||'')
                 +'</div>'+
-                '<div class="review-comment-delete-confirm hidden">'+
-                    '<span>Delete this note?</span>'+
-                    '<button type="button" class="tiny badbtn"'
-                    +' data-comment-delete-confirm>Delete</button>'+
-                    '<button type="button" class="tiny"'
-                    +' data-comment-delete-cancel>Cancel</button>'+
-                '</div>'+
+
             '</article>'
         );
     }).join('');
@@ -1924,6 +2006,7 @@ function startCommentEdit(commentId){
         window.cdspReviewListingPhotos=[];
         editingCommentId=0;
         currentComments=[];
+        closeCommentDeletePopover();
         renderComments([]);
         clearCommentComposer();
         renderAttachments([]);
@@ -2081,7 +2164,17 @@ function startCommentEdit(commentId){
 
     $(document).on('keydown', function(event){
         if(event.key!=='Escape')return;
-        if(!$('#listingImageLightbox').hasClass('hidden')){closeListingImage();return;}
+
+        if(!$deletePopover.hasClass('hidden')){
+            closeCommentDeletePopover();
+            return;
+        }
+
+        if(!$('#listingImageLightbox').hasClass('hidden')){
+            closeListingImage();
+            return;
+        }
+
         if(!$modal.hasClass('hidden'))closeReviewModal();
     });
 
@@ -2360,102 +2453,102 @@ $commentList.on('click','[data-comment-edit]',function(){
     startCommentEdit(commentId);
 });
 
-$commentList.on('click','[data-comment-delete]',function(){
-    const $comment=$(this).closest('[data-comment-id]');
 
-    $comment
-        .find('.review-comment-delete-confirm')
-        .removeClass('hidden');
+$commentList.on('click','[data-comment-delete]',function(event){
+    event.preventDefault();
+    event.stopPropagation();
+
+    const button=this;
+    const commentId=parseInt(
+        $(button).closest('[data-comment-id]').data('comment-id'),
+        10
+    )||0;
+
+    if(deleteCommentId===commentId&&!$deletePopover.hasClass('hidden')){
+        closeCommentDeletePopover();
+        return;
+    }
+
+    openCommentDeletePopover(button,commentId);
 });
 
-$commentList.on('click','[data-comment-delete-cancel]',function(){
-    $(this)
-        .closest('.review-comment-delete-confirm')
-        .addClass('hidden');
+$deleteCancel.on('click',function(){
+    closeCommentDeletePopover();
 });
 
-$commentList.on(
-    'click',
-    '[data-comment-delete-confirm]',
-    function(){
-        const $comment=$(this).closest('[data-comment-id]');
-        const commentId=parseInt(
-            $comment.data('comment-id'),
-            10
-        )||0;
-        const $button=$(this);
+$deleteConfirm.on('click',function(){
+    const commentId=deleteCommentId;
+    if(!commentId){
+        closeCommentDeletePopover();
+        return;
+    }
 
-        if(!commentId){
+    const $button=$(this);
+    $button.prop('disabled',true).text('Deleting…');
+
+    $.ajax({
+        url:commentDeleteUrl,
+        method:'POST',
+        dataType:'json',
+        data:{_csrf:csrf,comment_id:commentId},
+        headers:{
+            'X-Requested-With':'XMLHttpRequest',
+            'Accept':'application/json'
+        }
+    })
+    .done(function(data){
+        if(!data||!data.ok){
+            $commentMessage.addClass('error').text(
+                (data&&data.message)||'Could not delete note.'
+            );
+            $button.prop('disabled',false).text('Delete');
             return;
         }
 
-        $button
-            .prop('disabled',true)
-            .text('Deleting…');
-
-        $.ajax({
-            url:commentDeleteUrl,
-            method:'POST',
-            dataType:'json',
-            data:{
-                _csrf:csrf,
-                comment_id:commentId
-            },
-            headers:{
-                'X-Requested-With':'XMLHttpRequest',
-                'Accept':'application/json'
-            }
-        })
-        .done(function(data){
-            if(!data||!data.ok){
-                $commentMessage
-                    .addClass('error')
-                    .text(
-                        (data&&data.message)
-                        ||'Could not delete note.'
-                    );
-                return;
-            }
-
-            currentComments=currentComments.filter(function(item){
-                return parseInt(item.id,10)!==commentId;
-            });
-
-            renderComments(currentComments);
-
-            if(editingCommentId===commentId){
-                clearCommentComposer();
-            }
-
-            $commentMessage
-                .removeClass('error warning')
-                .text('Note deleted.');
-
-            setTimeout(function(){
-                if($commentMessage.text()==='Note deleted.'){
-                    $commentMessage.text('');
-                }
-            },1800);
-        })
-        .fail(function(xhr){
-            const data=xhr.responseJSON||{};
-
-            $commentMessage
-                .addClass('error')
-                .text(
-                    data.message
-                    ||'Could not delete note.'
-                );
-        })
-        .always(function(){
-            $button
-                .prop('disabled',false)
-                .text('Delete');
+        currentComments=currentComments.filter(function(item){
+            return parseInt(item.id,10)!==commentId;
         });
+
+        if(editingCommentId===commentId){
+            clearCommentComposer();
+        }
+
+        closeCommentDeletePopover();
+        renderComments(currentComments);
+        $commentMessage.removeClass('error warning').text('Note deleted.');
+
+        setTimeout(function(){
+            if($commentMessage.text()==='Note deleted.')$commentMessage.text('');
+        },1800);
+    })
+    .fail(function(xhr){
+        const data=xhr.responseJSON||{};
+        $commentMessage.addClass('error').text(
+            data.message||'Could not delete note.'
+        );
+        $button.prop('disabled',false).text('Delete');
+    });
+});
+
+$(document).on('mousedown.commentDeletePopover',function(event){
+    if($deletePopover.hasClass('hidden'))return;
+
+    if(
+        $(event.target).closest('#commentDeletePopover').length
+        ||$(event.target).closest('[data-comment-delete]').length
+    )return;
+
+    closeCommentDeletePopover();
+});
+
+$(window).on(
+    'resize.commentDeletePopover scroll.commentDeletePopover',
+    function(){
+        if(!$deletePopover.hasClass('hidden'))positionCommentDeletePopover();
     }
 );
 
-    $modalForm.on('submit', function(event){
+$modalForm.on('submit', function(event){
         event.preventDefault();
 
         const decision = String(

@@ -672,3 +672,16 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - Existing review attachments and review decision AJAX behavior remain unchanged.
 - Requires migration `010_post_review_comments`.
 - All border radius remains `4px`.
+
+## v0.1.30 — Anchored comment delete confirmation
+
+- Delete/Cancel no longer appears at the bottom of a comment.
+- Clicking the trash icon opens a viewport-level confirmation popover beside that exact icon.
+- Long comments and image-heavy comments cannot push the confirmation out of sight.
+- Placement automatically chooses left, right, below, or above and clamps within the viewport.
+- Scroll and resize keep the popover aligned to the trash icon.
+- Outside click, Cancel, or Escape closes it.
+- Delete remains AJAX + soft-delete; no browser `confirm()` is used.
+- Touch targets are enlarged on coarse-pointer devices.
+- No database migration is required.
+- All border radius remains `4px`.
