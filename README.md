@@ -785,3 +785,18 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - Reviewed Post borders are reinforced after AJAX reload: Good green, Bad red, Unreviewed neutral.
 - No database migration is required.
 - All border radius remains `4px`.
+
+## v0.1.38 — Permanent image deletion and restored Comment Edit
+
+- Image deletion now differs intentionally from Comment deletion.
+- Comments remain audit records: deleting a Comment only marks it `Marked as deleted` with administrator/time metadata.
+- Review/comment images may now be permanently removed when they were uploaded by mistake, preventing incorrect evidence from remaining visible and causing ambiguity.
+- Permanent image deletion removes both the `cdsp_review_attachments` database row and the physical file in `storage/uploads`.
+- The delete endpoint validates that the resolved file path remains inside the managed upload directory before unlinking it.
+- Images that were already soft-deleted by v0.1.35 are given a visible `×` again, allowing administrators to purge those old tombstones permanently.
+- Comment History updates immediately after image deletion; no page reload is required.
+- Restored a clearly labeled `Edit` button on every Comment instead of relying on a small pencil icon.
+- `Edit` remains available even when a Comment is marked deleted. Editing corrects its text but does not clear `deleted_at` or `deleted_by`, so the audit state remains intact.
+- Deleted Comments do not accept new uploaded images during Edit, preventing new evidence from being attached to a deleted record.
+- No database migration is required. Existing attachment soft-delete columns remain for backward compatibility with old records.
+- All border radius remains `4px`.

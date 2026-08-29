@@ -2082,13 +2082,11 @@ function renderCommentAttachments(items){
                         +deletedMeta+
                     '</div>'+
 
-                    (!deleted
-                        ?'<button type="button" class="attachment-remove"'
-                            +' data-attachment-delete="'
-                            +escapeHtml(item.id)
-                            +'" aria-label="Mark image as deleted"'
-                            +' title="Mark image as deleted">×</button>'
-                        :'')
+                    '<button type="button" class="attachment-remove"'
+                        +' data-attachment-delete="'
+                        +escapeHtml(item.id)
+                        +'" aria-label="Delete image permanently"'
+                        +' title="Delete image permanently">×</button>' 
                 +'</div>'
             );
         }).join('')
@@ -2308,28 +2306,26 @@ function renderComments(items,reviewItems){
                         '<span class="review-comment-action-label">'
                             +escapeHtml(actionLabel)
                         +'</span>'+
-                        (!deleted
-                            ?'<div class="review-comment-actions">'+
-                                '<button type="button"'
-                                +' class="review-comment-icon"'
-                                +' data-comment-edit'
-                                +' title="Edit note"'
-                                +' aria-label="Edit note">'+
-                                    '<svg viewBox="0 0 24 24" aria-hidden="true">'
-                                    +'<path d="M4 17.3V20h2.7L17.8 8.9l-2.7-2.7L4 17.3Zm15.9-10.5c.3-.3.3-.8 0-1.1l-1.6-1.6a.8.8 0 0 0-1.1 0l-1.3 1.3 2.7 2.7 1.3-1.3Z"/>'
-                                    +'</svg>'+
-                                '</button>'+
-                                '<button type="button"'
-                                +' class="review-comment-icon danger"'
-                                +' data-comment-delete'
-                                +' title="Mark note as deleted"'
-                                +' aria-label="Mark note as deleted">'+
-                                    '<svg viewBox="0 0 24 24" aria-hidden="true">'
-                                    +'<path d="M8 4h8l1 2h4v2H3V6h4l1-2Zm1 6h2v7H9v-7Zm4 0h2v7h-2v-7ZM6 9h12l-1 11H7L6 9Z"/>'
-                                    +'</svg>'+
-                                '</button>'+
-                            '</div>'
-                            :'')
+                        '<div class="review-comment-actions">'+
+                            '<button type="button"'
+                            +' class="review-comment-edit-button"'
+                            +' data-comment-edit'
+                            +' title="Edit comment"'
+                            +' aria-label="Edit comment">'
+                            +'Edit'
+                            +'</button>'+
+                            (!deleted
+                                ?'<button type="button"'
+                                    +' class="review-comment-icon danger"'
+                                    +' data-comment-delete'
+                                    +' title="Mark note as deleted"'
+                                    +' aria-label="Mark note as deleted">'+
+                                        '<svg viewBox="0 0 24 24" aria-hidden="true">'
+                                        +'<path d="M8 4h8l1 2h4v2H3V6h4l1-2Zm1 6h2v7H9v-7Zm4 0h2v7h-2v-7ZM6 9h12l-1 11H7L6 9Z"/>'
+                                        +'</svg>'+
+                                    '</button>'
+                                :'')
+                        +'</div>' 
                     +'</div>'+
                 '</div>'+
                 '<div class="review-comment-body">'
@@ -2378,7 +2374,7 @@ function startCommentEdit(commentId){
         return parseInt(item.id,10)===parseInt(commentId,10);
     });
 
-    if(!comment||comment.deleted){
+    if(!comment){
         return;
     }
 
@@ -2389,7 +2385,11 @@ function startCommentEdit(commentId){
     $commentCancelEdit.removeClass('hidden');
     $commentMessage
         .removeClass('error warning')
-        .text('Editing existing note.');
+        .text(
+            comment.deleted
+                ?'Editing a comment that remains marked as deleted.'
+                :'Editing existing note.'
+        );
 
     const editorEl=$modal
         .find('[data-html-note]')
@@ -2458,13 +2458,11 @@ function renderAttachments(items){
                         +escapeHtml(item.name)
                     +'</a>'+
                     audit+
-                    (!deleted
-                        ?'<button type="button" class="attachment-remove"'
-                            +' data-attachment-delete="'
-                            +escapeHtml(item.id)
-                            +'" aria-label="Mark image as deleted"'
-                            +' title="Mark image as deleted">×</button>'
-                        :'')
+                    '<button type="button" class="attachment-remove"'
+                        +' data-attachment-delete="'
+                        +escapeHtml(item.id)
+                        +'" aria-label="Delete image permanently"'
+                        +' title="Delete image permanently">×</button>' 
                 +'</div>'
             );
         }).join('')
@@ -3036,7 +3034,7 @@ function deleteAttachment(attachmentId,$source){
                 .addClass('error')
                 .text(
                     (data&&data.message)
-                    ||'Could not mark image as deleted.'
+                    ||'Could not delete image.'
                 );
 
             $source
@@ -3045,8 +3043,6 @@ function deleteAttachment(attachmentId,$source){
             return;
         }
 
-        const updated=data.attachment||null;
-
         if(data.entity_type==='post_comment'){
             currentComments=currentComments.map(function(comment){
                 if(
@@ -3054,17 +3050,13 @@ function deleteAttachment(attachmentId,$source){
                     ===parseInt(data.entity_id,10)
                 ){
                     comment.attachments=(comment.attachments||[])
-                        .map(function(item){
-                            return parseInt(item.id,10)===attachmentId
-                                ?updated
-                                :item;
+                        .filter(function(item){
+                            return parseInt(item.id,10)!==attachmentId;
                         });
 
                     comment.active_attachment_count=(
                         comment.attachments||[]
-                    ).filter(function(item){
-                        return item&&!item.deleted;
-                    }).length;
+                    ).length;
                 }
 
                 return comment;
@@ -3076,10 +3068,8 @@ function deleteAttachment(attachmentId,$source){
             );
         }else{
             currentLegacyAttachments=currentLegacyAttachments
-                .map(function(item){
-                    return parseInt(item.id,10)===attachmentId
-                        ?updated
-                        :item;
+                .filter(function(item){
+                    return parseInt(item.id,10)!==attachmentId;
                 });
 
             renderAttachments(
@@ -3089,7 +3079,16 @@ function deleteAttachment(attachmentId,$source){
 
         $commentMessage
             .removeClass('error warning')
-            .text('Image marked as deleted.');
+            .text('Image permanently deleted.');
+
+        setTimeout(function(){
+            if(
+                $commentMessage.text()
+                ==='Image permanently deleted.'
+            ){
+                $commentMessage.text('');
+            }
+        },1800);
     })
     .fail(function(xhr){
         const data=xhr.responseJSON||{};
@@ -3098,7 +3097,7 @@ function deleteAttachment(attachmentId,$source){
             .addClass('error')
             .text(
                 data.message
-                ||'Could not mark image as deleted.'
+                ||'Could not delete image.'
             );
 
         $source

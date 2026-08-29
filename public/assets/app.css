@@ -4497,3 +4497,56 @@ body.review-modal-open{
 .sales-post-tile.review-bad .sales-post-card-footer{
     background:#fff1f2;
 }
+
+/* v0.1.38 Permanent image delete + visible Comment Edit */
+.review-comment-edit-button{
+    min-height:30px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding:5px 9px;
+    border:1px solid #cbd5e1;
+    border-radius:4px;
+    background:#fff;
+    color:#2563eb;
+    cursor:pointer;
+    font-size:8px;
+    font-weight:900;
+}
+.review-comment-edit-button:hover,
+.review-comment-edit-button:focus{
+    border-color:#93c5fd;
+    background:#eff6ff;
+    color:#1d4ed8;
+    outline:none;
+}
+.review-comment.is-deleted .review-comment-edit-button{
+    border-color:#d8dee8;
+    background:#fff;
+    color:#475569;
+}
+
+/* Even old "Marked as deleted" image tombstones can now be purged. */
+.review-comment-attachment.is-deleted .attachment-remove,
+.legacy-attachment-chip.is-deleted .attachment-remove{
+    display:flex;
+    opacity:1;
+    z-index:4;
+}
+.review-comment-attachment .attachment-remove{
+    top:5px;
+    right:5px;
+}
+.review-comment-attachment.is-deleted .attachment-deleted-overlay{
+    right:5px;
+    left:5px;
+    padding-right:25px;
+}
+
+@media(pointer:coarse){
+    .review-comment-edit-button{
+        min-height:44px;
+        min-width:68px;
+        padding:8px 12px;
+    }
+}

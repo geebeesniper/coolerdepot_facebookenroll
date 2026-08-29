@@ -501,13 +501,25 @@ public function dashboardUpdateComment():void{
     }
 
     $this->verifyAjaxCsrf();
+
     $commentId=(int)($_POST['comment_id']??0);
-    $body=HtmlNoteSanitizer::clean((string)($_POST['comment_body']??''));
+    $body=HtmlNoteSanitizer::clean(
+        (string)($_POST['comment_body']??'')
+    );
     $hasImages=$this->hasUploadedFiles('comment_images');
-    $existing=$this->postReviewComment($commentId);
+
+    // Include soft-deleted comments: their wording may still need correction,
+    // but editing never clears deleted_at/deleted_by.
+    $existing=$this->postReviewComment(
+        $commentId,
+        true
+    );
 
     if(!$existing){
-        $this->json(['ok'=>false,'message'=>'Comment was not found.'],404);
+        $this->json([
+            'ok'=>false,
+            'message'=>'Comment was not found.',
+        ],404);
     }
 
     if(
@@ -518,33 +530,67 @@ public function dashboardUpdateComment():void{
         $this->json([
             'ok'=>false,
             'field'=>'comment_body',
-            'message'=>'A note cannot be empty unless it has an active image.',
+            'message'=>'A note cannot be empty unless it has an image.',
         ],422);
     }
 
     $s=Database::connection()->prepare(
         "UPDATE cdsp_post_review_comments
-         SET body_html=?,updated_by=?,updated_at=NOW()
-         WHERE id=? AND deleted_at IS NULL"
+         SET body_html=?,
+             updated_by=?,
+             updated_at=NOW()
+         WHERE id=?"
     );
-    $s->execute([$body,(int)$admin['id'],$commentId]);
+
+    $s->execute([
+        $body,
+        (int)$admin['id'],
+        $commentId,
+    ]);
+
     $uploadWarning=null;
 
-    try{
-        (new UploadService())->save(
-            'post_comment',$commentId,(int)$admin['id'],'comment_images'
-        );
-    }catch(\Throwable $e){
-        $uploadWarning=$e->getMessage();
+    // A deleted comment remains deleted. Do not attach new images to a
+    // deleted record; only permit text correction for audit clarity.
+    if(!empty($existing['deleted'])){
+        if($hasImages){
+            $uploadWarning=
+                'This comment is marked as deleted. Its text was updated, '
+                .'but new images were not attached.';
+        }
+    }else{
+        try{
+            (new UploadService())->save(
+                'post_comment',
+                $commentId,
+                (int)$admin['id'],
+                'comment_images'
+            );
+        }catch(\Throwable $e){
+            $uploadWarning=$e->getMessage();
+        }
     }
+
+    $updated=$this->postReviewComment(
+        $commentId,
+        true
+    );
 
     $this->json([
         'ok'=>true,
-        'comment'=>$this->postReviewComment($commentId),
+        'comment'=>$updated,
         'upload_warning'=>$uploadWarning,
-        'message'=>$uploadWarning
-            ? 'Note updated, but an image could not be uploaded.'
-            : 'Note updated.',
+        'message'=>!empty($existing['deleted'])
+            ? (
+                $uploadWarning
+                    ? 'Deleted comment text updated. '.$uploadWarning
+                    : 'Deleted comment text updated; it remains marked as deleted.'
+            )
+            : (
+                $uploadWarning
+                    ? 'Note updated, but an image could not be uploaded.'
+                    : 'Note updated.'
+            ),
     ]);
 }
 
@@ -611,39 +657,63 @@ public function dashboardDeleteAttachment():void{
         ],404);
     }
 
-    if(!empty($attachment['deleted_at'])){
+    $base=dirname(__DIR__,2).'/storage/uploads';
+    $baseReal=realpath($base);
+    $storedPath=ltrim(
+        str_replace('\\','/',(string)$attachment['stored_path']),
+        '/'
+    );
+    $file=$base.'/'.$storedPath;
+    $fileReal=is_file($file)
+        ? realpath($file)
+        : false;
+
+    if(
+        $fileReal!==false
+        && (
+            $baseReal===false
+            || !str_starts_with(
+                $fileReal,
+                rtrim($baseReal,DIRECTORY_SEPARATOR)
+                    .DIRECTORY_SEPARATOR
+            )
+        )
+    ){
         $this->json([
             'ok'=>false,
-            'message'=>'Image is already marked as deleted.',
-        ],409);
+            'message'=>'Image storage path failed the safety check.',
+        ],422);
+    }
+
+    if(
+        $fileReal!==false
+        && !@unlink($fileReal)
+    ){
+        $this->json([
+            'ok'=>false,
+            'message'=>'Image file could not be deleted from storage.',
+        ],500);
     }
 
     $d=Database::connection()->prepare(
-        "UPDATE cdsp_review_attachments
-         SET deleted_at=NOW(),
-             deleted_by=?
-         WHERE id=?
-           AND deleted_at IS NULL"
+        "DELETE FROM cdsp_review_attachments
+         WHERE id=?"
     );
+    $d->execute([$attachmentId]);
 
-    $d->execute([
-        (int)$admin['id'],
-        $attachmentId,
-    ]);
-
-    $updated=$this->attachmentById(
-        $attachmentId
-    );
+    if($d->rowCount()<1){
+        $this->json([
+            'ok'=>false,
+            'message'=>'Image database record could not be deleted.',
+        ],500);
+    }
 
     $this->json([
         'ok'=>true,
         'attachment_id'=>$attachmentId,
         'entity_type'=>(string)$attachment['entity_type'],
         'entity_id'=>(int)$attachment['entity_id'],
-        'attachment'=>$updated
-            ? $this->formatAttachment($updated)
-            : null,
-        'message'=>'Image marked as deleted.',
+        'message'=>'Image permanently deleted.',
     ]);
 }
 
