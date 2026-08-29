@@ -770,3 +770,18 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - A successful Save Review immediately refreshes that Last saved line from the exact history event returned by the server.
 - No database migration is required.
 - All border radius remains `4px`.
+
+## v0.1.37 — Canonical History-driven Post state and progress
+
+- Fixed reviewed Post cards reverting to gray/Unreviewed after the expanded grid was closed and reopened or after period/date AJAX navigation.
+- `cdsp_post_review_history` latest event is now the canonical persisted state for Dashboard Post cards.
+- `adminSalesPostsForPeriod()` derives `current_review_status` from the latest History event, falling back to the legacy `admin_review_status` and current review row only for old data.
+- Dashboard Daily/Weekly/Monthly progress counts now derive Good/Bad from the same latest History event.
+- Progress therefore persists across collapse/reopen, Daily/Weekly/Monthly switching, date changes, and full reloads.
+- Progress remains a stacked ratio against the target: latest Good = green, latest Bad = red, Unreviewed = gray.
+- Example: target 10 with 2 Good, 1 Bad, 1 Unreviewed displays 20% green + 10% red + 10% gray, with the remaining target capacity as the track background.
+- Sales daily-date Good/Bad summaries now use the same canonical History status.
+- The old `admin_review_status` column is still maintained for backward compatibility, but it no longer controls the dashboard when History exists.
+- Reviewed Post borders are reinforced after AJAX reload: Good green, Bad red, Unreviewed neutral.
+- No database migration is required.
+- All border radius remains `4px`.

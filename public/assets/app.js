@@ -1269,6 +1269,11 @@ function syncExpandedSalesCardFromTiles(){
         )||1
     );
 
+    $card
+        .attr('data-good-count',goodCount)
+        .attr('data-bad-count',badCount)
+        .attr('data-unreviewed-count',unreviewedCount);
+
     $card.find('[data-good-count]').text(goodCount);
     $card.find('[data-bad-count]').text(badCount);
     $card.find('[data-unreviewed-count]').text(
@@ -1322,19 +1327,24 @@ function syncExpandedSalesCardFromTiles(){
         $card.find('[data-period-days]').text(days);
         $card.find('[data-target-input]').val(dailyTarget);
 
-        $card.find('[data-good-count]').text(
-            parseInt(row.good_count, 10) || 0
-        );
-        $card.find('[data-bad-count]').text(
-            parseInt(row.bad_count, 10) || 0
-        );
+        const rowGoodCount=parseInt(row.good_count,10)||0;
+        const rowBadCount=parseInt(row.bad_count,10)||0;
+        const rowUnreviewedCount=parseInt(row.unreviewed_count,10)||0;
+
+        $card
+            .attr('data-good-count',rowGoodCount)
+            .attr('data-bad-count',rowBadCount)
+            .attr('data-unreviewed-count',rowUnreviewedCount);
+
+        $card.find('[data-good-count]').text(rowGoodCount);
+        $card.find('[data-bad-count]').text(rowBadCount);
         $card.find('[data-unreviewed-count]').text(
-            parseInt(row.unreviewed_count, 10) || 0
+            rowUnreviewedCount
         );
 
-        const goodCount=parseInt(row.good_count,10)||0;
-        const badCount=parseInt(row.bad_count,10)||0;
-        const unreviewedCount=parseInt(row.unreviewed_count,10)||0;
+        const goodCount=rowGoodCount;
+        const badCount=rowBadCount;
+        const unreviewedCount=rowUnreviewedCount;
 
         updateReviewProgressSegments(
             $card,
@@ -1515,6 +1525,7 @@ function renderPostGrid(data){
             +escapeHtml(post.id)
             +'" data-review-status="'
             +escapeHtml(status)
+            +'" data-status-source="history"'
             +'" role="button" tabindex="0"'
             +' aria-label="Review '
             +escapeHtml(title)

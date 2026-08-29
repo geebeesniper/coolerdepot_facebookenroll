@@ -4460,3 +4460,40 @@ body.review-modal-open{
         height:84px;
     }
 }
+
+/* v0.1.37 Canonical History-driven status/progress */
+.sales-progress-track{
+    position:relative;
+    min-height:14px;
+    height:14px;
+    border:1px solid #cbd5e1;
+    background:#e5e7eb;
+}
+.sales-progress-segment{
+    min-height:12px;
+}
+.sales-progress-segment.good{
+    background:#22c55e;
+}
+.sales-progress-segment.bad{
+    background:#ef4444;
+}
+.sales-progress-segment.unreviewed{
+    background:#94a3b8;
+}
+
+/* Reloaded cards must visually preserve the latest DB History decision. */
+.sales-post-tile.review-good{
+    border:2px solid #86efac;
+    background:#f0fdf4;
+}
+.sales-post-tile.review-bad{
+    border:2px solid #fca5a5;
+    background:#fff1f2;
+}
+.sales-post-tile.review-good .sales-post-card-footer{
+    background:#ecfdf3;
+}
+.sales-post-tile.review-bad .sales-post-card-footer{
+    background:#fff1f2;
+}

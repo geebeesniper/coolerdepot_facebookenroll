@@ -176,11 +176,11 @@ class AdminController extends Controller{
             $sequence++;
 
             $status=in_array(
-                ($post['admin_review_status']??null),
+                ($post['current_review_status']??null),
                 ['good','bad'],
                 true
             )
-                ? (string)$post['admin_review_status']
+                ? (string)$post['current_review_status']
                 : null;
 
             $items[]=[

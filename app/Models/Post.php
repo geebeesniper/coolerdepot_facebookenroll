@@ -59,13 +59,40 @@ class Post {
                     u.sales_id,
                     u.display_name,
                     COUNT(p.id) AS total_posts,
-                    COALESCE(SUM(p.admin_review_status='good'),0) AS good_posts,
-                    COALESCE(SUM(p.admin_review_status='bad'),0) AS bad_posts
+                    COALESCE(
+                        SUM(
+                            COALESCE(
+                                rh.decision,
+                                p.admin_review_status
+                            )='good'
+                        ),
+                        0
+                    ) AS good_posts,
+                    COALESCE(
+                        SUM(
+                            COALESCE(
+                                rh.decision,
+                                p.admin_review_status
+                            )='bad'
+                        ),
+                        0
+                    ) AS bad_posts
                 FROM cdsp_users u
                 LEFT JOIN cdsp_sales_posts p
                   ON p.sales_user_id=u.id
                  AND p.deleted_at IS NULL
                  AND p.published_date BETWEEN ? AND ?
+                LEFT JOIN (
+                    SELECT h.post_id,h.decision
+                    FROM cdsp_post_review_history h
+                    INNER JOIN (
+                        SELECT post_id,MAX(id) AS max_id
+                        FROM cdsp_post_review_history
+                        GROUP BY post_id
+                    ) latest
+                      ON latest.max_id=h.id
+                ) rh
+                  ON rh.post_id=p.id
                 WHERE u.role='sales'
                   AND u.active=1";
         $params = [$from, $to];
@@ -95,13 +122,40 @@ class Post {
                 u.display_name,
                 COALESCE(NULLIF(u.daily_post_target,0),10) AS daily_target,
                 COUNT(p.id) AS post_count,
-                COALESCE(SUM(p.admin_review_status='good'),0) AS good_count,
-                COALESCE(SUM(p.admin_review_status='bad'),0) AS bad_count
+                COALESCE(
+                    SUM(
+                        COALESCE(
+                            rh.decision,
+                            p.admin_review_status
+                        )='good'
+                    ),
+                    0
+                ) AS good_count,
+                COALESCE(
+                    SUM(
+                        COALESCE(
+                            rh.decision,
+                            p.admin_review_status
+                        )='bad'
+                    ),
+                    0
+                ) AS bad_count
              FROM cdsp_users u
              LEFT JOIN cdsp_sales_posts p
                ON p.sales_user_id=u.id
               AND p.deleted_at IS NULL
               AND p.published_date BETWEEN ? AND ?
+             LEFT JOIN (
+                SELECT h.post_id,h.decision
+                FROM cdsp_post_review_history h
+                INNER JOIN (
+                    SELECT post_id,MAX(id) AS max_id
+                    FROM cdsp_post_review_history
+                    GROUP BY post_id
+                ) latest
+                  ON latest.max_id=h.id
+             ) rh
+               ON rh.post_id=p.id
              WHERE u.role='sales'
                AND u.active=1
              GROUP BY
@@ -159,12 +213,29 @@ class Post {
                 p.*,
                 u.display_name,
                 u.sales_id,
-                r.decision
+                r.decision AS current_review_row_decision,
+                rh.decision AS latest_history_decision,
+                COALESCE(
+                    rh.decision,
+                    p.admin_review_status,
+                    r.decision
+                ) AS current_review_status
              FROM cdsp_sales_posts p
              JOIN cdsp_users u
                ON u.id=p.sales_user_id
              LEFT JOIN cdsp_post_reviews r
                ON r.post_id=p.id
+             LEFT JOIN (
+                SELECT h.post_id,h.decision,h.id AS history_id
+                FROM cdsp_post_review_history h
+                INNER JOIN (
+                    SELECT post_id,MAX(id) AS max_id
+                    FROM cdsp_post_review_history
+                    GROUP BY post_id
+                ) latest
+                  ON latest.max_id=h.id
+             ) rh
+               ON rh.post_id=p.id
              WHERE p.sales_user_id=?
                AND p.deleted_at IS NULL
                AND p.published_date BETWEEN ? AND ?
@@ -217,15 +288,44 @@ class Post {
     public static function dailyDatesForSales(int $salesUserId, string $from, string $to, int $limit, int $offset = 0): array
     {
         $stmt = Database::connection()->prepare(
-            "SELECT published_date, COUNT(*) AS post_count,
-                    SUM(admin_review_status='good') AS good_count,
-                    SUM(admin_review_status='bad') AS bad_count
-             FROM cdsp_sales_posts
-             WHERE sales_user_id = ?
-               AND deleted_at IS NULL
-               AND published_date BETWEEN ? AND ?
-             GROUP BY published_date
-             ORDER BY published_date DESC
+            "SELECT
+                p.published_date,
+                COUNT(*) AS post_count,
+                COALESCE(
+                    SUM(
+                        COALESCE(
+                            rh.decision,
+                            p.admin_review_status
+                        )='good'
+                    ),
+                    0
+                ) AS good_count,
+                COALESCE(
+                    SUM(
+                        COALESCE(
+                            rh.decision,
+                            p.admin_review_status
+                        )='bad'
+                    ),
+                    0
+                ) AS bad_count
+             FROM cdsp_sales_posts p
+             LEFT JOIN (
+                SELECT h.post_id,h.decision
+                FROM cdsp_post_review_history h
+                INNER JOIN (
+                    SELECT post_id,MAX(id) AS max_id
+                    FROM cdsp_post_review_history
+                    GROUP BY post_id
+                ) latest
+                  ON latest.max_id=h.id
+             ) rh
+               ON rh.post_id=p.id
+             WHERE p.sales_user_id = ?
+               AND p.deleted_at IS NULL
+               AND p.published_date BETWEEN ? AND ?
+             GROUP BY p.published_date
+             ORDER BY p.published_date DESC
              LIMIT ? OFFSET ?"
         );
         $stmt->bindValue(1, $salesUserId, \PDO::PARAM_INT);
