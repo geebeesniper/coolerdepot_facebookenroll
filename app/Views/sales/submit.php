@@ -184,6 +184,7 @@ use App\Core\Util;
 
             <form
                 method="post"
+                id="salesVerifiedSaveForm"
                 action="<?= Util::e($config['app']['base_path']) ?>/sales/save"
             >
                 <input
@@ -207,6 +208,20 @@ use App\Core\Util;
                     </span>
                 </button>
             </form>
+
+            <div
+                class="sales-post-save-complete hidden"
+                id="salesPostSaveComplete"
+            >
+                <strong>Saved ✓</strong>
+                <span>Your verified post was saved.</span>
+                <a
+                    class="btn"
+                    href="<?= Util::e($config['app']['base_path']) ?>/sales"
+                >
+                    View My Posts
+                </a>
+            </div>
         </div>
     </section>
 </div>

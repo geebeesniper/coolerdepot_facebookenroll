@@ -32,6 +32,8 @@ $periodNames = [
     data-from="<?= Util::e((string)$periodInfo['from']) ?>"
     data-to="<?= Util::e((string)$periodInfo['to']) ?>"
     data-period="<?= Util::e($period) ?>"
+    data-initial-sales-id="<?= (int)($_GET['sales_id'] ?? 0) ?>"
+    data-initial-open-review="<?= !empty($_GET['review']) ? '1' : '0' ?>"
     data-period-days="<?= (int)$periodInfo['days'] ?>"
     data-post-count="<?= (int)$dashboardState['post_count'] ?>"
     data-max-post-id="<?= (int)$dashboardState['max_post_id'] ?>"
@@ -300,15 +302,15 @@ $periodNames = [
                         class="sales-card-admin-actions"
                         data-card-control
                     >
-                        <a
+                        <button
+                            type="button"
                             class="sales-daily-review<?= $period === 'day' ? '' : ' hidden' ?>"
                             data-daily-review
-                            href="<?= Util::e($row['daily_review_url']) ?>"
                         >
                             <span data-card-daily-review-label>
                                 Daily Review
                             </span>
-                        </a>
+                        </button>
 
                         <div class="sales-target-editor">
                             <label>
@@ -423,6 +425,12 @@ $periodNames = [
     </div>
 
     <div
+        class="sales-period-review-rating hidden"
+        id="salesExpandedReviewRating"
+        aria-label="Current rating"
+    ></div>
+
+    <div
         class="sales-period-review-note empty"
         id="salesExpandedReviewNote"
     >
@@ -517,6 +525,39 @@ $periodNames = [
             >
 
             <div class="sales-period-review-editor-body">
+                <div
+                    class="sales-review-rating-field"
+                    id="salesPeriodReviewRatingField"
+                >
+                    <div class="sales-review-rating-label">
+                        <strong>Rating</strong>
+                        <span>Required</span>
+                    </div>
+                    <input type="hidden" name="rating" id="salesPeriodReviewRating" value="">
+                    <div
+                        class="sales-star-rating"
+                        id="salesPeriodReviewStars"
+                        role="radiogroup"
+                        aria-label="Sales review rating"
+                    >
+                        <?php for ($star=1; $star<=5; $star++): ?>
+                            <button
+                                type="button"
+                                class="sales-star-button"
+                                data-rating-star="<?= $star ?>"
+                                role="radio"
+                                aria-checked="false"
+                                aria-label="<?= $star ?> star<?= $star === 1 ? '' : 's' ?>"
+                            >★</button>
+                        <?php endfor; ?>
+                        <strong id="salesPeriodReviewRatingText">Not rated</strong>
+                    </div>
+                    <div
+                        class="sales-review-rating-error hidden"
+                        id="salesPeriodReviewRatingError"
+                    >Choose 1–5 stars.</div>
+                </div>
+
                 <?php
                 $fieldName = 'note';
                 $fieldLabel = 'Management Review';
@@ -525,6 +566,17 @@ $periodNames = [
                 $enableImageUpload = false;
                 require __DIR__ . '/_html_note_editor.php';
                 ?>
+
+                <section class="sales-review-save-history">
+                    <div class="sales-review-save-history-head">
+                        <span>Review History</span>
+                        <strong id="salesPeriodReviewHistoryCount">0 saves</strong>
+                    </div>
+                    <div
+                        class="sales-review-save-history-list"
+                        id="salesPeriodReviewHistory"
+                    ></div>
+                </section>
 
                 <div
                     class="sales-period-review-message"

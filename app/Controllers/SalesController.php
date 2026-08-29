@@ -4,6 +4,7 @@ namespace App\Controllers;
 use App\Core\Controller;
 use App\Core\Auth;
 use App\Core\Csrf;
+use App\Core\Database;
 use App\Models\Post;
 use App\Models\Inspection;
 
@@ -107,6 +108,7 @@ class SalesController extends Controller
 
         $nextOffset = $offset + count($days);
         $totalDays = Post::dailyDateCountForSales((int)$u['id'], $from, $to);
+        $summary=Post::salesRangeSummary((int)$u['id'],$from,$to);
 
         $this->json([
             'ok' => true,
@@ -114,6 +116,10 @@ class SalesController extends Controller
             'loaded' => count($days),
             'next_offset' => $nextOffset,
             'has_more' => $nextOffset < $totalDays,
+            'total_days'=>$totalDays,
+            'from'=>$from,
+            'to'=>$to,
+            'summary'=>$summary,
         ]);
     }
 
@@ -128,19 +134,42 @@ class SalesController extends Controller
 
     public function save(): void
     {
-        $u = Auth::requireRole('sales');
-        Csrf::verify($_POST['_csrf'] ?? null);
-
-        $token = trim((string)($_POST['inspection_token'] ?? ''));
-        $inspection = Inspection::verifiedForUser($token, (int)$u['id']);
-
-        if (!$inspection) {
-            $_SESSION['flash_error'] = 'Verification expired or invalid. Check the post again.';
+        global $config;
+        $u=Auth::requireRole('sales');
+        $isAjax=strtolower((string)($_SERVER['HTTP_X_REQUESTED_WITH']??''))==='xmlhttprequest';
+        $csrf=(string)($_POST['_csrf']??'');
+        if(!$csrf||empty($_SESSION['_csrf'])||!hash_equals((string)$_SESSION['_csrf'],$csrf)){
+            if($isAjax){$this->json(['ok'=>false,'message'=>'Security token expired. Refresh and try again.'],419);}
+            http_response_code(419);exit('CSRF validation failed');
+        }
+        $token=trim((string)($_POST['inspection_token']??''));
+        $inspection=Inspection::verified($token,(int)$u['id']);
+        if(!$inspection){
+            if($isAjax){$this->json(['ok'=>false,'message'=>'Verification expired or invalid. Check the post again.'],422);}
+            $_SESSION['flash_error']='Verification expired or invalid. Check the post again.';
             $this->redirect('/sales/submit');
         }
+        $pdo=Database::connection();
+        $pdo->beginTransaction();
 
-        Post::createFromInspection($inspection);
-        $_SESSION['flash_success'] = 'Post saved.';
+        try{
+            $postId=Post::create($inspection);
+            Inspection::consume((int)$inspection['id']);
+            $pdo->commit();
+        }catch(\Throwable $e){
+            if($pdo->inTransaction())$pdo->rollBack();
+            if($isAjax){$this->json(['ok'=>false,'message'=>$e->getMessage()],422);}
+            throw $e;
+        }
+        if($isAjax){
+            $this->json([
+                'ok'=>true,
+                'post_id'=>(int)$postId,
+                'message'=>'Post saved.',
+                'dashboard_url'=>rtrim($config['app']['base_path'],'/').'/sales',
+            ]);
+        }
+        $_SESSION['flash_success']='Post saved.';
         $this->redirect('/sales');
     }
 

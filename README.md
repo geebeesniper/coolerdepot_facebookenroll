@@ -863,3 +863,20 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - Fixed the Admin language listener selector after the language switch moved into the global top menu.
 - No database migration is required.
 - All border radius remains `4px`.
+
+## v0.1.43 — Unified people reviews, star rating history, and Sales AJAX cleanup
+
+- Consolidated Sales-person Daily / Weekly / Monthly management reviews into the Sales Activity & Attendance dashboard. The old standalone Daily Review page redirects into the same dashboard popup, and the Reports page no longer contains a second weekly/monthly editor.
+- Added a required clickable 1–5 star rating for Sales-person management reviews. Rating is selected directly on stars; there is no dropdown.
+- Reopening a person review restores its current rating. The expanded review summary also displays the latest rating.
+- Added `cdsp_sales_review_history`, an immutable save audit. Every successful press of Save Review writes a new event containing administrator, timestamp, rating, and note, even when the rating or note did not change.
+- Review History in the popup displays the rating on every saved event. Existing legacy reviews are backfilled once; old reviews that never had a rating can show `Not rated`.
+- Added migration `013_sales_review_history.sql` and `scripts/migrate_v0_1_43.php`.
+- Sales date-range Apply now refreshes the range through AJAX instead of reloading the full page. Summary metrics, daily sections, empty state, pagination state, and the browser URL update in place.
+- Fixed AJAX Load Earlier Days after changing the date range by reading the current `data-from` / `data-to` attributes instead of stale jQuery cached data.
+- Sales Verify Listing remains AJAX, deletion requests remain AJAX, and Save Verified Post is now AJAX with inline success/error state instead of a page redirect.
+- Fixed Save Verified Post to call the existing `Inspection::verified()` API and consume the inspection transactionally.
+- Starting a new verification clears the previous Saved state so the next listing has a clean workflow.
+- Legacy Daily/Weekly/Monthly save routes no longer write no-rating reviews; stale forms are redirected to the unified rating-enabled dashboard.
+- Post Good/Bad review remains separate from the person rating. No star rating was added back to individual Post Review.
+- All border radius remains `4px`.

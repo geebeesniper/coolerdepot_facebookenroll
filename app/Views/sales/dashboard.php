@@ -66,25 +66,25 @@ $unreviewedTotal=(int)($summary['unreviewed_count']??0);
 <section class="sales-overview-grid">
     <article class="sales-overview-card">
         <span data-sales-i18n="posts">Posts</span>
-        <strong><?= $postsTotal ?></strong>
+        <strong data-sales-summary="posts"><?= $postsTotal ?></strong>
         <small data-sales-i18n="selectedRange">Selected range</small>
     </article>
 
     <article class="sales-overview-card good">
         <span data-sales-i18n="good">Good</span>
-        <strong><?= $goodTotal ?></strong>
+        <strong data-sales-summary="good"><?= $goodTotal ?></strong>
         <small data-sales-i18n="passedReview">Passed review</small>
     </article>
 
     <article class="sales-overview-card bad">
         <span data-sales-i18n="issues">Issues</span>
-        <strong><?= $badTotal ?></strong>
+        <strong data-sales-summary="bad"><?= $badTotal ?></strong>
         <small data-sales-i18n="needsAttention">Needs attention</small>
     </article>
 
     <article class="sales-overview-card neutral">
         <span data-sales-i18n="unreviewed">Unreviewed</span>
-        <strong><?= $unreviewedTotal ?></strong>
+        <strong data-sales-summary="unreviewed"><?= $unreviewedTotal ?></strong>
         <small data-sales-i18n="awaitingReview">Awaiting Admin review</small>
     </article>
 </section>
@@ -102,15 +102,13 @@ $unreviewedTotal=(int)($summary['unreviewed_count']??0);
     <?php endforeach; ?>
 </div>
 
-<?php if (!$days): ?>
-    <div
-        id="dailyPostsEmpty"
-        class="panel empty sales-empty-state"
-        data-sales-i18n="noPostsRange"
-    >
-        No posts in this date range.
-    </div>
-<?php endif; ?>
+<div
+    id="dailyPostsEmpty"
+    class="panel empty sales-empty-state<?= $days ? ' hidden' : '' ?>"
+    data-sales-i18n="noPostsRange"
+>
+    No posts in this date range.
+</div>
 
 <div class="daily-load-more-wrap">
     <button

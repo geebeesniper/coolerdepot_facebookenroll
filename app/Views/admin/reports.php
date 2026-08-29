@@ -62,27 +62,30 @@
 </div>
 
 <?php if ($salesUserId > 0): ?>
-<div class="panel">
-    <h2><?= Util::e(ucfirst($period)) ?> Admin Review</h2>
+<div class="panel unified-review-redirect">
+    <div>
+        <div class="eyebrow">
+            <?= Util::e(ucfirst($period)) ?> Review
+        </div>
+        <h2>Sales Management Review</h2>
+        <p>
+            Rating, notes, and review history are managed in the
+            Sales Activity &amp; Attendance dashboard so there is only
+            one review interface.
+        </p>
+    </div>
 
-    <form method="post" enctype="multipart/form-data" action="<?= $config['app']['base_path'] ?>/admin/period/review">
-        <input type="hidden" name="_csrf" value="<?= Util::e(Csrf::token()) ?>">
-        <input type="hidden" name="sales_user_id" value="<?= (int)$salesUserId ?>">
-        <input type="hidden" name="period_type" value="<?= Util::e($period) ?>">
-        <input type="hidden" name="period_start" value="<?= Util::e($start) ?>">
-        <input type="hidden" name="period_end" value="<?= Util::e($end) ?>">
-<?php
-$fieldName = 'note';
-$fieldId = 'admin-note';
-$noteValue = '';
-require __DIR__ . '/_html_note_editor.php';
-?>
-
-
-        <label>Images</label>
-        <input type="file" name="images[]" multiple accept="image/jpeg,image/png,image/webp">
-
-        <button class="btn primary">Save Review</button>
-    </form>
+    <a
+        class="btn primary"
+        href="<?= Util::e(
+            $config['app']['base_path']
+            .'/admin?date='.rawurlencode($start)
+            .'&period='.rawurlencode($period)
+            .'&sales_id='.(int)$salesUserId
+            .'&review=1'
+        ) ?>"
+    >
+        Open <?= Util::e(ucfirst($period)) ?> Review
+    </a>
 </div>
 <?php endif; ?>

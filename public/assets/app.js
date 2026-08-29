@@ -509,15 +509,82 @@ $('#salesRangeForm').on('submit',function(event){
     event.preventDefault();
     $('#salesRangeApply').trigger('click');
 });
+let salesRangeRequest=null;
+
+function renderSalesRangeData(data,range){
+    const $wrap=$('#dailyPosts');
+    const $empty=$('#dailyPostsEmpty');
+    const $load=$('#loadMoreDailyPosts');
+    const summary=data.summary||{};
+
+    $wrap
+        .html(data.html||'')
+        .attr('data-from',range.from)
+        .attr('data-to',range.to)
+        .attr('data-offset',data.next_offset||0);
+
+    $('[data-sales-summary="posts"]').text(parseInt(summary.post_count,10)||0);
+    $('[data-sales-summary="good"]').text(parseInt(summary.good_count,10)||0);
+    $('[data-sales-summary="bad"]').text(parseInt(summary.bad_count,10)||0);
+    $('[data-sales-summary="unreviewed"]').text(parseInt(summary.unreviewed_count,10)||0);
+
+    const hasDays=(parseInt(data.total_days,10)||0)>0;
+    $empty.toggleClass('hidden',hasDays);
+
+    if(data.has_more){
+        $load.prop('disabled',false).show();
+        $load.find('[data-sales-i18n="loadEarlier"]').text(salesTr('loadEarlier'));
+    }else{
+        $load.prop('disabled',true).hide();
+    }
+
+    $('#dailyLoadStatus').text('');
+    applySalesLanguage();
+
+    const url=new URL(window.location.href);
+    url.searchParams.set('from',range.from);
+    url.searchParams.set('to',range.to);
+    window.history.replaceState({},'',url.toString());
+}
+
 $('#salesRangeApply').on('click',function(){
     const range=syncSalesRangeConstraints('');
     if(!range)return;
 
-    const action=String($('#salesRangeForm').attr('action')||window.location.pathname);
-    const url=new URL(action,window.location.origin);
-    url.searchParams.set('from',range.from);
-    url.searchParams.set('to',range.to);
-    window.location.assign(url.toString());
+    const $button=$(this);
+    if(salesRangeRequest&&salesRangeRequest.readyState!==4){
+        salesRangeRequest.abort();
+    }
+
+    $button.prop('disabled',true);
+    $('#dailyLoadStatus').text(salesTr('loading'));
+
+    salesRangeRequest=$.ajax({
+        url:window.CD_BASE_PATH+'/sales/daily-posts',
+        method:'GET',
+        dataType:'json',
+        cache:false,
+        data:{
+            from:range.from,
+            to:range.to,
+            offset:0,
+            limit:parseInt($('#dailyPosts').data('limit')||3,10)
+        }
+    })
+    .done(function(data){
+        if(!data||!data.ok){
+            $('#dailyLoadStatus').text((data&&data.message)||salesTr('loadEarlierFailed'));
+            return;
+        }
+        renderSalesRangeData(data,range);
+    })
+    .fail(function(xhr,status){
+        if(status==='abort')return;
+        $('#dailyLoadStatus').text((xhr.responseJSON&&xhr.responseJSON.message)||salesTr('loadEarlierFailed'));
+    })
+    .always(function(){
+        $button.prop('disabled',false);
+    });
 });
 syncSalesRangeConstraints('');
 
@@ -563,6 +630,12 @@ $('#inspectForm').on('submit',function(e){
 
     $('#postUrl').removeClass('field-error');
     setSalesSubmitMessage('',null);
+
+    $('#salesPostSaveComplete').addClass('hidden');
+    $('#saveButton')
+        .removeClass('saved')
+        .find('span')
+        .text(salesTr('saveVerified'));
 
     const $b=$('#inspectButton');
     const $p=$('#inspectionProgress');
@@ -678,6 +751,43 @@ $('#inspectForm').on('submit',function(e){
     });
 });
 
+$('#salesVerifiedSaveForm').on('submit',function(event){
+    event.preventDefault();
+    const $form=$(this);
+    const $button=$('#saveButton');
+    if($button.prop('disabled'))return;
+
+    $button.prop('disabled',true).find('span').text(salesTr('savingPost'));
+    setSalesSubmitMessage('',null);
+
+    $.ajax({
+        url:$form.attr('action'),
+        method:'POST',
+        dataType:'json',
+        data:$form.serialize(),
+        headers:{
+            'X-Requested-With':'XMLHttpRequest',
+            'Accept':'application/json'
+        }
+    })
+    .done(function(data){
+        if(!data||!data.ok){
+            setSalesSubmitMessage((data&&data.message)||salesTr('inspectionFailed'),'error');
+            $button.prop('disabled',false).find('span').text(salesTr('saveVerified'));
+            return;
+        }
+
+        setSalesSubmitMessage(data.message||salesTr('postSaved'),'ok');
+        $button.addClass('saved').find('span').text('Saved ✓');
+        $('#inspectionToken').val('');
+        $('#salesPostSaveComplete').removeClass('hidden').find('span').first().text(salesTr('postSaved'));
+    })
+    .fail(function(xhr){
+        setSalesSubmitMessage((xhr.responseJSON&&xhr.responseJSON.message)||salesTr('inspectionFailed'),'error');
+        $button.prop('disabled',false).find('span').text(salesTr('saveVerified'));
+    });
+});
+
     const savedView=localStorage.getItem('cdsp-sales-post-view')||'grid';
 
     function setPostView(v){
@@ -707,8 +817,8 @@ $('#inspectForm').on('submit',function(e){
             return;
         }
 
-        const from = $wrap.data('from');
-        const to = $wrap.data('to');
+        const from = String($wrap.attr('data-from') || '');
+        const to = String($wrap.attr('data-to') || '');
         const offset = parseInt($wrap.attr('data-offset') || '0', 10);
         const limit = parseInt($wrap.data('limit') || '3', 10);
 
@@ -1705,6 +1815,11 @@ const dashboardI18n={
         addReview:'Add Review',
         editReview:'Edit Review',
         noReviewYet:'No review yet',
+        rating:'Rating',
+        required:'Required',
+        notRated:'Not rated',
+        reviewHistory:'Review History',
+        saves:'saves',
         addManagementReview:'Add a management review for this Sales period.',
         reviewed:'Reviewed',
         reviewedBy:'Reviewed by {name}',
@@ -1774,6 +1889,11 @@ const dashboardI18n={
         addReview:'添加评语',
         editReview:'修改评语',
         noReviewYet:'暂无评语',
+        rating:'评分',
+        required:'必选',
+        notRated:'未评分',
+        reviewHistory:'评语历史',
+        saves:'次保存',
         addManagementReview:'为该销售周期添加管理评语。',
         reviewed:'已评阅',
         reviewedBy:'评阅人：{name}',
@@ -1843,6 +1963,11 @@ const dashboardI18n={
         addReview:'新增評語',
         editReview:'修改評語',
         noReviewYet:'尚無評語',
+        rating:'評分',
+        required:'必選',
+        notRated:'未評分',
+        reviewHistory:'評語歷史',
+        saves:'次儲存',
         addManagementReview:'為此銷售週期新增管理評語。',
         reviewed:'已評閱',
         reviewedBy:'評閱人：{name}',
@@ -1912,6 +2037,11 @@ const dashboardI18n={
         addReview:'Añadir revisión',
         editReview:'Editar revisión',
         noReviewYet:'Sin revisión todavía',
+        rating:'Calificación',
+        required:'Obligatorio',
+        notRated:'Sin calificar',
+        reviewHistory:'Historial de revisión',
+        saves:'guardados',
         addManagementReview:'Añade una revisión de gestión para este período de ventas.',
         reviewed:'Revisado',
         reviewedBy:'Revisado por {name}',
@@ -2125,6 +2255,9 @@ function applyDashboardLanguage(){
         .replaceWith(tr('decision')+' ');
 
     $('.review-required').text(tr('required'));
+    $('#salesPeriodReviewRatingField .sales-review-rating-label strong').text(tr('rating'));
+    $('#salesPeriodReviewRatingField .sales-review-rating-label span').text(tr('required'));
+    $('.sales-review-save-history-head span').text(tr('reviewHistory'));
 
     $('.review-decision-option.good strong').text(tr('good'));
     $('.review-decision-option.bad strong').text(
@@ -2199,13 +2332,23 @@ function applyDashboardLanguage(){
     const $expandedReviewNote = $('#salesExpandedReviewNote');
     const $expandedReviewMeta = $('#salesExpandedReviewMeta');
     const $expandedReviewEdit = $('#salesExpandedReviewEdit');
+    const $expandedReviewRating = $('#salesExpandedReviewRating');
 
     const $periodReviewModal = $('#salesPeriodReviewModal');
     const $periodReviewForm = $('#salesPeriodReviewForm');
     const $periodReviewSave = $('#salesPeriodReviewSave');
     const $periodReviewMessage = $('#salesPeriodReviewMessage');
+    const $periodReviewRating = $('#salesPeriodReviewRating');
+    const $periodReviewStars = $('#salesPeriodReviewStars');
+    const $periodReviewRatingText = $('#salesPeriodReviewRatingText');
+    const $periodReviewRatingError = $('#salesPeriodReviewRatingError');
+    const $periodReviewHistory = $('#salesPeriodReviewHistory');
+    const $periodReviewHistoryCount = $('#salesPeriodReviewHistoryCount');
 
     let currentSalesPeriodReview = null;
+    let openReviewAfterExpand = false;
+    const initialSalesId=parseInt($live.attr('data-initial-sales-id')||'0',10)||0;
+    const initialOpenReview=String($live.attr('data-initial-open-review')||'0')==='1';
 
     const $modal = $('#dashboardReviewModal');
     const $modalForm = $('#dashboardReviewForm');
@@ -2563,13 +2706,8 @@ function syncExpandedSalesCardFromTiles(){
 
         const $dailyReview = $card.find('[data-daily-review]');
 
-        if(period === 'day'){
-            $dailyReview
-                .removeClass('hidden')
-                .attr(
-                    'href',
-                    row.daily_review_url || '#'
-                );
+        if(period==='day'){
+            $dailyReview.removeClass('hidden');
         }else{
             $dailyReview.addClass('hidden');
         }
@@ -2697,6 +2835,41 @@ function setHtmlNoteValue($root,html){
         .trigger('click');
 }
 
+function salesRatingStars(rating){
+    rating=parseInt(rating,10)||0;
+    return Array.from({length:5},function(_,index){return index<rating?'★':'☆';}).join('');
+}
+
+function setSalesPeriodRating(rating){
+    rating=parseInt(rating,10)||0;
+    $periodReviewRating.val(rating>=1&&rating<=5?rating:'');
+    $periodReviewStars.find('[data-rating-star]').each(function(){
+        const value=parseInt($(this).data('rating-star'),10)||0;
+        $(this).toggleClass('active',rating>=value).attr('aria-checked',rating===value?'true':'false');
+    });
+    $periodReviewRatingText.text(rating?salesRatingStars(rating)+' '+rating+'/5':'Not rated');
+    $periodReviewRatingError.addClass('hidden');
+    $('#salesPeriodReviewRatingField').removeClass('has-error');
+}
+
+function renderSalesReviewHistory(items){
+    items=Array.isArray(items)?items:[];
+    $periodReviewHistoryCount.text(items.length+' '+tr('saves'));
+    if(!items.length){
+        $periodReviewHistory.html('<div class="sales-review-history-empty">'+escapeHtml(tr('notRated'))+'</div>');
+        return;
+    }
+    $periodReviewHistory.html(items.map(function(item){
+        const rating=parseInt(item.rating,10)||0;
+        const note=String(item.note||'').trim();
+        return '<article class="sales-review-history-item">'
+            +'<div class="sales-review-history-meta"><strong>'+escapeHtml(item.admin_name||'Administrator')+'</strong><span>'+escapeHtml(commentDateLabel(item.created_at))+'</span></div>'
+            +'<div class="sales-review-history-rating">'+(rating?escapeHtml(salesRatingStars(rating)+' '+rating+'/5'):escapeHtml(tr('notRated')))+'</div>'
+            +(note?'<div class="sales-review-history-note">'+note+'</div>':'')
+            +'</article>';
+    }).join(''));
+}
+
 function renderSalesPeriodReview(review){
     currentSalesPeriodReview=review||null;
 
@@ -2713,6 +2886,7 @@ function renderSalesPeriodReview(review){
                 ?tr('monthlyReview')
                 :tr('dailyReview');
     const note=String(review.note||'');
+    const rating=parseInt(review.rating,10)||0;
 
     $expandedReviewLabel.text(label);
     $expandedReviewState.text(
@@ -2720,6 +2894,10 @@ function renderSalesPeriodReview(review){
             ?tr('saved')
             :tr('noReviewYet')
     );
+
+    $expandedReviewRating
+        .toggleClass('hidden',rating<1)
+        .text(rating?salesRatingStars(rating)+' '+rating+'/5':'');
 
     $expandedReviewNote
         .toggleClass('empty',!note.trim())
@@ -2793,6 +2971,9 @@ function openSalesPeriodReviewEditor(){
     $('#salesPeriodReviewModalSubtitle').text(
         review.period_label||''
     );
+
+    setSalesPeriodRating(review.rating||0);
+    renderSalesReviewHistory(review.history||[]);
 
     setHtmlNoteValue(
         $periodReviewModal.find('[data-html-note]').first(),
@@ -2997,10 +3178,17 @@ function renderPostGrid(data){
         .done(function(data){
             if(
                 data
-                && data.ok
-                && expandedSalesId === salesId
+                &&data.ok
+                &&expandedSalesId===salesId
             ){
                 renderPostGrid(data);
+
+                if(openReviewAfterExpand){
+                    openReviewAfterExpand=false;
+                    setTimeout(function(){
+                        openSalesPeriodReviewEditor();
+                    },0);
+                }
             }
         })
         .fail(function(xhr, status){
@@ -3130,6 +3318,8 @@ function renderPostGrid(data){
             $grid.removeClass('dashboard-date-syncing period-loading');
             $('#dashboardPeriodSwitch [data-period]').prop('disabled',false);
         });
+
+        return periodRequest;
     }
 
     function reloadCurrentProgress(options){
@@ -3141,7 +3331,7 @@ function renderPostGrid(data){
             options.date=currentDate;
             options.period=currentPeriod;
         }
-        loadProgress(options);
+        return loadProgress(options);
     }
 
 $('#appLanguageSwitch').on(
@@ -3240,6 +3430,19 @@ $('#appLanguageSwitch').on(
         loadProgress({date:today,period:'day'});
     });
 
+    $grid.on('click','[data-daily-review]',function(event){
+        event.preventDefault();
+        event.stopPropagation();
+        const $card=$(this).closest('.sales-progress-card');
+        openReviewAfterExpand=true;
+        if(expandedSalesId===parseInt($card.attr('data-sales-id'),10)){
+            openSalesPeriodReviewEditor();
+            openReviewAfterExpand=false;
+            return;
+        }
+        openExpandedPosts($card);
+    });
+
     $grid.on('click', '[data-card-toggle]', function(event){
         if(
             $(event.target).closest(
@@ -3273,6 +3476,19 @@ $('#appLanguageSwitch').on(
         closeExpandedPosts();
     });
 
+$periodReviewStars.on('click','[data-rating-star]',function(){
+    setSalesPeriodRating(parseInt($(this).data('rating-star'),10)||0);
+});
+
+$periodReviewStars.on('mouseenter','[data-rating-star]',function(){
+    const hover=parseInt($(this).data('rating-star'),10)||0;
+    $periodReviewStars.find('[data-rating-star]').each(function(){
+        $(this).toggleClass('hover',(parseInt($(this).data('rating-star'),10)||0)<=hover);
+    });
+}).on('mouseleave',function(){
+    $(this).find('[data-rating-star]').removeClass('hover');
+});
+
 $expandedReviewEdit.on('click',function(){
     openSalesPeriodReviewEditor();
 });
@@ -3294,6 +3510,15 @@ $periodReviewForm.on('submit',function(event){
     event.preventDefault();
 
     if(!salesReviewSaveUrl||!expandedSalesId){
+        return;
+    }
+
+    const rating=parseInt($periodReviewRating.val(),10)||0;
+
+    if(rating<1||rating>5){
+        $('#salesPeriodReviewRatingField').addClass('has-error');
+        $periodReviewRatingError.removeClass('hidden');
+        $periodReviewStars.find('[data-rating-star]').first().trigger('focus');
         return;
     }
 
@@ -3348,12 +3573,14 @@ $periodReviewForm.on('submit',function(event){
     .fail(function(xhr){
         const data=xhr.responseJSON||{};
 
+        if(data.field==='rating'){
+            $('#salesPeriodReviewRatingField').addClass('has-error');
+            $periodReviewRatingError.removeClass('hidden').text(data.message||'Choose 1–5 stars.');
+        }
+
         $periodReviewMessage
             .addClass('error')
-            .text(
-                data.message
-                ||'Could not save review.'
-            );
+            .text(data.message||'Could not save review.');
     })
     .always(function(){
         if(!$periodReviewSave.hasClass('saved')){
@@ -5176,7 +5403,20 @@ $modalForm.on('submit', function(event){
 
     syncAdminRangeInputs();
     updateBackToday();
-    reloadCurrentProgress({initial:true});
+    const initialProgressRequest=reloadCurrentProgress({initial:true});
+
+    if(initialProgressRequest&&initialSalesId){
+        initialProgressRequest.done(function(){
+            const $card=$grid.find(
+                '.sales-progress-card[data-sales-id="'
+                +initialSalesId
+                +'"]'
+            );
+            if(!$card.length)return;
+            openReviewAfterExpand=initialOpenReview;
+            openExpandedPosts($card);
+        });
+    }
 
     checkDashboardActivity();
     activityTimer = setInterval(checkDashboardActivity, 5000);

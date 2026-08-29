@@ -5585,3 +5585,70 @@ body.review-modal-open{
 .sales-range-apply{position:relative;z-index:2;min-height:38px;pointer-events:auto;cursor:pointer;}
 @media(pointer:coarse){.admin-range-field input,.sales-range-apply{min-height:44px;}}
 @media(max-width:560px){.admin-range-controls,.dashboard-date-control-row{width:100%;}.admin-range-field{flex:1 1 130px;}.admin-range-field input{width:100%;}}
+
+/* v0.1.43 Unified people Review + clickable rating + AJAX Sales UX */
+.sales-daily-review{min-height:34px;border:1px solid #bfdbfe;border-radius:4px;background:#eff6ff;color:#1d4ed8;cursor:pointer;font-size:8px;font-weight:900;}
+.sales-daily-review:hover,.sales-daily-review:focus{border-color:#60a5fa;background:#dbeafe;outline:none;}
+.sales-period-review-rating{display:inline-flex;margin-top:8px;padding:5px 7px;border:1px solid #fde68a;border-radius:4px;background:#fffbeb;color:#92400e;font-size:10px;font-weight:900;}
+.sales-period-review-rating.hidden{display:none;}
+.sales-review-rating-field{margin-bottom:14px;padding:11px 12px;border:1px solid #dbe3ee;border-radius:4px;background:#f8fafc;}
+.sales-review-rating-field.has-error{border-color:#ef4444;background:#fff7f7;}
+.sales-review-rating-label{display:flex;align-items:center;gap:7px;margin-bottom:7px;}
+.sales-review-rating-label strong{color:#0f172a;font-size:10px;}
+.sales-review-rating-label span{color:#b42318;font-size:7px;font-weight:900;text-transform:uppercase;}
+.sales-star-rating{display:flex;align-items:center;gap:2px;min-height:40px;}
+.sales-star-button{width:38px;height:38px;padding:0;border:1px solid transparent;border-radius:4px;background:transparent;color:#cbd5e1;cursor:pointer;font-size:27px;line-height:1;}
+.sales-star-button.active,.sales-star-button.hover{color:#f59e0b;}
+.sales-star-button:hover,.sales-star-button:focus{border-color:#fcd34d;background:#fffbeb;outline:none;}
+.sales-star-rating > strong{margin-left:8px;color:#475569;font-size:9px;}
+.sales-review-rating-error{margin-top:4px;color:#b42318;font-size:8px;font-weight:900;}
+.sales-review-rating-error.hidden{display:none;}
+.sales-review-save-history{margin-top:14px;border:1px solid #dbe3ee;border-radius:4px;overflow:hidden;}
+.sales-review-save-history-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 10px;border-bottom:1px solid #e2e8f0;background:#f8fafc;}
+.sales-review-save-history-head span{color:#334155;font-size:8px;font-weight:900;text-transform:uppercase;}
+.sales-review-save-history-head strong{color:#64748b;font-size:8px;}
+.sales-review-save-history-list{max-height:240px;overflow:auto;padding:8px;}
+.sales-review-history-item{padding:9px 10px;border:1px solid #e2e8f0;border-radius:4px;background:#fff;}
+.sales-review-history-item + .sales-review-history-item{margin-top:7px;}
+.sales-review-history-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.sales-review-history-meta strong{color:#0f172a;font-size:9px;}
+.sales-review-history-meta span{color:#64748b;font-size:7px;}
+.sales-review-history-rating{margin-top:5px;color:#b45309;font-size:10px;font-weight:900;}
+.sales-review-history-note{margin-top:6px;color:#475569;font-size:9px;line-height:1.45;}
+.sales-review-history-empty{padding:14px;color:#94a3b8;text-align:center;font-size:9px;}
+.sales-post-save-complete{margin-top:10px;padding:10px;border:1px solid #86efac;border-radius:4px;background:#f0fdf4;}
+.sales-post-save-complete.hidden{display:none;}
+.sales-post-save-complete strong,.sales-post-save-complete span{display:block;}
+.sales-post-save-complete strong{color:#166534;font-size:11px;}
+.sales-post-save-complete span{margin:3px 0 8px;color:#15803d;font-size:9px;}
+#saveButton.saved{background:#15803d;color:#fff;}
+@media(pointer:coarse){.sales-daily-review{min-height:44px;}.sales-star-button{width:46px;height:46px;font-size:31px;}}
+@media(max-width:520px){.sales-star-rating{flex-wrap:wrap;}.sales-review-history-meta{align-items:flex-start;flex-direction:column;}}
+
+
+.unified-review-redirect{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+}
+.unified-review-redirect h2{
+    margin:3px 0 5px;
+}
+.unified-review-redirect p{
+    max-width:720px;
+    margin:0;
+    color:#64748b;
+    font-size:10px;
+    line-height:1.5;
+}
+@media(max-width:620px){
+    .unified-review-redirect{
+        align-items:stretch;
+        flex-direction:column;
+    }
+    .unified-review-redirect .btn{
+        width:100%;
+        justify-content:center;
+    }
+}

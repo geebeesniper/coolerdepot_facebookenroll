@@ -244,6 +244,15 @@ class AdminController extends Controller{
         $note=HtmlNoteSanitizer::clean(
             (string)($_POST['note']??'')
         );
+        $rating=(int)($_POST['rating']??0);
+
+        if($rating<1||$rating>5){
+            $this->json([
+                'ok'=>false,
+                'field'=>'rating',
+                'message'=>'Choose a rating from 1 to 5 stars.',
+            ],422);
+        }
 
         $salesUser=User::find($salesUserId);
 
@@ -264,66 +273,51 @@ class AdminController extends Controller{
         );
 
         $pdo=Database::connection();
+        $pdo->beginTransaction();
 
-        if($period==='day'){
-            $s=$pdo->prepare(
-                "INSERT INTO cdsp_daily_sales_reviews(
-                    sales_user_id,
-                    work_date,
-                    admin_user_id,
-                    rating,
-                    note,
-                    reviewed_at,
-                    created_at,
-                    updated_at
-                 )
-                 VALUES(?,?,?,NULL,?,NOW(),NOW(),NOW())
-                 ON DUPLICATE KEY UPDATE
-                    admin_user_id=VALUES(admin_user_id),
-                    rating=NULL,
-                    note=VALUES(note),
-                    reviewed_at=NOW(),
-                    updated_at=NOW()"
+        try{
+            if($period==='day'){
+                $q=$pdo->prepare(
+                    "INSERT INTO cdsp_daily_sales_reviews(
+                        sales_user_id,work_date,admin_user_id,rating,note,reviewed_at,created_at,updated_at
+                     ) VALUES(?,?,?,?,?,NOW(),NOW(),NOW())
+                     ON DUPLICATE KEY UPDATE
+                        admin_user_id=VALUES(admin_user_id),
+                        rating=VALUES(rating),
+                        note=VALUES(note),
+                        reviewed_at=NOW(),
+                        updated_at=NOW()"
+                );
+                $q->execute([$salesUserId,$periodInfo['from'],(int)$admin['id'],$rating,$note]);
+            }else{
+                $q=$pdo->prepare(
+                    "INSERT INTO cdsp_period_sales_reviews(
+                        sales_user_id,period_type,period_start,period_end,admin_user_id,rating,note,reviewed_at,created_at,updated_at
+                     ) VALUES(?,?,?,?,?,?,?,NOW(),NOW(),NOW())
+                     ON DUPLICATE KEY UPDATE
+                        period_end=VALUES(period_end),
+                        admin_user_id=VALUES(admin_user_id),
+                        rating=VALUES(rating),
+                        note=VALUES(note),
+                        reviewed_at=NOW(),
+                        updated_at=NOW()"
+                );
+                $q->execute([$salesUserId,$period,$periodInfo['from'],$periodInfo['to'],(int)$admin['id'],$rating,$note]);
+            }
+
+            $history=$pdo->prepare(
+                "INSERT INTO cdsp_sales_review_history(
+                    sales_user_id,period_type,period_start,period_end,admin_user_id,rating,note,created_at
+                 ) VALUES(?,?,?,?,?,?,?,NOW())"
             );
-
-            $s->execute([
-                $salesUserId,
-                $periodInfo['from'],
-                (int)$admin['id'],
-                $note,
-            ]);
-        }else{
-            $s=$pdo->prepare(
-                "INSERT INTO cdsp_period_sales_reviews(
-                    sales_user_id,
-                    period_type,
-                    period_start,
-                    period_end,
-                    admin_user_id,
-                    rating,
-                    note,
-                    reviewed_at,
-                    created_at,
-                    updated_at
-                 )
-                 VALUES(?,?,?,?,?,NULL,?,NOW(),NOW(),NOW())
-                 ON DUPLICATE KEY UPDATE
-                    period_end=VALUES(period_end),
-                    admin_user_id=VALUES(admin_user_id),
-                    rating=NULL,
-                    note=VALUES(note),
-                    reviewed_at=NOW(),
-                    updated_at=NOW()"
-            );
-
-            $s->execute([
-                $salesUserId,
-                $period,
-                $periodInfo['from'],
-                $periodInfo['to'],
-                (int)$admin['id'],
-                $note,
-            ]);
+            $history->execute([$salesUserId,$period,$periodInfo['from'],$periodInfo['to'],(int)$admin['id'],$rating,$note]);
+            $pdo->commit();
+        }catch(\Throwable $e){
+            if($pdo->inTransaction())$pdo->rollBack();
+            $this->json([
+                'ok'=>false,
+                'message'=>'Sales review save failed: '.$e->getMessage(),
+            ],422);
         }
 
         $review=$this->dashboardSalesReviewData(
@@ -1076,6 +1070,7 @@ private function dashboardSalesReviewData(
         $s=Database::connection()->prepare(
             "SELECT
                 r.id,
+                r.rating,
                 r.note,
                 r.reviewed_at,
                 r.updated_at,
@@ -1096,6 +1091,7 @@ private function dashboardSalesReviewData(
         $s=Database::connection()->prepare(
             "SELECT
                 r.id,
+                r.rating,
                 r.note,
                 r.reviewed_at,
                 r.updated_at,
@@ -1131,6 +1127,9 @@ private function dashboardSalesReviewData(
         'from'=>(string)$periodInfo['from'],
         'to'=>(string)$periodInfo['to'],
         'period_label'=>(string)$periodInfo['label'],
+        'rating'=>$row && (int)($row['rating']??0)>0
+            ? (int)$row['rating']
+            : null,
         'note'=>$row ? (string)$row['note'] : '',
         'reviewed_at'=>$row
             ? (string)($row['reviewed_at']??$row['updated_at'])
@@ -1138,10 +1137,41 @@ private function dashboardSalesReviewData(
         'admin_name'=>$row
             ? (string)$row['admin_name']
             : null,
+        'history'=>$this->dashboardSalesReviewHistory(
+            $salesUserId,
+            $period,
+            (string)$periodInfo['from']
+        ),
         'exists'=>(bool)$row,
     ];
 }
 
+
+    private function dashboardSalesReviewHistory(
+        int $salesUserId,
+        string $period,
+        string $periodStart
+    ):array{
+        $q=Database::connection()->prepare(
+            "SELECT h.id,h.rating,h.note,h.created_at,u.display_name AS admin_name
+             FROM cdsp_sales_review_history h
+             JOIN cdsp_users u ON u.id=h.admin_user_id
+             WHERE h.sales_user_id=? AND h.period_type=? AND h.period_start=?
+             ORDER BY h.created_at DESC,h.id DESC"
+        );
+        $q->execute([$salesUserId,$period,$periodStart]);
+        $rows=[];
+        foreach($q->fetchAll() as $row){
+            $rows[]=[
+                'id'=>(int)$row['id'],
+                'rating'=>(int)($row['rating']??0)>0 ? (int)$row['rating'] : null,
+                'note'=>(string)($row['note']??''),
+                'admin_name'=>(string)$row['admin_name'],
+                'created_at'=>(string)$row['created_at'],
+            ];
+        }
+        return $rows;
+    }
 
     private function dashboardRequestContext(array $source):array{
         $rawFrom=trim((string)($source['from']??''));
@@ -1293,11 +1323,6 @@ private function dashboardSalesReviewData(
                 )
                 : 0;
             $row['target_met']=$postCount >= $periodTarget;
-            $row['daily_review_url']=
-                $GLOBALS['config']['app']['base_path']
-                .'/admin/daily?sales_id='
-                .(int)$row['sales_user_id']
-                .'&date='.rawurlencode($from);
 
             if ($period==='day') {
                 $row['view_url']=
@@ -1506,18 +1531,34 @@ public function savePostReview():void{
 }
 
     public function dailyReview():void{
-        $admin=Auth::requireRole('admin');$sid=(int)($_GET['sales_id']??0);$date=$_GET['date']??date('Y-m-d');$salesUser=User::find($sid);
-        if(!$salesUser||$salesUser['role']!=='sales'){http_response_code(404);exit('Sales user not found');}
-        $posts=Post::forSales($sid,$date,$date);$s=Database::connection()->prepare("SELECT * FROM cdsp_daily_sales_reviews WHERE sales_user_id=? AND work_date=? LIMIT 1");$s->execute([$sid,$date]);$review=$s->fetch()?:null;
-        $attachments=$review?$this->attachments('daily_review',(int)$review['id']):[];$this->render('admin/daily_review',compact('admin','salesUser','date','posts','review','attachments'));
+        Auth::requireRole('admin');
+        $sid=(int)($_GET['sales_id']??0);
+        $date=$this->validDashboardDate((string)($_GET['date']??date('Y-m-d')));
+        $salesUser=User::find($sid);
+        if(!$salesUser||($salesUser['role']??'')!=='sales'){http_response_code(404);exit('Sales user not found');}
+        $this->redirect('/admin?date='.rawurlencode($date).'&period=day&sales_id='.$sid.'&review=1');
     }
-    public function saveDailyReview():void{
-        $admin=Auth::requireRole('admin');Csrf::verify($_POST['_csrf']??null);$sid=(int)$_POST['sales_user_id'];$date=(string)$_POST['work_date'];$note = HtmlNoteSanitizer::clean((string)($_POST['note'] ?? ''));
-        $pdo=Database::connection();$s=$pdo->prepare("INSERT INTO cdsp_daily_sales_reviews(sales_user_id,work_date,admin_user_id,rating,note,reviewed_at,created_at,updated_at) VALUES(?,?,?,NULL,?,NOW(),NOW(),NOW())
-        ON DUPLICATE KEY UPDATE admin_user_id=VALUES(admin_user_id),rating=NULL,note=VALUES(note),reviewed_at=NOW(),updated_at=NOW()");
-        $s->execute([$sid,$date,(int)$admin['id'],$note]);$s=$pdo->prepare("SELECT id FROM cdsp_daily_sales_reviews WHERE sales_user_id=? AND work_date=?");$s->execute([$sid,$date]);$rid=(int)$s->fetchColumn();(new UploadService())->save('daily_review',$rid,(int)$admin['id']);
-        $_SESSION['flash_success']='Daily review saved.';$this->redirect('/admin/daily?sales_id='.$sid.'&date='.urlencode($date));
-    }
+public function saveDailyReview():void{
+    Auth::requireRole('admin');
+    Csrf::verify($_POST['_csrf']??null);
+
+    $sid=(int)($_POST['sales_user_id']??0);
+    $date=$this->validDashboardDate(
+        (string)($_POST['work_date']??date('Y-m-d'))
+    );
+
+    $_SESSION['flash_error']=
+        'Daily Review now uses the unified Dashboard review. '
+        .'Choose a 1–5 star rating and save it there.';
+
+    $this->redirect(
+        '/admin?date='.rawurlencode($date)
+        .'&period=day'
+        .'&sales_id='.$sid
+        .'&review=1'
+    );
+}
+
     public function reports():void{
         $admin=Auth::requireRole('admin');$period=$_GET['period']??'week';$sid=(int)($_GET['sales_id']??0);$sales=User::allSales();
         if($period==='month'){$start=$_GET['start']??date('Y-m-01');$end=date('Y-m-t',strtotime($start));}else{$period='week';$start=$_GET['start']??date('Y-m-d',strtotime('monday this week'));$end=date('Y-m-d',strtotime($start.' +6 days'));}
@@ -1526,13 +1567,34 @@ public function savePostReview():void{
         FROM cdsp_users u LEFT JOIN cdsp_sales_posts p ON p.sales_user_id=u.id AND p.created_at BETWEEN ? AND ? AND p.deleted_at IS NULL WHERE u.role='sales' AND u.active=1 {$filter} GROUP BY u.id,u.display_name ORDER BY total_posts DESC,u.display_name";
         $s=Database::connection()->prepare($sql);$s->execute($params);$rows=$s->fetchAll();$salesUserId=$sid;$this->render('admin/reports',compact('admin','period','start','end','salesUserId','sales','rows'));
     }
-    public function savePeriodReview():void{
-        $admin=Auth::requireRole('admin');Csrf::verify($_POST['_csrf']??null);$sid=(int)$_POST['sales_user_id'];$type=(string)$_POST['period_type'];$start=(string)$_POST['period_start'];$end=(string)$_POST['period_end'];$note = HtmlNoteSanitizer::clean((string)($_POST['note'] ?? ''));
-        $s=Database::connection()->prepare("INSERT INTO cdsp_period_sales_reviews(sales_user_id,period_type,period_start,period_end,admin_user_id,rating,note,reviewed_at,created_at,updated_at) VALUES(?,?,?,?,?,NULL,?,NOW(),NOW(),NOW())
-        ON DUPLICATE KEY UPDATE period_end=VALUES(period_end),admin_user_id=VALUES(admin_user_id),rating=NULL,note=VALUES(note),reviewed_at=NOW(),updated_at=NOW()");
-        $s->execute([$sid,$type,$start,$end,(int)$admin['id'],$note]);$s=Database::connection()->prepare("SELECT id FROM cdsp_period_sales_reviews WHERE sales_user_id=? AND period_type=? AND period_start=?");$s->execute([$sid,$type,$start]);$rid=(int)$s->fetchColumn();(new UploadService())->save('period_review',$rid,(int)$admin['id']);
-        $_SESSION['flash_success']=ucfirst($type).' review saved.';$this->redirect('/admin/reports?period='.$type.'&start='.urlencode($start).'&sales_id='.$sid);
+public function savePeriodReview():void{
+    Auth::requireRole('admin');
+    Csrf::verify($_POST['_csrf']??null);
+
+    $sid=(int)($_POST['sales_user_id']??0);
+    $type=(string)($_POST['period_type']??'week');
+
+    if(!in_array($type,['week','month'],true)){
+        $type='week';
     }
+
+    $start=$this->validDashboardDate(
+        (string)($_POST['period_start']??date('Y-m-d'))
+    );
+
+    $_SESSION['flash_error']=
+        ucfirst($type)
+        .' Review now uses the unified Dashboard review. '
+        .'Choose a 1–5 star rating and save it there.';
+
+    $this->redirect(
+        '/admin?date='.rawurlencode($start)
+        .'&period='.rawurlencode($type)
+        .'&sales_id='.$sid
+        .'&review=1'
+    );
+}
+
     public function handleDeleteRequest():void{
         $admin=Auth::requireRole('admin');Csrf::verify($_POST['_csrf']??null);$id=(int)$_POST['request_id'];$action=(string)$_POST['action'];$pdo=Database::connection();$pdo->beginTransaction();
         try{$s=$pdo->prepare("SELECT * FROM cdsp_deletion_requests WHERE id=? AND status='pending' FOR UPDATE");$s->execute([$id]);$r=$s->fetch();if(!$r)throw new \RuntimeException('Request not found');
