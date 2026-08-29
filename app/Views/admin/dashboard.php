@@ -38,30 +38,82 @@ $periodNames = [
 <div class="dashboard-refresh-notice hidden" id="dashboardRefreshNotice">
     <div>
         <span class="dashboard-refresh-dot"></span>
-        <strong id="dashboardRefreshTitle">New posts are available</strong>
-        <small id="dashboardRefreshText">
+        <strong
+            id="dashboardRefreshTitle"
+            data-dashboard-i18n="newPosts"
+        >New posts are available</strong>
+        <small
+            id="dashboardRefreshText"
+            data-dashboard-i18n="salesChanged"
+        >
             Sales activity changed since this view was loaded.
         </small>
     </div>
     <button type="button" class="btn" id="dashboardRefreshButton">
-        Refresh
+        <span data-dashboard-i18n="refresh">Refresh</span>
     </button>
 </div>
 
 <div class="page-head admin-page-head">
-    <div>
-        <div class="eyebrow">Administrator</div>
-        <h1>Sales Work Progress</h1>
-        <p class="dashboard-date-copy" id="dashboardPeriodLabel">
-            <?= Util::e($periodInfo['label']) ?>
-        </p>
+    <div class="admin-dashboard-heading">
+        <div
+            class="eyebrow"
+            id="dashboardGreeting"
+            data-admin-name="<?= Util::e((string)($admin['display_name'] ?? 'Administrator')) ?>"
+        >
+            Hi, <?= Util::e((string)($admin['display_name'] ?? 'Administrator')) ?>
+        </div>
+
+        <h1 id="dashboardPageTitle">
+            Sales Activity &amp; Attendance
+        </h1>
     </div>
 
-    <form
-        class="filters dashboard-date-controls"
-        method="get"
-        id="dashboardDateForm"
-    >
+    <div class="dashboard-head-controls">
+        <div
+            class="dashboard-language-switch"
+            id="dashboardLanguageSwitch"
+            aria-label="Language"
+        >
+            <button
+                type="button"
+                class="dashboard-language-button active"
+                data-dashboard-lang="en"
+                aria-pressed="true"
+            >
+                English
+            </button>
+            <button
+                type="button"
+                class="dashboard-language-button"
+                data-dashboard-lang="zh-CN"
+                aria-pressed="false"
+            >
+                简体中文
+            </button>
+            <button
+                type="button"
+                class="dashboard-language-button"
+                data-dashboard-lang="zh-TW"
+                aria-pressed="false"
+            >
+                繁體中文
+            </button>
+            <button
+                type="button"
+                class="dashboard-language-button"
+                data-dashboard-lang="es"
+                aria-pressed="false"
+            >
+                Español
+            </button>
+        </div>
+
+        <form
+            class="filters dashboard-date-controls"
+            method="get"
+            id="dashboardDateForm"
+        >
         <input
             type="hidden"
             name="period"
@@ -83,7 +135,7 @@ $periodNames = [
                 class="btn dashboard-date-view"
                 id="dashboardDateView"
             >
-                View
+                <span data-dashboard-i18n="view">View</span>
             </button>
 
             <button
@@ -91,10 +143,11 @@ $periodNames = [
                 class="dashboard-back-today<?= $date === $today ? ' hidden' : '' ?>"
                 id="dashboardBackToday"
             >
-                Back to today
+                <span data-dashboard-i18n="backToday">Back to today</span>
             </button>
         </div>
-    </form>
+        </form>
+    </div>
 </div>
 
 <section class="admin-sales-progress-section">
@@ -111,7 +164,11 @@ $periodNames = [
                     data-period="<?= Util::e($periodKey) ?>"
                     aria-pressed="<?= $period === $periodKey ? 'true' : 'false' ?>"
                 >
-                    <?= Util::e($periodName) ?>
+                    <span
+                        data-dashboard-period-label="<?= Util::e($periodKey) ?>"
+                    >
+                        <?= Util::e($periodName) ?>
+                    </span>
                 </button>
             <?php endforeach; ?>
         </div>
@@ -120,12 +177,12 @@ $periodNames = [
             <strong id="dashboardSalesCount">
                 <?= count($salesProgress) ?>
             </strong>
-            Sales
+            <span data-dashboard-i18n="sales">Sales</span>
             <span>·</span>
             <strong id="dashboardPostCount">
                 <?= (int)$dashboardState['post_count'] ?>
             </strong>
-            Posts
+            <span data-dashboard-i18n="posts">Posts</span>
         </div>
     </div>
 
@@ -188,7 +245,7 @@ $periodNames = [
                         class="sales-target-badge<?= empty($row['target_met']) ? ' hidden' : '' ?>"
                         data-target-badge
                     >
-                        Target met
+                        <span data-dashboard-i18n="targetMet">Target met</span>
                     </span>
                 </div>
 
@@ -199,7 +256,8 @@ $periodNames = [
                     <span>
                         / <b data-progress-target>
                             <?= (int)$row['period_target'] ?>
-                        </b> posts
+                        </b>
+                        <span data-card-posts-label>posts</span>
                     </span>
                 </div>
 
@@ -207,13 +265,15 @@ $periodNames = [
                     <span>
                         <b data-daily-target-label>
                             <?= (int)$row['daily_target'] ?>
-                        </b>/day
+                        </b><span data-card-per-day>/day</span>
                     </span>
                     <span>
                         <b data-period-days>
                             <?= (int)$periodInfo['days'] ?>
                         </b>
-                        day<?= (int)$periodInfo['days'] === 1 ? '' : 's' ?>
+                        <span data-card-days-label>
+                            day<?= (int)$periodInfo['days'] === 1 ? '' : 's' ?>
+                        </span>
                     </span>
                 </div>
 
@@ -265,15 +325,15 @@ $periodNames = [
                 <div class="sales-progress-meta">
                     <span>
                         <b data-good-count><?= (int)$row['good_count'] ?></b>
-                        Good
+                        <span data-card-good-label>Good</span>
                     </span>
                     <span>
                         <b data-bad-count><?= (int)$row['bad_count'] ?></b>
-                        Issues
+                        <span data-card-issues-label>Issues</span>
                     </span>
                     <span>
                         <b data-unreviewed-count><?= (int)$row['unreviewed_count'] ?></b>
-                        Unreviewed
+                        <span data-card-unreviewed-label>Unreviewed</span>
                     </span>
                 </div>
 
@@ -287,12 +347,16 @@ $periodNames = [
                             data-daily-review
                             href="<?= Util::e($row['daily_review_url']) ?>"
                         >
-                            Daily Review
+                            <span data-card-daily-review-label>
+                                Daily Review
+                            </span>
                         </a>
 
                         <div class="sales-target-editor">
                             <label>
-                                Daily Target
+                                <span data-card-daily-target-label>
+                                    Daily Target
+                                </span>
                                 <input
                                     type="number"
                                     min="1"
@@ -307,7 +371,7 @@ $periodNames = [
                                 class="tiny sales-target-save"
                                 data-target-save
                             >
-                                Save
+                                <span data-card-save-label>Save</span>
                             </button>
                         </div>
                     </div>
@@ -323,7 +387,10 @@ $periodNames = [
                     class="sales-card-view-footer"
                     aria-hidden="true"
                 >
-                    <span class="sales-card-view-label">
+                    <span
+                        class="sales-card-view-label"
+                        data-card-view-posts-label
+                    >
                         View posts
                     </span>
                     <span
@@ -335,7 +402,10 @@ $periodNames = [
         <?php endforeach; ?>
 
         <?php if (!$salesProgress): ?>
-            <div class="panel empty">
+            <div
+                class="panel empty"
+                data-dashboard-i18n="noActiveSales"
+            >
                 No active Sales users.
             </div>
         <?php endif; ?>

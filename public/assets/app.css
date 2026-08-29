@@ -4801,3 +4801,97 @@ body.review-modal-open{
         flex-direction:column;
     }
 }
+
+/* v0.1.40 Admin greeting + attendance naming + visible language switch */
+.admin-dashboard-heading{
+    min-width:0;
+}
+.admin-page-head{
+    align-items:flex-start;
+}
+.admin-page-head .eyebrow{
+    margin-bottom:5px;
+}
+.dashboard-head-controls{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    gap:9px;
+}
+.dashboard-language-switch{
+    display:grid;
+    grid-template-columns:repeat(4,max-content);
+    gap:4px;
+    padding:3px;
+    border:1px solid #d8e0eb;
+    border-radius:4px;
+    background:#eef2f7;
+}
+.dashboard-language-button{
+    min-height:32px;
+    padding:6px 9px;
+    border:1px solid transparent;
+    border-radius:4px;
+    background:transparent;
+    color:#64748b;
+    cursor:pointer;
+    white-space:nowrap;
+    font-size:9px;
+    font-weight:900;
+}
+.dashboard-language-button:hover,
+.dashboard-language-button:focus{
+    border-color:#cbd5e1;
+    background:#fff;
+    color:#0f172a;
+    outline:none;
+}
+.dashboard-language-button.active{
+    border-color:#bfdbfe;
+    background:#fff;
+    color:#1d4ed8;
+    box-shadow:0 1px 4px rgba(15,23,42,.08);
+}
+
+/* The page heading no longer repeats the selected date under the title. */
+.dashboard-date-copy{
+    display:none;
+}
+
+@media(pointer:coarse){
+    .dashboard-language-button{
+        min-height:44px;
+        padding:8px 11px;
+    }
+}
+@media(max-width:860px){
+    .admin-page-head{
+        align-items:stretch;
+        flex-direction:column;
+        gap:14px;
+    }
+    .dashboard-head-controls{
+        align-items:flex-start;
+        width:100%;
+    }
+    .dashboard-language-switch{
+        width:100%;
+        grid-template-columns:repeat(4,minmax(0,1fr));
+    }
+    .dashboard-language-button{
+        min-width:0;
+        padding-left:5px;
+        padding-right:5px;
+    }
+    .dashboard-date-controls{
+        width:100%;
+    }
+    .dashboard-date-control-row{
+        justify-content:flex-start;
+    }
+}
+@media(max-width:560px){
+    .dashboard-language-switch{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+}

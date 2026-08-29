@@ -1012,6 +1012,482 @@ $('[data-html-note]').each(function(){
     const today = String($live.data('today') || '');
     const csrf = $('#adminDashboardCsrf').val();
 
+const dashboardI18n={
+    en:{
+        greeting:'Hi, {name}',
+        pageTitle:'Sales Activity & Attendance',
+        view:'View',
+        backToday:'Back to today',
+        daily:'Daily',
+        weekly:'Weekly',
+        monthly:'Monthly',
+        sales:'Sales',
+        posts:'Posts',
+        postingProgress:'{period} Posting Progress',
+        targetFormula:'Daily target × {days} = {target}.',
+        targetMet:'Target met',
+        postsLower:'posts',
+        perDay:'/day',
+        day:'day',
+        days:'days',
+        good:'Good',
+        issues:'Issues',
+        issue:'Issue',
+        unreviewed:'Unreviewed',
+        dailyReview:'Daily Review',
+        weeklyReview:'Weekly Review',
+        monthlyReview:'Monthly Review',
+        dailyTarget:'Daily Target',
+        save:'Save',
+        saved:'Saved',
+        saveReview:'Save Review',
+        addReview:'Add Review',
+        editReview:'Edit Review',
+        noReviewYet:'No review yet',
+        addManagementReview:'Add a management review for this Sales period.',
+        reviewed:'Reviewed',
+        reviewedBy:'Reviewed by {name}',
+        viewPosts:'View posts',
+        noActiveSales:'No active Sales users.',
+        newPosts:'New posts are available',
+        salesChanged:'Sales activity changed since this view was loaded.',
+        refresh:'Refresh',
+        postList:'POST LIST',
+        chronological:'chronological order',
+        loading:'Loading',
+        noPostsPeriod:'No verified posts in this period.',
+        couldNotLoadPosts:'Could not load Sales posts.',
+        noDescription:'No description available.',
+        review:'Review',
+        comment:'Comment',
+        history:'History',
+        seeFullComments:'See full comments',
+        hideDeletedComments:'Hide deleted comments',
+        deletedCount:'See full comments ({count} deleted)',
+        decision:'Decision',
+        required:'Required',
+        passReview:'Pass review',
+        needsAttention:'Needs attention',
+        addNote:'Add Note',
+        cancel:'Cancel',
+        close:'Close',
+        noPostsSelected:'No posts for the selected period.',
+        periodTarget:'period target',
+        listed:'Listed',
+        noTitle:'No title returned',
+        noDescriptionReturned:'No description returned.',
+        contentFetched:'Content fetched.',
+        addReviewForPeriod:'Add a management review for this Sales period.'
+    },
+    'zh-CN':{
+        greeting:'你好，{name}',
+        pageTitle:'销售活动与考勤',
+        view:'查看',
+        backToday:'返回今天',
+        daily:'每日',
+        weekly:'每周',
+        monthly:'每月',
+        sales:'销售',
+        posts:'帖子',
+        postingProgress:'{period}发帖进度',
+        targetFormula:'每日目标 × {days} = {target}。',
+        targetMet:'已达目标',
+        postsLower:'帖',
+        perDay:'/天',
+        day:'天',
+        days:'天',
+        good:'通过',
+        issues:'有问题',
+        issue:'有问题',
+        unreviewed:'未审核',
+        dailyReview:'每日评语',
+        weeklyReview:'每周评语',
+        monthlyReview:'每月评语',
+        dailyTarget:'每日目标',
+        save:'保存',
+        saved:'已保存',
+        saveReview:'保存评语',
+        addReview:'添加评语',
+        editReview:'修改评语',
+        noReviewYet:'暂无评语',
+        addManagementReview:'为该销售周期添加管理评语。',
+        reviewed:'已评阅',
+        reviewedBy:'评阅人：{name}',
+        viewPosts:'查看帖子',
+        noActiveSales:'没有启用的销售人员。',
+        newPosts:'有新的帖子',
+        salesChanged:'自本页面加载后，销售活动已有变化。',
+        refresh:'刷新',
+        postList:'帖子列表',
+        chronological:'按时间顺序',
+        loading:'加载中',
+        noPostsPeriod:'该周期没有已验证的帖子。',
+        couldNotLoadPosts:'无法加载销售帖子。',
+        noDescription:'暂无描述。',
+        review:'审核',
+        comment:'评论',
+        history:'历史记录',
+        seeFullComments:'查看完整评论',
+        hideDeletedComments:'隐藏已删除评论',
+        deletedCount:'查看完整评论（{count} 条已删除）',
+        decision:'审核结果',
+        required:'必选',
+        passReview:'审核通过',
+        needsAttention:'需要处理',
+        addNote:'添加备注',
+        cancel:'取消',
+        close:'关闭',
+        noPostsSelected:'所选周期没有帖子。',
+        periodTarget:'周期目标',
+        listed:'发布于',
+        noTitle:'未返回标题',
+        noDescriptionReturned:'未返回描述。',
+        contentFetched:'内容已获取。',
+        addReviewForPeriod:'为该销售周期添加管理评语。'
+    },
+    'zh-TW':{
+        greeting:'你好，{name}',
+        pageTitle:'銷售活動與考勤',
+        view:'查看',
+        backToday:'返回今天',
+        daily:'每日',
+        weekly:'每週',
+        monthly:'每月',
+        sales:'銷售',
+        posts:'貼文',
+        postingProgress:'{period}發文進度',
+        targetFormula:'每日目標 × {days} = {target}。',
+        targetMet:'已達目標',
+        postsLower:'篇',
+        perDay:'/天',
+        day:'天',
+        days:'天',
+        good:'通過',
+        issues:'有問題',
+        issue:'有問題',
+        unreviewed:'未審核',
+        dailyReview:'每日評語',
+        weeklyReview:'每週評語',
+        monthlyReview:'每月評語',
+        dailyTarget:'每日目標',
+        save:'儲存',
+        saved:'已儲存',
+        saveReview:'儲存評語',
+        addReview:'新增評語',
+        editReview:'修改評語',
+        noReviewYet:'尚無評語',
+        addManagementReview:'為此銷售週期新增管理評語。',
+        reviewed:'已評閱',
+        reviewedBy:'評閱人：{name}',
+        viewPosts:'查看貼文',
+        noActiveSales:'沒有啟用的銷售人員。',
+        newPosts:'有新的貼文',
+        salesChanged:'自本頁載入後，銷售活動已有變化。',
+        refresh:'重新整理',
+        postList:'貼文列表',
+        chronological:'依時間順序',
+        loading:'載入中',
+        noPostsPeriod:'此週期沒有已驗證的貼文。',
+        couldNotLoadPosts:'無法載入銷售貼文。',
+        noDescription:'暫無描述。',
+        review:'審核',
+        comment:'評論',
+        history:'歷史記錄',
+        seeFullComments:'查看完整評論',
+        hideDeletedComments:'隱藏已刪除評論',
+        deletedCount:'查看完整評論（{count} 筆已刪除）',
+        decision:'審核結果',
+        required:'必選',
+        passReview:'審核通過',
+        needsAttention:'需要處理',
+        addNote:'新增備註',
+        cancel:'取消',
+        close:'關閉',
+        noPostsSelected:'所選週期沒有貼文。',
+        periodTarget:'週期目標',
+        listed:'發布於',
+        noTitle:'未回傳標題',
+        noDescriptionReturned:'未回傳描述。',
+        contentFetched:'內容已取得。',
+        addReviewForPeriod:'為此銷售週期新增管理評語。'
+    },
+    es:{
+        greeting:'Hola, {name}',
+        pageTitle:'Actividad y asistencia de ventas',
+        view:'Ver',
+        backToday:'Volver a hoy',
+        daily:'Diario',
+        weekly:'Semanal',
+        monthly:'Mensual',
+        sales:'Ventas',
+        posts:'Publicaciones',
+        postingProgress:'Progreso de publicaciones · {period}',
+        targetFormula:'Meta diaria × {days} = {target}.',
+        targetMet:'Meta alcanzada',
+        postsLower:'publicaciones',
+        perDay:'/día',
+        day:'día',
+        days:'días',
+        good:'Aprobado',
+        issues:'Problemas',
+        issue:'Problema',
+        unreviewed:'Sin revisar',
+        dailyReview:'Revisión diaria',
+        weeklyReview:'Revisión semanal',
+        monthlyReview:'Revisión mensual',
+        dailyTarget:'Meta diaria',
+        save:'Guardar',
+        saved:'Guardado',
+        saveReview:'Guardar revisión',
+        addReview:'Añadir revisión',
+        editReview:'Editar revisión',
+        noReviewYet:'Sin revisión todavía',
+        addManagementReview:'Añade una revisión de gestión para este período de ventas.',
+        reviewed:'Revisado',
+        reviewedBy:'Revisado por {name}',
+        viewPosts:'Ver publicaciones',
+        noActiveSales:'No hay vendedores activos.',
+        newPosts:'Hay nuevas publicaciones',
+        salesChanged:'La actividad de ventas cambió desde que se cargó esta vista.',
+        refresh:'Actualizar',
+        postList:'LISTA DE PUBLICACIONES',
+        chronological:'orden cronológico',
+        loading:'Cargando',
+        noPostsPeriod:'No hay publicaciones verificadas en este período.',
+        couldNotLoadPosts:'No se pudieron cargar las publicaciones.',
+        noDescription:'Sin descripción.',
+        review:'Revisión',
+        comment:'Comentario',
+        history:'Historial',
+        seeFullComments:'Ver comentarios completos',
+        hideDeletedComments:'Ocultar comentarios eliminados',
+        deletedCount:'Ver comentarios completos ({count} eliminados)',
+        decision:'Decisión',
+        required:'Obligatorio',
+        passReview:'Aprobar revisión',
+        needsAttention:'Requiere atención',
+        addNote:'Añadir nota',
+        cancel:'Cancelar',
+        close:'Cerrar',
+        noPostsSelected:'No hay publicaciones en el período seleccionado.',
+        periodTarget:'meta del período',
+        listed:'Publicado',
+        noTitle:'No se devolvió título',
+        noDescriptionReturned:'No se devolvió descripción.',
+        contentFetched:'Contenido obtenido.',
+        addReviewForPeriod:'Añade una revisión de gestión para este período de ventas.'
+    }
+};
+
+let dashboardLanguage=localStorage.getItem('cdsp-admin-language')||'en';
+
+if(!dashboardI18n[dashboardLanguage]){
+    dashboardLanguage='en';
+}
+
+function dashboardLocale(){
+    if(dashboardLanguage==='zh-CN')return 'zh-CN';
+    if(dashboardLanguage==='zh-TW')return 'zh-TW';
+    if(dashboardLanguage==='es')return 'es-US';
+    return 'en-US';
+}
+
+function tr(key,vars){
+    const dict=dashboardI18n[dashboardLanguage]||dashboardI18n.en;
+    let value=String(dict[key]??dashboardI18n.en[key]??key);
+
+    Object.entries(vars||{}).forEach(function(entry){
+        value=value.replace(
+            new RegExp('\\{'+entry[0]+'\\}','g'),
+            String(entry[1])
+        );
+    });
+
+    return value;
+}
+
+function translatedPeriodName(period){
+    if(period==='week')return tr('weekly');
+    if(period==='month')return tr('monthly');
+    return tr('daily');
+}
+
+function translateSalesCard($card){
+    const days=parseInt(
+        $card.find('[data-period-days]').text(),
+        10
+    )||1;
+
+    $card.find('[data-target-badge] [data-dashboard-i18n]')
+        .text(tr('targetMet'));
+    $card.find('[data-card-posts-label]').text(tr('postsLower'));
+    $card.find('[data-card-per-day]').text(tr('perDay'));
+    $card.find('[data-card-days-label]').text(
+        days===1?tr('day'):tr('days')
+    );
+    $card.find('[data-card-good-label]').text(tr('good'));
+    $card.find('[data-card-issues-label]').text(tr('issues'));
+    $card.find('[data-card-unreviewed-label]').text(tr('unreviewed'));
+    $card.find('[data-card-daily-review-label]').text(tr('dailyReview'));
+    $card.find('[data-card-daily-target-label]').text(tr('dailyTarget'));
+    $card.find('[data-card-save-label]').text(tr('save'));
+    $card.find('[data-card-view-posts-label]').text(tr('viewPosts'));
+}
+
+function translateTopNav(){
+    const $header=$('header');
+
+    $header.find('a').each(function(){
+        const href=String($(this).attr('href')||'');
+
+        if(/\/admin$/.test(href)){
+            $(this).text(dashboardLanguage==='es'?'Admin':'Admin');
+        }else if(/\/admin\/reports$/.test(href)){
+            $(this).text(
+                dashboardLanguage==='zh-CN'
+                    ?'报表'
+                    :dashboardLanguage==='zh-TW'
+                        ?'報表'
+                        :dashboardLanguage==='es'
+                            ?'Informes'
+                            :'Reports'
+            );
+        }else if(/\/admin\/settings$/.test(href)){
+            $(this).text(
+                dashboardLanguage==='zh-CN'
+                    ?'设置'
+                    :dashboardLanguage==='zh-TW'
+                        ?'設定'
+                        :dashboardLanguage==='es'
+                            ?'Configuración'
+                            :'Settings'
+            );
+        }
+    });
+
+    $header.find('form[action$="/logout"] button').text(
+        dashboardLanguage==='zh-CN'
+            ?'退出'
+            :dashboardLanguage==='zh-TW'
+                ?'登出'
+                :dashboardLanguage==='es'
+                    ?'Salir'
+                    :'Sign out'
+    );
+}
+
+function applyDashboardLanguage(){
+    const adminName=String(
+        $('#dashboardGreeting').attr('data-admin-name')
+        ||'Administrator'
+    );
+
+    $('#dashboardGreeting').text(
+        tr('greeting',{name:adminName})
+    );
+    $('#dashboardPageTitle').text(tr('pageTitle'));
+
+    $('[data-dashboard-i18n]').each(function(){
+        const key=String($(this).data('dashboard-i18n')||'');
+
+        if(key){
+            $(this).text(tr(key));
+        }
+    });
+
+    $('#dashboardPeriodSwitch [data-period]').each(function(){
+        const period=String($(this).data('period')||'day');
+
+        $(this)
+            .find('[data-dashboard-period-label]')
+            .text(translatedPeriodName(period));
+    });
+
+    $('#dashboardProgressTitle').text(
+        tr('postingProgress',{
+            period:translatedPeriodName(currentPeriod)
+        })
+    );
+
+    $('#dashboardProgressSubtitle').text(
+        tr('targetFormula',{
+            days:currentPeriodDays,
+            target:
+                String(
+                    $('#dashboardProgressSubtitle')
+                        .attr('data-period-target-label')
+                    ||tr('periodTarget')
+                )
+        })
+    );
+
+    $grid.find('.sales-progress-card').each(function(){
+        translateSalesCard($(this));
+    });
+
+    $('.sales-period-review-label').each(function(){
+        if(currentSalesPeriodReview){
+            $(this).text(
+                currentSalesPeriodReview.period==='week'
+                    ?tr('weeklyReview')
+                    :currentSalesPeriodReview.period==='month'
+                        ?tr('monthlyReview')
+                        :tr('dailyReview')
+            );
+        }
+    });
+
+    $('#dashboardHistoryDeletedLabel').text(
+        showDeletedComments
+            ?tr('hideDeletedComments')
+            :tr('seeFullComments')
+    );
+
+    $('.review-comment-kicker').text(tr('history'));
+
+    $('.review-decision-modern legend')
+        .contents()
+        .filter(function(){
+            return this.nodeType===3;
+        })
+        .first()
+        .replaceWith(tr('decision')+' ');
+
+    $('.review-required').text(tr('required'));
+
+    $('.review-decision-option.good strong').text(tr('good'));
+    $('.review-decision-option.bad strong').text(
+        dashboardLanguage==='es'?'Problema':tr('issues')
+    );
+    $('.review-decision-option.good small').text(tr('passReview'));
+    $('.review-decision-option.bad small').text(tr('needsAttention'));
+
+    $('.prose-editor-label label').each(function(){
+        const text=String($(this).text()||'').trim();
+
+        if(/Add Note|添加备注|新增備註|Añadir nota/i.test(text)){
+            $(this).text(tr('addNote'));
+        }
+    });
+
+    $('#dashboardCommentSave').text(tr('addNote'));
+    $('#dashboardReviewCancel').text(tr('cancel'));
+    $('#dashboardReviewSave').text(tr('saveReview'));
+
+    translateTopNav();
+
+    $('#dashboardLanguageSwitch [data-dashboard-lang]').each(function(){
+        const active=String($(this).data('dashboard-lang'))===dashboardLanguage;
+
+        $(this)
+            .toggleClass('active',active)
+            .attr('aria-pressed',active?'true':'false');
+    });
+
+    document.documentElement.lang=dashboardLanguage;
+}
+
+
     let currentDate = String($live.data('date') || '');
     let currentPeriod = String($live.attr('data-period') || 'day');
     let currentPeriodDays = parseInt(
@@ -1148,9 +1624,7 @@ function platformLogoHtml(platform){
 }
 
     function periodName(period){
-        if(period === 'week') return 'Weekly';
-        if(period === 'month') return 'Monthly';
-        return 'Daily';
+        return translatedPeriodName(period);
     }
 
     function setTargetMessage($card, message, error){
@@ -1383,6 +1857,8 @@ function syncExpandedSalesCardFromTiles(){
             .find('[data-target-badge]')
             .toggleClass('hidden', !met);
 
+        translateSalesCard($card);
+
         const $dailyReview = $card.find('[data-daily-review]');
 
         if(period === 'day'){
@@ -1434,30 +1910,23 @@ function postDateTimeLabel(value){
         return raw;
     }
 
-    const monthNames=[
-        'Jan','Feb','Mar','Apr','May','Jun',
-        'Jul','Aug','Sep','Oct','Nov','Dec'
-    ];
+    const d=new Date(
+        parseInt(match[1],10),
+        parseInt(match[2],10)-1,
+        parseInt(match[3],10),
+        parseInt(match[4],10),
+        parseInt(match[5],10)
+    );
 
-    let hour=parseInt(match[4],10);
-    const minute=match[5];
-    const suffix=hour>=12?'PM':'AM';
-
-    hour=hour%12;
-
-    if(hour===0){
-        hour=12;
-    }
-
-    return monthNames[parseInt(match[2],10)-1]
-        +' '
-        +parseInt(match[3],10)
-        +' · '
-        +hour
-        +':'
-        +minute
-        +' '
-        +suffix;
+    return d.toLocaleString(
+        dashboardLocale(),
+        {
+            month:'short',
+            day:'numeric',
+            hour:'numeric',
+            minute:'2-digit'
+        }
+    ).replace(',',' ·');
 }
 
 function postThumbnailHtml(post){
@@ -1495,7 +1964,7 @@ function periodReviewDateLabel(review){
                 parseInt(parts[2],10)
             );
 
-            return d.toLocaleDateString([],{
+            return d.toLocaleDateString(dashboardLocale(),{
                 year:'numeric',
                 month:'long',
                 day:'numeric'
@@ -1535,14 +2004,19 @@ function renderSalesPeriodReview(review){
     }
 
     const exists=Boolean(review.exists);
-    const label=String(review.label||'Review');
+    const label=
+        review.period==='week'
+            ?tr('weeklyReview')
+            :review.period==='month'
+                ?tr('monthlyReview')
+                :tr('dailyReview');
     const note=String(review.note||'');
 
     $expandedReviewLabel.text(label);
     $expandedReviewState.text(
         exists
-            ?'Saved'
-            :'No review yet'
+            ?tr('saved')
+            :tr('noReviewYet')
     );
 
     $expandedReviewNote
@@ -1550,15 +2024,15 @@ function renderSalesPeriodReview(review){
         .html(
             note.trim()
                 ?note
-                :'Add a management review for this Sales period.'
+                :escapeHtml(tr('addManagementReview'))
         );
 
     $expandedReviewMeta.text(
         exists
             ?[
                 review.admin_name
-                    ?'Reviewed by '+review.admin_name
-                    :'Reviewed',
+                    ?tr('reviewedBy',{name:review.admin_name})
+                    :tr('reviewed'),
                 review.reviewed_at
                     ?commentDateLabel(review.reviewed_at)
                     :'',
@@ -1569,8 +2043,8 @@ function renderSalesPeriodReview(review){
 
     $expandedReviewEdit.text(
         exists
-            ?'Edit Review'
-            :'Add Review'
+            ?tr('editReview')
+            :tr('addReview')
     );
 
     $expandedReview.removeClass('hidden');
@@ -1598,9 +2072,21 @@ function openSalesPeriodReviewEditor(){
     $('#salesPeriodReviewDate').val(currentDate);
     $('#salesPeriodReviewPeriod').val(currentPeriod);
 
-    $('#salesPeriodReviewModalEyebrow').text(review.label||'Review');
+    $('#salesPeriodReviewModalEyebrow').text(
+        review.period==='week'
+            ?tr('weeklyReview')
+            :review.period==='month'
+                ?tr('monthlyReview')
+                :tr('dailyReview')
+    );
     $('#salesPeriodReviewModalTitle').text(
-        salesName+' · '+(review.label||'Review')
+        salesName+' · '+(
+            review.period==='week'
+                ?tr('weeklyReview')
+                :review.period==='month'
+                    ?tr('monthlyReview')
+                    :tr('dailyReview')
+        )
     );
     $('#salesPeriodReviewModalSubtitle').text(
         review.period_label||''
@@ -1618,7 +2104,7 @@ function openSalesPeriodReviewEditor(){
     $periodReviewSave
         .prop('disabled',false)
         .removeClass('saved')
-        .text('Save Review');
+        .text(tr('saveReview'));
 
     $periodReviewModal
         .removeClass('hidden')
@@ -1646,21 +2132,22 @@ function renderPostGrid(data){
         data.sales.name
         +' · '
         +data.count
-        +' post'
-        +(data.count===1?'':'s')
+        +' '
+        +tr('postsLower')
     );
 
     $expandedSubtitle.text(
         data.period_label
         +' · #'
         +data.sales.sales_id
-        +' · chronological order'
+        +' · '
+        +tr('chronological')
     );
 
     if(!posts.length){
         $expandedList.html(
             '<div class="sales-expanded-empty">'
-            +'No verified posts in this period.'
+            +escapeHtml(tr('noPostsPeriod'))
             +'</div>'
         );
         return;
@@ -1682,11 +2169,11 @@ function renderPostGrid(data){
 
         const statusText=
             status==='good'
-                ?'Good'
+                ?tr('good')
                 :(
                     status==='bad'
-                        ?'Issue'
-                        :'Unreviewed'
+                        ?tr('issue')
+                        :tr('unreviewed')
                 );
 
         const title=String(post.title||'').trim()
@@ -1726,7 +2213,7 @@ function renderPostGrid(data){
                     '<p>'
                         +escapeHtml(
                             description
-                            ||'No description available.'
+                            ||tr('noDescription')
                         )
                     +'</p>'+
                 '</div>'+
@@ -1785,10 +2272,10 @@ function renderPostGrid(data){
         $expanded.removeClass('hidden');
         $expandedTitle.text(
             String($card.attr('data-sales-name') || 'Sales')
-            + ' · Loading'
+            + ' · '+tr('loading')
         );
         $expandedSubtitle.text(
-            periodName(currentPeriod) + ' posts'
+            periodName(currentPeriod) + ' · ' + tr('posts')
         );
         $expandedList.empty();
         $expandedReview.addClass('hidden');
@@ -1826,7 +2313,7 @@ function renderPostGrid(data){
             $expandedList.html(
                 '<div class="sales-expanded-error">'+
                     escapeHtml(
-                        data.message || 'Could not load Sales posts.'
+                        data.message || tr('couldNotLoadPosts')
                     )+
                 '</div>'
             );
@@ -1858,20 +2345,25 @@ function renderPostGrid(data){
         updateBackToday();
         updateHistory();
 
-        $('#dashboardPeriodLabel').text(
-            data.period_label || ''
-        );
+        $('#dashboardProgressSubtitle')
+            .attr(
+                'data-period-target-label',
+                data.period_short_label||tr('periodTarget')
+            );
+
         $('#dashboardProgressTitle').text(
-            periodName(currentPeriod) + ' Posting Progress'
+            tr('postingProgress',{
+                period:periodName(currentPeriod)
+            })
         );
         $('#dashboardProgressSubtitle').text(
-            'Daily target × '
-            + currentPeriodDays
-            + ' = '
-            + (data.period_short_label || 'period target')
-            + '.'
+            tr('targetFormula',{
+                days:currentPeriodDays,
+                target:data.period_short_label||tr('periodTarget')
+            })
         );
         $('#dashboardPostCount').text(baselineCount);
+        applyDashboardLanguage();
 
         const rows = Array.isArray(data.rows) ? data.rows : [];
         const byId = {};
@@ -1944,6 +2436,48 @@ function renderPostGrid(data){
                 .prop('disabled', false);
         });
     }
+
+$('#dashboardLanguageSwitch').on(
+    'click',
+    '[data-dashboard-lang]',
+    function(){
+        const lang=String(
+            $(this).data('dashboard-lang')||'en'
+        );
+
+        if(!dashboardI18n[lang]){
+            return;
+        }
+
+        dashboardLanguage=lang;
+        localStorage.setItem(
+            'cdsp-admin-language',
+            dashboardLanguage
+        );
+
+        applyDashboardLanguage();
+
+        if(currentSalesPeriodReview){
+            renderSalesPeriodReview(
+                currentSalesPeriodReview
+            );
+        }
+
+        if(expandedSalesId){
+            const activeSalesId=expandedSalesId;
+            const $card=$grid.find(
+                '.sales-progress-card[data-sales-id="'
+                +activeSalesId
+                +'"]'
+            );
+
+            if($card.length){
+                expandedSalesId=0;
+                openExpandedPosts($card);
+            }
+        }
+    }
+);
 
     $('#dashboardPeriodSwitch').on(
         'click',
@@ -2153,7 +2687,7 @@ function renderContentPreview(content){
         $contentDate
             .removeClass('hidden')
             .text(
-                'Listed · '
+                tr('listed')+' · '
                 +commentDateLabel(listingDate)
             );
     }else{
@@ -2162,8 +2696,10 @@ function renderContentPreview(content){
             .text('');
     }
 
-    $contentTitle.text(content.title||'No title returned');
-    $contentDescription.text(content.description||'No description returned.');
+    $contentTitle.text(content.title||tr('noTitle'));
+    $contentDescription.text(
+        content.description||tr('noDescriptionReturned')
+    );
 
     const facts=[];
     if(content.price)facts.push('<span><b>Price</b>'+escapeHtml(content.price)+'</span>');
@@ -2426,12 +2962,11 @@ function renderComments(items,reviewItems){
 
     $historyDeletedLabel.text(
         showDeletedComments
-            ?'Hide deleted comments'
+            ?tr('hideDeletedComments')
             :(
-                'See full comments'
-                +(deletedCommentCount
-                    ?' ('+deletedCommentCount+' deleted)'
-                    :'')
+                deletedCommentCount
+                    ?tr('deletedCount',{count:deletedCommentCount})
+                    :tr('seeFullComments')
             )
     );
 

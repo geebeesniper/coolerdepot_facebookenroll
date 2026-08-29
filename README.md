@@ -815,3 +815,18 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - The switch resets to the default hidden-deleted state whenever a different Post Review is opened.
 - No database migration is required; existing daily/period review tables are reused.
 - All border radius remains `4px`.
+
+## v0.1.40 — Admin greeting, attendance naming, and four-language dashboard
+
+- Replaced the `Administrator` eyebrow with `Hi, {admin display name}`.
+- Renamed `Sales Work Progress` to `Sales Activity & Attendance`, better matching the dashboard's target/participation/period-review purpose without implying time-clock punches.
+- Removed the duplicate period/date line under the page title; the date picker on the right remains the single date control.
+- Added four always-visible language buttons — English, 简体中文, 繁體中文, Español — with no dropdown.
+- English is the default on first use. The user's selected dashboard language is stored in browser localStorage for subsequent visits.
+- Language switching is instant and does not reload the page.
+- Dashboard localization covers the greeting/title, date actions, Daily/Weekly/Monthly tabs, Sales/Post counts, posting-progress labels, target/card labels, Post List states, period reviews, primary Review controls, History deleted-comment filter, and Admin header navigation.
+- Dynamic AJAX content uses the active language as it is rendered, including Post status labels and Post List empty/error states.
+- Dashboard date/time formatting follows the active locale.
+- Existing Post data and Post List behavior are unchanged. A view showing `0 Posts` is a filter result, not removed data; for example, selecting 2026-08-19 does not display posts created on 2026-08-28.
+- No database migration is required.
+- All border radius remains `4px`.
