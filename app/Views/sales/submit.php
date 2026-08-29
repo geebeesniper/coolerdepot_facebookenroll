@@ -1,78 +1,212 @@
-<?php use App\Core\Csrf; use App\Core\Util; ?>
+<?php
+use App\Core\Csrf;
+use App\Core\Util;
+?>
 
-<div class="page-head">
+<div
+    id="salesSubmitPortal"
+    class="sales-submit-portal"
+></div>
+
+<div class="page-head sales-portal-head">
     <div>
-        <div class="eyebrow">New Post</div>
-        <h1>Verify before saving</h1>
-        <p>Detect platform → fetch verified metadata → verify today's date → duplicate check → save.</p>
+        <div
+            class="eyebrow"
+            data-sales-i18n="greeting"
+            data-sales-name="<?= Util::e((string)$user['display_name']) ?>"
+        >
+            Hi, <?= Util::e((string)$user['display_name']) ?>
+        </div>
+
+        <h1 data-sales-i18n="submitTitle">
+            Submit Marketplace Post
+        </h1>
+
+        <p class="sales-portal-subtitle" data-sales-i18n="submitSubtitle">
+            Verify the listing first. Only verified posts can be saved.
+        </p>
     </div>
+
+    <a
+        class="btn"
+        href="<?= Util::e($config['app']['base_path']) ?>/sales"
+    >
+        <span data-sales-i18n="backDashboard">Back to Dashboard</span>
+    </a>
 </div>
 
-<div class="two">
-    <div class="panel">
-        <form id="inspectForm">
-            <input type="hidden" name="_csrf" value="<?= Util::e(Csrf::token()) ?>">
-            <input type="hidden" name="platform" id="detectedPlatformValue" value="">
+<div
+    id="salesSubmitMessage"
+    class="sales-submit-message hidden"
+    aria-live="polite"
+></div>
 
-            <label>Post URL / Share Link</label>
+<div class="sales-submit-layout">
+    <section class="panel sales-submit-panel">
+        <div class="sales-submit-section-head">
+            <div>
+                <span class="eyebrow" data-sales-i18n="stepOne">
+                    Step 1
+                </span>
+                <h2 data-sales-i18n="verifyListing">
+                    Verify Listing
+                </h2>
+            </div>
+        </div>
+
+        <form id="inspectForm" novalidate>
             <input
-                type="url"
-                name="url"
-                id="postUrl"
-                required
-                autocomplete="off"
-                placeholder="Paste Facebook, OfferUp, or Craigslist URL"
+                type="hidden"
+                name="_csrf"
+                value="<?= Util::e(Csrf::token()) ?>"
+            >
+            <input
+                type="hidden"
+                name="platform"
+                id="detectedPlatformValue"
+                value=""
             >
 
-            <div class="platform-detect-row">
-                <span class="muted-label">Platform</span>
-                <span id="detectedPlatform" class="detected-platform empty-platform">Paste a supported URL</span>
+            <label for="postUrl">
+                <span data-sales-i18n="postUrl">
+                    Post URL / Share Link
+                </span>
+            </label>
+
+            <div class="sales-url-row">
+                <input
+                    type="url"
+                    name="url"
+                    id="postUrl"
+                    required
+                    autocomplete="off"
+                    placeholder="Paste Facebook, OfferUp, or Craigslist URL"
+                    data-sales-placeholder="postUrl"
+                >
+
+                <button
+                    id="inspectButton"
+                    class="btn primary"
+                    disabled
+                    type="submit"
+                >
+                    <span data-sales-i18n="checkPost">Check Post</span>
+                </button>
             </div>
 
-            <button id="inspectButton" class="btn primary" disabled>Check Post</button>
+            <div class="platform-detect-row">
+                <span class="muted-label" data-sales-i18n="platform">
+                    Platform
+                </span>
+                <span
+                    id="detectedPlatform"
+                    class="detected-platform empty-platform"
+                >
+                    <span data-sales-i18n="pasteSupported">
+                        Paste a supported URL
+                    </span>
+                </span>
+            </div>
         </form>
 
-        <div id="inspectionProgress" class="steps hidden">
-            <div>Detecting platform...</div>
-            <div>Checking duplicates...</div>
-            <div>Fetching verified post information...</div>
-            <div>Checking date...</div>
-            <div>Checking duplicates...</div>
+        <div id="inspectionProgress" class="sales-inspection-progress hidden">
+            <div data-sales-i18n="detectingPlatform">Detecting platform…</div>
+            <div data-sales-i18n="checkingDuplicates">Checking duplicates…</div>
+            <div data-sales-i18n="fetchingPost">Fetching verified post information…</div>
+            <div data-sales-i18n="checkingDate">Checking listing date…</div>
+            <div data-sales-i18n="finalDuplicate">Final duplicate check…</div>
         </div>
-    </div>
+    </section>
 
-    <div class="panel">
-        <h2>Verification Result</h2>
-        <div id="inspectionEmpty" class="empty">Paste a URL and run Check Post.</div>
+    <section class="panel sales-submit-panel">
+        <div class="sales-submit-section-head">
+            <div>
+                <span class="eyebrow" data-sales-i18n="stepTwo">
+                    Step 2
+                </span>
+                <h2 data-sales-i18n="verificationResult">
+                    Verification Result
+                </h2>
+            </div>
+        </div>
+
+        <div
+            id="inspectionEmpty"
+            class="sales-verification-empty"
+        >
+            <div class="sales-verification-empty-icon">✓</div>
+            <strong data-sales-i18n="readyToVerify">
+                Ready to verify
+            </strong>
+            <span data-sales-i18n="pasteAndCheck">
+                Paste a listing URL and click Check Post.
+            </span>
+        </div>
 
         <div id="inspectionResult" class="hidden">
             <div id="verificationBanner" class="banner"></div>
 
-            <dl class="details">
-                <dt>Platform</dt>
-                <dd id="resultPlatform">—</dd>
+            <div class="sales-verification-card">
+                <div class="sales-verification-title-row">
+                    <div>
+                        <span
+                            class="sales-verification-platform"
+                            id="resultPlatform"
+                        >
+                            —
+                        </span>
+                        <h3 id="resultTitle">—</h3>
+                    </div>
+                </div>
 
-                <dt>Title</dt>
-                <dd id="resultTitle">—</dd>
+                <p
+                    class="sales-verification-description"
+                    id="resultDescription"
+                >
+                    —
+                </p>
 
-                <dt>Published</dt>
-                <dd id="resultDate">—</dd>
+                <dl class="sales-verification-facts">
+                    <div>
+                        <dt data-sales-i18n="published">Published</dt>
+                        <dd id="resultDate">—</dd>
+                    </div>
+                    <div>
+                        <dt data-sales-i18n="postId">Post ID</dt>
+                        <dd id="resultExternalId">—</dd>
+                    </div>
+                    <div class="wide">
+                        <dt data-sales-i18n="originalUrl">Original URL</dt>
+                        <dd id="resultCanonical">—</dd>
+                    </div>
+                </dl>
+            </div>
 
-                <dt>Original URL</dt>
-                <dd id="resultCanonical">—</dd>
+            <form
+                method="post"
+                action="<?= Util::e($config['app']['base_path']) ?>/sales/save"
+            >
+                <input
+                    type="hidden"
+                    name="_csrf"
+                    value="<?= Util::e(Csrf::token()) ?>"
+                >
+                <input
+                    type="hidden"
+                    name="inspection_token"
+                    id="inspectionToken"
+                >
 
-                <dt>Post ID</dt>
-                <dd id="resultExternalId">—</dd>
-
-                <dt>Description</dt>
-                <dd id="resultDescription">—</dd>
-            </dl>
-
-            <form method="post" action="<?= $config['app']['base_path'] ?>/sales/save">
-                <input type="hidden" name="_csrf" value="<?= Util::e(Csrf::token()) ?>">
-                <input type="hidden" name="inspection_token" id="inspectionToken">
-                <button id="saveButton" class="btn success full" disabled>Save Verified Post</button>
+                <button
+                    id="saveButton"
+                    class="btn success full"
+                    disabled
+                >
+                    <span data-sales-i18n="saveVerified">
+                        Save Verified Post
+                    </span>
+                </button>
             </form>
         </div>
-    </div>
+    </section>
 </div>

@@ -1,4 +1,87 @@
 $(function(){
+
+const appLanguageDictionary={
+    en:{
+        dashboard:'Dashboard',
+        submit:'Submit',
+        admin:'Admin',
+        reports:'Reports',
+        settings:'Settings',
+        signOut:'Sign out'
+    },
+    'zh-CN':{
+        dashboard:'主页',
+        submit:'提交',
+        admin:'管理',
+        reports:'报表',
+        settings:'设置',
+        signOut:'退出'
+    },
+    'zh-TW':{
+        dashboard:'主頁',
+        submit:'提交',
+        admin:'管理',
+        reports:'報表',
+        settings:'設定',
+        signOut:'登出'
+    },
+    es:{
+        dashboard:'Panel',
+        submit:'Enviar',
+        admin:'Admin',
+        reports:'Informes',
+        settings:'Configuración',
+        signOut:'Salir'
+    }
+};
+
+function currentAppLanguage(){
+    const lang=localStorage.getItem('cdsp-admin-language')||'en';
+    return appLanguageDictionary[lang]?lang:'en';
+}
+
+function applyGlobalMenuLanguage(){
+    const lang=currentAppLanguage();
+    const dict=appLanguageDictionary[lang];
+
+    $('[data-nav-i18n]').each(function(){
+        const key=String($(this).data('nav-i18n')||'');
+
+        if(dict[key]){
+            $(this).text(dict[key]);
+        }
+    });
+
+    $('#appLanguageSwitch [data-app-lang]').each(function(){
+        const active=String($(this).data('app-lang'))===lang;
+
+        $(this)
+            .toggleClass('active',active)
+            .attr('aria-pressed',active?'true':'false');
+    });
+
+    document.documentElement.lang=lang;
+}
+
+applyGlobalMenuLanguage();
+
+$('#appLanguageSwitch').on(
+    'click',
+    '[data-app-lang]',
+    function(){
+        const lang=String($(this).data('app-lang')||'en');
+
+        if(!appLanguageDictionary[lang]){
+            return;
+        }
+
+        localStorage.setItem('cdsp-admin-language',lang);
+        applyGlobalMenuLanguage();
+
+        $(document).trigger('cdsp:language-changed',[lang]);
+    }
+);
+
     function detectPlatform(url){
         try{
             const u = new URL((url || '').trim());
@@ -61,67 +144,494 @@ $(function(){
         $label
             .removeClass('facebook offerup craigslist empty-platform')
             .addClass(platform || 'empty-platform')
-            .text(platform ? platformLabel(platform) : (url.trim() ? 'Unsupported URL' : 'Paste a supported URL'));
+            .text(
+                platform
+                    ?platformLabel(platform)
+                    :(url.trim()
+                        ?salesTr('unsupportedUrl')
+                        :salesTr('pasteSupported'))
+            );
 
         return platform;
     }
+
+
+const salesI18n={
+    en:{
+        greeting:'Hi, {name}',
+        dashboardTitle:'My Sales Activity',
+        dashboardSubtitle:'Review your verified Marketplace posts and Admin review status.',
+        from:'From',
+        to:'To',
+        apply:'Apply',
+        submitPost:'Submit Post',
+        posts:'Posts',
+        selectedRange:'Selected range',
+        good:'Good',
+        passedReview:'Passed review',
+        issues:'Issues',
+        needsAttention:'Needs attention',
+        unreviewed:'Unreviewed',
+        awaitingReview:'Awaiting Admin review',
+        dailyPosts:'Daily Posts',
+        published:'Published',
+        openOriginal:'Open original',
+        requestDeletion:'Request deletion',
+        reason:'Reason',
+        cancel:'Cancel',
+        sendRequest:'Send request',
+        deletionSent:'Deletion request sent.',
+        noPostsRange:'No posts in this date range.',
+        loadEarlier:'Load earlier days',
+        loading:'Loading…',
+        loadingEarlier:'Loading earlier days…',
+        allDaysLoaded:'All days loaded.',
+        loadEarlierFailed:'Could not load earlier days.',
+        noDescription:'No description available.',
+        submitTitle:'Submit Marketplace Post',
+        submitSubtitle:'Verify the listing first. Only verified posts can be saved.',
+        backDashboard:'Back to Dashboard',
+        stepOne:'Step 1',
+        verifyListing:'Verify Listing',
+        postUrl:'Post URL / Share Link',
+        platform:'Platform',
+        pasteSupported:'Paste a supported URL',
+        unsupportedUrl:'Unsupported URL',
+        checkPost:'Check Post',
+        checking:'Checking…',
+        detectingPlatform:'Detecting platform…',
+        checkingDuplicates:'Checking duplicates…',
+        fetchingPost:'Fetching verified post information…',
+        checkingDate:'Checking listing date…',
+        finalDuplicate:'Final duplicate check…',
+        stepTwo:'Step 2',
+        verificationResult:'Verification Result',
+        readyToVerify:'Ready to verify',
+        pasteAndCheck:'Paste a listing URL and click Check Post.',
+        verified:'VERIFIED ✓',
+        blocked:'BLOCKED',
+        inspectionFailed:'Inspection failed.',
+        useSupported:'Use Facebook Marketplace, OfferUp, or Craigslist.',
+        publishedLabel:'Published',
+        postId:'Post ID',
+        originalUrl:'Original URL',
+        saveVerified:'Save Verified Post',
+        reasonPlaceholder:'Why should this post be removed?'
+    },
+    'zh-CN':{
+        greeting:'你好，{name}',
+        dashboardTitle:'我的销售活动',
+        dashboardSubtitle:'查看已验证的 Marketplace 帖子以及管理员审核状态。',
+        from:'开始',
+        to:'结束',
+        apply:'应用',
+        submitPost:'提交帖子',
+        posts:'帖子',
+        selectedRange:'所选日期范围',
+        good:'通过',
+        passedReview:'审核通过',
+        issues:'有问题',
+        needsAttention:'需要处理',
+        unreviewed:'未审核',
+        awaitingReview:'等待管理员审核',
+        dailyPosts:'每日帖子',
+        published:'发布',
+        openOriginal:'打开原帖',
+        requestDeletion:'申请删除',
+        reason:'原因',
+        cancel:'取消',
+        sendRequest:'发送申请',
+        deletionSent:'删除申请已发送。',
+        noPostsRange:'这个日期范围内没有帖子。',
+        loadEarlier:'加载更早日期',
+        loading:'加载中…',
+        loadingEarlier:'正在加载更早日期…',
+        allDaysLoaded:'已加载全部日期。',
+        loadEarlierFailed:'无法加载更早日期。',
+        noDescription:'暂无描述。',
+        submitTitle:'提交 Marketplace 帖子',
+        submitSubtitle:'先验证帖子。只有验证通过的帖子才能保存。',
+        backDashboard:'返回主页',
+        stepOne:'第 1 步',
+        verifyListing:'验证帖子',
+        postUrl:'帖子 URL / 分享链接',
+        platform:'平台',
+        pasteSupported:'粘贴支持的平台链接',
+        unsupportedUrl:'不支持的链接',
+        checkPost:'检查帖子',
+        checking:'检查中…',
+        detectingPlatform:'正在识别平台…',
+        checkingDuplicates:'正在检查重复…',
+        fetchingPost:'正在获取已验证的帖子信息…',
+        checkingDate:'正在检查发布日期…',
+        finalDuplicate:'最后检查重复…',
+        stepTwo:'第 2 步',
+        verificationResult:'验证结果',
+        readyToVerify:'可以开始验证',
+        pasteAndCheck:'粘贴帖子链接后点击“检查帖子”。',
+        verified:'验证通过 ✓',
+        blocked:'已阻止',
+        inspectionFailed:'验证失败。',
+        useSupported:'请使用 Facebook Marketplace、OfferUp 或 Craigslist。',
+        publishedLabel:'发布',
+        postId:'帖子 ID',
+        originalUrl:'原始 URL',
+        saveVerified:'保存已验证帖子',
+        reasonPlaceholder:'为什么要删除这个帖子？'
+    },
+    'zh-TW':{
+        greeting:'你好，{name}',
+        dashboardTitle:'我的銷售活動',
+        dashboardSubtitle:'查看已驗證的 Marketplace 貼文以及管理員審核狀態。',
+        from:'開始',
+        to:'結束',
+        apply:'套用',
+        submitPost:'提交貼文',
+        posts:'貼文',
+        selectedRange:'所選日期範圍',
+        good:'通過',
+        passedReview:'審核通過',
+        issues:'有問題',
+        needsAttention:'需要處理',
+        unreviewed:'未審核',
+        awaitingReview:'等待管理員審核',
+        dailyPosts:'每日貼文',
+        published:'發布',
+        openOriginal:'開啟原貼',
+        requestDeletion:'申請刪除',
+        reason:'原因',
+        cancel:'取消',
+        sendRequest:'送出申請',
+        deletionSent:'刪除申請已送出。',
+        noPostsRange:'此日期範圍內沒有貼文。',
+        loadEarlier:'載入更早日期',
+        loading:'載入中…',
+        loadingEarlier:'正在載入更早日期…',
+        allDaysLoaded:'已載入全部日期。',
+        loadEarlierFailed:'無法載入更早日期。',
+        noDescription:'暫無描述。',
+        submitTitle:'提交 Marketplace 貼文',
+        submitSubtitle:'先驗證貼文。只有驗證通過的貼文才能儲存。',
+        backDashboard:'返回主頁',
+        stepOne:'第 1 步',
+        verifyListing:'驗證貼文',
+        postUrl:'貼文 URL / 分享連結',
+        platform:'平台',
+        pasteSupported:'貼上支援的平台連結',
+        unsupportedUrl:'不支援的連結',
+        checkPost:'檢查貼文',
+        checking:'檢查中…',
+        detectingPlatform:'正在辨識平台…',
+        checkingDuplicates:'正在檢查重複…',
+        fetchingPost:'正在取得已驗證的貼文資訊…',
+        checkingDate:'正在檢查發布日期…',
+        finalDuplicate:'最後檢查重複…',
+        stepTwo:'第 2 步',
+        verificationResult:'驗證結果',
+        readyToVerify:'可以開始驗證',
+        pasteAndCheck:'貼上貼文連結後點擊「檢查貼文」。',
+        verified:'驗證通過 ✓',
+        blocked:'已阻止',
+        inspectionFailed:'驗證失敗。',
+        useSupported:'請使用 Facebook Marketplace、OfferUp 或 Craigslist。',
+        publishedLabel:'發布',
+        postId:'貼文 ID',
+        originalUrl:'原始 URL',
+        saveVerified:'儲存已驗證貼文',
+        reasonPlaceholder:'為什麼要刪除這篇貼文？'
+    },
+    es:{
+        greeting:'Hola, {name}',
+        dashboardTitle:'Mi actividad de ventas',
+        dashboardSubtitle:'Revisa tus publicaciones verificadas y el estado de revisión del administrador.',
+        from:'Desde',
+        to:'Hasta',
+        apply:'Aplicar',
+        submitPost:'Enviar publicación',
+        posts:'Publicaciones',
+        selectedRange:'Rango seleccionado',
+        good:'Aprobado',
+        passedReview:'Revisión aprobada',
+        issues:'Problemas',
+        needsAttention:'Requiere atención',
+        unreviewed:'Sin revisar',
+        awaitingReview:'Esperando revisión del administrador',
+        dailyPosts:'Publicaciones diarias',
+        published:'Publicado',
+        openOriginal:'Abrir original',
+        requestDeletion:'Solicitar eliminación',
+        reason:'Motivo',
+        cancel:'Cancelar',
+        sendRequest:'Enviar solicitud',
+        deletionSent:'Solicitud de eliminación enviada.',
+        noPostsRange:'No hay publicaciones en este rango de fechas.',
+        loadEarlier:'Cargar días anteriores',
+        loading:'Cargando…',
+        loadingEarlier:'Cargando días anteriores…',
+        allDaysLoaded:'Todos los días cargados.',
+        loadEarlierFailed:'No se pudieron cargar días anteriores.',
+        noDescription:'Sin descripción.',
+        submitTitle:'Enviar publicación de Marketplace',
+        submitSubtitle:'Verifica la publicación primero. Solo se pueden guardar publicaciones verificadas.',
+        backDashboard:'Volver al panel',
+        stepOne:'Paso 1',
+        verifyListing:'Verificar publicación',
+        postUrl:'URL / enlace compartido',
+        platform:'Plataforma',
+        pasteSupported:'Pega un enlace compatible',
+        unsupportedUrl:'URL no compatible',
+        checkPost:'Comprobar publicación',
+        checking:'Comprobando…',
+        detectingPlatform:'Detectando plataforma…',
+        checkingDuplicates:'Comprobando duplicados…',
+        fetchingPost:'Obteniendo información verificada…',
+        checkingDate:'Comprobando fecha de publicación…',
+        finalDuplicate:'Comprobación final de duplicados…',
+        stepTwo:'Paso 2',
+        verificationResult:'Resultado de verificación',
+        readyToVerify:'Listo para verificar',
+        pasteAndCheck:'Pega una URL y pulsa Comprobar publicación.',
+        verified:'VERIFICADO ✓',
+        blocked:'BLOQUEADO',
+        inspectionFailed:'La verificación falló.',
+        useSupported:'Usa Facebook Marketplace, OfferUp o Craigslist.',
+        publishedLabel:'Publicado',
+        postId:'ID de publicación',
+        originalUrl:'URL original',
+        saveVerified:'Guardar publicación verificada',
+        reasonPlaceholder:'¿Por qué se debe eliminar esta publicación?'
+    }
+};
+
+function salesLanguage(){
+    const lang=currentAppLanguage();
+    return salesI18n[lang]?lang:'en';
+}
+
+function salesTr(key,vars){
+    const lang=salesLanguage();
+    const dict=salesI18n[lang]||salesI18n.en;
+    let value=String(dict[key]??salesI18n.en[key]??key);
+
+    Object.entries(vars||{}).forEach(function(entry){
+        value=value.replace(
+            new RegExp('\\{'+entry[0]+'\\}','g'),
+            String(entry[1])
+        );
+    });
+
+    return value;
+}
+
+function applySalesLanguage(){
+    $('[data-sales-i18n]').each(function(){
+        const key=String($(this).data('sales-i18n')||'');
+
+        if(!key){
+            return;
+        }
+
+        if(key==='greeting'){
+            const name=String($(this).data('sales-name')||'Sales');
+            $(this).text(salesTr(key,{name:name}));
+            return;
+        }
+
+        $(this).text(salesTr(key));
+    });
+
+    $('[data-sales-placeholder="reason"]').attr(
+        'placeholder',
+        salesTr('reasonPlaceholder')
+    );
+
+    $('[data-sales-placeholder="postUrl"]').attr(
+        'placeholder',
+        salesLanguage()==='es'
+            ?'Pega una URL de Facebook, OfferUp o Craigslist'
+            :salesLanguage()==='zh-CN'
+                ?'粘贴 Facebook、OfferUp 或 Craigslist 链接'
+                :salesLanguage()==='zh-TW'
+                    ?'貼上 Facebook、OfferUp 或 Craigslist 連結'
+                    :'Paste Facebook, OfferUp, or Craigslist URL'
+    );
+
+    const platform=$('#detectedPlatformValue').val();
+
+    if($('#detectedPlatform').length){
+        $('#detectedPlatform').text(
+            platform
+                ?platformLabel(platform)
+                :($('#postUrl').val()
+                    ?salesTr('unsupportedUrl')
+                    :salesTr('pasteSupported'))
+        );
+    }
+
+    applyGlobalMenuLanguage();
+}
+
+$(document).on('cdsp:language-changed',function(){
+    applySalesLanguage();
+});
+
+applySalesLanguage();
 
     $('#postUrl').on('input paste change', function(){
         setTimeout(updateDetectedPlatform, 0);
     });
 
-    $('#inspectForm').on('submit',function(e){
-        e.preventDefault();
+function setSalesSubmitMessage(message,type){
+    const $message=$('#salesSubmitMessage');
 
-        const platform = updateDetectedPlatform();
-        if(!platform){
-            alert('Unsupported URL. Use Facebook Marketplace, OfferUp, or Craigslist.');
-            return;
+    if(!$message.length){
+        return;
+    }
+
+    if(!message){
+        $message
+            .addClass('hidden')
+            .removeClass('ok error')
+            .text('');
+        return;
+    }
+
+    $message
+        .removeClass('hidden ok error')
+        .addClass(type==='ok'?'ok':'error')
+        .text(message);
+}
+
+$('#inspectForm').on('submit',function(e){
+    e.preventDefault();
+
+    const platform=updateDetectedPlatform();
+
+    if(!platform){
+        setSalesSubmitMessage(
+            salesTr('useSupported'),
+            'error'
+        );
+        $('#postUrl').addClass('field-error').trigger('focus');
+        return;
+    }
+
+    $('#postUrl').removeClass('field-error');
+    setSalesSubmitMessage('',null);
+
+    const $b=$('#inspectButton');
+    const $p=$('#inspectionProgress');
+    const $r=$('#inspectionResult');
+
+    $b
+        .prop('disabled',true)
+        .text(salesTr('checking'));
+
+    $p
+        .removeClass('hidden')
+        .find('div')
+        .removeClass()
+        .addClass('active');
+
+    $('#inspectionEmpty').addClass('hidden');
+    $r.addClass('hidden');
+    $('#saveButton').prop('disabled',true);
+
+    $.post(
+        window.CD_BASE_PATH+'/api/inspect',
+        $(this).serialize()
+    )
+    .done(function(d){
+        $('#resultPlatform').text(
+            platformLabel(d.platform)||d.platform||'—'
+        );
+        $('#resultTitle').text(d.title||'—');
+        $('#resultDate').text(d.published_at||'—');
+        $('#resultExternalId').text(
+            d.external_post_id||'—'
+        );
+        $('#resultDescription').text(
+            d.description||'—'
+        );
+
+        const u=d.canonical_url||d.resolved_url||'—';
+
+        $('#resultCanonical').html(
+            u==='—'
+                ?'—'
+                :'<a target="_blank" rel="noopener" href="'
+                    +$('<div>').text(u).html()
+                    +'">'
+                    +$('<div>').text(u).html()
+                    +'</a>'
+        );
+
+        $('#inspectionToken').val(
+            d.inspection_token||''
+        );
+
+        $('#verificationBanner')
+            .attr(
+                'class',
+                'banner '+(d.ok?'ok':'bad')
+            )
+            .text(
+                d.ok
+                    ?salesTr('verified')
+                    :salesTr('blocked')
+                        +' — '
+                        +(d.message||salesTr('inspectionFailed'))
+            );
+
+        $r.removeClass('hidden');
+        $('#saveButton').prop('disabled',!d.ok);
+
+        $p
+            .find('div')
+            .attr(
+                'class',
+                d.ok?'done':'failed'
+            );
+
+        if(!d.ok){
+            setSalesSubmitMessage(
+                d.message||salesTr('inspectionFailed'),
+                'error'
+            );
+        }else{
+            setSalesSubmitMessage(
+                d.message||salesTr('verified'),
+                'ok'
+            );
         }
+    })
+    .fail(function(x){
+        const message=
+            (x.responseJSON&&x.responseJSON.message)
+            ||salesTr('inspectionFailed');
 
-        const $b=$('#inspectButton'),
-              $p=$('#inspectionProgress'),
-              $r=$('#inspectionResult');
+        setSalesSubmitMessage(message,'error');
 
-        $b.prop('disabled',true).text('Checking...');
-        $p.removeClass('hidden').find('div').removeClass().addClass('active');
-        $('#inspectionEmpty').addClass('hidden');
-        $r.addClass('hidden');
-        $('#saveButton').prop('disabled',true);
+        $('#verificationBanner')
+            .attr('class','banner bad')
+            .text(
+                salesTr('blocked')
+                +' — '
+                +message
+            );
 
-        $.post(window.CD_BASE_PATH+'/api/inspect',$(this).serialize())
-            .done(function(d){
-                $('#resultPlatform').text(platformLabel(d.platform) || d.platform || '—');
-                $('#resultTitle').text(d.title||'—');
-                $('#resultDate').text(d.published_at||'—');
-                $('#resultExternalId').text(d.external_post_id||'—');
-                $('#resultDescription').text(d.description||'—');
-
-                const u=d.canonical_url||d.resolved_url||'—';
-                $('#resultCanonical').html(
-                    u==='—'
-                    ? '—'
-                    : '<a target="_blank" rel="noopener" href="'+$('<div>').text(u).html()+'">'+$('<div>').text(u).html()+'</a>'
-                );
-
-                $('#inspectionToken').val(d.inspection_token||'');
-                $('#verificationBanner')
-                    .attr('class','banner '+(d.ok?'ok':'bad'))
-                    .text(d.ok?'VERIFIED ✓':'BLOCKED — '+(d.message||'Verification failed'));
-
-                $r.removeClass('hidden');
-                $('#saveButton').prop('disabled',!d.ok);
-                $p.find('div').attr('class',d.ok?'done':'failed');
-
-                if(!d.ok) alert(d.message||'Post could not be verified.');
-            })
-            .fail(function(x){
-                alert((x.responseJSON&&x.responseJSON.message)||'Inspection failed.');
-            })
-            .always(function(){
-                $b.prop('disabled',!updateDetectedPlatform()).text('Check Post');
-            });
+        $r.removeClass('hidden');
+        $p.find('div').attr('class','failed');
+    })
+    .always(function(){
+        $b
+            .prop(
+                'disabled',
+                !updateDetectedPlatform()
+            )
+            .text(salesTr('checkPost'));
     });
+});
 
     const savedView=localStorage.getItem('cdsp-sales-post-view')||'grid';
 
@@ -157,8 +667,8 @@ $(function(){
         const offset = parseInt($wrap.attr('data-offset') || '0', 10);
         const limit = parseInt($wrap.data('limit') || '3', 10);
 
-        $btn.prop('disabled', true).text('Loading...');
-        $('#dailyLoadStatus').text('Loading earlier days...');
+        $btn.prop('disabled', true).text(salesTr('loading'));
+        $('#dailyLoadStatus').text(salesTr('loadingEarlier'));
 
         $.get(window.CD_BASE_PATH + '/sales/daily-posts', {
             from: from,
@@ -174,25 +684,128 @@ $(function(){
 
             if(d.html){
                 $wrap.append(d.html);
+                applySalesLanguage();
             }
 
             $wrap.attr('data-offset', d.next_offset || offset);
 
             if(d.has_more){
-                $btn.prop('disabled', false).text('Load earlier days');
+                $btn.prop('disabled', false).text(salesTr('loadEarlier'));
                 $('#dailyLoadStatus').text('');
             }else{
                 $btn.prop('disabled', true).hide();
-                $('#dailyLoadStatus').text('All days loaded.');
+                $('#dailyLoadStatus').text(salesTr('allDaysLoaded'));
             }
         })
         .fail(function(){
-            $btn.prop('disabled', false).text('Load earlier days');
-            $('#dailyLoadStatus').text('Could not load earlier days.');
+            $btn.prop('disabled', false).text(salesTr('loadEarlier'));
+            $('#dailyLoadStatus').text(salesTr('loadEarlierFailed'));
         });
     }
 
     $('#loadMoreDailyPosts').on('click', loadMoreDailyPosts);
+
+$(document).on('click','[data-delete-toggle]',function(){
+    const $card=$(this).closest('.sales-self-post-card');
+
+    $card
+        .find('[data-delete-form]')
+        .removeClass('hidden');
+
+    $(this).addClass('hidden');
+
+    $card
+        .find('input[name="reason"]')
+        .trigger('focus');
+});
+
+$(document).on('click','[data-delete-cancel]',function(){
+    const $card=$(this).closest('.sales-self-post-card');
+
+    $card
+        .find('[data-delete-form]')
+        .addClass('hidden')
+        .find('[data-delete-message]')
+        .removeClass('error ok')
+        .text('');
+
+    $card
+        .find('[data-delete-toggle]')
+        .removeClass('hidden');
+});
+
+$(document).on('submit','[data-delete-form]',function(event){
+    event.preventDefault();
+
+    const $form=$(this);
+    const $message=$form.find('[data-delete-message]');
+    const $submit=$form.find('button[type="submit"]');
+    const reason=String(
+        $form.find('input[name="reason"]').val()||''
+    ).trim();
+
+    if(!reason){
+        $form.find('input[name="reason"]')
+            .addClass('field-error')
+            .trigger('focus');
+        return;
+    }
+
+    $form.find('input[name="reason"]')
+        .removeClass('field-error');
+
+    $submit
+        .prop('disabled',true);
+
+    $message
+        .removeClass('error ok')
+        .text(salesTr('loading'));
+
+    $.ajax({
+        url:$form.attr('action'),
+        method:'POST',
+        dataType:'json',
+        data:$form.serialize(),
+        headers:{
+            'X-Requested-With':'XMLHttpRequest',
+            'Accept':'application/json'
+        }
+    })
+    .done(function(data){
+        if(!data||!data.ok){
+            $message
+                .addClass('error')
+                .text(
+                    (data&&data.message)
+                    ||salesTr('inspectionFailed')
+                );
+            return;
+        }
+
+        $message
+            .addClass('ok')
+            .text(salesTr('deletionSent'));
+
+        $form.find('input[name="reason"]')
+            .prop('disabled',true);
+
+        $submit.addClass('hidden');
+        $form.find('[data-delete-cancel]')
+            .text(salesTr('close'));
+    })
+    .fail(function(xhr){
+        $message
+            .addClass('error')
+            .text(
+                (xhr.responseJSON&&xhr.responseJSON.message)
+                ||salesTr('inspectionFailed')
+            );
+    })
+    .always(function(){
+        $submit.prop('disabled',false);
+    });
+});
+
 
     // Progressive loading: when the button approaches the viewport, fetch the next date batch.
     if($('#loadMoreDailyPosts').length && 'IntersectionObserver' in window){
@@ -1476,8 +2089,8 @@ function applyDashboardLanguage(){
 
     translateTopNav();
 
-    $('#dashboardLanguageSwitch [data-dashboard-lang]').each(function(){
-        const active=String($(this).data('dashboard-lang'))===dashboardLanguage;
+    $('#appLanguageSwitch [data-app-lang]').each(function(){
+        const active=String($(this).data('app-lang'))===dashboardLanguage;
 
         $(this)
             .toggleClass('active',active)
@@ -2437,12 +3050,12 @@ function renderPostGrid(data){
         });
     }
 
-$('#dashboardLanguageSwitch').on(
+$('#appLanguageSwitch').on(
     'click',
     '[data-dashboard-lang]',
     function(){
         const lang=String(
-            $(this).data('dashboard-lang')||'en'
+            $(this).data('app-lang')||'en'
         );
 
         if(!dashboardI18n[lang]){

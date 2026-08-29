@@ -830,3 +830,22 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - Existing Post data and Post List behavior are unchanged. A view showing `0 Posts` is a filter result, not removed data; for example, selecting 2026-08-19 does not display posts created on 2026-08-28.
 - No database migration is required.
 - All border radius remains `4px`.
+
+## v0.1.41 — Menu language switch and Admin-aligned Sales Portal
+
+- Moved the four-language switch from the Admin page body into the global top navigation menu.
+- English / 简体中文 / 繁體中文 / Español now use one shared language preference across Admin and Sales.
+- Removed the duplicate page-level language control from the Admin dashboard.
+- Rebuilt the Sales dashboard to use the same SaaS hierarchy as Admin: greeting/title, compact date controls, primary CTA, summary cards, status-aware Post cards, platform icons, thumbnails, compact metadata, and 4px geometry.
+- Sales Post cards now use the latest immutable `cdsp_post_review_history` status, matching Admin. Good remains green, Bad/Issue red, Unreviewed neutral across reloads.
+- Sales cards show the fetched first thumbnail when available; otherwise they display the platform placeholder without consuming another provider/API request.
+- Replaced the legacy URL-heavy Sales post presentation with thumbnail + published date + title + description + status + Open original.
+- Replaced native `<details>` deletion UX with an inline SaaS-style deletion request panel.
+- Sales deletion requests now submit by AJAX and show inline success/error state without reloading the whole dashboard.
+- Added range summary cards for Posts / Good / Issues / Unreviewed.
+- Rebuilt the Sales Submit screen to match Admin panels and status UX.
+- Removed browser `alert()` from the Sales post verification flow; verification errors and provider failures are rendered inline.
+- Sales Dashboard and Submit are localized in all four supported languages, including AJAX-loaded earlier-day sections.
+- Header navigation labels also follow the selected language.
+- No database migration is required.
+- All border radius remains `4px`.

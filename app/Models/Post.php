@@ -341,16 +341,98 @@ class Post {
     public static function forSalesOnDate(int $salesUserId, string $date): array
     {
         $stmt = Database::connection()->prepare(
-            "SELECT *
-             FROM cdsp_sales_posts
-             WHERE sales_user_id = ?
-               AND deleted_at IS NULL
-               AND published_date = ?
-             ORDER BY published_at DESC, id DESC"
+            "SELECT
+                p.*,
+                COALESCE(
+                    rh.decision,
+                    p.admin_review_status
+                ) AS current_review_status
+             FROM cdsp_sales_posts p
+             LEFT JOIN (
+                SELECT h.post_id,h.decision
+                FROM cdsp_post_review_history h
+                INNER JOIN (
+                    SELECT post_id,MAX(id) AS max_id
+                    FROM cdsp_post_review_history
+                    GROUP BY post_id
+                ) latest
+                  ON latest.max_id=h.id
+             ) rh
+               ON rh.post_id=p.id
+             WHERE p.sales_user_id = ?
+               AND p.deleted_at IS NULL
+               AND p.published_date = ?
+             ORDER BY p.published_at DESC,p.id DESC"
         );
         $stmt->execute([$salesUserId, $date]);
 
         return $stmt->fetchAll();
+    }
+
+    public static function salesRangeSummary(
+        int $salesUserId,
+        string $from,
+        string $to
+    ): array {
+        $stmt=Database::connection()->prepare(
+            "SELECT
+                COUNT(p.id) AS post_count,
+                COALESCE(
+                    SUM(
+                        COALESCE(
+                            rh.decision,
+                            p.admin_review_status
+                        )='good'
+                    ),
+                    0
+                ) AS good_count,
+                COALESCE(
+                    SUM(
+                        COALESCE(
+                            rh.decision,
+                            p.admin_review_status
+                        )='bad'
+                    ),
+                    0
+                ) AS bad_count
+             FROM cdsp_sales_posts p
+             LEFT JOIN (
+                SELECT h.post_id,h.decision
+                FROM cdsp_post_review_history h
+                INNER JOIN (
+                    SELECT post_id,MAX(id) AS max_id
+                    FROM cdsp_post_review_history
+                    GROUP BY post_id
+                ) latest
+                  ON latest.max_id=h.id
+             ) rh
+               ON rh.post_id=p.id
+             WHERE p.sales_user_id=?
+               AND p.deleted_at IS NULL
+               AND p.published_date BETWEEN ? AND ?"
+        );
+
+        $stmt->execute([
+            $salesUserId,
+            $from,
+            $to,
+        ]);
+
+        $row=$stmt->fetch() ?: [];
+
+        $posts=(int)($row['post_count']??0);
+        $good=(int)($row['good_count']??0);
+        $bad=(int)($row['bad_count']??0);
+
+        return [
+            'post_count'=>$posts,
+            'good_count'=>$good,
+            'bad_count'=>$bad,
+            'unreviewed_count'=>max(
+                0,
+                $posts-$good-$bad
+            ),
+        ];
     }
 
     public static function dailyDateCountForSales(int $salesUserId, string $from, string $to): int

@@ -1,69 +1,102 @@
 <?php
 use App\Core\Util;
 
-$metricDays = [];
-foreach ($counts as $r) {
-    $d = $r['work_date'];
-    if (!isset($metricDays[$d])) {
-        $metricDays[$d] = [
-            'facebook' => 0,
-            'offerup' => 0,
-            'craigslist' => 0,
-            'total' => 0,
-        ];
-    }
-
-    $metricDays[$d][$r['platform']] = (int)$r['cnt'];
-    $metricDays[$d]['total'] += (int)$r['cnt'];
-}
+$postsTotal=(int)($summary['post_count']??0);
+$goodTotal=(int)($summary['good_count']??0);
+$badTotal=(int)($summary['bad_count']??0);
+$unreviewedTotal=(int)($summary['unreviewed_count']??0);
 ?>
 
-<div class="page-head">
+<div
+    class="sales-portal"
+    id="salesPortalDashboard"
+    data-from="<?= Util::e($from) ?>"
+    data-to="<?= Util::e($to) ?>"
+></div>
+
+<div class="page-head sales-portal-head">
     <div>
-        <div class="eyebrow">Sales Dashboard</div>
-        <h1><?= Util::e($user['display_name']) ?></h1>
-        <p>Saved posts cannot be deleted by Sales. Request deletion from Admin if needed.</p>
+        <div
+            class="eyebrow"
+            data-sales-i18n="greeting"
+            data-sales-name="<?= Util::e((string)$user['display_name']) ?>"
+        >
+            Hi, <?= Util::e((string)$user['display_name']) ?>
+        </div>
+
+        <h1 data-sales-i18n="dashboardTitle">
+            My Sales Activity
+        </h1>
+
+        <p class="sales-portal-subtitle" data-sales-i18n="dashboardSubtitle">
+            Review your verified Marketplace posts and Admin review status.
+        </p>
     </div>
 
-    <a class="btn primary" href="<?= $config['app']['base_path'] ?>/sales/submit">+ Submit Post</a>
+    <div class="sales-portal-head-actions">
+        <form class="sales-range-filter" method="get">
+            <label>
+                <span data-sales-i18n="from">From</span>
+                <input
+                    type="date"
+                    name="from"
+                    value="<?= Util::e($from) ?>"
+                >
+            </label>
+
+            <label>
+                <span data-sales-i18n="to">To</span>
+                <input
+                    type="date"
+                    name="to"
+                    value="<?= Util::e($to) ?>"
+                >
+            </label>
+
+            <button class="btn" type="submit">
+                <span data-sales-i18n="apply">Apply</span>
+            </button>
+        </form>
+
+        <a
+            class="btn primary sales-submit-cta"
+            href="<?= Util::e($config['app']['base_path']) ?>/sales/submit"
+        >
+            <span class="sales-submit-plus">+</span>
+            <span data-sales-i18n="submitPost">Submit Post</span>
+        </a>
+    </div>
 </div>
 
-<div class="panel filter-panel">
-    <form class="filters">
-        <label>
-            From
-            <input type="date" name="from" value="<?= Util::e($from) ?>">
-        </label>
+<section class="sales-overview-grid">
+    <article class="sales-overview-card">
+        <span data-sales-i18n="posts">Posts</span>
+        <strong><?= $postsTotal ?></strong>
+        <small data-sales-i18n="selectedRange">Selected range</small>
+    </article>
 
-        <label>
-            To
-            <input type="date" name="to" value="<?= Util::e($to) ?>">
-        </label>
+    <article class="sales-overview-card good">
+        <span data-sales-i18n="good">Good</span>
+        <strong><?= $goodTotal ?></strong>
+        <small data-sales-i18n="passedReview">Passed review</small>
+    </article>
 
-        <button class="btn">Apply</button>
-    </form>
-</div>
+    <article class="sales-overview-card bad">
+        <span data-sales-i18n="issues">Issues</span>
+        <strong><?= $badTotal ?></strong>
+        <small data-sales-i18n="needsAttention">Needs attention</small>
+    </article>
 
-<?php if ($metricDays): ?>
-<div class="metrics compact-metrics">
-    <?php foreach ($metricDays as $d => $c): ?>
-        <div class="metric compact-metric">
-            <small><?= Util::e($d) ?></small>
-            <strong><?= $c['total'] ?></strong>
-
-            <div class="metric-platforms">
-                <span>FB <b><?= $c['facebook'] ?></b></span>
-                <span>OfferUp <b><?= $c['offerup'] ?></b></span>
-                <span>CL <b><?= $c['craigslist'] ?></b></span>
-            </div>
-        </div>
-    <?php endforeach; ?>
-</div>
-<?php endif; ?>
+    <article class="sales-overview-card neutral">
+        <span data-sales-i18n="unreviewed">Unreviewed</span>
+        <strong><?= $unreviewedTotal ?></strong>
+        <small data-sales-i18n="awaitingReview">Awaiting Admin review</small>
+    </article>
+</section>
 
 <div
     id="dailyPosts"
-    class="daily-posts"
+    class="daily-posts sales-daily-posts"
     data-from="<?= Util::e($from) ?>"
     data-to="<?= Util::e($to) ?>"
     data-offset="<?= (int)$loadedDays ?>"
@@ -75,7 +108,13 @@ foreach ($counts as $r) {
 </div>
 
 <?php if (!$days): ?>
-    <div id="dailyPostsEmpty" class="panel empty">No posts in this date range.</div>
+    <div
+        id="dailyPostsEmpty"
+        class="panel empty sales-empty-state"
+        data-sales-i18n="noPostsRange"
+    >
+        No posts in this date range.
+    </div>
 <?php endif; ?>
 
 <div class="daily-load-more-wrap">
@@ -84,7 +123,12 @@ foreach ($counts as $r) {
         id="loadMoreDailyPosts"
         class="btn"
         <?= $loadedDays >= $totalDays ? 'hidden' : '' ?>
-    >Load earlier days</button>
+    >
+        <span data-sales-i18n="loadEarlier">Load earlier days</span>
+    </button>
 
-    <div id="dailyLoadStatus" class="daily-load-status"></div>
+    <div
+        id="dailyLoadStatus"
+        class="daily-load-status"
+    ></div>
 </div>

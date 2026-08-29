@@ -26,6 +26,11 @@ class SalesController extends Controller
         }
 
         $counts = Post::dailyCounts((int)$u['id'], $from, $to);
+        $summary = Post::salesRangeSummary(
+            (int)$u['id'],
+            $from,
+            $to
+        );
 
         $limit = max(1, (int)$config['app']['daily_posts_initial_days']);
         $dayRows = Post::dailyDatesForSales((int)$u['id'], $from, $to, $limit, 0);
@@ -49,6 +54,7 @@ class SalesController extends Controller
             'from' => $from,
             'to' => $to,
             'counts' => $counts,
+            'summary' => $summary,
             'days' => $days,
             'loadedDays' => count($days),
             'totalDays' => $totalDays,
@@ -105,8 +111,11 @@ class SalesController extends Controller
 
     public function submitForm(): void
     {
-        Auth::requireRole('sales');
-        $this->render('sales/submit');
+        $u=Auth::requireRole('sales');
+
+        $this->render('sales/submit',[
+            'user'=>$u,
+        ]);
     }
 
     public function save(): void
@@ -136,6 +145,19 @@ class SalesController extends Controller
         $reason = trim((string)($_POST['reason'] ?? ''));
 
         Post::requestDeletion((int)$u['id'], $postId, $reason);
+
+        $isAjax=strtolower(
+            (string)($_SERVER['HTTP_X_REQUESTED_WITH']??'')
+        )==='xmlhttprequest';
+
+        if($isAjax){
+            $this->json([
+                'ok'=>true,
+                'post_id'=>$postId,
+                'message'=>'Deletion request sent to Admin.',
+            ]);
+        }
+
         $_SESSION['flash_success'] = 'Deletion request sent to Admin.';
         $this->redirect('/sales');
     }

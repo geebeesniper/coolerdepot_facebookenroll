@@ -70,45 +70,6 @@ $periodNames = [
     </div>
 
     <div class="dashboard-head-controls">
-        <div
-            class="dashboard-language-switch"
-            id="dashboardLanguageSwitch"
-            aria-label="Language"
-        >
-            <button
-                type="button"
-                class="dashboard-language-button active"
-                data-dashboard-lang="en"
-                aria-pressed="true"
-            >
-                English
-            </button>
-            <button
-                type="button"
-                class="dashboard-language-button"
-                data-dashboard-lang="zh-CN"
-                aria-pressed="false"
-            >
-                简体中文
-            </button>
-            <button
-                type="button"
-                class="dashboard-language-button"
-                data-dashboard-lang="zh-TW"
-                aria-pressed="false"
-            >
-                繁體中文
-            </button>
-            <button
-                type="button"
-                class="dashboard-language-button"
-                data-dashboard-lang="es"
-                aria-pressed="false"
-            >
-                Español
-            </button>
-        </div>
-
         <form
             class="filters dashboard-date-controls"
             method="get"
