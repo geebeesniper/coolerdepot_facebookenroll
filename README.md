@@ -800,3 +800,18 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - Deleted Comments do not accept new uploaded images during Edit, preventing new evidence from being attached to a deleted record.
 - No database migration is required. Existing attachment soft-delete columns remain for backward compatibility with old records.
 - All border radius remains `4px`.
+
+## v0.1.39 — Inline period reviews, listing-date hierarchy, and deleted-comment filter
+
+- Expanded Sales Post List now includes the selected Sales user's management review directly above the Post Grid.
+- The review follows the dashboard period switch automatically: Daily tab shows Daily Review, Weekly shows Weekly Review, Monthly shows Monthly Review.
+- Existing period reviews display their HTML note, reviewer, review time, and period; the action changes from `Add Review` to `Edit Review`.
+- Add/Edit opens an in-page rich-text popup using the existing Visual/HTML editor and saves by AJAX without reloading the dashboard.
+- Daily reviews persist in `cdsp_daily_sales_reviews`; Weekly and Monthly reviews persist in `cdsp_period_sales_reviews`. Existing records are updated instead of duplicated.
+- Listing date was removed from the old fact-box presentation and is now shown as a compact `Listed · date/time` line directly above the Marketplace listing title.
+- History now hides soft-deleted Comments by default.
+- When at least one deleted Comment exists, a `See full comments` switch appears in the History header. Enabling it includes deleted Comments and their audit tombstones; disabling it hides them again.
+- Good/Bad Review history always remains visible and is never filtered by the deleted-comment switch.
+- The switch resets to the default hidden-deleted state whenever a different Post Review is opened.
+- No database migration is required; existing daily/period review tables are reused.
+- All border radius remains `4px`.

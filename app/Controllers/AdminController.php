@@ -158,6 +158,12 @@ class AdminController extends Controller{
 
         $periodInfo=$this->dashboardPeriodInfo($date,$period);
 
+        $salesPeriodReview=$this->dashboardSalesReviewData(
+            $salesUserId,
+            $period,
+            $periodInfo
+        );
+
         if (session_status()===PHP_SESSION_ACTIVE) {
             session_write_close();
         }
@@ -215,8 +221,118 @@ class AdminController extends Controller{
             'period_label'=>$periodInfo['label'],
             'from'=>$periodInfo['from'],
             'to'=>$periodInfo['to'],
+            'review'=>$salesPeriodReview,
             'posts'=>$items,
             'count'=>count($items),
+        ]);
+    }
+
+    public function dashboardSaveSalesReview():void{
+        $admin=Auth::requireRole('admin');
+        $this->verifyAjaxCsrf();
+
+        $salesUserId=(int)($_POST['sales_user_id']??0);
+        $date=$this->validDashboardDate(
+            (string)($_POST['date']??date('Y-m-d'))
+        );
+        $period=$this->validDashboardPeriod(
+            (string)($_POST['period']??'day')
+        );
+        $note=HtmlNoteSanitizer::clean(
+            (string)($_POST['note']??'')
+        );
+
+        $salesUser=User::find($salesUserId);
+
+        if(
+            !$salesUser
+            || ($salesUser['role']??'')!=='sales'
+            || !(int)($salesUser['active']??0)
+        ){
+            $this->json([
+                'ok'=>false,
+                'message'=>'Sales user was not found.',
+            ],404);
+        }
+
+        $periodInfo=$this->dashboardPeriodInfo(
+            $date,
+            $period
+        );
+
+        $pdo=Database::connection();
+
+        if($period==='day'){
+            $s=$pdo->prepare(
+                "INSERT INTO cdsp_daily_sales_reviews(
+                    sales_user_id,
+                    work_date,
+                    admin_user_id,
+                    rating,
+                    note,
+                    reviewed_at,
+                    created_at,
+                    updated_at
+                 )
+                 VALUES(?,?,?,NULL,?,NOW(),NOW(),NOW())
+                 ON DUPLICATE KEY UPDATE
+                    admin_user_id=VALUES(admin_user_id),
+                    rating=NULL,
+                    note=VALUES(note),
+                    reviewed_at=NOW(),
+                    updated_at=NOW()"
+            );
+
+            $s->execute([
+                $salesUserId,
+                $periodInfo['from'],
+                (int)$admin['id'],
+                $note,
+            ]);
+        }else{
+            $s=$pdo->prepare(
+                "INSERT INTO cdsp_period_sales_reviews(
+                    sales_user_id,
+                    period_type,
+                    period_start,
+                    period_end,
+                    admin_user_id,
+                    rating,
+                    note,
+                    reviewed_at,
+                    created_at,
+                    updated_at
+                 )
+                 VALUES(?,?,?,?,?,NULL,?,NOW(),NOW(),NOW())
+                 ON DUPLICATE KEY UPDATE
+                    period_end=VALUES(period_end),
+                    admin_user_id=VALUES(admin_user_id),
+                    rating=NULL,
+                    note=VALUES(note),
+                    reviewed_at=NOW(),
+                    updated_at=NOW()"
+            );
+
+            $s->execute([
+                $salesUserId,
+                $period,
+                $periodInfo['from'],
+                $periodInfo['to'],
+                (int)$admin['id'],
+                $note,
+            ]);
+        }
+
+        $review=$this->dashboardSalesReviewData(
+            $salesUserId,
+            $period,
+            $periodInfo
+        );
+
+        $this->json([
+            'ok'=>true,
+            'review'=>$review,
+            'message'=>$review['label'].' saved.',
         ]);
     }
 
@@ -948,6 +1064,81 @@ private function extractMarketplacePhotos(array $raw):array{
     }
 
     return array_slice($urls,0,8);
+}
+
+private function dashboardSalesReviewData(
+    int $salesUserId,
+    string $period,
+    array $periodInfo
+):array{
+    if($period==='day'){
+        $s=Database::connection()->prepare(
+            "SELECT
+                r.id,
+                r.note,
+                r.reviewed_at,
+                r.updated_at,
+                u.display_name AS admin_name
+             FROM cdsp_daily_sales_reviews r
+             JOIN cdsp_users u
+               ON u.id=r.admin_user_id
+             WHERE r.sales_user_id=?
+               AND r.work_date=?
+             LIMIT 1"
+        );
+
+        $s->execute([
+            $salesUserId,
+            $periodInfo['from'],
+        ]);
+    }else{
+        $s=Database::connection()->prepare(
+            "SELECT
+                r.id,
+                r.note,
+                r.reviewed_at,
+                r.updated_at,
+                u.display_name AS admin_name
+             FROM cdsp_period_sales_reviews r
+             JOIN cdsp_users u
+               ON u.id=r.admin_user_id
+             WHERE r.sales_user_id=?
+               AND r.period_type=?
+               AND r.period_start=?
+             LIMIT 1"
+        );
+
+        $s->execute([
+            $salesUserId,
+            $period,
+            $periodInfo['from'],
+        ]);
+    }
+
+    $row=$s->fetch()?:null;
+
+    $label=match($period){
+        'week'=>'Weekly Review',
+        'month'=>'Monthly Review',
+        default=>'Daily Review',
+    };
+
+    return [
+        'id'=>$row ? (int)$row['id'] : null,
+        'period'=>$period,
+        'label'=>$label,
+        'from'=>(string)$periodInfo['from'],
+        'to'=>(string)$periodInfo['to'],
+        'period_label'=>(string)$periodInfo['label'],
+        'note'=>$row ? (string)$row['note'] : '',
+        'reviewed_at'=>$row
+            ? (string)($row['reviewed_at']??$row['updated_at'])
+            : null,
+        'admin_name'=>$row
+            ? (string)$row['admin_name']
+            : null,
+        'exists'=>(bool)$row,
+    ];
 }
 
     private function validDashboardDate(string $date):string{

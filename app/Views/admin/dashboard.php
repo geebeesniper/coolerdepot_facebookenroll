@@ -19,6 +19,7 @@ $periodNames = [
     data-progress-url="<?= Util::e($base) ?>/admin/dashboard/progress"
     data-sales-posts-url="<?= Util::e($base) ?>/admin/dashboard/sales-posts"
     data-post-review-url="<?= Util::e($base) ?>/admin/dashboard/post-review"
+    data-sales-review-save-url="<?= Util::e($base) ?>/admin/dashboard/sales-review/save"
     data-review-save-url="<?= Util::e($base) ?>/admin/post/review"
     data-get-content-url="<?= Util::e($base) ?>/admin/dashboard/get-content"
     data-editor-image-url="<?= Util::e($base) ?>/admin/dashboard/editor-image"
@@ -363,6 +364,49 @@ $periodNames = [
             </button>
         </div>
 
+<section
+    class="sales-period-review hidden"
+    id="salesExpandedReview"
+>
+    <div class="sales-period-review-top">
+        <div>
+            <span
+                class="sales-period-review-label"
+                id="salesExpandedReviewLabel"
+            >
+                Daily Review
+            </span>
+
+            <strong
+                class="sales-period-review-state"
+                id="salesExpandedReviewState"
+            >
+                No review yet
+            </strong>
+        </div>
+
+        <button
+            type="button"
+            class="sales-period-review-edit"
+            id="salesExpandedReviewEdit"
+        >
+            Add Review
+        </button>
+    </div>
+
+    <div
+        class="sales-period-review-note empty"
+        id="salesExpandedReviewNote"
+    >
+        Add a management review for this Sales period.
+    </div>
+
+    <div
+        class="sales-period-review-meta"
+        id="salesExpandedReviewMeta"
+    ></div>
+</section>
+
         <div
             class="sales-expanded-loading hidden"
             id="salesExpandedLoading"
@@ -378,6 +422,109 @@ $periodNames = [
         ></div>
     </section>
 </section>
+
+
+<div
+    class="sales-period-review-backdrop hidden"
+    id="salesPeriodReviewModal"
+    aria-hidden="true"
+>
+    <section
+        class="sales-period-review-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="salesPeriodReviewModalTitle"
+    >
+        <div class="sales-period-review-modal-head">
+            <div>
+                <div
+                    class="eyebrow"
+                    id="salesPeriodReviewModalEyebrow"
+                >
+                    Daily Review
+                </div>
+                <h2 id="salesPeriodReviewModalTitle">
+                    Sales Review
+                </h2>
+                <p id="salesPeriodReviewModalSubtitle"></p>
+            </div>
+
+            <button
+                type="button"
+                class="icon-close"
+                id="salesPeriodReviewClose"
+                aria-label="Close Sales review editor"
+            >
+                ×
+            </button>
+        </div>
+
+        <form
+            class="sales-period-review-form"
+            id="salesPeriodReviewForm"
+            novalidate
+        >
+            <input
+                type="hidden"
+                name="_csrf"
+                value="<?= Util::e($csrf) ?>"
+            >
+            <input
+                type="hidden"
+                name="sales_user_id"
+                id="salesPeriodReviewSalesId"
+                value=""
+            >
+            <input
+                type="hidden"
+                name="date"
+                id="salesPeriodReviewDate"
+                value=""
+            >
+            <input
+                type="hidden"
+                name="period"
+                id="salesPeriodReviewPeriod"
+                value="day"
+            >
+
+            <div class="sales-period-review-editor-body">
+                <?php
+                $fieldName = 'note';
+                $fieldLabel = 'Management Review';
+                $fieldId = 'sales-period-review-note';
+                $noteValue = '';
+                $enableImageUpload = false;
+                require __DIR__ . '/_html_note_editor.php';
+                ?>
+
+                <div
+                    class="sales-period-review-message"
+                    id="salesPeriodReviewMessage"
+                    aria-live="polite"
+                ></div>
+            </div>
+
+            <div class="sales-period-review-modal-footer">
+                <button
+                    type="button"
+                    class="btn"
+                    id="salesPeriodReviewCancel"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    type="submit"
+                    class="btn primary"
+                    id="salesPeriodReviewSave"
+                >
+                    Save Review
+                </button>
+            </div>
+        </form>
+    </section>
+</div>
 
 
 <div
@@ -483,6 +630,11 @@ $periodNames = [
                 </div>
 
                 <div class="review-content-body">
+                    <div
+                        class="review-content-date hidden"
+                        id="dashboardContentDate"
+                    ></div>
+
                     <h3 id="dashboardContentTitle">No content loaded</h3>
                     <p id="dashboardContentDescription"></p>
 
@@ -568,6 +720,24 @@ $periodNames = [
                         <span class="review-comment-kicker">History</span>
                         <strong id="dashboardCommentCount">0 activities</strong>
                     </div>
+
+                    <button
+                        type="button"
+                        class="history-deleted-switch hidden"
+                        id="dashboardHistoryDeletedSwitch"
+                        role="switch"
+                        aria-checked="false"
+                    >
+                        <span class="history-deleted-switch-track">
+                            <span></span>
+                        </span>
+                        <span
+                            class="history-deleted-switch-label"
+                            id="dashboardHistoryDeletedLabel"
+                        >
+                            See full comments
+                        </span>
+                    </button>
                 </div>
 
                 <div

@@ -1001,6 +1001,7 @@ $('[data-html-note]').each(function(){
     const updatesUrl = $live.data('updates-url');
     const salesPostsUrl = $live.data('sales-posts-url');
     const postReviewUrl = $live.data('post-review-url');
+    const salesReviewSaveUrl = $live.data('sales-review-save-url');
     const reviewSaveUrl = $live.data('review-save-url');
     const getContentUrl = $live.data('get-content-url');
     const editorImageUrl = $live.data('editor-image-url');
@@ -1043,6 +1044,19 @@ $('[data-html-note]').each(function(){
     const $expandedSubtitle = $('#salesExpandedSubtitle');
     const $expandedList = $('#salesExpandedList');
     const $expandedLoading = $('#salesExpandedLoading');
+    const $expandedReview = $('#salesExpandedReview');
+    const $expandedReviewLabel = $('#salesExpandedReviewLabel');
+    const $expandedReviewState = $('#salesExpandedReviewState');
+    const $expandedReviewNote = $('#salesExpandedReviewNote');
+    const $expandedReviewMeta = $('#salesExpandedReviewMeta');
+    const $expandedReviewEdit = $('#salesExpandedReviewEdit');
+
+    const $periodReviewModal = $('#salesPeriodReviewModal');
+    const $periodReviewForm = $('#salesPeriodReviewForm');
+    const $periodReviewSave = $('#salesPeriodReviewSave');
+    const $periodReviewMessage = $('#salesPeriodReviewMessage');
+
+    let currentSalesPeriodReview = null;
 
     const $modal = $('#dashboardReviewModal');
     const $modalForm = $('#dashboardReviewForm');
@@ -1063,6 +1077,10 @@ $('[data-html-note]').each(function(){
     let currentComments = [];
     let currentReviewHistory = [];
     let currentLegacyAttachments = [];
+    let showDeletedComments = false;
+
+    const $historyDeletedSwitch = $('#dashboardHistoryDeletedSwitch');
+    const $historyDeletedLabel = $('#dashboardHistoryDeletedLabel');
     let deleteCommentId = 0;
     let deleteAnchorButton = null;
     const $deletePopover = $('#commentDeletePopover');
@@ -1072,6 +1090,7 @@ $('[data-html-note]').each(function(){
     const $contentProvider = $('#dashboardContentProvider');
     const $contentFetched = $('#dashboardContentFetched');
     const $contentTitle = $('#dashboardContentTitle');
+    const $contentDate = $('#dashboardContentDate');
     const $contentDescription = $('#dashboardContentDescription');
     const $contentFacts = $('#dashboardContentFacts');
     const $contentPhotos = $('#dashboardContentPhotos');
@@ -1396,6 +1415,8 @@ function syncExpandedSalesCardFromTiles(){
 
         $expanded.addClass('hidden');
         $expandedList.empty();
+        $expandedReview.addClass('hidden');
+        currentSalesPeriodReview=null;
         $expandedLoading.addClass('hidden');
 
         if(expandedRequest && expandedRequest.readyState !== 4){
@@ -1459,10 +1480,167 @@ function postThumbnailHtml(post){
     );
 }
 
+function periodReviewDateLabel(review){
+    if(!review){
+        return '';
+    }
+
+    if(review.period==='day'){
+        const parts=String(review.from||'').split('-');
+
+        if(parts.length===3){
+            const d=new Date(
+                parseInt(parts[0],10),
+                parseInt(parts[1],10)-1,
+                parseInt(parts[2],10)
+            );
+
+            return d.toLocaleDateString([],{
+                year:'numeric',
+                month:'long',
+                day:'numeric'
+            });
+        }
+    }
+
+    return String(review.period_label||'');
+}
+
+function setHtmlNoteValue($root,html){
+    if(!$root||!$root.length){
+        return;
+    }
+
+    const value=String(html||'');
+
+    $root.find('[data-html-source]').val(value);
+    $root.find('[data-html-editor]').html(value);
+    $root.find('[data-note-linkbar]').addClass('hidden');
+    $root.find('[data-note-image-panel]').addClass('hidden');
+    $root.find('[data-note-image-message]')
+        .removeClass('error')
+        .text('');
+
+    $root
+        .find('[data-note-mode="visual"]')
+        .trigger('click');
+}
+
+function renderSalesPeriodReview(review){
+    currentSalesPeriodReview=review||null;
+
+    if(!review){
+        $expandedReview.addClass('hidden');
+        return;
+    }
+
+    const exists=Boolean(review.exists);
+    const label=String(review.label||'Review');
+    const note=String(review.note||'');
+
+    $expandedReviewLabel.text(label);
+    $expandedReviewState.text(
+        exists
+            ?'Saved'
+            :'No review yet'
+    );
+
+    $expandedReviewNote
+        .toggleClass('empty',!note.trim())
+        .html(
+            note.trim()
+                ?note
+                :'Add a management review for this Sales period.'
+        );
+
+    $expandedReviewMeta.text(
+        exists
+            ?[
+                review.admin_name
+                    ?'Reviewed by '+review.admin_name
+                    :'Reviewed',
+                review.reviewed_at
+                    ?commentDateLabel(review.reviewed_at)
+                    :'',
+                periodReviewDateLabel(review)
+            ].filter(Boolean).join(' · ')
+            :periodReviewDateLabel(review)
+    );
+
+    $expandedReviewEdit.text(
+        exists
+            ?'Edit Review'
+            :'Add Review'
+    );
+
+    $expandedReview.removeClass('hidden');
+}
+
+function openSalesPeriodReviewEditor(){
+    const review=currentSalesPeriodReview;
+
+    if(!review||!expandedSalesId){
+        return;
+    }
+
+    const salesName=String(
+        $grid
+            .find(
+                '.sales-progress-card[data-sales-id="'
+                +expandedSalesId
+                +'"]'
+            )
+            .attr('data-sales-name')
+        ||'Sales'
+    );
+
+    $('#salesPeriodReviewSalesId').val(expandedSalesId);
+    $('#salesPeriodReviewDate').val(currentDate);
+    $('#salesPeriodReviewPeriod').val(currentPeriod);
+
+    $('#salesPeriodReviewModalEyebrow').text(review.label||'Review');
+    $('#salesPeriodReviewModalTitle').text(
+        salesName+' · '+(review.label||'Review')
+    );
+    $('#salesPeriodReviewModalSubtitle').text(
+        review.period_label||''
+    );
+
+    setHtmlNoteValue(
+        $periodReviewModal.find('[data-html-note]').first(),
+        review.note||''
+    );
+
+    $periodReviewMessage
+        .removeClass('error')
+        .text('');
+
+    $periodReviewSave
+        .prop('disabled',false)
+        .removeClass('saved')
+        .text('Save Review');
+
+    $periodReviewModal
+        .removeClass('hidden')
+        .attr('aria-hidden','false');
+}
+
+function closeSalesPeriodReviewEditor(){
+    $periodReviewModal
+        .addClass('hidden')
+        .attr('aria-hidden','true');
+
+    $periodReviewMessage
+        .removeClass('error')
+        .text('');
+}
+
 function renderPostGrid(data){
     const posts=Array.isArray(data.posts)
         ?data.posts
         :[];
+
+    renderSalesPeriodReview(data.review||null);
 
     $expandedTitle.text(
         data.sales.name
@@ -1613,6 +1791,8 @@ function renderPostGrid(data){
             periodName(currentPeriod) + ' posts'
         );
         $expandedList.empty();
+        $expandedReview.addClass('hidden');
+        currentSalesPeriodReview=null;
         $expandedLoading.removeClass('hidden');
 
         expandedRequest = $.ajax({
@@ -1852,6 +2032,97 @@ function renderPostGrid(data){
         closeExpandedPosts();
     });
 
+$expandedReviewEdit.on('click',function(){
+    openSalesPeriodReviewEditor();
+});
+
+$('#salesPeriodReviewClose,#salesPeriodReviewCancel').on(
+    'click',
+    function(){
+        closeSalesPeriodReviewEditor();
+    }
+);
+
+$periodReviewModal.on('click',function(event){
+    if(event.target===this){
+        closeSalesPeriodReviewEditor();
+    }
+});
+
+$periodReviewForm.on('submit',function(event){
+    event.preventDefault();
+
+    if(!salesReviewSaveUrl||!expandedSalesId){
+        return;
+    }
+
+    const $note=$periodReviewModal
+        .find('[data-html-note]')
+        .first();
+
+    syncHtmlNote($note);
+
+    $periodReviewSave
+        .prop('disabled',true)
+        .removeClass('saved')
+        .text('Saving…');
+
+    $periodReviewMessage
+        .removeClass('error')
+        .text('');
+
+    $.ajax({
+        url:salesReviewSaveUrl,
+        method:'POST',
+        dataType:'json',
+        data:$periodReviewForm.serialize(),
+        headers:{
+            'X-Requested-With':'XMLHttpRequest',
+            'Accept':'application/json'
+        }
+    })
+    .done(function(data){
+        if(!data||!data.ok){
+            $periodReviewMessage
+                .addClass('error')
+                .text(
+                    (data&&data.message)
+                    ||'Could not save review.'
+                );
+            return;
+        }
+
+        renderSalesPeriodReview(data.review);
+
+        $periodReviewSave
+            .addClass('saved')
+            .text('Saved ✓');
+
+        $periodReviewMessage.text('Review saved.');
+
+        setTimeout(function(){
+            closeSalesPeriodReviewEditor();
+        },600);
+    })
+    .fail(function(xhr){
+        const data=xhr.responseJSON||{};
+
+        $periodReviewMessage
+            .addClass('error')
+            .text(
+                data.message
+                ||'Could not save review.'
+            );
+    })
+    .always(function(){
+        if(!$periodReviewSave.hasClass('saved')){
+            $periodReviewSave
+                .prop('disabled',false)
+                .text('Save Review');
+        }
+    });
+});
+
     function setModalEditorHtml(html){
         const $note = $modal.find('[data-html-note]').first();
         const $editor = $note.find('[data-html-editor]');
@@ -1875,10 +2146,26 @@ function renderContentPreview(content){
     content=content||{};
     $contentProvider.text(content.provider||'Saved post');
     $contentFetched.text(content.fetched_at?'Fetched '+content.fetched_at:'');
+
+    const listingDate=String(content.listing_date||'').trim();
+
+    if(listingDate){
+        $contentDate
+            .removeClass('hidden')
+            .text(
+                'Listed · '
+                +commentDateLabel(listingDate)
+            );
+    }else{
+        $contentDate
+            .addClass('hidden')
+            .text('');
+    }
+
     $contentTitle.text(content.title||'No title returned');
     $contentDescription.text(content.description||'No description returned.');
+
     const facts=[];
-    if(content.listing_date)facts.push('<span><b>Listing Date</b>'+escapeHtml(content.listing_date)+'</span>');
     if(content.price)facts.push('<span><b>Price</b>'+escapeHtml(content.price)+'</span>');
     if(content.location)facts.push('<span><b>Location</b>'+escapeHtml(content.location)+'</span>');
     $contentFacts.html(facts.join(''));
@@ -2123,7 +2410,36 @@ function renderComments(items,reviewItems){
         });
     });
 
+    const deletedCommentCount=currentComments.filter(
+        function(comment){
+            return Boolean(comment.deleted);
+        }
+    ).length;
+
+    $historyDeletedSwitch
+        .toggleClass('hidden',deletedCommentCount<1)
+        .toggleClass('active',showDeletedComments)
+        .attr(
+            'aria-checked',
+            showDeletedComments?'true':'false'
+        );
+
+    $historyDeletedLabel.text(
+        showDeletedComments
+            ?'Hide deleted comments'
+            :(
+                'See full comments'
+                +(deletedCommentCount
+                    ?' ('+deletedCommentCount+' deleted)'
+                    :'')
+            )
+    );
+
     currentComments.forEach(function(comment){
+        if(comment.deleted&&!showDeletedComments){
+            return;
+        }
+
         activities.push({
             activity_type:'comment',
             id:comment.id,
@@ -2341,6 +2657,15 @@ function renderComments(items,reviewItems){
     $commentList.html(html);
 }
 
+$historyDeletedSwitch.on('click',function(){
+    showDeletedComments=!showDeletedComments;
+
+    renderComments(
+        currentComments,
+        currentReviewHistory
+    );
+});
+
 function getCommentEditorHtml(){
     const $note=$modal.find('[data-html-note]').first();
 
@@ -2534,6 +2859,13 @@ function syncDecisionVisualState(decision){
         currentComments=[];
         currentReviewHistory=[];
         currentLegacyAttachments=[];
+        showDeletedComments=false;
+
+        $historyDeletedSwitch
+            .attr('aria-checked','false')
+            .removeClass('active hidden');
+        $historyDeletedLabel.text('See full comments');
+
         closeCommentDeletePopover();
         renderComments([],[]);
         clearCommentComposer();
@@ -2744,6 +3076,11 @@ function syncDecisionVisualState(decision){
 
     $(document).on('keydown', function(event){
         if(event.key!=='Escape')return;
+
+        if(!$periodReviewModal.hasClass('hidden')){
+            closeSalesPeriodReviewEditor();
+            return;
+        }
 
         if(!$deletePopover.hasClass('hidden')){
             closeCommentDeletePopover();

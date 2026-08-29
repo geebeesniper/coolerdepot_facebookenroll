@@ -4550,3 +4550,254 @@ body.review-modal-open{
         padding:8px 12px;
     }
 }
+
+/* v0.1.39 Period reviews + listing date hierarchy + History filter */
+.sales-period-review{
+    margin:0;
+    padding:12px 14px;
+    border-bottom:1px solid #dbe3ee;
+    background:#fbfdff;
+}
+.sales-period-review.hidden{
+    display:none;
+}
+.sales-period-review-top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+}
+.sales-period-review-label{
+    display:block;
+    color:#2563eb;
+    font-size:8px;
+    font-weight:900;
+    text-transform:uppercase;
+    letter-spacing:.05em;
+}
+.sales-period-review-state{
+    display:block;
+    margin-top:2px;
+    color:#0f172a;
+    font-size:11px;
+}
+.sales-period-review-edit{
+    min-height:34px;
+    padding:6px 10px;
+    border:1px solid #bfdbfe;
+    border-radius:4px;
+    background:#eff6ff;
+    color:#1d4ed8;
+    cursor:pointer;
+    font-size:9px;
+    font-weight:900;
+}
+.sales-period-review-edit:hover,
+.sales-period-review-edit:focus{
+    border-color:#60a5fa;
+    background:#dbeafe;
+    outline:none;
+}
+.sales-period-review-note{
+    margin-top:9px;
+    color:#334155;
+    font-size:10px;
+    line-height:1.55;
+}
+.sales-period-review-note.empty{
+    color:#94a3b8;
+    font-style:italic;
+}
+.sales-period-review-note p:first-child{
+    margin-top:0;
+}
+.sales-period-review-note p:last-child{
+    margin-bottom:0;
+}
+.sales-period-review-meta{
+    margin-top:7px;
+    color:#64748b;
+    font-size:8px;
+    font-weight:700;
+}
+
+.sales-period-review-backdrop{
+    position:fixed;
+    inset:0;
+    z-index:250;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    background:rgba(15,23,42,.54);
+}
+.sales-period-review-backdrop.hidden{
+    display:none;
+}
+.sales-period-review-modal{
+    width:min(760px,calc(100vw - 28px));
+    max-height:min(720px,calc(100vh - 28px));
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    border:1px solid #cbd5e1;
+    border-radius:4px;
+    background:#fff;
+    box-shadow:0 24px 70px rgba(15,23,42,.24);
+}
+.sales-period-review-modal-head{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:14px;
+    padding:15px 17px;
+    border-bottom:1px solid #e2e8f0;
+    background:#f8fafc;
+}
+.sales-period-review-modal-head h2{
+    margin:2px 0 0;
+}
+.sales-period-review-modal-head p{
+    margin:4px 0 0;
+    color:#64748b;
+    font-size:9px;
+}
+.sales-period-review-form{
+    min-height:0;
+    display:flex;
+    flex:1 1 auto;
+    flex-direction:column;
+    overflow:hidden;
+}
+.sales-period-review-editor-body{
+    min-height:0;
+    flex:1 1 auto;
+    overflow:auto;
+    padding:15px 17px;
+}
+.sales-period-review-modal-footer{
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:8px;
+    flex:0 0 auto;
+    padding:11px 17px;
+    border-top:1px solid #e2e8f0;
+    background:#fff;
+}
+.sales-period-review-message{
+    min-height:18px;
+    margin-top:6px;
+    color:#15803d;
+    font-size:9px;
+    font-weight:800;
+}
+.sales-period-review-message.error{
+    color:#b42318;
+}
+
+.review-content-date{
+    margin:0 0 5px;
+    color:#64748b;
+    font-size:8px;
+    font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:.03em;
+}
+.review-content-date.hidden{
+    display:none;
+}
+
+/* Default History shows active comments only. Deleted comments are opt-in. */
+.history-deleted-switch{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    min-height:32px;
+    padding:4px 7px;
+    border:1px solid transparent;
+    border-radius:4px;
+    background:transparent;
+    color:#64748b;
+    cursor:pointer;
+    font-size:8px;
+    font-weight:900;
+}
+.history-deleted-switch.hidden{
+    display:none;
+}
+.history-deleted-switch:hover,
+.history-deleted-switch:focus{
+    border-color:#cbd5e1;
+    background:#fff;
+    outline:none;
+}
+.history-deleted-switch-track{
+    position:relative;
+    width:30px;
+    height:17px;
+    flex:0 0 30px;
+    border:1px solid #cbd5e1;
+    border-radius:4px;
+    background:#e2e8f0;
+    transition:background .16s ease,border-color .16s ease;
+}
+.history-deleted-switch-track > span{
+    position:absolute;
+    left:2px;
+    top:2px;
+    width:11px;
+    height:11px;
+    border-radius:4px;
+    background:#fff;
+    box-shadow:0 1px 3px rgba(15,23,42,.18);
+    transition:transform .16s ease;
+}
+.history-deleted-switch.active{
+    color:#1d4ed8;
+}
+.history-deleted-switch.active .history-deleted-switch-track{
+    border-color:#60a5fa;
+    background:#2563eb;
+}
+.history-deleted-switch.active .history-deleted-switch-track > span{
+    transform:translateX(13px);
+}
+.review-comment-thread-head{
+    gap:12px;
+}
+
+@media(pointer:coarse){
+    .sales-period-review-edit,
+    .history-deleted-switch{
+        min-height:44px;
+    }
+    .history-deleted-switch-track{
+        width:38px;
+        height:22px;
+        flex-basis:38px;
+    }
+    .history-deleted-switch-track > span{
+        width:16px;
+        height:16px;
+    }
+    .history-deleted-switch.active .history-deleted-switch-track > span{
+        transform:translateX(16px);
+    }
+}
+@media(max-width:600px){
+    .sales-period-review-top{
+        align-items:flex-start;
+    }
+    .sales-period-review-backdrop{
+        padding:8px;
+    }
+    .sales-period-review-modal{
+        width:100%;
+        max-height:calc(100vh - 16px);
+    }
+    .review-comment-thread-head{
+        align-items:flex-start;
+        flex-direction:column;
+    }
+}
