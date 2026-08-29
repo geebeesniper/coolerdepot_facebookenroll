@@ -34,26 +34,21 @@ $unreviewedTotal=(int)($summary['unreviewed_count']??0);
     </div>
 
     <div class="sales-portal-head-actions">
-        <form class="sales-range-filter" method="get">
+        <form class="sales-range-filter" id="salesRangeForm" method="get"
+            action="<?= Util::e($config['app']['base_path']) ?>/sales" novalidate>
             <label>
                 <span data-sales-i18n="from">From</span>
-                <input
-                    type="date"
-                    name="from"
-                    value="<?= Util::e($from) ?>"
-                >
+                <input type="date" name="from" id="salesRangeFrom"
+                    value="<?= Util::e($from) ?>" max="<?= Util::e($to) ?>">
             </label>
 
             <label>
                 <span data-sales-i18n="to">To</span>
-                <input
-                    type="date"
-                    name="to"
-                    value="<?= Util::e($to) ?>"
-                >
+                <input type="date" name="to" id="salesRangeTo"
+                    value="<?= Util::e($to) ?>" min="<?= Util::e($from) ?>">
             </label>
 
-            <button class="btn" type="submit">
+            <button class="btn sales-range-apply" id="salesRangeApply" type="button">
                 <span data-sales-i18n="apply">Apply</span>
             </button>
         </form>

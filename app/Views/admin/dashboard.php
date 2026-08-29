@@ -29,6 +29,8 @@ $periodNames = [
     data-attachment-delete-url="<?= Util::e($base) ?>/admin/dashboard/attachment/delete"
     data-today="<?= Util::e($today) ?>"
     data-date="<?= Util::e($date) ?>"
+    data-from="<?= Util::e((string)$periodInfo['from']) ?>"
+    data-to="<?= Util::e((string)$periodInfo['to']) ?>"
     data-period="<?= Util::e($period) ?>"
     data-period-days="<?= (int)$periodInfo['days'] ?>"
     data-post-count="<?= (int)$dashboardState['post_count'] ?>"
@@ -71,42 +73,37 @@ $periodNames = [
 
     <div class="dashboard-head-controls">
         <form
-            class="filters dashboard-date-controls"
+            class="filters dashboard-date-controls admin-range-controls"
             method="get"
             id="dashboardDateForm"
+            novalidate
         >
-        <input
-            type="hidden"
-            name="period"
-            value="<?= Util::e($period) ?>"
-            id="dashboardPeriodFormValue"
-        >
+            <input type="hidden" name="period" value="<?= Util::e($period) ?>" id="dashboardPeriodFormValue">
 
-        <div class="dashboard-date-control-row">
-            <input
-                type="date"
-                name="date"
-                id="dashboardDateInput"
-                value="<?= Util::e($date) ?>"
-                aria-label="Dashboard date"
-            >
+            <div class="dashboard-date-control-row">
+                <label class="admin-range-field">
+                    <span data-dashboard-i18n="from">From</span>
+                    <input type="date" name="from" id="dashboardFromInput"
+                        value="<?= Util::e((string)$periodInfo['from']) ?>"
+                        max="<?= Util::e((string)$periodInfo['to']) ?>">
+                </label>
 
-            <button
-                type="button"
-                class="btn dashboard-date-view"
-                id="dashboardDateView"
-            >
-                <span data-dashboard-i18n="view">View</span>
-            </button>
+                <label class="admin-range-field">
+                    <span data-dashboard-i18n="to">To</span>
+                    <input type="date" name="to" id="dashboardToInput"
+                        value="<?= Util::e((string)$periodInfo['to']) ?>"
+                        min="<?= Util::e((string)$periodInfo['from']) ?>">
+                </label>
 
-            <button
-                type="button"
-                class="dashboard-back-today<?= $date === $today ? ' hidden' : '' ?>"
-                id="dashboardBackToday"
-            >
-                <span data-dashboard-i18n="backToday">Back to today</span>
-            </button>
-        </div>
+                <button type="button"
+                    class="dashboard-back-today<?= (
+                        (string)$periodInfo['from'] === $today
+                        && (string)$periodInfo['to'] === $today
+                    ) ? ' hidden' : '' ?>"
+                    id="dashboardBackToday">
+                    <span data-dashboard-i18n="backToday">Back to today</span>
+                </button>
+            </div>
         </form>
     </div>
 </div>

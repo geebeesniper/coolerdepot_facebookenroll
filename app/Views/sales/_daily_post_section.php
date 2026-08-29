@@ -11,7 +11,7 @@ $unreviewedCount=max(
     $postCount-$goodCount-$badCount
 );
 
-function salesPlatformIcon(string $platform): string
+$salesPlatformIcon = static function(string $platform): string
 {
     $platform=strtolower($platform);
 
@@ -46,7 +46,7 @@ function salesPlatformIcon(string $platform): string
         .'<svg viewBox="0 0 24 24" aria-hidden="true">'
         .'<path d="M4 5h16v14H4V5Zm2 2v10h12V7H6Z"/>'
         .'</svg></span>';
-}
+};
 ?>
 <section
     class="daily-post-section sales-day-section"
@@ -101,7 +101,7 @@ function salesPlatformIcon(string $platform): string
                         >
                     <?php else: ?>
                         <div class="sales-self-post-placeholder">
-                            <?= salesPlatformIcon((string)$p['platform']) ?>
+                            <?= $salesPlatformIcon((string)$p['platform']) ?>
                             <span><?= Util::e(ucfirst((string)$p['platform'])) ?></span>
                         </div>
                     <?php endif; ?>
@@ -111,7 +111,7 @@ function salesPlatformIcon(string $platform): string
                     </span>
 
                     <span class="sales-self-post-platform">
-                        <?= salesPlatformIcon((string)$p['platform']) ?>
+                        <?= $salesPlatformIcon((string)$p['platform']) ?>
                     </span>
                 </div>
 

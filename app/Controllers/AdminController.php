@@ -7,12 +7,11 @@ use App\Core\Controller;use App\Core\Auth;use App\Core\Csrf;use App\Core\Databas
 class AdminController extends Controller{
     public function dashboard():void{
         $admin=Auth::requireRole('admin');
-        $date=$this->validDashboardDate(
-            (string)($_GET['date']??date('Y-m-d'))
-        );
-        $period=$this->validDashboardPeriod(
-            (string)($_GET['period']??'day')
-        );
+        [
+            'date'=>$date,
+            'period'=>$period,
+            'info'=>$periodInfo,
+        ]=$this->dashboardRequestContext($_GET);
 
         $salesFilter=(int)($_GET['sales_id']??0);
         $sales=User::allSales();
@@ -26,7 +25,6 @@ class AdminController extends Controller{
             $salesFilter=0;
         }
 
-        $periodInfo=$this->dashboardPeriodInfo($date,$period);
         $salesProgress=$this->formatProgressRows(
             Post::adminSalesProgress(
                 $periodInfo['from'],
@@ -84,13 +82,11 @@ class AdminController extends Controller{
     public function dashboardProgress():void{
         Auth::requireRole('admin');
 
-        $date=$this->validDashboardDate(
-            (string)($_GET['date']??date('Y-m-d'))
-        );
-        $period=$this->validDashboardPeriod(
-            (string)($_GET['period']??'day')
-        );
-        $periodInfo=$this->dashboardPeriodInfo($date,$period);
+        [
+            'date'=>$date,
+            'period'=>$period,
+            'info'=>$periodInfo,
+        ]=$this->dashboardRequestContext($_GET);
 
         if (session_status()===PHP_SESSION_ACTIVE) {
             session_write_close();
@@ -131,12 +127,12 @@ class AdminController extends Controller{
         Auth::requireRole('admin');
 
         $salesUserId=(int)($_GET['sales_id']??0);
-        $date=$this->validDashboardDate(
-            (string)($_GET['date']??date('Y-m-d'))
-        );
-        $period=$this->validDashboardPeriod(
-            (string)($_GET['period']??'day')
-        );
+
+        [
+            'date'=>$date,
+            'period'=>$period,
+            'info'=>$periodInfo,
+        ]=$this->dashboardRequestContext($_GET);
 
         if ($salesUserId < 1) {
             $this->json([
@@ -156,13 +152,13 @@ class AdminController extends Controller{
             ],404);
         }
 
-        $periodInfo=$this->dashboardPeriodInfo($date,$period);
-
-        $salesPeriodReview=$this->dashboardSalesReviewData(
-            $salesUserId,
-            $period,
-            $periodInfo
-        );
+        $salesPeriodReview=$period==='range'
+            ? null
+            : $this->dashboardSalesReviewData(
+                $salesUserId,
+                $period,
+                $periodInfo
+            );
 
         if (session_status()===PHP_SESSION_ACTIVE) {
             session_write_close();
@@ -235,9 +231,16 @@ class AdminController extends Controller{
         $date=$this->validDashboardDate(
             (string)($_POST['date']??date('Y-m-d'))
         );
-        $period=$this->validDashboardPeriod(
-            (string)($_POST['period']??'day')
-        );
+        $rawPeriod=(string)($_POST['period']??'day');
+
+        if($rawPeriod==='range'){
+            $this->json([
+                'ok'=>false,
+                'message'=>'Custom date ranges do not have a single period review.',
+            ],422);
+        }
+
+        $period=$this->validDashboardPeriod($rawPeriod);
         $note=HtmlNoteSanitizer::clean(
             (string)($_POST['note']??'')
         );
@@ -901,13 +904,11 @@ public function dashboardDeleteAttachment():void{
     public function dashboardUpdates():void{
         Auth::requireRole('admin');
 
-        $date=$this->validDashboardDate(
-            (string)($_GET['date']??date('Y-m-d'))
-        );
-        $period=$this->validDashboardPeriod(
-            (string)($_GET['period']??'day')
-        );
-        $periodInfo=$this->dashboardPeriodInfo($date,$period);
+        [
+            'date'=>$date,
+            'period'=>$period,
+            'info'=>$periodInfo,
+        ]=$this->dashboardRequestContext($_GET);
 
         if (session_status()===PHP_SESSION_ACTIVE) {
             session_write_close();
@@ -1140,6 +1141,69 @@ private function dashboardSalesReviewData(
         'exists'=>(bool)$row,
     ];
 }
+
+
+    private function dashboardRequestContext(array $source):array{
+        $rawFrom=trim((string)($source['from']??''));
+        $rawTo=trim((string)($source['to']??''));
+
+        $validFrom=preg_match('/^\d{4}-\d{2}-\d{2}$/',$rawFrom)===1;
+        $validTo=preg_match('/^\d{4}-\d{2}-\d{2}$/',$rawTo)===1;
+
+        if($validFrom&&$validTo){
+            $from=$rawFrom;
+            $to=$rawTo;
+
+            if($from>$to){
+                $to=$from;
+            }
+
+            $days=max(
+                1,
+                (int)floor(
+                    (
+                        strtotime($to.' 12:00:00')
+                        -strtotime($from.' 12:00:00')
+                    )/86400
+                )+1
+            );
+
+            $fromTs=strtotime($from.' 12:00:00');
+            $toTs=strtotime($to.' 12:00:00');
+
+            $label=$from===$to
+                ? date('F j, Y',$fromTs)
+                : date('M j',$fromTs).' — '.date('M j, Y',$toTs);
+
+            return [
+                'date'=>$to,
+                'period'=>'range',
+                'info'=>[
+                    'period'=>'range',
+                    'from'=>$from,
+                    'to'=>$to,
+                    'days'=>$days,
+                    'label'=>$label,
+                    'short_label'=>$days===1
+                        ? 'Daily target'
+                        : $days.'-day target',
+                ],
+            ];
+        }
+
+        $date=$this->validDashboardDate(
+            (string)($source['date']??date('Y-m-d'))
+        );
+        $period=$this->validDashboardPeriod(
+            (string)($source['period']??'day')
+        );
+
+        return [
+            'date'=>$date,
+            'period'=>$period,
+            'info'=>$this->dashboardPeriodInfo($date,$period),
+        ];
+    }
 
     private function validDashboardDate(string $date):string{
         return preg_match('/^\d{4}-\d{2}-\d{2}$/',$date)

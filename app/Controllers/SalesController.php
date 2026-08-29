@@ -25,6 +25,10 @@ class SalesController extends Controller
             $to = date('Y-m-d');
         }
 
+        if($from>$to){
+            $to=$from;
+        }
+
         $counts = Post::dailyCounts((int)$u['id'], $from, $to);
         $summary = Post::salesRangeSummary(
             (int)$u['id'],
@@ -75,6 +79,10 @@ class SalesController extends Controller
 
         if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $from) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $to)) {
             $this->json(['ok' => false, 'message' => 'Invalid date range.'], 422);
+        }
+
+        if($from>$to){
+            $to=$from;
         }
 
         $rows = Post::dailyDatesForSales((int)$u['id'], $from, $to, $limit, $offset);

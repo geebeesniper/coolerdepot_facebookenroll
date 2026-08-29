@@ -5574,3 +5574,14 @@ body.review-modal-open{
         border-right:0;
     }
 }
+
+/* v0.1.42 Date-range controls + Sales Apply fix */
+.admin-range-controls{align-items:flex-end;}
+.admin-range-field{margin:0;color:#64748b;font-size:9px;font-weight:800;}
+.admin-range-field>span{display:block;margin-bottom:4px;}
+.admin-range-field input{width:144px;min-height:38px;}
+.dashboard-date-control-row{align-items:flex-end;}
+.dashboard-date-view{display:none!important;}
+.sales-range-apply{position:relative;z-index:2;min-height:38px;pointer-events:auto;cursor:pointer;}
+@media(pointer:coarse){.admin-range-field input,.sales-range-apply{min-height:44px;}}
+@media(max-width:560px){.admin-range-controls,.dashboard-date-control-row{width:100%;}.admin-range-field{flex:1 1 130px;}.admin-range-field input{width:100%;}}

@@ -849,3 +849,17 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - Header navigation labels also follow the selected language.
 - No database migration is required.
 - All border radius remains `4px`.
+
+## v0.1.42 — Admin From/To, Sales Apply, and Sales partial fatal fix
+
+- Admin now uses `From / To` date inputs like Sales; the old `View` button is removed.
+- Admin From/To changes apply immediately through the existing AJAX dashboard refresh.
+- From cannot move after To, and To cannot move before From. The opposite endpoint is automatically clamped and the native `min` / `max` values stay synchronized.
+- Exact Admin ranges use a custom `range` mode for progress, expanded Post Lists, URL state, and live update polling.
+- Daily / Weekly / Monthly remain quick presets and use the current To date as their anchor.
+- Sales From/To now uses the same mutual date constraints plus server-side normalization.
+- Sales `Apply` is an explicit JavaScript navigation action, so it no longer depends on ambiguous native form submission behavior.
+- Fixed `Fatal error: Cannot redeclare salesPlatformIcon()` by replacing the Sales daily-post partial's global function with a local closure. The same partial can now be included repeatedly in one full-page or AJAX request.
+- Fixed the Admin language listener selector after the language switch moved into the global top menu.
+- No database migration is required.
+- All border radius remains `4px`.

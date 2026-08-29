@@ -477,6 +477,51 @@ $(document).on('cdsp:language-changed',function(){
 
 applySalesLanguage();
 
+function syncSalesRangeConstraints(changed){
+    const $from=$('#salesRangeFrom');
+    const $to=$('#salesRangeTo');
+
+    if(!$from.length||!$to.length)return null;
+
+    let from=String($from.val()||'');
+    let to=String($to.val()||'');
+
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(from)||!/^\d{4}-\d{2}-\d{2}$/.test(to)){
+        return null;
+    }
+
+    if(changed==='from'&&from>to){
+        to=from;
+        $to.val(to);
+    }else if(changed==='to'&&to<from){
+        from=to;
+        $from.val(from);
+    }
+
+    $from.attr('max',to);
+    $to.attr('min',from);
+    return {from:from,to:to};
+}
+
+$('#salesRangeFrom').on('change',function(){syncSalesRangeConstraints('from');});
+$('#salesRangeTo').on('change',function(){syncSalesRangeConstraints('to');});
+$('#salesRangeForm').on('submit',function(event){
+    event.preventDefault();
+    $('#salesRangeApply').trigger('click');
+});
+$('#salesRangeApply').on('click',function(){
+    const range=syncSalesRangeConstraints('');
+    if(!range)return;
+
+    const action=String($('#salesRangeForm').attr('action')||window.location.pathname);
+    const url=new URL(action,window.location.origin);
+    url.searchParams.set('from',range.from);
+    url.searchParams.set('to',range.to);
+    window.location.assign(url.toString());
+});
+syncSalesRangeConstraints('');
+
+
     $('#postUrl').on('input paste change', function(){
         setTimeout(updateDetectedPlatform, 0);
     });
@@ -1630,6 +1675,9 @@ const dashboardI18n={
         greeting:'Hi, {name}',
         pageTitle:'Sales Activity & Attendance',
         view:'View',
+        from:'From',
+        to:'To',
+        range:'Range',
         backToday:'Back to today',
         daily:'Daily',
         weekly:'Weekly',
@@ -1696,6 +1744,9 @@ const dashboardI18n={
         greeting:'你好，{name}',
         pageTitle:'销售活动与考勤',
         view:'查看',
+        from:'开始',
+        to:'结束',
+        range:'日期范围',
         backToday:'返回今天',
         daily:'每日',
         weekly:'每周',
@@ -1762,6 +1813,9 @@ const dashboardI18n={
         greeting:'你好，{name}',
         pageTitle:'銷售活動與考勤',
         view:'查看',
+        from:'開始',
+        to:'結束',
+        range:'日期範圍',
         backToday:'返回今天',
         daily:'每日',
         weekly:'每週',
@@ -1828,6 +1882,9 @@ const dashboardI18n={
         greeting:'Hola, {name}',
         pageTitle:'Actividad y asistencia de ventas',
         view:'Ver',
+        from:'Desde',
+        to:'Hasta',
+        range:'Rango',
         backToday:'Volver a hoy',
         daily:'Diario',
         weekly:'Semanal',
@@ -1922,6 +1979,7 @@ function tr(key,vars){
 function translatedPeriodName(period){
     if(period==='week')return tr('weekly');
     if(period==='month')return tr('monthly');
+    if(period==='range')return tr('range');
     return tr('daily');
 }
 
@@ -2102,6 +2160,8 @@ function applyDashboardLanguage(){
 
 
     let currentDate = String($live.data('date') || '');
+    let currentFrom = String($live.attr('data-from') || currentDate);
+    let currentTo = String($live.attr('data-to') || currentDate);
     let currentPeriod = String($live.attr('data-period') || 'day');
     let currentPeriodDays = parseInt(
         $live.attr('data-period-days'),
@@ -2279,20 +2339,49 @@ function platformLogoHtml(platform){
             return;
         }
 
-        const url = new URL(window.location.href);
-        url.searchParams.set('date', currentDate);
-        url.searchParams.set('period', currentPeriod);
-        url.searchParams.delete('sales_id');
+        const url=new URL(window.location.href);
 
-        window.history.replaceState({}, '', url.toString());
+        if(currentPeriod==='range'){
+            url.searchParams.delete('date');
+            url.searchParams.set('period','range');
+            url.searchParams.set('from',currentFrom);
+            url.searchParams.set('to',currentTo);
+        }else{
+            url.searchParams.set('date',currentDate);
+            url.searchParams.set('period',currentPeriod);
+            url.searchParams.delete('from');
+            url.searchParams.delete('to');
+        }
+
+        url.searchParams.delete('sales_id');
+        window.history.replaceState({},'',url.toString());
     }
 
     function updateBackToday(){
-        $('#dashboardBackToday')
-            .toggleClass(
-                'hidden',
-                !today || currentDate === today
-            );
+        $('#dashboardBackToday').toggleClass(
+            'hidden',
+            !today||(currentFrom===today&&currentTo===today)
+        );
+    }
+
+    function syncAdminRangeInputs(){
+        const $from=$('#dashboardFromInput');
+        const $to=$('#dashboardToInput');
+        $from.val(currentFrom).attr('max',currentTo);
+        $to.val(currentTo).attr('min',currentFrom);
+    }
+
+    function adminAjaxRangeData(extra){
+        const data=Object.assign({},extra||{});
+        if(currentPeriod==='range'){
+            data.from=currentFrom;
+            data.to=currentTo;
+            data.period='range';
+        }else{
+            data.date=currentDate;
+            data.period=currentPeriod;
+        }
+        return data;
     }
 
     function updatePeriodButtons(period){
@@ -2895,17 +2984,15 @@ function renderPostGrid(data){
         currentSalesPeriodReview=null;
         $expandedLoading.removeClass('hidden');
 
-        expandedRequest = $.ajax({
-            url: salesPostsUrl,
-            method: 'GET',
-            dataType: 'json',
-            cache: false,
-            data: {
-                sales_id: salesId,
-                date: currentDate,
-                period: currentPeriod,
-                _: Date.now()
-            }
+        expandedRequest=$.ajax({
+            url:salesPostsUrl,
+            method:'GET',
+            dataType:'json',
+            cache:false,
+            data:adminAjaxRangeData({
+                sales_id:salesId,
+                _:Date.now()
+            })
         })
         .done(function(data){
             if(
@@ -2939,21 +3026,26 @@ function renderPostGrid(data){
     }
 
     function applyProgress(data){
-        currentPeriod = data.period || 'day';
-        currentPeriodDays = parseInt(data.days, 10) || 1;
-        baselineCount = parseInt(data.post_count, 10) || 0;
+        currentPeriod=data.period||'day';
+        currentFrom=String(data.from||currentFrom||currentDate);
+        currentTo=String(data.to||currentTo||currentDate);
+        currentDate=String(data.date||currentTo||currentDate);
+        currentPeriodDays=parseInt(data.days,10)||1;
+        baselineCount=parseInt(data.post_count,10)||0;
         baselineMaxId = parseInt(data.max_post_id, 10) || 0;
         noticeShown = false;
         $notice.addClass('hidden');
 
         $live
-            .attr('data-date', currentDate)
-            .attr('data-period', currentPeriod)
+            .attr('data-date',currentDate)
+            .attr('data-from',currentFrom)
+            .attr('data-to',currentTo)
+            .attr('data-period',currentPeriod)
             .attr('data-period-days', currentPeriodDays)
             .attr('data-post-count', baselineCount)
             .attr('data-max-post-id', baselineMaxId);
 
-        $('#dashboardDateInput').val(currentDate);
+        syncAdminRangeInputs();
         updatePeriodButtons(currentPeriod);
         updateBackToday();
         updateHistory();
@@ -3001,58 +3093,60 @@ function renderPostGrid(data){
     }
 
     function loadProgress(options){
-        options = options || {};
-        const date = options.date || currentDate;
-        const period = options.period || currentPeriod;
-        const initial = !!options.initial;
+        options=options||{};
+        const initial=!!options.initial;
+        let requestData={};
+
+        if(options.from&&options.to){
+            requestData={from:String(options.from),to:String(options.to),period:'range'};
+        }else{
+            requestData={date:String(options.date||currentDate),period:String(options.period||currentPeriod)};
+        }
 
         closeExpandedPosts();
 
-        if(periodRequest && periodRequest.readyState !== 4){
+        if(periodRequest&&periodRequest.readyState!==4){
             periodRequest.abort();
         }
 
-        $('#dashboardPeriodSwitch [data-period]')
-            .prop('disabled', true);
-
+        $('#dashboardPeriodSwitch [data-period]').prop('disabled',true);
         $('body').addClass('dashboard-ajax-loading');
-        $grid.addClass(
-            initial ? 'dashboard-date-syncing' : 'period-loading'
-        );
+        $grid.addClass(initial?'dashboard-date-syncing':'period-loading');
 
-        periodRequest = $.ajax({
-            url: progressUrl,
-            method: 'GET',
-            dataType: 'json',
-            cache: false,
-            data: {
-                date: date,
-                period: period,
-                _: Date.now()
-            }
+        periodRequest=$.ajax({
+            url:progressUrl,
+            method:'GET',
+            dataType:'json',
+            cache:false,
+            data:Object.assign({},requestData,{_:Date.now()})
         })
         .done(function(data){
-            if(!data || !data.ok){
-                return;
+            if(data&&data.ok){
+                applyProgress(data);
             }
-
-            currentDate = data.date || date;
-            currentPeriod = data.period || period;
-            applyProgress(data);
         })
         .always(function(){
             $('body').removeClass('dashboard-ajax-loading');
-            $grid.removeClass(
-                'dashboard-date-syncing period-loading'
-            );
-            $('#dashboardPeriodSwitch [data-period]')
-                .prop('disabled', false);
+            $grid.removeClass('dashboard-date-syncing period-loading');
+            $('#dashboardPeriodSwitch [data-period]').prop('disabled',false);
         });
+    }
+
+    function reloadCurrentProgress(options){
+        options=Object.assign({},options||{});
+        if(currentPeriod==='range'){
+            options.from=currentFrom;
+            options.to=currentTo;
+        }else{
+            options.date=currentDate;
+            options.period=currentPeriod;
+        }
+        loadProgress(options);
     }
 
 $('#appLanguageSwitch').on(
     'click',
-    '[data-dashboard-lang]',
+    '[data-app-lang]',
     function(){
         const lang=String(
             $(this).data('app-lang')||'en'
@@ -3105,45 +3199,45 @@ $('#appLanguageSwitch').on(
             }
 
             loadProgress({
-                date: currentDate,
-                period: period
+                date:currentTo||currentDate,
+                period:period
             });
         }
     );
 
-    $('#dashboardDateView').on('click', function(){
-        const nextDate = String(
-            $('#dashboardDateInput').val() || ''
-        );
+    function applyAdminRangeChange(changed){
+        const $from=$('#dashboardFromInput');
+        const $to=$('#dashboardToInput');
+        let from=String($from.val()||'');
+        let to=String($to.val()||'');
 
-        if(!/^\d{4}-\d{2}-\d{2}$/.test(nextDate)){
+        if(!/^\d{4}-\d{2}-\d{2}$/.test(from)||!/^\d{4}-\d{2}-\d{2}$/.test(to)){
             return;
         }
 
-        loadProgress({
-            date: nextDate,
-            period: currentPeriod
-        });
-    });
-
-    $('#dashboardDateForm').on('submit', function(event){
-        event.preventDefault();
-        $('#dashboardDateView').trigger('click');
-    });
-
-    $('#dashboardDateInput').on('change', function(){
-        $('#dashboardDateView').trigger('click');
-    });
-
-    $('#dashboardBackToday').on('click', function(){
-        if(!today){
-            return;
+        if(changed==='from'&&from>to){
+            to=from;
+            $to.val(to);
+        }else if(changed==='to'&&to<from){
+            from=to;
+            $from.val(from);
         }
 
-        loadProgress({
-            date: today,
-            period: currentPeriod
-        });
+        $from.attr('max',to);
+        $to.attr('min',from);
+        loadProgress({from:from,to:to});
+    }
+
+    $('#dashboardDateForm').on('submit',function(event){event.preventDefault();});
+    $('#dashboardFromInput').on('change',function(){applyAdminRangeChange('from');});
+    $('#dashboardToInput').on('change',function(){applyAdminRangeChange('to');});
+
+    $('#dashboardBackToday').on('click',function(){
+        if(!today)return;
+        currentFrom=today;
+        currentTo=today;
+        currentDate=today;
+        loadProgress({date:today,period:'day'});
     });
 
     $grid.on('click', '[data-card-toggle]', function(event){
@@ -5049,11 +5143,9 @@ $modalForm.on('submit', function(event){
             method: 'GET',
             dataType: 'json',
             cache: false,
-            data: {
-                date: currentDate,
-                period: currentPeriod,
-                _: Date.now()
-            }
+            data:adminAjaxRangeData({
+                _:Date.now()
+            })
         })
         .done(function(data){
             if(!data || !data.ok){
@@ -5072,11 +5164,8 @@ $modalForm.on('submit', function(event){
         });
     }
 
-    $('#dashboardRefreshButton').on('click', function(){
-        loadProgress({
-            date: currentDate,
-            period: currentPeriod
-        });
+    $('#dashboardRefreshButton').on('click',function(){
+        reloadCurrentProgress();
     });
 
     document.addEventListener('visibilitychange', function(){
@@ -5085,12 +5174,9 @@ $modalForm.on('submit', function(event){
         }
     });
 
+    syncAdminRangeInputs();
     updateBackToday();
-    loadProgress({
-        date: currentDate,
-        period: currentPeriod,
-        initial: true
-    });
+    reloadCurrentProgress({initial:true});
 
     checkDashboardActivity();
     activityTimer = setInterval(checkDashboardActivity, 5000);
