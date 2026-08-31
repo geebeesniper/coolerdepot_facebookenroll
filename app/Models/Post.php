@@ -369,6 +369,83 @@ class Post {
         return $stmt->fetchAll();
     }
 
+
+public static function salesChartRows(
+    int $salesUserId,
+    string $from,
+    string $to
+): array {
+    $stmt=Database::connection()->prepare(
+        "SELECT
+            p.published_date,
+            p.platform,
+            COUNT(p.id) AS post_count,
+            COALESCE(
+                SUM(
+                    COALESCE(
+                        rh.decision,
+                        p.admin_review_status
+                    )='good'
+                ),
+                0
+            ) AS good_count,
+            COALESCE(
+                SUM(
+                    COALESCE(
+                        rh.decision,
+                        p.admin_review_status
+                    )='bad'
+                ),
+                0
+            ) AS bad_count
+         FROM cdsp_sales_posts p
+         LEFT JOIN (
+            SELECT h.post_id,h.decision
+            FROM cdsp_post_review_history h
+            INNER JOIN (
+                SELECT post_id,MAX(id) AS max_id
+                FROM cdsp_post_review_history
+                GROUP BY post_id
+            ) latest
+              ON latest.max_id=h.id
+         ) rh
+           ON rh.post_id=p.id
+         WHERE p.sales_user_id=?
+           AND p.deleted_at IS NULL
+           AND p.published_date BETWEEN ? AND ?
+         GROUP BY p.published_date,p.platform
+         ORDER BY p.published_date ASC,p.platform ASC"
+    );
+
+    $stmt->execute([
+        $salesUserId,
+        $from,
+        $to,
+    ]);
+
+    $rows=[];
+
+    foreach($stmt->fetchAll() as $row){
+        $posts=(int)($row['post_count']??0);
+        $good=(int)($row['good_count']??0);
+        $bad=(int)($row['bad_count']??0);
+
+        $rows[]=[
+            'date'=>(string)$row['published_date'],
+            'platform'=>(string)$row['platform'],
+            'post_count'=>$posts,
+            'good_count'=>$good,
+            'bad_count'=>$bad,
+            'unreviewed_count'=>max(
+                0,
+                $posts-$good-$bad
+            ),
+        ];
+    }
+
+    return $rows;
+}
+
     public static function salesRangeSummary(
         int $salesUserId,
         string $from,

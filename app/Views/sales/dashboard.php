@@ -48,9 +48,11 @@ $unreviewedTotal=(int)($summary['unreviewed_count']??0);
                     value="<?= Util::e($to) ?>" min="<?= Util::e($from) ?>">
             </label>
 
-            <button class="btn sales-range-apply" id="salesRangeApply" type="button">
-                <span data-sales-i18n="apply">Apply</span>
-            </button>
+            <span
+                class="sales-range-live-status"
+                id="salesRangeStatus"
+                aria-live="polite"
+            ></span>
         </form>
 
         <a
@@ -63,31 +65,134 @@ $unreviewedTotal=(int)($summary['unreviewed_count']??0);
     </div>
 </div>
 
-<section class="sales-overview-grid">
-    <article class="sales-overview-card">
-        <span data-sales-i18n="posts">Posts</span>
-        <strong data-sales-summary="posts"><?= $postsTotal ?></strong>
-        <small data-sales-i18n="selectedRange">Selected range</small>
-    </article>
+<section
+    class="sales-activity-chart-panel"
+    id="salesActivityChartPanel"
+    data-daily-target="<?= (int)$dailyTarget ?>"
+>
+    <div class="sales-activity-chart-head">
+        <div>
+            <span class="eyebrow" data-sales-i18n="activityChart">
+                Posting Activity
+            </span>
+            <h2 data-sales-i18n="dailyProgress">
+                Daily Post Progress
+            </h2>
+            <p>
+                <span data-sales-i18n="targetLine">Daily target</span>
+                <strong id="salesChartTargetCopy">
+                    <?= (int)$dailyTarget ?>
+                </strong>
+            </p>
+        </div>
 
-    <article class="sales-overview-card good">
-        <span data-sales-i18n="good">Good</span>
-        <strong data-sales-summary="good"><?= $goodTotal ?></strong>
-        <small data-sales-i18n="passedReview">Passed review</small>
-    </article>
+        <div
+            class="sales-platform-filter"
+            id="salesPlatformFilter"
+            role="group"
+            aria-label="Filter dashboard by platform"
+        >
+            <button
+                type="button"
+                class="sales-platform-filter-button active"
+                data-sales-platform-filter="all"
+                aria-pressed="true"
+            >
+                <span data-sales-i18n="allPlatforms">All</span>
+            </button>
+            <button
+                type="button"
+                class="sales-platform-filter-button"
+                data-sales-platform-filter="facebook"
+                aria-pressed="false"
+            >
+                Facebook
+            </button>
+            <button
+                type="button"
+                class="sales-platform-filter-button"
+                data-sales-platform-filter="instagram"
+                aria-pressed="false"
+            >
+                Instagram
+            </button>
+            <button
+                type="button"
+                class="sales-platform-filter-button"
+                data-sales-platform-filter="offerup"
+                aria-pressed="false"
+            >
+                OfferUp
+            </button>
+            <button
+                type="button"
+                class="sales-platform-filter-button"
+                data-sales-platform-filter="craigslist"
+                aria-pressed="false"
+            >
+                Craigslist
+            </button>
+        </div>
+    </div>
 
-    <article class="sales-overview-card bad">
-        <span data-sales-i18n="issues">Issues</span>
-        <strong data-sales-summary="bad"><?= $badTotal ?></strong>
-        <small data-sales-i18n="needsAttention">Needs attention</small>
-    </article>
+    <div class="sales-chart-legend">
+        <span><i class="good"></i><b data-sales-i18n="good">Good</b></span>
+        <span><i class="bad"></i><b data-sales-i18n="issues">Issues</b></span>
+        <span><i class="unreviewed"></i><b data-sales-i18n="unreviewed">Unreviewed</b></span>
+        <span><i class="missing"></i><b data-sales-i18n="missing">Missing</b></span>
+    </div>
 
-    <article class="sales-overview-card neutral">
-        <span data-sales-i18n="unreviewed">Unreviewed</span>
-        <strong data-sales-summary="unreviewed"><?= $unreviewedTotal ?></strong>
-        <small data-sales-i18n="awaitingReview">Awaiting Admin review</small>
-    </article>
+    <div class="sales-chart-shell">
+        <div class="sales-chart-y-axis" aria-hidden="true">
+            <span class="top" id="salesChartMaxLabel">—</span>
+            <span class="target" id="salesChartTargetLabel">
+                <?= (int)$dailyTarget ?>
+            </span>
+            <span class="zero">0</span>
+        </div>
+
+        <div class="sales-chart-scroll" id="salesChartScroll">
+            <div class="sales-chart-canvas" id="salesChartCanvas">
+                <div
+                    class="sales-chart-target-line"
+                    id="salesChartTargetLine"
+                >
+                    <span>
+                        <span data-sales-i18n="targetLine">Daily target</span>
+                        <b id="salesChartTargetLineValue"><?= (int)$dailyTarget ?></b>
+                    </span>
+                </div>
+
+                <div
+                    class="sales-chart-bars"
+                    id="salesChartBars"
+                    aria-label="Daily post progress chart"
+                ></div>
+            </div>
+        </div>
+    </div>
+
+    <div
+        class="sales-chart-tooltip hidden"
+        id="salesChartTooltip"
+        role="status"
+    ></div>
 </section>
+
+<script type="application/json" id="salesChartInitialData"><?= json_encode(
+    [
+        'from'=>$from,
+        'to'=>$to,
+        'daily_target'=>(int)$dailyTarget,
+        'rows'=>$chartRows,
+    ],
+    JSON_UNESCAPED_SLASHES
+    | JSON_UNESCAPED_UNICODE
+    | JSON_HEX_TAG
+    | JSON_HEX_AMP
+    | JSON_HEX_APOS
+    | JSON_HEX_QUOT
+) ?></script>
 
 <div
     id="dailyPosts"

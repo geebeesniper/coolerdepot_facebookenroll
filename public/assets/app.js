@@ -123,6 +123,7 @@ $('#appLanguageSwitch').on(
 
     function platformLabel(platform){
         if(platform === 'facebook') return 'Facebook';
+        if(platform === 'instagram') return 'Instagram';
         if(platform === 'offerup') return 'OfferUp';
         if(platform === 'craigslist') return 'Craigslist';
         return '';
@@ -161,6 +162,15 @@ const salesI18n={
         greeting:'Hi, {name}',
         dashboardTitle:'My Sales Activity',
         dashboardSubtitle:'Review your verified Marketplace posts and Admin review status.',
+        activityChart:'Posting Activity',
+        dailyProgress:'Daily Post Progress',
+        targetLine:'Daily target',
+        allPlatforms:'All',
+        missing:'Missing',
+        total:'Total',
+        viewDetails:'View details',
+        noImage:'No listing image',
+        close:'Close',
         from:'From',
         to:'To',
         apply:'Apply',
@@ -222,6 +232,15 @@ const salesI18n={
         greeting:'你好，{name}',
         dashboardTitle:'我的销售活动',
         dashboardSubtitle:'查看已验证的 Marketplace 帖子以及管理员审核状态。',
+        activityChart:'发帖活动',
+        dailyProgress:'每日发帖进度',
+        targetLine:'每日目标',
+        allPlatforms:'全部',
+        missing:'缺少',
+        total:'总数',
+        viewDetails:'查看详情',
+        noImage:'没有帖子图片',
+        close:'关闭',
         from:'开始',
         to:'结束',
         apply:'应用',
@@ -283,6 +302,15 @@ const salesI18n={
         greeting:'你好，{name}',
         dashboardTitle:'我的銷售活動',
         dashboardSubtitle:'查看已驗證的 Marketplace 貼文以及管理員審核狀態。',
+        activityChart:'發文活動',
+        dailyProgress:'每日發文進度',
+        targetLine:'每日目標',
+        allPlatforms:'全部',
+        missing:'缺少',
+        total:'總數',
+        viewDetails:'查看詳情',
+        noImage:'沒有貼文圖片',
+        close:'關閉',
         from:'開始',
         to:'結束',
         apply:'套用',
@@ -344,6 +372,15 @@ const salesI18n={
         greeting:'Hola, {name}',
         dashboardTitle:'Mi actividad de ventas',
         dashboardSubtitle:'Revisa tus publicaciones verificadas y el estado de revisión del administrador.',
+        activityChart:'Actividad de publicaciones',
+        dailyProgress:'Progreso diario de publicaciones',
+        targetLine:'Meta diaria',
+        allPlatforms:'Todas',
+        missing:'Faltantes',
+        total:'Total',
+        viewDetails:'Ver detalles',
+        noImage:'Sin imagen',
+        close:'Cerrar',
         from:'Desde',
         to:'Hasta',
         apply:'Aplicar',
@@ -473,6 +510,10 @@ function applySalesLanguage(){
 
 $(document).on('cdsp:language-changed',function(){
     applySalesLanguage();
+
+    if($('#salesActivityChartPanel').length){
+        renderSalesChart();
+    }
 });
 
 applySalesLanguage();
@@ -481,12 +522,17 @@ function syncSalesRangeConstraints(changed){
     const $from=$('#salesRangeFrom');
     const $to=$('#salesRangeTo');
 
-    if(!$from.length||!$to.length)return null;
+    if(!$from.length||!$to.length){
+        return null;
+    }
 
     let from=String($from.val()||'');
     let to=String($to.val()||'');
 
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(from)||!/^\d{4}-\d{2}-\d{2}$/.test(to)){
+    if(
+        !/^\d{4}-\d{2}-\d{2}$/.test(from)
+        ||!/^\d{4}-\d{2}-\d{2}$/.test(to)
+    ){
         return null;
     }
 
@@ -500,60 +546,46 @@ function syncSalesRangeConstraints(changed){
 
     $from.attr('max',to);
     $to.attr('min',from);
-    return {from:from,to:to};
+
+    return {
+        from:from,
+        to:to
+    };
 }
 
-$('#salesRangeFrom').on('change',function(){syncSalesRangeConstraints('from');});
-$('#salesRangeTo').on('change',function(){syncSalesRangeConstraints('to');});
-$('#salesRangeForm').on('submit',function(event){
-    event.preventDefault();
-    $('#salesRangeApply').trigger('click');
-});
 let salesRangeRequest=null;
-
-function renderSalesRangeData(data,range){
-    const $wrap=$('#dailyPosts');
-    const $empty=$('#dailyPostsEmpty');
-    const $load=$('#loadMoreDailyPosts');
-    const summary=data.summary||{};
-
-    $wrap
-        .html(data.html||'')
-        .attr('data-from',range.from)
-        .attr('data-to',range.to)
-        .attr('data-offset',data.next_offset||0);
-
-    $('[data-sales-summary="posts"]').text(parseInt(summary.post_count,10)||0);
-    $('[data-sales-summary="good"]').text(parseInt(summary.good_count,10)||0);
-    $('[data-sales-summary="bad"]').text(parseInt(summary.bad_count,10)||0);
-    $('[data-sales-summary="unreviewed"]').text(parseInt(summary.unreviewed_count,10)||0);
-
-    const hasDays=(parseInt(data.total_days,10)||0)>0;
-    $empty.toggleClass('hidden',hasDays);
-
-    if(data.has_more){
-        $load.prop('disabled',false).show();
-        $load.find('[data-sales-i18n="loadEarlier"]').text(salesTr('loadEarlier'));
-    }else{
-        $load.prop('disabled',true).hide();
-    }
-
-    $('#dailyLoadStatus').text('');
-    applySalesLanguage();
-
-    const url=new URL(window.location.href);
-    url.searchParams.set('from',range.from);
-    url.searchParams.set('to',range.to);
-    window.history.replaceState({},'',url.toString());
-}
-
-$('#salesRangeApply').on('click',function(){
-    const range=syncSalesRangeConstraints('');
-
+let salesChartRows=[];
+let salesChartDailyTarget=10;
+let salesPlatformFilter='all';
+let salesTouchChartDay=null;
 
 const $salesPostDetailModal=$('#salesPostDetailModal');
 const $salesPostDetailImageButton=$('#salesPostDetailImageButton');
 const $salesImageLightbox=$('#salesImageLightbox');
+const $salesChartTooltip=$('#salesChartTooltip');
+
+function parseSalesChartInitialData(){
+    const node=document.getElementById('salesChartInitialData');
+
+    if(!node){
+        return;
+    }
+
+    try{
+        const data=JSON.parse(node.textContent||'{}');
+
+        salesChartRows=Array.isArray(data.rows)
+            ?data.rows
+            :[];
+        salesChartDailyTarget=Math.max(
+            1,
+            parseInt(data.daily_target,10)||10
+        );
+    }catch(error){
+        salesChartRows=[];
+        salesChartDailyTarget=10;
+    }
+}
 
 function salesPostStatusLabel(status){
     if(status==='good'){
@@ -565,6 +597,558 @@ function salesPostStatusLabel(status){
     }
 
     return salesTr('unreviewed');
+}
+
+function salesDateRange(from,to){
+    const dates=[];
+    const start=new Date(from+'T12:00:00');
+    const end=new Date(to+'T12:00:00');
+
+    if(
+        Number.isNaN(start.getTime())
+        ||Number.isNaN(end.getTime())
+    ){
+        return dates;
+    }
+
+    let guard=0;
+
+    for(
+        let day=new Date(start);
+        day<=end&&guard<1000;
+        day.setDate(day.getDate()+1)
+    ){
+        const year=day.getFullYear();
+        const month=String(day.getMonth()+1).padStart(2,'0');
+        const date=String(day.getDate()).padStart(2,'0');
+
+        dates.push(year+'-'+month+'-'+date);
+        guard++;
+    }
+
+    return dates;
+}
+
+function salesShortDate(value){
+    const d=new Date(value+'T12:00:00');
+
+    if(Number.isNaN(d.getTime())){
+        return value;
+    }
+
+    return d.toLocaleDateString(
+        salesLanguage()==='zh-CN'
+            ?'zh-CN'
+            :salesLanguage()==='zh-TW'
+                ?'zh-TW'
+                :salesLanguage()==='es'
+                    ?'es-US'
+                    :'en-US',
+        {
+            month:'numeric',
+            day:'numeric'
+        }
+    );
+}
+
+function aggregateSalesChartDate(date,platform){
+    const result={
+        date:date,
+        post_count:0,
+        good_count:0,
+        bad_count:0,
+        unreviewed_count:0
+    };
+
+    salesChartRows.forEach(function(row){
+        if(String(row.date)!==date){
+            return;
+        }
+
+        if(
+            platform!=='all'
+            &&String(row.platform)!==platform
+        ){
+            return;
+        }
+
+        result.post_count+=parseInt(row.post_count,10)||0;
+        result.good_count+=parseInt(row.good_count,10)||0;
+        result.bad_count+=parseInt(row.bad_count,10)||0;
+        result.unreviewed_count+=
+            parseInt(row.unreviewed_count,10)||0;
+    });
+
+    return result;
+}
+
+function buildSalesChartTooltipHtml(data){
+    const missing=Math.max(
+        0,
+        salesChartDailyTarget-data.post_count
+    );
+
+    return (
+        '<strong>'+escapeHtml(data.date)+'</strong>'
+        +'<span>'
+            +escapeHtml(salesTr('total'))
+            +': <b>'+data.post_count+'</b>'
+        +'</span>'
+        +'<span class="good">'
+            +escapeHtml(salesTr('good'))
+            +': <b>'+data.good_count+'</b>'
+        +'</span>'
+        +'<span class="bad">'
+            +escapeHtml(salesTr('issues'))
+            +': <b>'+data.bad_count+'</b>'
+        +'</span>'
+        +'<span class="unreviewed">'
+            +escapeHtml(salesTr('unreviewed'))
+            +': <b>'+data.unreviewed_count+'</b>'
+        +'</span>'
+        +'<span class="missing">'
+            +escapeHtml(salesTr('missing'))
+            +': <b>'+missing+'</b>'
+        +'</span>'
+        +'<span>'
+            +escapeHtml(salesTr('targetLine'))
+            +': <b>'+salesChartDailyTarget+'</b>'
+        +'</span>'
+    );
+}
+
+function renderSalesChart(){
+    const $bars=$('#salesChartBars');
+    const $canvas=$('#salesChartCanvas');
+    const $panel=$('#salesActivityChartPanel');
+
+    if(!$bars.length||!$panel.length){
+        return;
+    }
+
+    const from=String($('#salesRangeFrom').val()||'');
+    const to=String($('#salesRangeTo').val()||'');
+    const dates=salesDateRange(from,to);
+    const target=Math.max(1,salesChartDailyTarget);
+    const cap=Math.max(1,target*1.2);
+    const targetPercent=Math.min(
+        100,
+        (target/cap)*100
+    );
+
+    $('#salesChartTargetCopy,#salesChartTargetLabel,#salesChartTargetLineValue')
+        .text(target);
+
+    $('#salesChartMaxLabel').text(
+        Number.isInteger(cap)
+            ?String(cap)
+            :cap.toFixed(1)
+    );
+
+    const chartXAxisHeight=26;
+    const chartPlotHeight=226;
+    const targetBottom=
+        chartXAxisHeight
+        +(chartPlotHeight*(targetPercent/100));
+
+    $('#salesChartTargetLine').css(
+        'bottom',
+        targetBottom+'px'
+    );
+
+    $('#salesChartTargetLabel').css(
+        'bottom',
+        targetBottom+'px'
+    );
+
+    $panel.attr('data-daily-target',target);
+
+    $canvas.css(
+        'width',
+        'max(100%,'+Math.max(360,dates.length*50)+'px)'
+    );
+
+    let html='';
+
+    dates.forEach(function(date){
+        const data=aggregateSalesChartDate(
+            date,
+            salesPlatformFilter
+        );
+        const actual=data.post_count;
+        const scaleFactor=
+            actual>cap
+                ?cap/actual
+                :1;
+
+        const goodHeight=
+            (data.good_count*scaleFactor/cap)*100;
+        const badHeight=
+            (data.bad_count*scaleFactor/cap)*100;
+        const unreviewedHeight=
+            (data.unreviewed_count*scaleFactor/cap)*100;
+        const actualHeight=Math.min(
+            100,
+            (Math.min(actual,cap)/cap)*100
+        );
+        const missingCount=Math.max(0,target-actual);
+        const missingHeight=
+            missingCount>0
+                ?Math.max(
+                    0,
+                    targetPercent-actualHeight
+                )
+                :0;
+
+        html+=(
+            '<div'
+                +' class="sales-chart-day"'
+                +' tabindex="0"'
+                +' data-chart-date="'+escapeHtml(date)+'"'
+                +' data-chart-total="'+actual+'"'
+                +' data-chart-good="'+data.good_count+'"'
+                +' data-chart-bad="'+data.bad_count+'"'
+                +' data-chart-unreviewed="'+data.unreviewed_count+'"'
+                +' data-chart-missing="'+missingCount+'"'
+            +'>'
+                +'<div class="sales-chart-day-plot">'
+                    +(missingHeight>0
+                        ?'<span class="sales-chart-missing"'
+                            +' style="bottom:'+actualHeight+'%;height:'+missingHeight+'%"'
+                            +'></span>'
+                        :'')
+                    +'<div class="sales-chart-stack">'
+                        +'<span class="sales-chart-segment good"'
+                            +' style="height:'+goodHeight+'%"'
+                        +'></span>'
+                        +'<span class="sales-chart-segment bad"'
+                            +' style="height:'+badHeight+'%"'
+                        +'></span>'
+                        +'<span class="sales-chart-segment unreviewed"'
+                            +' style="height:'+unreviewedHeight+'%"'
+                        +'></span>'
+                    +'</div>'
+                    +(actual>cap
+                        ?'<span class="sales-chart-over-cap">120%+</span>'
+                        :'')
+                +'</div>'
+                +'<span class="sales-chart-x-label">'
+                    +escapeHtml(salesShortDate(date))
+                +'</span>'
+            +'</div>'
+        );
+    });
+
+    $bars.html(html);
+}
+
+function showSalesChartTooltip($day,event){
+    if(!$day||!$day.length||!$salesChartTooltip.length){
+        return;
+    }
+
+    const data={
+        date:String($day.attr('data-chart-date')||''),
+        post_count:parseInt($day.attr('data-chart-total'),10)||0,
+        good_count:parseInt($day.attr('data-chart-good'),10)||0,
+        bad_count:parseInt($day.attr('data-chart-bad'),10)||0,
+        unreviewed_count:parseInt(
+            $day.attr('data-chart-unreviewed'),
+            10
+        )||0
+    };
+
+    const rect=$day[0].getBoundingClientRect();
+
+    $salesChartTooltip
+        .html(buildSalesChartTooltipHtml(data))
+        .removeClass('hidden');
+
+    const width=$salesChartTooltip.outerWidth()||170;
+    const height=$salesChartTooltip.outerHeight()||120;
+
+    let left=rect.left+(rect.width/2)-(width/2);
+    let top=rect.top-height-8;
+
+    left=Math.max(
+        8,
+        Math.min(
+            window.innerWidth-width-8,
+            left
+        )
+    );
+
+    if(top<8){
+        top=Math.min(
+            window.innerHeight-height-8,
+            rect.bottom+8
+        );
+    }
+
+    $salesChartTooltip.css({
+        left:left+'px',
+        top:top+'px'
+    });
+}
+
+function hideSalesChartTooltip(){
+    $salesChartTooltip.addClass('hidden');
+    salesTouchChartDay=null;
+}
+
+function updateSalesDayStatusCounts($section){
+    const $all=$section.find('.sales-self-post-card');
+    const $platformCards=$all.filter(function(){
+        return (
+            salesPlatformFilter==='all'
+            ||String(
+                $(this).attr('data-sales-post-platform')||''
+            )===salesPlatformFilter
+        );
+    });
+
+    const counts={
+        all:$platformCards.length,
+        good:$platformCards.filter(
+            '[data-sales-post-status="good"]'
+        ).length,
+        bad:$platformCards.filter(
+            '[data-sales-post-status="bad"]'
+        ).length,
+        unreviewed:$platformCards.filter(
+            '[data-sales-post-status="unreviewed"]'
+        ).length
+    };
+
+    $section
+        .find('[data-sales-day-filter]')
+        .each(function(){
+            const type=String(
+                $(this).data('sales-day-filter')||'all'
+            );
+
+            $(this)
+                .find('strong')
+                .text(counts[type]||0);
+        });
+
+    return counts;
+}
+
+function applySalesDayFilter($section,filter){
+    const $cards=$section.find('.sales-self-post-card');
+    const counts=updateSalesDayStatusCounts($section);
+
+    $cards.each(function(){
+        const status=String(
+            $(this).attr('data-sales-post-status')
+            ||'unreviewed'
+        );
+        const platform=String(
+            $(this).attr('data-sales-post-platform')
+            ||''
+        );
+
+        const platformMatch=
+            salesPlatformFilter==='all'
+            ||platform===salesPlatformFilter;
+        const statusMatch=
+            filter==='all'
+            ||status===filter;
+
+        $(this).toggleClass(
+            'sales-filter-hidden',
+            !(platformMatch&&statusMatch)
+        );
+    });
+
+    const visible=$cards.filter(
+        ':not(.sales-filter-hidden)'
+    ).length;
+
+    $section.toggleClass(
+        'sales-platform-section-empty',
+        counts.all===0
+    );
+
+    let $empty=$section.find(
+        '[data-sales-filter-empty]'
+    );
+
+    if(!$empty.length){
+        $empty=$(
+            '<div class="sales-filter-empty hidden" '
+            +'data-sales-filter-empty></div>'
+        );
+        $section
+            .find('.sales-post-card-grid')
+            .after($empty);
+    }
+
+    $empty
+        .toggleClass(
+            'hidden',
+            visible!==0||counts.all===0
+        )
+        .text(
+            salesTr('noPostsRange')
+            +' · '
+            +salesPostStatusLabel(filter)
+        );
+
+    $section
+        .find('[data-sales-day-filter]')
+        .each(function(){
+            const active=
+                String($(this).data('sales-day-filter'))
+                ===filter;
+
+            $(this)
+                .toggleClass('active',active)
+                .attr(
+                    'aria-pressed',
+                    active?'true':'false'
+                );
+        });
+}
+
+function applySalesPlatformFilterToCards(){
+    $('.sales-day-section').each(function(){
+        const $section=$(this);
+        const active=String(
+            $section
+                .find('[data-sales-day-filter].active')
+                .data('sales-day-filter')
+            ||'all'
+        );
+
+        applySalesDayFilter($section,active);
+    });
+}
+
+function renderSalesRangeData(data,range){
+    const $wrap=$('#dailyPosts');
+    const $empty=$('#dailyPostsEmpty');
+    const $load=$('#loadMoreDailyPosts');
+
+    $wrap
+        .html(data.html||'')
+        .attr('data-from',range.from)
+        .attr('data-to',range.to)
+        .attr(
+            'data-offset',
+            data.next_offset||0
+        );
+
+    salesChartRows=Array.isArray(data.chart_rows)
+        ?data.chart_rows
+        :[];
+    salesChartDailyTarget=Math.max(
+        1,
+        parseInt(data.daily_target,10)||10
+    );
+
+    const hasDays=
+        (parseInt(data.total_days,10)||0)>0;
+
+    $empty.toggleClass('hidden',hasDays);
+
+    if(data.has_more){
+        $load
+            .prop('disabled',false)
+            .show()
+            .find('[data-sales-i18n="loadEarlier"]')
+            .text(salesTr('loadEarlier'));
+    }else{
+        $load.prop('disabled',true).hide();
+    }
+
+    $('#dailyLoadStatus').text('');
+    $('#salesRangeStatus').text('');
+
+    applySalesLanguage();
+    renderSalesChart();
+    applySalesPlatformFilterToCards();
+
+    const url=new URL(window.location.href);
+    url.searchParams.set('from',range.from);
+    url.searchParams.set('to',range.to);
+    window.history.replaceState(
+        {},
+        '',
+        url.toString()
+    );
+}
+
+function loadSalesRange(range){
+    if(!range){
+        return;
+    }
+
+    if(
+        salesRangeRequest
+        &&salesRangeRequest.readyState!==4
+    ){
+        salesRangeRequest.abort();
+    }
+
+    $('#salesRangeStatus')
+        .removeClass('error')
+        .text(salesTr('loading'));
+
+    $('#salesActivityChartPanel,#dailyPosts')
+        .addClass('sales-range-loading');
+
+    salesRangeRequest=$.ajax({
+        url:window.CD_BASE_PATH+'/sales/daily-posts',
+        method:'GET',
+        dataType:'json',
+        cache:false,
+        data:{
+            from:range.from,
+            to:range.to,
+            offset:0,
+            limit:parseInt(
+                $('#dailyPosts').data('limit')||3,
+                10
+            )
+        }
+    })
+    .done(function(data){
+        if(!data||!data.ok){
+            $('#salesRangeStatus')
+                .addClass('error')
+                .text(
+                    (data&&data.message)
+                    ||salesTr('loadEarlierFailed')
+                );
+            return;
+        }
+
+        renderSalesRangeData(
+            data,
+            range
+        );
+    })
+    .fail(function(xhr,status){
+        if(status==='abort'){
+            return;
+        }
+
+        $('#salesRangeStatus')
+            .addClass('error')
+            .text(
+                (
+                    xhr.responseJSON
+                    &&xhr.responseJSON.message
+                )
+                ||salesTr('loadEarlierFailed')
+            );
+    })
+    .always(function(){
+        $('#salesActivityChartPanel,#dailyPosts')
+            .removeClass('sales-range-loading');
+    });
 }
 
 function openSalesPostDetail($card){
@@ -591,17 +1175,22 @@ function openSalesPostDetail($card){
         $card.attr('data-sales-post-image')||''
     );
     const status=String(
-        $card.attr('data-sales-post-status')||'unreviewed'
+        $card.attr('data-sales-post-status')
+        ||'unreviewed'
     );
     const externalId=String(
         $card.attr('data-sales-post-external-id')||''
     );
 
     $('#salesPostDetailPlatform').text(
-        platformLabel(platform)||platform||'Marketplace'
+        platformLabel(platform)
+        ||platform
+        ||'Marketplace'
     );
     $('#salesPostDetailPlatformValue').text(
-        platformLabel(platform)||platform||'—'
+        platformLabel(platform)
+        ||platform
+        ||'—'
     );
     $('#salesPostDetailTitle').text(
         title||'Post details'
@@ -620,23 +1209,39 @@ function openSalesPostDetail($card){
     );
 
     $('#salesPostDetailStatus')
-        .attr('class','sales-post-detail-status '+status)
-        .text(salesPostStatusLabel(status));
+        .attr(
+            'class',
+            'sales-post-detail-status '+status
+        )
+        .text(
+            salesPostStatusLabel(status)
+        );
 
     $('#salesPostDetailOriginal')
         .attr('href',originalUrl||'#')
-        .toggleClass('disabled',!originalUrl);
+        .toggleClass(
+            'disabled',
+            !originalUrl
+        );
 
     if(image){
-        $('#salesPostDetailImage').attr('src',image);
-        $('#salesImageLightboxImage').attr('src',image);
-        $salesPostDetailImageButton.removeClass('hidden');
-        $('#salesPostDetailNoImage').addClass('hidden');
+        $('#salesPostDetailImage')
+            .attr('src',image);
+        $('#salesImageLightboxImage')
+            .attr('src',image);
+        $salesPostDetailImageButton
+            .removeClass('hidden');
+        $('#salesPostDetailNoImage')
+            .addClass('hidden');
     }else{
-        $('#salesPostDetailImage').attr('src','');
-        $('#salesImageLightboxImage').attr('src','');
-        $salesPostDetailImageButton.addClass('hidden');
-        $('#salesPostDetailNoImage').removeClass('hidden');
+        $('#salesPostDetailImage')
+            .attr('src','');
+        $('#salesImageLightboxImage')
+            .attr('src','');
+        $salesPostDetailImageButton
+            .addClass('hidden');
+        $('#salesPostDetailNoImage')
+            .removeClass('hidden');
     }
 
     $salesPostDetailModal
@@ -646,7 +1251,8 @@ function openSalesPostDetail($card){
     $('body').addClass('sales-detail-open');
 
     setTimeout(function(){
-        $('#salesPostDetailClose').trigger('focus');
+        $('#salesPostDetailClose')
+            .trigger('focus');
     },0);
 }
 
@@ -667,7 +1273,8 @@ function openSalesImageLightbox(){
         return;
     }
 
-    $('#salesImageLightboxImage').attr('src',src);
+    $('#salesImageLightboxImage')
+        .attr('src',src);
 
     $salesImageLightbox
         .removeClass('hidden')
@@ -680,68 +1287,59 @@ function closeSalesImageLightbox(){
         .attr('aria-hidden','true');
 }
 
+$('#salesRangeFrom').on('change',function(){
+    const range=syncSalesRangeConstraints('from');
+    loadSalesRange(range);
+});
 
-function applySalesDayFilter($section,filter){
-    const $cards=$section.find('.sales-self-post-card');
+$('#salesRangeTo').on('change',function(){
+    const range=syncSalesRangeConstraints('to');
+    loadSalesRange(range);
+});
 
-    $cards.each(function(){
-        const status=String(
-            $(this).attr('data-sales-post-status')
-            ||'unreviewed'
+$('#salesRangeForm').on(
+    'submit',
+    function(event){
+        event.preventDefault();
+
+        loadSalesRange(
+            syncSalesRangeConstraints('')
         );
-
-        const show=
-            filter==='all'
-            ||status===filter;
-
-        $(this).toggleClass('sales-filter-hidden',!show);
-    });
-
-    const visible=$cards.filter(
-        ':not(.sales-filter-hidden)'
-    ).length;
-
-    let $empty=$section.find(
-        '[data-sales-filter-empty]'
-    );
-
-    if(!$empty.length){
-        $empty=$(
-            '<div class="sales-filter-empty hidden" '
-            +'data-sales-filter-empty></div>'
-        );
-        $section
-            .find('.sales-post-card-grid')
-            .after($empty);
     }
+);
 
-    $empty
-        .toggleClass('hidden',visible!==0)
-        .text(
-            filter==='all'
-                ?salesTr('noPostsRange')
-                :(
-                    salesTr('noPostsRange')
-                    +' · '
-                    +salesPostStatusLabel(filter)
-                )
+$(document).on(
+    'click',
+    '[data-sales-platform-filter]',
+    function(){
+        salesPlatformFilter=String(
+            $(this).data(
+                'sales-platform-filter'
+            )||'all'
         );
 
-    $section
-        .find('[data-sales-day-filter]')
-        .each(function(){
-            const active=
-                String($(this).data('sales-day-filter'))
-                ===filter;
+        $('#salesPlatformFilter')
+            .find('[data-sales-platform-filter]')
+            .each(function(){
+                const active=
+                    String(
+                        $(this).data(
+                            'sales-platform-filter'
+                        )
+                    )===salesPlatformFilter;
 
-            $(this)
-                .toggleClass('active',active)
-                .attr(
-                    'aria-pressed',
-                    active?'true':'false'
-                );
-        });
-}
+                $(this)
+                    .toggleClass('active',active)
+                    .attr(
+                        'aria-pressed',
+                        active?'true':'false'
+                    );
+            });
+
+        renderSalesChart();
+        applySalesPlatformFilterToCards();
+    }
+);
 
 $(document).on(
     'click',
@@ -753,13 +1351,14 @@ $(document).on(
         const $section=$button.closest(
             '.sales-day-section'
         );
-        const filter=String(
-            $button.data('sales-day-filter')||'all'
-        );
 
         applySalesDayFilter(
             $section,
-            filter
+            String(
+                $button.data(
+                    'sales-day-filter'
+                )||'all'
+            )
         );
     }
 );
@@ -788,7 +1387,9 @@ $(document).on(
         event.stopPropagation();
 
         openSalesPostDetail(
-            $(this).closest('.sales-self-post-card')
+            $(this).closest(
+                '.sales-self-post-card'
+            )
         );
     }
 );
@@ -822,25 +1423,84 @@ $('#salesPostDetailClose,#salesPostDetailFooterClose')
         closeSalesPostDetail();
     });
 
-$salesPostDetailModal.on('click',function(event){
-    if(event.target===this){
-        closeSalesPostDetail();
+$salesPostDetailModal.on(
+    'click',
+    function(event){
+        if(event.target===this){
+            closeSalesPostDetail();
+        }
     }
-});
+);
 
-$salesPostDetailImageButton.on('click',function(){
-    openSalesImageLightbox();
-});
+$salesPostDetailImageButton.on(
+    'click',
+    function(){
+        openSalesImageLightbox();
+    }
+);
 
-$('#salesImageLightboxClose').on('click',function(){
-    closeSalesImageLightbox();
-});
-
-$salesImageLightbox.on('click',function(event){
-    if(event.target===this){
+$('#salesImageLightboxClose').on(
+    'click',
+    function(){
         closeSalesImageLightbox();
     }
-});
+);
+
+$salesImageLightbox.on(
+    'click',
+    function(event){
+        if(event.target===this){
+            closeSalesImageLightbox();
+        }
+    }
+);
+
+$(document).on(
+    'mouseenter focus',
+    '.sales-chart-day',
+    function(event){
+        showSalesChartTooltip(
+            $(this),
+            event
+        );
+    }
+);
+
+$(document).on(
+    'mouseleave blur',
+    '.sales-chart-day',
+    function(){
+        if(salesTouchChartDay!==this){
+            hideSalesChartTooltip();
+        }
+    }
+);
+
+$(document).on(
+    'click',
+    '.sales-chart-day',
+    function(event){
+        if(
+            window.matchMedia
+            &&window.matchMedia(
+                '(pointer:coarse)'
+            ).matches
+        ){
+            event.preventDefault();
+
+            if(salesTouchChartDay===this){
+                hideSalesChartTooltip();
+                return;
+            }
+
+            salesTouchChartDay=this;
+            showSalesChartTooltip(
+                $(this),
+                event
+            );
+        }
+    }
+);
 
 $(document).on('keydown',function(event){
     if(event.key!=='Escape'){
@@ -854,47 +1514,19 @@ $(document).on('keydown',function(event){
 
     if(!$salesPostDetailModal.hasClass('hidden')){
         closeSalesPostDetail();
-    }
-});
-
-    if(!range)return;
-
-    const $button=$(this);
-    if(salesRangeRequest&&salesRangeRequest.readyState!==4){
-        salesRangeRequest.abort();
+        return;
     }
 
-    $button.prop('disabled',true);
-    $('#dailyLoadStatus').text(salesTr('loading'));
-
-    salesRangeRequest=$.ajax({
-        url:window.CD_BASE_PATH+'/sales/daily-posts',
-        method:'GET',
-        dataType:'json',
-        cache:false,
-        data:{
-            from:range.from,
-            to:range.to,
-            offset:0,
-            limit:parseInt($('#dailyPosts').data('limit')||3,10)
-        }
-    })
-    .done(function(data){
-        if(!data||!data.ok){
-            $('#dailyLoadStatus').text((data&&data.message)||salesTr('loadEarlierFailed'));
-            return;
-        }
-        renderSalesRangeData(data,range);
-    })
-    .fail(function(xhr,status){
-        if(status==='abort')return;
-        $('#dailyLoadStatus').text((xhr.responseJSON&&xhr.responseJSON.message)||salesTr('loadEarlierFailed'));
-    })
-    .always(function(){
-        $button.prop('disabled',false);
-    });
+    hideSalesChartTooltip();
 });
+
+parseSalesChartInitialData();
 syncSalesRangeConstraints('');
+renderSalesChart();
+applySalesPlatformFilterToCards();
+
+
+
 
 
     $('#postUrl').on('input paste change', function(){
@@ -1148,6 +1780,7 @@ $('#salesVerifiedSaveForm').on('submit',function(event){
             if(d.html){
                 $wrap.append(d.html);
                 applySalesLanguage();
+                applySalesPlatformFilterToCards();
             }
 
             $wrap.attr('data-offset', d.next_offset || offset);
@@ -2117,6 +2750,10 @@ const dashboardI18n={
         weeklyReview:'Weekly Review',
         monthlyReview:'Monthly Review',
         dailyTarget:'Daily Target',
+        settings:'Settings',
+        salesSettings:'Sales Settings',
+        targetChartHelp:'This target is the horizontal line on the Sales activity chart.',
+        saveSettings:'Save Settings',
         save:'Save',
         saved:'Saved',
         saveReview:'Save Review',
@@ -2191,6 +2828,10 @@ const dashboardI18n={
         weeklyReview:'每周评语',
         monthlyReview:'每月评语',
         dailyTarget:'每日目标',
+        settings:'设置',
+        salesSettings:'销售设置',
+        targetChartHelp:'这个目标会显示为销售活动图上的横线。',
+        saveSettings:'保存设置',
         save:'保存',
         saved:'已保存',
         saveReview:'保存评语',
@@ -2265,6 +2906,10 @@ const dashboardI18n={
         weeklyReview:'每週評語',
         monthlyReview:'每月評語',
         dailyTarget:'每日目標',
+        settings:'設定',
+        salesSettings:'銷售設定',
+        targetChartHelp:'此目標會顯示為銷售活動圖上的橫線。',
+        saveSettings:'儲存設定',
         save:'儲存',
         saved:'已儲存',
         saveReview:'儲存評語',
@@ -2339,6 +2984,10 @@ const dashboardI18n={
         weeklyReview:'Revisión semanal',
         monthlyReview:'Revisión mensual',
         dailyTarget:'Meta diaria',
+        settings:'Configuración',
+        salesSettings:'Configuración de ventas',
+        targetChartHelp:'Esta meta aparece como la línea horizontal del gráfico de actividad.',
+        saveSettings:'Guardar configuración',
         save:'Guardar',
         saved:'Guardado',
         saveReview:'Guardar revisión',
@@ -5485,6 +6134,166 @@ $modalForm.on('submit', function(event){
             .find('[data-target-badge]')
             .toggleClass('hidden', !met);
     }
+
+
+let salesSettingsCard=null;
+const $salesSettingsModal=$('#salesPersonSettingsModal');
+const $salesSettingsInput=$('#salesPersonDailyTarget');
+const $salesSettingsMessage=$('#salesPersonSettingsMessage');
+
+function closeSalesPersonSettings(){
+    $salesSettingsModal
+        .addClass('hidden')
+        .attr('aria-hidden','true');
+    $salesSettingsMessage
+        .removeClass('error ok')
+        .text('');
+    salesSettingsCard=null;
+}
+
+$grid.on('click','[data-sales-settings]',function(event){
+    event.preventDefault();
+    event.stopPropagation();
+
+    const $card=$(this).closest('.sales-progress-card');
+    const target=Math.max(
+        1,
+        parseInt(
+            $card.attr('data-daily-target'),
+            10
+        )||10
+    );
+
+    salesSettingsCard=$card;
+
+    $('#salesPersonSettingsName').text(
+        String(
+            $card.attr('data-sales-name')||''
+        )
+    );
+
+    $salesSettingsInput
+        .val(target)
+        .removeClass('field-error');
+
+    $salesSettingsMessage
+        .removeClass('error ok')
+        .text('');
+
+    $salesSettingsModal
+        .removeClass('hidden')
+        .attr('aria-hidden','false');
+
+    setTimeout(function(){
+        $salesSettingsInput
+            .trigger('focus')
+            .trigger('select');
+    },0);
+});
+
+$('#salesPersonSettingsClose,#salesPersonSettingsCancel')
+    .on('click',function(){
+        closeSalesPersonSettings();
+    });
+
+$salesSettingsModal.on('click',function(event){
+    if(event.target===this){
+        closeSalesPersonSettings();
+    }
+});
+
+$('#salesPersonSettingsSave').on('click',function(){
+    if(!salesSettingsCard||!salesSettingsCard.length){
+        return;
+    }
+
+    const salesId=parseInt(
+        salesSettingsCard.attr('data-sales-id'),
+        10
+    )||0;
+    const target=parseInt(
+        $salesSettingsInput.val(),
+        10
+    )||0;
+    const $button=$(this);
+
+    $salesSettingsInput.removeClass('field-error');
+    $salesSettingsMessage
+        .removeClass('error ok')
+        .text('');
+
+    if(target<1||target>999){
+        $salesSettingsInput
+            .addClass('field-error')
+            .trigger('focus');
+
+        $salesSettingsMessage
+            .addClass('error')
+            .text('Target must be 1–999.');
+        return;
+    }
+
+    $button
+        .prop('disabled',true)
+        .text(tr('loading'));
+
+    $.ajax({
+        url:targetUrl,
+        method:'POST',
+        dataType:'json',
+        data:{
+            _csrf:csrf,
+            sales_user_id:salesId,
+            target:target
+        }
+    })
+    .done(function(data){
+        if(!data||!data.ok){
+            $salesSettingsMessage
+                .addClass('error')
+                .text(
+                    (data&&data.message)
+                    ||'Could not save.'
+                );
+            return;
+        }
+
+        const dailyTarget=Math.max(
+            1,
+            parseInt(data.target,10)||10
+        );
+
+        redrawAfterDailyTargetSave(
+            salesSettingsCard,
+            dailyTarget
+        );
+
+        $salesSettingsInput.val(dailyTarget);
+
+        $salesSettingsMessage
+            .addClass('ok')
+            .text(data.message||'Saved');
+
+        setTimeout(function(){
+            closeSalesPersonSettings();
+        },450);
+    })
+    .fail(function(xhr){
+        const data=xhr.responseJSON||{};
+
+        $salesSettingsMessage
+            .addClass('error')
+            .text(
+                data.message
+                ||'Could not save.'
+            );
+    })
+    .always(function(){
+        $button
+            .prop('disabled',false)
+            .text(tr('saveSettings'));
+    });
+});
 
     $(document).on('click', '[data-target-save]', function(){
         const $button = $(this);

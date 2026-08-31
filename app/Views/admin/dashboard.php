@@ -312,28 +312,18 @@ $periodNames = [
                             </span>
                         </button>
 
-                        <div class="sales-target-editor">
-                            <label>
-                                <span data-card-daily-target-label>
-                                    Daily Target
-                                </span>
-                                <input
-                                    type="number"
-                                    min="1"
-                                    max="999"
-                                    value="<?= (int)$row['daily_target'] ?>"
-                                    data-target-input
-                                    aria-label="Daily target for <?= Util::e($row['display_name']) ?>"
-                                >
-                            </label>
-                            <button
-                                type="button"
-                                class="tiny sales-target-save"
-                                data-target-save
-                            >
-                                <span data-card-save-label>Save</span>
-                            </button>
-                        </div>
+                        <button
+                            type="button"
+                            class="sales-person-settings-button"
+                            data-sales-settings
+                            data-card-control
+                            aria-label="Settings for <?= Util::e($row['display_name']) ?>"
+                        >
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M19.4 13a7.8 7.8 0 0 0 .1-1 7.8 7.8 0 0 0-.1-1l2.1-1.6-2-3.4-2.6 1a7.5 7.5 0 0 0-1.7-1L14.8 3h-4l-.4 3a7.5 7.5 0 0 0-1.7 1L6.1 6 4.1 9.4 6.2 11a7.8 7.8 0 0 0-.1 1 7.8 7.8 0 0 0 .1 1l-2.1 1.6 2 3.4 2.6-1a7.5 7.5 0 0 0 1.7 1l.4 3h4l.4-3a7.5 7.5 0 0 0 1.7-1l2.6 1 2-3.4L19.4 13ZM12.8 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z"/>
+                            </svg>
+                            <span data-dashboard-i18n="settings">Settings</span>
+                        </button>
                     </div>
                 </div>
 
@@ -370,6 +360,80 @@ $periodNames = [
             </div>
         <?php endif; ?>
     </div>
+
+
+<div
+    class="sales-person-settings-backdrop hidden"
+    id="salesPersonSettingsModal"
+    aria-hidden="true"
+>
+    <section
+        class="sales-person-settings-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="salesPersonSettingsTitle"
+    >
+        <div class="sales-person-settings-head">
+            <div>
+                <span class="eyebrow" data-dashboard-i18n="salesSettings">
+                    Sales Settings
+                </span>
+                <h3 id="salesPersonSettingsTitle" data-dashboard-i18n="salesSettings">Sales Settings</h3>
+                <p id="salesPersonSettingsName"></p>
+            </div>
+
+            <button
+                type="button"
+                class="icon-close"
+                id="salesPersonSettingsClose"
+                aria-label="Close settings"
+            >
+                ×
+            </button>
+        </div>
+
+        <div class="sales-person-settings-body">
+            <label class="sales-person-target-field">
+                <span data-dashboard-i18n="dailyTarget">
+                    Daily Post Target
+                </span>
+                <input
+                    type="number"
+                    min="1"
+                    max="999"
+                    id="salesPersonDailyTarget"
+                    inputmode="numeric"
+                >
+                <small data-dashboard-i18n="targetChartHelp">
+                    This is the target line shown on the Sales activity chart.
+                </small>
+            </label>
+
+            <div
+                class="sales-person-settings-message"
+                id="salesPersonSettingsMessage"
+                aria-live="polite"
+            ></div>
+        </div>
+
+        <div class="sales-person-settings-footer">
+            <button
+                type="button"
+                class="btn"
+                id="salesPersonSettingsCancel"
+            >
+                <span data-dashboard-i18n="cancel">Cancel</span>
+            </button>
+            <button
+                type="button"
+                class="btn primary"
+                id="salesPersonSettingsSave"
+            >
+                <span data-dashboard-i18n="saveSettings">Save Settings</span>
+            </button>
+        </div>
+    </section>
+</div>
 
     <section
         class="sales-expanded-posts hidden"

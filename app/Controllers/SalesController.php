@@ -7,6 +7,7 @@ use App\Core\Csrf;
 use App\Core\Database;
 use App\Models\Post;
 use App\Models\Inspection;
+use App\Models\User;
 
 class SalesController extends Controller
 {
@@ -36,6 +37,16 @@ class SalesController extends Controller
             $from,
             $to
         );
+        $chartRows=Post::salesChartRows(
+            (int)$u['id'],
+            $from,
+            $to
+        );
+        $salesUser=User::find((int)$u['id']);
+        $dailyTarget=max(
+            1,
+            (int)($salesUser['daily_post_target']??10)
+        );
 
         $limit = max(1, (int)$config['app']['daily_posts_initial_days']);
         $dayRows = Post::dailyDatesForSales((int)$u['id'], $from, $to, $limit, 0);
@@ -60,6 +71,8 @@ class SalesController extends Controller
             'to' => $to,
             'counts' => $counts,
             'summary' => $summary,
+            'chartRows'=>$chartRows,
+            'dailyTarget'=>$dailyTarget,
             'days' => $days,
             'loadedDays' => count($days),
             'totalDays' => $totalDays,
@@ -109,6 +122,16 @@ class SalesController extends Controller
         $nextOffset = $offset + count($days);
         $totalDays = Post::dailyDateCountForSales((int)$u['id'], $from, $to);
         $summary=Post::salesRangeSummary((int)$u['id'],$from,$to);
+        $chartRows=Post::salesChartRows(
+            (int)$u['id'],
+            $from,
+            $to
+        );
+        $salesUser=User::find((int)$u['id']);
+        $dailyTarget=max(
+            1,
+            (int)($salesUser['daily_post_target']??10)
+        );
 
         $this->json([
             'ok' => true,
@@ -120,6 +143,8 @@ class SalesController extends Controller
             'from'=>$from,
             'to'=>$to,
             'summary'=>$summary,
+            'chart_rows'=>$chartRows,
+            'daily_target'=>$dailyTarget,
         ]);
     }
 

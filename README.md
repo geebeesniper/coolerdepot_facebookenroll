@@ -921,3 +921,19 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - Full title and description remain visible in the card detail popup.
 - No database migration is required.
 - All border radius remains `4px`.
+
+## v0.1.47 — Sales daily coordinate chart and per-person Admin target settings
+
+- Replaced the four large Sales summary cards with a real daily coordinate/bar chart.
+- X axis follows the selected From/To date range, including zero-post days.
+- Each day is a stacked bar: Good at the bottom, Issues in the middle, Unreviewed on top.
+- Bar height represents total posts. The vertical chart scale tops out at 120% of the Admin-configured daily target; actual values above 120% are visually capped at 120% and marked `120%+`, while hover/touch tooltips still show the real counts.
+- A horizontal Daily target line is drawn across the chart using that Sales person's `daily_post_target`.
+- When a day is below target, the missing amount is shown as a dashed block between the actual total and the target line. Hover/focus/touch displays Total / Good / Issues / Unreviewed / Missing / Target.
+- Added dashboard platform filters: All, Facebook, Instagram, OfferUp, Craigslist. The filter updates both the chart and loaded Daily Post cards without reloading the page.
+- Instagram is exposed as a dashboard filter now; the current submit/database pipeline still has no Instagram provider, so it remains zero until Instagram posts are supported.
+- Removed the Sales Apply button. Changing From or To immediately reloads the chart and Daily Posts through AJAX.
+- Fixed the Sales-card detail bug introduced by the previous Apply-handler scope: card mouse click, View details, keyboard Enter/Space, and touch now bind at page initialization instead of only after Apply was clicked.
+- Admin Daily Post Target is moved into a per-person `Settings` popup on each Sales progress card. It uses the existing `daily_post_target` database field and existing `/admin/sales-target` endpoint, so no migration is required.
+- Saving an Admin target immediately updates that person's Admin progress card; the target becomes the horizontal line on that Sales person's dashboard.
+- Touch targets remain at least 44px where needed, chart/filter controls support horizontal touch scrolling, and all border radius remains `4px`.
