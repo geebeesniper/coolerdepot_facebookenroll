@@ -174,7 +174,8 @@ const salesI18n={
         noImage:'No listing image',
         close:'Close',
         daily:'Daily',
-        dailyProgressTitle:'Daily Post Progress',
+        threeDays:'3 Days',
+        dailyProgressTitle:'3-Day Post Progress',
         weeklyProgressTitle:'Weekly Post Progress',
         monthlyProgressTitle:'Monthly Post Progress',
         weekly:'Weekly',
@@ -253,10 +254,11 @@ const salesI18n={
         noImage:'没有帖子图片',
         close:'关闭',
         daily:'每日',
-        dailyProgressTitle:'每日發佈進度',
+        threeDays:'3天',
+        dailyProgressTitle:'3天發佈進度',
         weeklyProgressTitle:'每週發佈進度',
         monthlyProgressTitle:'每月發佈進度',
-        dailyProgressTitle:'每日发布进度',
+        dailyProgressTitle:'3天发布进度',
         weeklyProgressTitle:'每周发布进度',
         monthlyProgressTitle:'每月发布进度',
         weekly:'每周',
@@ -409,7 +411,8 @@ const salesI18n={
         noImage:'Sin imagen',
         close:'Cerrar',
         daily:'Diario',
-        dailyProgressTitle:'Progreso diario de publicaciones',
+        threeDays:'3 días',
+        dailyProgressTitle:'Progreso de publicaciones de 3 días',
         weeklyProgressTitle:'Progreso semanal de publicaciones',
         monthlyProgressTitle:'Progreso mensual de publicaciones',
         weekly:'Semanal',
@@ -637,42 +640,61 @@ function salesPresetRange(period,anchorValue){
         anchor=new Date(today);
     }
 
+    const to=new Date(anchor);
     let from=new Date(anchor);
-    let to=new Date(anchor);
 
-    if(period==='week'){
-        const day=anchor.getDay();
-        const mondayOffset=(day+6)%7;
-
+    if(period==='day'){
+        // "Daily" is now a rolling three-day range ending at To.
         from.setDate(
-            anchor.getDate()-mondayOffset
+            from.getDate()-2
         );
-
-        to=new Date(from);
-        to.setDate(
-            from.getDate()+6
+    }else if(period==='week'){
+        // Rolling seven-day range ending at To.
+        from.setDate(
+            from.getDate()-6
         );
     }else if(period==='month'){
-        from=new Date(
-            anchor.getFullYear(),
-            anchor.getMonth(),
+        /*
+         * Rolling one-calendar-month range ending at To.
+         * Example:
+         *   To 08/31 -> From 08/01
+         *   To 08/20 -> From 07/21
+         *
+         * Clamp the day when the previous month is shorter.
+         */
+        const anchorYear=to.getFullYear();
+        const anchorMonth=to.getMonth();
+        const anchorDay=to.getDate();
+
+        const previousMonthDate=new Date(
+            anchorYear,
+            anchorMonth-1,
             1,
             12,0,0
         );
 
-        to=new Date(
-            anchor.getFullYear(),
-            anchor.getMonth()+1,
+        const previousMonthLastDay=new Date(
+            anchorYear,
+            anchorMonth,
             0,
             12,0,0
-        );
-    }
+        ).getDate();
 
-    if(
-        today
-        &&to.getTime()>today.getTime()
-    ){
-        to=new Date(today);
+        const previousDay=Math.min(
+            anchorDay,
+            previousMonthLastDay
+        );
+
+        from=new Date(
+            previousMonthDate.getFullYear(),
+            previousMonthDate.getMonth(),
+            previousDay,
+            12,0,0
+        );
+
+        from.setDate(
+            from.getDate()+1
+        );
     }
 
     return {
@@ -680,7 +702,6 @@ function salesPresetRange(period,anchorValue){
         to:salesIsoDate(to)
     };
 }
-
 function setSalesRangePeriod(period){
     salesRangePeriod=String(
         period||'custom'
@@ -1575,7 +1596,23 @@ function renderSalesRangeData(data,range,period,channel){
     const hasDays=
         (parseInt(data.total_days,10)||0)>0;
 
+    const $dailyStage=$('#salesDailyStage');
+
     $empty.toggleClass('hidden',hasDays);
+
+    if($dailyStage.length){
+        $dailyStage.toggleClass(
+            'sales-daily-stage-empty',
+            !hasDays
+        );
+
+        if(hasDays){
+            $dailyStage.css(
+                '--sales-preserved-height',
+                ''
+            );
+        }
+    }
 
     if(data.has_more){
         $load
@@ -1643,11 +1680,53 @@ function renderSalesRangeData(data,range,period,channel){
         '',
         url.toString()
     );
+
+    const $channelTargets=$(
+        '#salesDailyStage,#salesActivityChartPanel'
+    );
+
+    if(
+        $channelTargets.hasClass(
+            'sales-channel-changing'
+        )
+    ){
+        $channelTargets
+            .removeClass(
+                'sales-channel-changing'
+            )
+            .addClass(
+                'sales-channel-enter'
+            );
+
+        window.setTimeout(
+            function(){
+                $channelTargets.removeClass(
+                    'sales-channel-enter'
+                );
+            },
+            220
+        );
+    }
 }
 
 function loadSalesRange(range,period,channel){
     if(!range){
         return;
+    }
+
+    const $dailyStage=$('#salesDailyStage');
+
+    if($dailyStage.length){
+        const currentHeight=Math.ceil(
+            $dailyStage.outerHeight()||0
+        );
+
+        if(currentHeight>0){
+            $dailyStage.css(
+                '--sales-preserved-height',
+                currentHeight+'px'
+            );
+        }
     }
 
     if(
@@ -1722,6 +1801,14 @@ function loadSalesRange(range,period,channel){
         $('#salesActivityChartPanel,#dailyPosts')
             .removeClass('sales-range-loading')
             .attr('aria-busy','false');
+
+        if(
+            $('#salesDailyStage,#salesActivityChartPanel')
+                .hasClass('sales-channel-changing')
+        ){
+            $('#salesDailyStage,#salesActivityChartPanel')
+                .removeClass('sales-channel-changing');
+        }
     });
 }
 
@@ -1902,33 +1989,36 @@ $('#salesBackToday').on('click',function(){
         return;
     }
 
-    $('#salesRangeFrom').val(today);
-    $('#salesRangeTo').val(today);
+    const period=(
+        salesRangePeriod==='week'
+        ||salesRangePeriod==='month'
+        ||salesRangePeriod==='day'
+    )
+        ?salesRangePeriod
+        :'day';
 
-    const range=syncSalesRangeConstraints('');
+    const range=salesPresetRange(
+        period,
+        today
+    );
 
     if(!range){
         return;
     }
 
-    setSalesRangePeriod('day');
+    $('#salesRangeFrom').val(range.from);
+    $('#salesRangeTo').val(range.to);
 
-    /*
-     * Clear the old month/week grid immediately so a resize observer
-     * can never reflow 31 stale date nodes into one narrow column.
-     */
-    $('#salesChartBars')
-        .empty()
-        .css({
-            'grid-template-columns':'1fr',
-            'grid-auto-flow':'row'
-        });
+    syncSalesRangeConstraints('');
+    setSalesRangePeriod(period);
+
+    $('#salesChartBars').empty();
 
     renderSalesChart();
 
     loadSalesRange(
         range,
-        'day',
+        period,
         salesPlatformFilter
     );
 });
@@ -2018,6 +2108,10 @@ $(document).on(
         ).trim().toLowerCase();
 
         salesPlatformFilter=nextChannel;
+
+        $('#salesDailyStage,#salesActivityChartPanel')
+            .removeClass('sales-channel-enter')
+            .addClass('sales-channel-changing');
 
         $('#salesPlatformFilter')
             .find('[data-sales-platform-filter]')

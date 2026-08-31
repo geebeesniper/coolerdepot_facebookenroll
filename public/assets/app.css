@@ -8081,3 +8081,287 @@ body.sales-detail-open{
 .sales-chart-segment.unreviewed{
     border-radius:0 !important;
 }
+
+/* v0.1.57 readable Sales typography + rolling ranges + stable Channels */
+
+/* ------------------------------------------------------------
+ * Header alignment
+ * ---------------------------------------------------------- */
+.sales-range-filter,
+.admin-range-controls{
+    overflow:visible;
+}
+
+.sales-to-field-stack,
+.admin-range-field-stack{
+    position:relative;
+}
+
+/*
+ * Pin Back to today under the To input instead of letting old flex/grid
+ * rules push it down into a separate row.
+ */
+.sales-to-field-stack{
+    padding-bottom:22px;
+}
+
+.sales-to-field-stack .sales-back-today{
+    position:absolute;
+    left:0;
+    top:59px;
+    width:auto;
+    height:18px;
+    min-height:18px;
+    margin:0;
+    padding:0 2px;
+    display:inline-flex;
+    align-items:center;
+    color:#2563eb;
+    font-size:9px;
+    font-weight:800;
+    line-height:18px;
+    white-space:nowrap;
+}
+
+.admin-range-field-stack{
+    padding-bottom:22px;
+}
+
+.admin-range-field-stack .dashboard-back-today{
+    position:absolute;
+    left:0;
+    top:59px;
+    width:auto;
+    height:18px;
+    min-height:18px;
+    margin:0;
+    padding:0 2px;
+    display:inline-flex;
+    align-items:center;
+    font-size:9px;
+    line-height:18px;
+    white-space:nowrap;
+}
+
+/* ------------------------------------------------------------
+ * Make the Sales dashboard readable at normal desktop scale.
+ * ---------------------------------------------------------- */
+.sales-head-period-switch .sales-period-button{
+    font-size:10px;
+    font-weight:800;
+}
+
+.sales-range-filter .admin-range-field > span{
+    font-size:9px;
+}
+
+.sales-range-filter .admin-range-field input[type="date"]{
+    font-size:12px;
+}
+
+.sales-channel-title{
+    font-size:10px;
+}
+
+.sales-platform-filter-button{
+    font-size:9px;
+    font-weight:800;
+}
+
+.sales-day-head .daily-post-date{
+    font-size:10px;
+    font-weight:700;
+}
+
+.sales-day-head h2{
+    font-size:16px;
+    line-height:1.25;
+}
+
+.sales-day-filter .post-summary,
+.sales-day-filter .post-summary strong{
+    font-size:9px !important;
+}
+
+.sales-self-post-date{
+    font-size:8px;
+    line-height:1.3;
+}
+
+.sales-self-post-body h3{
+    font-size:11px;
+    line-height:1.3;
+}
+
+.sales-self-post-body p{
+    font-size:8.5px;
+    line-height:1.4;
+}
+
+.sales-view-details{
+    font-size:8.5px;
+    font-weight:800;
+}
+
+.sales-self-post-status{
+    font-size:8.5px;
+    font-weight:900;
+}
+
+.sales-chart-x-label{
+    font-size:8px;
+}
+
+.sales-chart-legend,
+.sales-chart-target-copy{
+    font-size:9px;
+}
+
+/* ------------------------------------------------------------
+ * Channels animation
+ * ---------------------------------------------------------- */
+#salesDailyStage,
+#salesActivityChartPanel{
+    transition:
+        opacity .16s ease,
+        transform .16s ease;
+}
+
+#salesDailyStage.sales-channel-changing,
+#salesActivityChartPanel.sales-channel-changing{
+    opacity:.58;
+    transform:translateY(2px);
+    pointer-events:none;
+}
+
+#salesDailyStage.sales-channel-enter,
+#salesActivityChartPanel.sales-channel-enter{
+    animation:salesChannelEnter .2s ease both;
+}
+
+@keyframes salesChannelEnter{
+    from{
+        opacity:.55;
+        transform:translateY(3px);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+
+.sales-platform-filter-button{
+    transition:
+        background .14s ease,
+        border-color .14s ease,
+        color .14s ease,
+        box-shadow .14s ease,
+        transform .12s ease;
+}
+
+.sales-platform-filter-button:active{
+    transform:scale(.96);
+}
+
+/* ------------------------------------------------------------
+ * Empty channel results keep the previous card-area height.
+ * ---------------------------------------------------------- */
+.sales-daily-stage{
+    position:relative;
+    min-height:280px;
+}
+
+.sales-daily-stage.sales-daily-stage-empty{
+    min-height:max(
+        280px,
+        var(--sales-preserved-height,280px)
+    );
+}
+
+.sales-daily-stage.sales-daily-stage-empty
+.sales-daily-posts{
+    min-height:0;
+}
+
+.sales-daily-stage.sales-daily-stage-empty
+.sales-empty-state{
+    box-sizing:border-box;
+    min-height:max(
+        280px,
+        var(--sales-preserved-height,280px)
+    );
+    margin:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+
+/* Keep status-filter zero states inside an existing day section stable too. */
+.sales-post-card-grid{
+    min-height:280px;
+}
+
+.sales-filter-empty{
+    min-height:262px;
+}
+
+/* Touch targets stay readable and comfortably tappable. */
+@media(pointer:coarse){
+    .sales-to-field-stack .sales-back-today,
+    .admin-range-field-stack .dashboard-back-today{
+        top:65px;
+        min-height:24px;
+        height:24px;
+        font-size:10px;
+        line-height:24px;
+    }
+
+    .sales-to-field-stack,
+    .admin-range-field-stack{
+        padding-bottom:28px;
+    }
+
+    .sales-head-period-switch .sales-period-button{
+        font-size:11px;
+    }
+
+    .sales-platform-filter-button{
+        font-size:10px;
+    }
+
+    .sales-self-post-body h3{
+        font-size:12px;
+    }
+
+    .sales-view-details,
+    .sales-self-post-status{
+        font-size:10px;
+    }
+}
+
+@media(max-width:760px){
+    /*
+     * On narrow screens return Back to today to normal document flow.
+     * This avoids overlap when the To control occupies a full-width row.
+     */
+    .sales-to-field-stack,
+    .admin-range-field-stack{
+        padding-bottom:0;
+    }
+
+    .sales-to-field-stack .sales-back-today,
+    .admin-range-field-stack .dashboard-back-today{
+        position:static;
+        margin-top:3px;
+    }
+}
+
+
+/* Explicit chart-only square-corner exception. */
+.sales-chart-stack,
+.sales-chart-segment,
+.sales-chart-segment.good,
+.sales-chart-segment.bad,
+.sales-chart-segment.unreviewed{
+    border-radius:0 !important;
+}

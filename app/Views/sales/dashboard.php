@@ -92,7 +92,7 @@ $chartInitialWidth=max(100,count($chartDates)*30);
         data-sales-period="day"
         aria-pressed="<?= ($rangePeriod ?? '') === 'day' ? 'true' : 'false' ?>"
     >
-        <span data-sales-i18n="daily">Daily</span>
+        <span data-sales-i18n="threeDays">3 Days</span>
     </button>
 
     <button
@@ -418,24 +418,29 @@ $chartInitialWidth=max(100,count($chartDates)*30);
 ) ?></script>
 
 <div
-    id="dailyPosts"
-    class="daily-posts sales-daily-posts"
-    data-from="<?= Util::e($from) ?>"
-    data-to="<?= Util::e($to) ?>"
-    data-offset="<?= (int)$loadedDays ?>"
-    data-limit="<?= (int)$loadDays ?>"
+    class="sales-daily-stage<?= $days ? '' : ' sales-daily-stage-empty' ?>"
+    id="salesDailyStage"
 >
-    <?php foreach ($days as $day): ?>
-        <?php require __DIR__ . '/_daily_post_section.php'; ?>
-    <?php endforeach; ?>
-</div>
+    <div
+        id="dailyPosts"
+        class="daily-posts sales-daily-posts"
+        data-from="<?= Util::e($from) ?>"
+        data-to="<?= Util::e($to) ?>"
+        data-offset="<?= (int)$loadedDays ?>"
+        data-limit="<?= (int)$loadDays ?>"
+    >
+        <?php foreach ($days as $day): ?>
+            <?php require __DIR__ . '/_daily_post_section.php'; ?>
+        <?php endforeach; ?>
+    </div>
 
-<div
-    id="dailyPostsEmpty"
-    class="panel empty sales-empty-state<?= $days ? ' hidden' : '' ?>"
-    data-sales-i18n="noPostsRange"
->
-    No posts in this date range.
+    <div
+        id="dailyPostsEmpty"
+        class="panel empty sales-empty-state<?= $days ? ' hidden' : '' ?>"
+        data-sales-i18n="noPostsRange"
+    >
+        No posts in this date range.
+    </div>
 </div>
 
 <div

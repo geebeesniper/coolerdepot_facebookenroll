@@ -1056,3 +1056,25 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - Channel matching is case-insensitive on both server and client.
 - No database migration is required.
 - Normal UI radius remains 4px; chart bars remain the explicit square-corner exception.
+
+## v0.1.57 — Rolling 3-day/week/month ranges, remaining Aug-28 correction, readable Sales UX
+
+- Corrected the remaining three Facebook Marketplace posts that were still grouped under August 27 so they are stored on August 28:
+  - `1546388710570410` — funnel cake gas fryer
+  - `3813795918762562` — 10 mold popsicle maker machine PM-10
+  - `1606074697620900` — NSF 40LB GAS FRYER HRFR-90B-NG
+- The migration preserves each post's existing time-of-day while changing both `published_at` date part and `published_date` to `2026-08-28`.
+- Updated demo data so future refreshes keep those records on August 28.
+- Renamed the Sales `Daily` preset to `3 Days`.
+- All Sales presets are now rolling ranges based on the current `To` date:
+  - 3 Days = To plus the previous 2 days.
+  - Weekly = To plus the previous 6 days.
+  - Monthly = one rolling calendar month ending on To.
+- Back to today no longer forces a one-day view. It keeps the currently selected 3 Days / Weekly / Monthly preset and moves that rolling window so its `To` is today.
+- Sales typography was enlarged across period buttons, date controls, Channels, Daily Posts headers, per-day filters, cards, View details, statuses, and chart labels.
+- Back to today is pinned directly beneath the To date input on both Sales and Admin desktop layouts; narrow layouts return it to normal flow.
+- Channels now use a short fade/slide transition while the authoritative AJAX filter is loading.
+- When a Channel returns no posts, the Daily Posts area preserves its pre-filter height instead of collapsing.
+- Per-day Good / Issues / Unreviewed zero-result filters also retain a stable card-row height.
+- Database migration is required on existing installations.
+- Normal UI radius remains 4px; chart bars remain the explicit square-corner exception.
