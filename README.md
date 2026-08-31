@@ -953,3 +953,18 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - Admin cards are compacted to match the six-column density while keeping title/description clamped and status visible.
 - No database migration is required.
 - All border radius remains `4px`.
+
+## v0.1.50 — Today-only range, Back to today, complete X-axis chart
+
+- v0.1.50 supersedes the invalid v0.1.49 build.
+- Sales From/To can never exceed today. The browser date field and SalesController both enforce this.
+- Added Back to today; it sets From and To to today and refreshes through AJAX.
+- Every date in the selected range is printed on the X axis.
+- The chart compresses the day slots first and only uses a horizontal scrollbar when the selected range becomes too dense.
+- The first chart is also rendered server-side so cards cannot appear below a completely empty graph during JavaScript startup.
+- Loaded Sales cards are re-counted into chart data as a second correctness layer.
+- Good, Issues, and Unreviewed remain stacked; Missing is dashed up to the Admin target; visual height still caps at 120%.
+- Zero-result filtering preserves one card-row height.
+- Request deletion is removed from Sales cards and its client-side handlers.
+- No database migration is required.
+- All border radius remains 4px.

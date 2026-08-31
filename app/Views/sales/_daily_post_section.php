@@ -1,5 +1,4 @@
 <?php
-use App\Core\Csrf;
 use App\Core\Util;
 
 $date=(string)$day['date'];
@@ -195,65 +194,6 @@ $salesPlatformIcon = static function(string $platform): string
                     </span>
                 </div>
 
-                <div class="sales-delete-zone">
-                    <button
-                        type="button"
-                        class="sales-delete-toggle"
-                        data-delete-toggle
-                    >
-                        <span data-sales-i18n="requestDeletion">
-                            Request deletion
-                        </span>
-                    </button>
-
-                    <form
-                        class="sales-delete-form hidden"
-                        data-delete-form
-                        method="post"
-                        action="<?= Util::e($config['app']['base_path']) ?>/sales/delete-request"
-                    >
-                        <input
-                            type="hidden"
-                            name="_csrf"
-                            value="<?= Util::e(Csrf::token()) ?>"
-                        >
-                        <input
-                            type="hidden"
-                            name="post_id"
-                            value="<?= (int)$p['id'] ?>"
-                        >
-
-                        <label>
-                            <span data-sales-i18n="reason">Reason</span>
-                            <input
-                                name="reason"
-                                required
-                                placeholder="Reason"
-                                data-sales-placeholder="reason"
-                            >
-                        </label>
-
-                        <div class="sales-delete-actions">
-                            <button
-                                type="button"
-                                class="tiny"
-                                data-delete-cancel
-                            >
-                                <span data-sales-i18n="cancel">Cancel</span>
-                            </button>
-
-                            <button class="tiny badbtn" type="submit">
-                                <span data-sales-i18n="sendRequest">Send request</span>
-                            </button>
-                        </div>
-
-                        <div
-                            class="sales-delete-message"
-                            data-delete-message
-                            aria-live="polite"
-                        ></div>
-                    </form>
-                </div>
             </article>
         <?php endforeach; ?>
     </div>

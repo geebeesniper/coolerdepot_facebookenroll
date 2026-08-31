@@ -168,13 +168,13 @@ const salesI18n={
         allPlatforms:'All',
         missing:'Missing',
         total:'Total',
-        allPosts:'Todas',
         allPosts:'All',
         viewDetails:'View details',
         noImage:'No listing image',
         close:'Close',
         from:'From',
         to:'To',
+        backToday:'Back to today',
         apply:'Apply',
         submitPost:'Submit Post',
         posts:'Posts',
@@ -246,6 +246,7 @@ const salesI18n={
         close:'关闭',
         from:'开始',
         to:'结束',
+        backToday:'返回今天',
         apply:'应用',
         submitPost:'提交帖子',
         posts:'帖子',
@@ -317,6 +318,7 @@ const salesI18n={
         close:'關閉',
         from:'開始',
         to:'結束',
+        backToday:'返回今天',
         apply:'套用',
         submitPost:'提交貼文',
         posts:'貼文',
@@ -387,6 +389,7 @@ const salesI18n={
         close:'Cerrar',
         from:'Desde',
         to:'Hasta',
+        backToday:'Volver a hoy',
         apply:'Aplicar',
         submitPost:'Enviar publicación',
         posts:'Publicaciones',
@@ -522,6 +525,38 @@ $(document).on('cdsp:language-changed',function(){
 
 applySalesLanguage();
 
+function salesTodayValue(){
+    return String(
+        $('#salesPortalDashboard').attr('data-today')
+        ||''
+    );
+}
+
+function updateSalesBackToday(range){
+    const today=salesTodayValue();
+    const $back=$('#salesBackToday');
+
+    if(!$back.length||!today){
+        return;
+    }
+
+    const from=String(
+        range
+            ?range.from
+            :$('#salesRangeFrom').val()||''
+    );
+    const to=String(
+        range
+            ?range.to
+            :$('#salesRangeTo').val()||''
+    );
+
+    $back.toggleClass(
+        'hidden',
+        from===today&&to===today
+    );
+}
+
 function syncSalesRangeConstraints(changed){
     const $from=$('#salesRangeFrom');
     const $to=$('#salesRangeTo');
@@ -529,6 +564,8 @@ function syncSalesRangeConstraints(changed){
     if(!$from.length||!$to.length){
         return null;
     }
+
+    const today=salesTodayValue();
 
     let from=String($from.val()||'');
     let to=String($to.val()||'');
@@ -540,23 +577,42 @@ function syncSalesRangeConstraints(changed){
         return null;
     }
 
+    if(today&&to>today){
+        to=today;
+        $to.val(to);
+    }
+
+    if(today&&from>today){
+        from=today;
+        $from.val(from);
+    }
+
     if(changed==='from'&&from>to){
         to=from;
         $to.val(to);
     }else if(changed==='to'&&to<from){
         from=to;
         $from.val(from);
+    }else if(from>to){
+        from=to;
+        $from.val(from);
     }
 
     $from.attr('max',to);
-    $to.attr('min',from);
 
-    return {
+    $to
+        .attr('min',from)
+        .attr('max',today||'');
+
+    const range={
         from:from,
         to:to
     };
-}
 
+    updateSalesBackToday(range);
+
+    return range;
+}
 let salesRangeRequest=null;
 let salesChartRows=[];
 let salesChartDailyTarget=10;
@@ -655,6 +711,78 @@ function salesShortDate(value){
     );
 }
 
+function mergeSalesChartRowsFromDom(){
+    const replacements={};
+
+    $('.sales-day-section').each(function(){
+        const date=String(
+            $(this).attr('data-post-date')||''
+        );
+
+        if(!date){
+            return;
+        }
+
+        $(this)
+            .find('.sales-self-post-card')
+            .each(function(){
+                const platform=String(
+                    $(this).attr(
+                        'data-sales-post-platform'
+                    )||''
+                ).toLowerCase()||'unknown';
+
+                const status=String(
+                    $(this).attr(
+                        'data-sales-post-status'
+                    )||'unreviewed'
+                );
+
+                const key=date+'|'+platform;
+
+                if(!replacements[key]){
+                    replacements[key]={
+                        date:date,
+                        platform:platform,
+                        post_count:0,
+                        good_count:0,
+                        bad_count:0,
+                        unreviewed_count:0
+                    };
+                }
+
+                const row=replacements[key];
+
+                row.post_count++;
+
+                if(status==='good'){
+                    row.good_count++;
+                }else if(status==='bad'){
+                    row.bad_count++;
+                }else{
+                    row.unreviewed_count++;
+                }
+            });
+    });
+
+    const keys=new Set(
+        Object.keys(replacements)
+    );
+
+    salesChartRows=salesChartRows.filter(function(row){
+        const key=
+            String(row.date||'')
+            +'|'
+            +String(row.platform||'').toLowerCase();
+
+        return !keys.has(key);
+    });
+
+    salesChartRows=salesChartRows.concat(
+        Object.values(replacements)
+    );
+}
+
 function aggregateSalesChartDate(date,platform){
     const result={
         date:date,
@@ -669,9 +797,13 @@ function aggregateSalesChartDate(date,platform){
             return;
         }
 
+        const rowPlatform=String(
+            row.platform||''
+        ).toLowerCase();
+
         if(
             platform!=='all'
-            &&String(row.platform)!==platform
+            &&rowPlatform!==String(platform).toLowerCase()
         ){
             return;
         }
@@ -731,6 +863,8 @@ function renderSalesChart(){
         return;
     }
 
+    mergeSalesChartRowsFromDom();
+
     const from=String($('#salesRangeFrom').val()||'');
     const to=String($('#salesRangeTo').val()||'');
     const dates=salesDateRange(from,to);
@@ -750,83 +884,55 @@ function renderSalesChart(){
             :cap.toFixed(1)
     );
 
-    const chartXAxisHeight=26;
-    const chartPlotHeight=226;
+    const xAxisHeight=28;
+    const plotHeight=224;
     const targetBottom=
-        chartXAxisHeight
-        +(chartPlotHeight*(targetPercent/100));
+        xAxisHeight
+        +(plotHeight*(targetPercent/100));
 
-    $('#salesChartTargetLine').css(
-        'bottom',
-        targetBottom+'px'
-    );
+    $('#salesChartTargetLine,#salesChartTargetLabel')
+        .css('bottom',targetBottom+'px');
 
-    $('#salesChartTargetLabel').css(
-        'bottom',
-        targetBottom+'px'
-    );
-
-    $panel.attr('data-daily-target',target);
-
-    /*
-     * SaaS-like X-axis scaling:
-     * - normal ranges fit the available viewport instead of using a fixed
-     *   50px/day width;
-     * - labels become less dense as the date range grows;
-     * - very long ranges switch to horizontal scrolling only when fitting
-     *   every day would make the bars unusably narrow.
-     */
     const availableWidth=Math.max(
         320,
         Math.floor(
             ($scroll.innerWidth()||$panel.innerWidth()||720)-2
         )
     );
+
     const dayCount=Math.max(1,dates.length);
     const coarse=Boolean(
         window.matchMedia
         &&window.matchMedia('(pointer:coarse)').matches
     );
 
-    const minimumReadableSlot=coarse?30:22;
+    // Show every selected date. Compress first, scroll only if too tight.
+    const minimumSlot=coarse?38:30;
     const naturalSlot=availableWidth/dayCount;
-    const needsScroll=
-        dayCount>45
-        ||naturalSlot<minimumReadableSlot;
+    const needsScroll=naturalSlot<minimumSlot;
 
     const canvasWidth=needsScroll
         ?Math.max(
             availableWidth,
-            dayCount*(coarse?34:25)
+            dayCount*minimumSlot
         )
         :availableWidth;
 
     const slotWidth=canvasWidth/dayCount;
 
-    let barWidth=54;
+    let barWidth=Math.min(
+        44,
+        Math.max(8,slotWidth-8)
+    );
 
-    if(slotWidth<32){
-        barWidth=Math.max(10,slotWidth-7);
-    }else if(slotWidth<46){
-        barWidth=Math.max(16,slotWidth-10);
-    }else if(slotWidth<72){
-        barWidth=30;
-    }else if(slotWidth<105){
+    if(slotWidth>=70){
         barWidth=40;
-    }
-
-    const desiredLabelWidth=coarse?58:52;
-    const maxLabels=Math.max(
-        2,
-        Math.floor(canvasWidth/desiredLabelWidth)
-    );
-    let labelStep=Math.max(
-        1,
-        Math.ceil(dayCount/maxLabels)
-    );
-
-    if(dayCount<=10){
-        labelStep=1;
+    }else if(slotWidth>=50){
+        barWidth=32;
+    }else if(slotWidth>=38){
+        barWidth=25;
+    }else if(slotWidth>=30){
+        barWidth=20;
     }
 
     $canvas.css(
@@ -841,45 +947,47 @@ function renderSalesChart(){
         '--sales-chart-bar-width':
             Math.round(barWidth)+'px',
         '--sales-chart-gap':
-            slotWidth<28?'2px':'4px'
+            slotWidth<34?'1px':'3px'
     });
 
     let html='';
 
-    dates.forEach(function(date,index){
+    dates.forEach(function(date){
         const data=aggregateSalesChartDate(
             date,
             salesPlatformFilter
         );
+
         const actual=data.post_count;
-        const scaleFactor=
+        const scale=
             actual>cap
                 ?cap/actual
                 :1;
 
-        const goodHeight=
-            (data.good_count*scaleFactor/cap)*100;
-        const badHeight=
-            (data.bad_count*scaleFactor/cap)*100;
-        const unreviewedHeight=
-            (data.unreviewed_count*scaleFactor/cap)*100;
-        const actualHeight=Math.min(
+        const goodH=
+            (data.good_count*scale/cap)*100;
+        const badH=
+            (data.bad_count*scale/cap)*100;
+        const unreviewedH=
+            (data.unreviewed_count*scale/cap)*100;
+
+        const actualH=Math.min(
             100,
             (Math.min(actual,cap)/cap)*100
         );
-        const missingCount=Math.max(0,target-actual);
-        const missingHeight=
-            missingCount>0
+
+        const missing=Math.max(
+            0,
+            target-actual
+        );
+
+        const missingH=
+            missing>0
                 ?Math.max(
                     0,
-                    targetPercent-actualHeight
+                    targetPercent-actualH
                 )
                 :0;
-
-        const showLabel=
-            index===0
-            ||index===dayCount-1
-            ||index%labelStep===0;
 
         html+=(
             '<div'
@@ -890,35 +998,31 @@ function renderSalesChart(){
                 +' data-chart-good="'+data.good_count+'"'
                 +' data-chart-bad="'+data.bad_count+'"'
                 +' data-chart-unreviewed="'+data.unreviewed_count+'"'
-                +' data-chart-missing="'+missingCount+'"'
+                +' data-chart-missing="'+missing+'"'
             +'>'
                 +'<div class="sales-chart-day-plot">'
-                    +(missingHeight>0
+                    +(missingH>0
                         ?'<span class="sales-chart-missing"'
-                            +' style="bottom:'+actualHeight+'%;height:'+missingHeight+'%"'
+                            +' style="bottom:'+actualH+'%;height:'+missingH+'%"'
                             +'></span>'
                         :'')
                     +'<div class="sales-chart-stack">'
                         +'<span class="sales-chart-segment good"'
-                            +' style="height:'+goodHeight+'%"'
+                            +' style="height:'+goodH+'%"'
                         +'></span>'
                         +'<span class="sales-chart-segment bad"'
-                            +' style="height:'+badHeight+'%"'
+                            +' style="height:'+badH+'%"'
                         +'></span>'
                         +'<span class="sales-chart-segment unreviewed"'
-                            +' style="height:'+unreviewedHeight+'%"'
+                            +' style="height:'+unreviewedH+'%"'
                         +'></span>'
                     +'</div>'
                     +(actual>cap
                         ?'<span class="sales-chart-over-cap">120%+</span>'
                         :'')
                 +'</div>'
-                +'<span class="sales-chart-x-label'
-                    +(showLabel?'':' hidden-label')
-                    +'">'
-                    +(showLabel
-                        ?escapeHtml(salesShortDate(date))
-                        :'')
+                +'<span class="sales-chart-x-label">'
+                    +escapeHtml(salesShortDate(date))
                 +'</span>'
             +'</div>'
         );
@@ -1086,13 +1190,13 @@ function applySalesDayFilter($section,filter){
         );
         $section
             .find('.sales-post-card-grid')
-            .after($empty);
+            .append($empty);
     }
 
     $empty
         .toggleClass(
             'hidden',
-            visible!==0||counts.all===0
+            visible!==0
         )
         .text(
             filter==='all'
@@ -1179,8 +1283,10 @@ function renderSalesRangeData(data,range){
     $('#salesRangeStatus').text('');
 
     applySalesLanguage();
+    mergeSalesChartRowsFromDom();
     renderSalesChart();
     applySalesPlatformFilterToCards();
+    updateSalesBackToday(range);
 
     const url=new URL(window.location.href);
     url.searchParams.set('from',range.from);
@@ -1406,6 +1512,21 @@ $('#salesRangeFrom').on('change',function(){
 
 $('#salesRangeTo').on('change',function(){
     const range=syncSalesRangeConstraints('to');
+    loadSalesRange(range);
+});
+
+$('#salesBackToday').on('click',function(){
+    const today=salesTodayValue();
+
+    if(!today){
+        return;
+    }
+
+    $('#salesRangeFrom').val(today);
+    $('#salesRangeTo').val(today);
+
+    const range=syncSalesRangeConstraints('');
+
     loadSalesRange(range);
 });
 
@@ -1641,6 +1762,10 @@ $(document).on('keydown',function(event){
 });
 
 parseSalesChartInitialData();
+mergeSalesChartRowsFromDom();
+updateSalesBackToday(
+    syncSalesRangeConstraints('')
+);
 
 let salesChartResizeTimer=null;
 
@@ -1937,6 +2062,8 @@ $('#salesVerifiedSaveForm').on('submit',function(event){
             if(d.html){
                 $wrap.append(d.html);
                 applySalesLanguage();
+                mergeSalesChartRowsFromDom();
+                renderSalesChart();
                 applySalesPlatformFilterToCards();
             }
 
@@ -1957,108 +2084,6 @@ $('#salesVerifiedSaveForm').on('submit',function(event){
     }
 
     $('#loadMoreDailyPosts').on('click', loadMoreDailyPosts);
-
-$(document).on('click','[data-delete-toggle]',function(){
-    const $card=$(this).closest('.sales-self-post-card');
-
-    $card
-        .find('[data-delete-form]')
-        .removeClass('hidden');
-
-    $(this).addClass('hidden');
-
-    $card
-        .find('input[name="reason"]')
-        .trigger('focus');
-});
-
-$(document).on('click','[data-delete-cancel]',function(){
-    const $card=$(this).closest('.sales-self-post-card');
-
-    $card
-        .find('[data-delete-form]')
-        .addClass('hidden')
-        .find('[data-delete-message]')
-        .removeClass('error ok')
-        .text('');
-
-    $card
-        .find('[data-delete-toggle]')
-        .removeClass('hidden');
-});
-
-$(document).on('submit','[data-delete-form]',function(event){
-    event.preventDefault();
-
-    const $form=$(this);
-    const $message=$form.find('[data-delete-message]');
-    const $submit=$form.find('button[type="submit"]');
-    const reason=String(
-        $form.find('input[name="reason"]').val()||''
-    ).trim();
-
-    if(!reason){
-        $form.find('input[name="reason"]')
-            .addClass('field-error')
-            .trigger('focus');
-        return;
-    }
-
-    $form.find('input[name="reason"]')
-        .removeClass('field-error');
-
-    $submit
-        .prop('disabled',true);
-
-    $message
-        .removeClass('error ok')
-        .text(salesTr('loading'));
-
-    $.ajax({
-        url:$form.attr('action'),
-        method:'POST',
-        dataType:'json',
-        data:$form.serialize(),
-        headers:{
-            'X-Requested-With':'XMLHttpRequest',
-            'Accept':'application/json'
-        }
-    })
-    .done(function(data){
-        if(!data||!data.ok){
-            $message
-                .addClass('error')
-                .text(
-                    (data&&data.message)
-                    ||salesTr('inspectionFailed')
-                );
-            return;
-        }
-
-        $message
-            .addClass('ok')
-            .text(salesTr('deletionSent'));
-
-        $form.find('input[name="reason"]')
-            .prop('disabled',true);
-
-        $submit.addClass('hidden');
-        $form.find('[data-delete-cancel]')
-            .text(salesTr('close'));
-    })
-    .fail(function(xhr){
-        $message
-            .addClass('error')
-            .text(
-                (xhr.responseJSON&&xhr.responseJSON.message)
-                ||salesTr('inspectionFailed')
-            );
-    })
-    .always(function(){
-        $submit.prop('disabled',false);
-    });
-});
-
 
     // Progressive loading: when the button approaches the viewport, fetch the next date batch.
     if($('#loadMoreDailyPosts').length && 'IntersectionObserver' in window){

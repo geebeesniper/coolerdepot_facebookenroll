@@ -17,18 +17,27 @@ class SalesController extends Controller
 
         $u = Auth::requireRole('sales');
 
-        $to = $_GET['to'] ?? date('Y-m-d');
+        $today=date('Y-m-d');
+        $to = $_GET['to'] ?? $today;
         $from = $_GET['from'] ?? date('Y-m-01');
 
         if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $from)) {
             $from = date('Y-m-01');
         }
         if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $to)) {
-            $to = date('Y-m-d');
+            $to = $today;
+        }
+
+        if($to>$today){
+            $to=$today;
+        }
+
+        if($from>$today){
+            $from=$today;
         }
 
         if($from>$to){
-            $to=$from;
+            $from=$to;
         }
 
         $counts = Post::dailyCounts((int)$u['id'], $from, $to);
@@ -69,6 +78,7 @@ class SalesController extends Controller
             'user' => $u,
             'from' => $from,
             'to' => $to,
+            'today'=>$today,
             'counts' => $counts,
             'summary' => $summary,
             'chartRows'=>$chartRows,
@@ -86,8 +96,9 @@ class SalesController extends Controller
 
         $u = Auth::requireRole('sales');
 
+        $today=date('Y-m-d');
         $from = (string)($_GET['from'] ?? date('Y-m-01'));
-        $to = (string)($_GET['to'] ?? date('Y-m-d'));
+        $to = (string)($_GET['to'] ?? $today);
         $offset = max(0, (int)($_GET['offset'] ?? 0));
         $limit = max(1, min(10, (int)($_GET['limit'] ?? $config['app']['daily_posts_load_days'])));
 
@@ -95,8 +106,16 @@ class SalesController extends Controller
             $this->json(['ok' => false, 'message' => 'Invalid date range.'], 422);
         }
 
+        if($to>$today){
+            $to=$today;
+        }
+
+        if($from>$today){
+            $from=$today;
+        }
+
         if($from>$to){
-            $to=$from;
+            $from=$to;
         }
 
         $rows = Post::dailyDatesForSales((int)$u['id'], $from, $to, $limit, $offset);

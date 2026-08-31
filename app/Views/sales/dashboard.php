@@ -5,6 +5,49 @@ $postsTotal=(int)($summary['post_count']??0);
 $goodTotal=(int)($summary['good_count']??0);
 $badTotal=(int)($summary['bad_count']??0);
 $unreviewedTotal=(int)($summary['unreviewed_count']??0);
+
+$chartByDate=[];
+
+foreach (($chartRows ?? []) as $row) {
+    $dateKey=(string)($row['date'] ?? '');
+
+    if ($dateKey === '') {
+        continue;
+    }
+
+    if (!isset($chartByDate[$dateKey])) {
+        $chartByDate[$dateKey]=[
+            'post_count'=>0,
+            'good_count'=>0,
+            'bad_count'=>0,
+            'unreviewed_count'=>0,
+        ];
+    }
+
+    $chartByDate[$dateKey]['post_count']+=(int)($row['post_count'] ?? 0);
+    $chartByDate[$dateKey]['good_count']+=(int)($row['good_count'] ?? 0);
+    $chartByDate[$dateKey]['bad_count']+=(int)($row['bad_count'] ?? 0);
+    $chartByDate[$dateKey]['unreviewed_count']+=(int)(
+        $row['unreviewed_count'] ?? 0
+    );
+}
+
+$chartDates=[];
+$chartStart=new DateTimeImmutable($from.' 12:00:00');
+$chartEnd=new DateTimeImmutable($to.' 12:00:00');
+
+for (
+    $cursor=$chartStart;
+    $cursor <= $chartEnd;
+    $cursor=$cursor->modify('+1 day')
+) {
+    $chartDates[]=$cursor->format('Y-m-d');
+}
+
+$chartTarget=max(1,(int)$dailyTarget);
+$chartCap=max(1,$chartTarget*1.2);
+$chartTargetPercent=min(100,($chartTarget/$chartCap)*100);
+$chartInitialWidth=max(100,count($chartDates)*30);
 ?>
 
 <div
@@ -12,6 +55,7 @@ $unreviewedTotal=(int)($summary['unreviewed_count']??0);
     id="salesPortalDashboard"
     data-from="<?= Util::e($from) ?>"
     data-to="<?= Util::e($to) ?>"
+    data-today="<?= Util::e($today) ?>"
 ></div>
 
 <div class="page-head sales-portal-head">
@@ -44,9 +88,28 @@ $unreviewedTotal=(int)($summary['unreviewed_count']??0);
 
             <label>
                 <span data-sales-i18n="to">To</span>
-                <input type="date" name="to" id="salesRangeTo"
-                    value="<?= Util::e($to) ?>" min="<?= Util::e($from) ?>">
+                <input
+                    type="date"
+                    name="to"
+                    id="salesRangeTo"
+                    value="<?= Util::e($to) ?>"
+                    min="<?= Util::e($from) ?>"
+                    max="<?= Util::e($today) ?>"
+                >
             </label>
+
+            <button
+                type="button"
+                class="sales-back-today<?= (
+                    $from===$today
+                    &&$to===$today
+                ) ? ' hidden' : '' ?>"
+                id="salesBackToday"
+            >
+                <span data-sales-i18n="backToday">
+                    Back to today
+                </span>
+            </button>
 
             <span
                 class="sales-range-live-status"
@@ -152,7 +215,11 @@ $unreviewedTotal=(int)($summary['unreviewed_count']??0);
         </div>
 
         <div class="sales-chart-scroll" id="salesChartScroll">
-            <div class="sales-chart-canvas" id="salesChartCanvas">
+            <div
+                class="sales-chart-canvas"
+                id="salesChartCanvas"
+                style="width:max(100%,<?= (int)$chartInitialWidth ?>px)"
+            >
                 <div
                     class="sales-chart-target-line"
                     id="salesChartTargetLine"
@@ -167,7 +234,96 @@ $unreviewedTotal=(int)($summary['unreviewed_count']??0);
                     class="sales-chart-bars"
                     id="salesChartBars"
                     aria-label="Daily post progress chart"
-                ></div>
+                    style="
+                        grid-template-columns:repeat(<?= max(1,count($chartDates)) ?>,minmax(0,1fr));
+                        --sales-chart-bar-width:20px;
+                        --sales-chart-gap:3px;
+                    "
+                >
+                    <?php foreach ($chartDates as $chartDate): ?>
+                        <?php
+                        $chartRow=$chartByDate[$chartDate] ?? [
+                            'post_count'=>0,
+                            'good_count'=>0,
+                            'bad_count'=>0,
+                            'unreviewed_count'=>0,
+                        ];
+
+                        $actual=(int)$chartRow['post_count'];
+                        $scale=$actual>$chartCap
+                            ?$chartCap/$actual
+                            :1;
+
+                        $goodH=((int)$chartRow['good_count']*$scale/$chartCap)*100;
+                        $badH=((int)$chartRow['bad_count']*$scale/$chartCap)*100;
+                        $unreviewedH=((int)$chartRow['unreviewed_count']*$scale/$chartCap)*100;
+
+                        $actualH=min(
+                            100,
+                            (min($actual,$chartCap)/$chartCap)*100
+                        );
+
+                        $missing=max(0,$chartTarget-$actual);
+                        $missingH=$missing>0
+                            ?max(0,$chartTargetPercent-$actualH)
+                            :0;
+
+                        $labelDate=DateTimeImmutable::createFromFormat(
+                            'Y-m-d',
+                            $chartDate
+                        );
+                        ?>
+                        <div
+                            class="sales-chart-day"
+                            tabindex="0"
+                            data-chart-date="<?= Util::e($chartDate) ?>"
+                            data-chart-total="<?= $actual ?>"
+                            data-chart-good="<?= (int)$chartRow['good_count'] ?>"
+                            data-chart-bad="<?= (int)$chartRow['bad_count'] ?>"
+                            data-chart-unreviewed="<?= (int)$chartRow['unreviewed_count'] ?>"
+                            data-chart-missing="<?= $missing ?>"
+                        >
+                            <div class="sales-chart-day-plot">
+                                <?php if ($missingH>0): ?>
+                                    <span
+                                        class="sales-chart-missing"
+                                        style="
+                                            bottom:<?= round($actualH,4) ?>%;
+                                            height:<?= round($missingH,4) ?>%;
+                                        "
+                                    ></span>
+                                <?php endif; ?>
+
+                                <div class="sales-chart-stack">
+                                    <span
+                                        class="sales-chart-segment good"
+                                        style="height:<?= round($goodH,4) ?>%"
+                                    ></span>
+                                    <span
+                                        class="sales-chart-segment bad"
+                                        style="height:<?= round($badH,4) ?>%"
+                                    ></span>
+                                    <span
+                                        class="sales-chart-segment unreviewed"
+                                        style="height:<?= round($unreviewedH,4) ?>%"
+                                    ></span>
+                                </div>
+
+                                <?php if ($actual>$chartCap): ?>
+                                    <span class="sales-chart-over-cap">120%+</span>
+                                <?php endif; ?>
+                            </div>
+
+                            <span class="sales-chart-x-label">
+                                <?= Util::e(
+                                    $labelDate
+                                        ?$labelDate->format('n/j')
+                                        :$chartDate
+                                ) ?>
+                            </span>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
             </div>
         </div>
     </div>
