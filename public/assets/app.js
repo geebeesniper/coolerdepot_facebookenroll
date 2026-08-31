@@ -9334,7 +9334,7 @@ $(document).on('click','.website-reference-delete',function(){
 });
 
 
-// v0.1.80 Management Reports: shared date controls + live result refresh.
+// v0.1.81 Management Reports: in-panel shared date controls + live result refresh.
 (function(){
     const $reports=$('#managementReports');
     if(!$reports.length)return;
@@ -9395,7 +9395,6 @@ $(document).on('click','.website-reference-delete',function(){
         else if(from>to){from=to;$from.val(from);}
         $from.attr('max',to);
         $to.attr('min',from).attr('max',today);
-        $('#reportHeadRange').text(from+' → '+to);
         return true;
     }
     function queryString(){
@@ -9421,15 +9420,27 @@ $(document).on('click','.website-reference-delete',function(){
         }).done(function(html){
             if(seq!==refreshSeq)return;
             const $doc=$('<div>').append($.parseHTML(html,document,false));
-            const $next=$doc.find('#reportResultPanel').first();
-            if(!$next.length)return;
-            const $current=$('#reportResultPanel');
-            $next.hide();
-            $current.replaceWith($next);
-            if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches){
-                $next.show();
+            const $nextTable=$doc.find('#reportTableArea').first();
+            const $nextTitle=$doc.find('#reportSelectedSalesTitle').first();
+            const $nextDownload=$doc.find('#reportDownloadButton').first();
+            if(!$nextTable.length)return;
+
+            const $currentTable=$('#reportTableArea');
+            const reduceMotion=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if(reduceMotion){
+                $currentTable.replaceWith($nextTable);
             }else{
-                $next.fadeIn(150);
+                $currentTable.stop(true,true).fadeOut(80,function(){
+                    $(this).replaceWith($nextTable.hide());
+                    $nextTable.fadeIn(120);
+                });
+            }
+
+            if($nextTitle.length){
+                $('#reportSelectedSalesTitle').text($nextTitle.text());
+            }
+            if($nextDownload.length){
+                $('#reportDownloadButton').attr('href',$nextDownload.attr('href')||'#');
             }
             if(pushUrl&&window.history&&window.history.replaceState){
                 window.history.replaceState(null,'',$form.attr('action')+'?'+qs);

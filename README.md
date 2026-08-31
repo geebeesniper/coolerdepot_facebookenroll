@@ -1461,3 +1461,12 @@ Upload `sales-posts-v0.1.74-chart-pointer-tooltip.zip` to `/opt/coolerdepot/www/
 - Download CSV always follows the currently refreshed report scope, including All Sales.
 - Sales post detail, Submit Post, image lightbox, and delete-request editor use small jQuery fade/slide transitions while respecting reduced-motion preferences.
 - No database migration is required.
+
+## v0.1.81 — report toolbar placement cleanup
+
+- Moves the shared report range / From / To / Sales / Run controls into the report result header where the old dynamic `Monthly Range` / `Weekly Range` label used to appear.
+- Removes the dynamic range title and removes the duplicated date-range text below the `Sales Report` page title.
+- Keeps the current Sales label as the report subject while removing the redundant date line beneath it.
+- Aligns `Download CSV` with the report control bar on desktop and stacks it cleanly on narrow screens.
+- Live report refresh now updates only the result table, selected Sales label, and download URL so the moved toolbar remains interactive after every AJAX refresh.
+- No database migration is required.

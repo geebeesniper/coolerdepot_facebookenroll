@@ -10735,3 +10735,66 @@ body.sales-submit-modal-open,body.sales-detail-open,body.review-modal-open{overf
         transition:none;
     }
 }
+
+/* v0.1.81 — report controls live with the report result, aligned with download. */
+.report-page-head.sales-portal-head{
+    display:block;
+    margin-bottom:14px;
+}
+.report-result-head{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    align-items:end;
+    gap:14px;
+    margin-bottom:12px;
+}
+.report-result-head .report-toolbar{
+    min-width:0;
+    justify-content:flex-start;
+    align-items:flex-start;
+    flex-wrap:wrap;
+}
+.report-download-button{
+    box-sizing:border-box;
+    height:38px;
+    min-height:38px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    align-self:end;
+    margin:0;
+}
+.report-result-meta{
+    margin:0 0 12px;
+}
+.report-result-meta h2{
+    margin:0;
+    font-size:17px;
+}
+#reportTableArea{
+    transition:opacity .12s ease;
+}
+
+@media(max-width:1100px){
+    .report-result-head{
+        grid-template-columns:1fr;
+        align-items:stretch;
+    }
+    .report-download-button{
+        justify-self:start;
+    }
+}
+@media(max-width:760px){
+    .report-result-head{
+        display:grid;
+        grid-template-columns:1fr;
+    }
+    .report-download-button{
+        width:100%;
+        justify-self:stretch;
+        text-align:center;
+    }
+}
+@media(prefers-reduced-motion:reduce){
+    #reportTableArea{transition:none;}
+}
