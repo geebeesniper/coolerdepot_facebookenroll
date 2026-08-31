@@ -174,6 +174,9 @@ const salesI18n={
         noImage:'No listing image',
         close:'Close',
         daily:'Daily',
+        oneDay:'1 Day',
+        oneDayProgressTitle:'1-Day Post Progress',
+        noFilteredPosts:'No {status} posts in this range.',
         threeDays:'3 Days',
         dailyProgressTitle:'3-Day Post Progress',
         weeklyProgressTitle:'Weekly Post Progress',
@@ -259,6 +262,9 @@ const salesI18n={
         noImage:'没有帖子图片',
         close:'关闭',
         daily:'每日',
+        oneDay:'1天',
+        oneDayProgressTitle:'1天发布进度',
+        noFilteredPosts:'此日期范围内没有“{status}”帖子。',
         threeDays:'3天',
         dailyProgressTitle:'3天發佈進度',
         weeklyProgressTitle:'每週發佈進度',
@@ -348,6 +354,15 @@ const salesI18n={
         noImage:'沒有貼文圖片',
         close:'關閉',
         daily:'每日',
+        oneDay:'1天',
+        oneDayProgressTitle:'1天發文進度',
+        noFilteredPosts:'此日期範圍內沒有「{status}」貼文。',
+        threeDays:'3天',
+        dailyProgressTitle:'3天發文進度',
+        weeklyProgressTitle:'每週發文進度',
+        monthlyProgressTitle:'每月發文進度',
+        customRange:'自訂範圍',
+        customProgressTitle:'自訂範圍發文進度',
         weekly:'每週',
         monthly:'每月',
         from:'開始',
@@ -424,6 +439,9 @@ const salesI18n={
         noImage:'Sin imagen',
         close:'Cerrar',
         daily:'Diario',
+        oneDay:'1 día',
+        oneDayProgressTitle:'Progreso de publicaciones de 1 día',
+        noFilteredPosts:'No hay publicaciones con estado «{status}» en este rango.',
         threeDays:'3 días',
         dailyProgressTitle:'Progreso de publicaciones de 3 días',
         weeklyProgressTitle:'Progreso semanal de publicaciones',
@@ -517,7 +535,7 @@ function salesTr(key,vars){
 
 function applySalesLanguage(){
     $('[data-sales-i18n]').each(function(){
-        const key=String($(this).data('sales-i18n')||'');
+        const key=String($(this).attr('data-sales-i18n')||'');
 
         if(!key){
             return;
@@ -562,6 +580,8 @@ function applySalesLanguage(){
 
     applyGlobalMenuLanguage();
 }
+
+window.cdspSalesLanguage={translate:salesTr,apply:applySalesLanguage};
 
 $(document).on('cdsp:language-changed',function(){
     applySalesLanguage();
@@ -674,8 +694,11 @@ function salesPresetRange(period,anchorValue){
     const to=new Date(anchor);
     let from=new Date(anchor);
 
-    if(period==='day'){
-        // "Daily" is now a rolling three-day range ending at To.
+    if(period==='single'){
+        // One selected day; keep period=day compatible with old 3-Day URLs.
+        from=new Date(to);
+    }else if(period==='day'){
+        // Rolling three-day range ending at To.
         from.setDate(
             from.getDate()-2
         );
@@ -760,7 +783,9 @@ function setSalesRangePeriod(period){
         });
 
     const titleKey=
-        salesRangePeriod==='week'
+        salesRangePeriod==='single'
+            ?'oneDayProgressTitle'
+            :salesRangePeriod==='week'
             ?'weeklyProgressTitle'
             :(
                 salesRangePeriod==='month'
@@ -788,6 +813,8 @@ function detectSalesRangePeriod(from,to){
     if(!toDate){
         return 'custom';
     }
+
+    if(from===to){return 'single';}
 
     const threeDays=salesPresetRange(
         'day',
@@ -1406,7 +1433,17 @@ function renderSalesChartYAxis(
     }
 }
 
-function renderSalesChart(){
+function renderSalesChart(options){
+    // The isolated controller owns current rows, range and animation.
+    if(typeof window.renderSalesChart==='function'){
+        window.renderSalesChart(options);
+        return;
+    }
+    // Sales pages load sales-dashboard.js immediately after this file.
+    // Keep the server chart until that controller is ready.
+    if(document.getElementById('salesPortalDashboard')){
+        return;
+    }
     const $bars=$('#salesChartBars');
     const $canvas=$('#salesChartCanvas');
     const $panel=$('#salesActivityChartPanel');
@@ -2756,6 +2793,7 @@ $('#salesBackToday').on('click',function(){
         salesRangePeriod==='week'
         ||salesRangePeriod==='month'
         ||salesRangePeriod==='day'
+        ||salesRangePeriod==='single'
     )
         ?salesRangePeriod
         :'day';
@@ -3185,7 +3223,7 @@ if(
 
             salesChartResizeTimer=setTimeout(
                 function(){
-                    renderSalesChart();
+                    renderSalesChart({animate:false});
                 },
                 70
             );
@@ -3201,7 +3239,7 @@ if(
 
         salesChartResizeTimer=setTimeout(
             function(){
-                renderSalesChart();
+                renderSalesChart({animate:false});
             },
             100
         );

@@ -147,6 +147,15 @@ $chartTargetTop=
 >
     <button
         type="button"
+        class="sales-period-button<?= ($rangePeriod ?? '') === 'single' ? ' active' : '' ?>"
+        data-sales-period="single"
+        aria-pressed="<?= ($rangePeriod ?? '') === 'single' ? 'true' : 'false' ?>"
+    >
+        <span data-sales-i18n="oneDay">1 Day</span>
+    </button>
+
+    <button
+        type="button"
         class="sales-period-button<?= ($rangePeriod ?? '') === 'day' ? ' active' : '' ?>"
         data-sales-period="day"
         aria-pressed="<?= ($rangePeriod ?? '') === 'day' ? 'true' : 'false' ?>"

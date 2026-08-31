@@ -16,9 +16,9 @@ class SalesController extends Controller
         $u=Auth::requireRole('sales');
         $today=date('Y-m-d');
         $to=(string)($_GET['to']??$today);
-        $from=(string)($_GET['from']??date('Y-m-01'));
+        $from=(string)($_GET['from']??$to);
 
-        if(!preg_match('/^\d{4}-\d{2}-\d{2}$/',$from)){$from=date('Y-m-01');}
+        if(!preg_match('/^\d{4}-\d{2}-\d{2}$/',$from)){$from=$today;}
         if(!preg_match('/^\d{4}-\d{2}-\d{2}$/',$to)){$to=$today;}
         if($to>$today){$to=$today;}
         if($from>$today){$from=$today;}
@@ -31,11 +31,11 @@ class SalesController extends Controller
 
         $hasExplicitRange=(isset($_GET['from'])||isset($_GET['to']));
         $requestedPeriod=strtolower(trim((string)($_GET['period']??'')));
-        if(!in_array($requestedPeriod,['day','week','month','custom'],true)){
-            $requestedPeriod=$hasExplicitRange?'custom':'month';
+        if(!in_array($requestedPeriod,['single','day','week','month','custom'],true)){
+            $requestedPeriod=$hasExplicitRange?'custom':'single';
         }
         $rangePeriod=$requestedPeriod;
-        if(in_array($rangePeriod,['day','week','month'],true)){
+        if(in_array($rangePeriod,['single','day','week','month'],true)){
             [$from,$to]=$this->salesPresetRange($rangePeriod,$to,$today);
         }
 
@@ -63,8 +63,8 @@ class SalesController extends Controller
     {
         $u=Auth::requireRole('sales');
         $today=date('Y-m-d');
-        $from=(string)($_GET['from']??date('Y-m-01'));
         $to=(string)($_GET['to']??$today);
+        $from=(string)($_GET['from']??$to);
 
         if(!preg_match('/^\d{4}-\d{2}-\d{2}$/',$from)||!preg_match('/^\d{4}-\d{2}-\d{2}$/',$to)){
             $this->json(['ok'=>false,'message'=>'Invalid date range.'],422);
@@ -73,9 +73,11 @@ class SalesController extends Controller
         if($from>$today){$from=$today;}
         if($from>$to){$from=$to;}
 
-        $rangePeriod=strtolower(trim((string)($_GET['period']??'custom')));
-        if(!in_array($rangePeriod,['day','week','month','custom'],true)){$rangePeriod='custom';}
-        if(in_array($rangePeriod,['day','week','month'],true)){
+        $hasExplicitRange=(isset($_GET['from'])||isset($_GET['to']));
+        $defaultPeriod=$hasExplicitRange?'custom':'single';
+        $rangePeriod=strtolower(trim((string)($_GET['period']??$defaultPeriod)));
+        if(!in_array($rangePeriod,['single','day','week','month','custom'],true)){$rangePeriod=$defaultPeriod;}
+        if(in_array($rangePeriod,['single','day','week','month'],true)){
             [$from,$to]=$this->salesPresetRange($rangePeriod,$to,$today);
         }
 
@@ -143,7 +145,9 @@ private function salesPresetRange(
         $to.' 12:00:00'
     );
 
-    if($period==='day'){
+    if($period==='single'){
+        $from=$anchor;
+    }elseif($period==='day'){
         $from=$anchor->modify('-2 days');
     }elseif($period==='week'){
         $from=$anchor->modify('-6 days');

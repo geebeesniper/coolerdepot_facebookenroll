@@ -9319,8 +9319,8 @@ body.sales-detail-open{
 /* v0.1.64 ISOLATED SALES DASHBOARD CONTROLLER */
 
 /*
- * Bars must NEVER "grow from the bottom" on reload/filter.
- * Data replacement animates the container, not segment height.
+ * Individual segments keep stable heights. Since v0.1.67 the inner stack
+ * animates as one bar from the baseline on each data update.
  */
 .sales-chart-segment,
 .sales-chart-segment.good,
@@ -9390,7 +9390,7 @@ body.sales-detail-open{
 
 /*
  * Range/Channel changes get a short SaaS replacement transition.
- * Bars themselves stay static inside the entering content.
+ * The inner colored stack has its own bottom-up growth animation.
  */
 #salesDailyStage,
 #salesActivityChartPanel .sales-chart-shell{
@@ -9652,3 +9652,144 @@ body.sales-detail-open{
 .sales-range-post-stage-empty{min-height:max(310px,var(--sales-preserved-height,310px));}
 .sales-chart-tooltip-focus{margin-bottom:2px;color:#0f172a;font-weight:900;}
 @media(max-width:760px){.sales-range-post-head{align-items:flex-start;flex-direction:column}.sales-range-post-filter{width:100%;overflow-x:auto}}
+
+/* v0.1.67 — Fixed menu slots and replayable bottom-up chart growth. */
+.nav{flex-wrap:wrap;}
+.nav > a,
+.nav > [data-nav-i18n],
+.nav > form{
+    flex:0 0 110px;
+    width:110px;
+    min-width:110px;
+    max-width:110px;
+    text-align:center;
+}
+.nav > a,
+.nav > [data-nav-i18n],
+.nav > form button{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-height:32px;
+    white-space:nowrap;
+}
+.nav > form button{
+    width:100%;
+}
+.nav > .app-language-switch,
+.nav > .nav-user{
+    flex-shrink:0;
+}
+/* Fixed columns reserve enough room for all four supported languages. */
+#salesPeriodSwitch{
+    width:444px;
+    min-width:444px;
+    max-width:444px;
+    grid-template-columns:60px 60px 76px 76px 158px;
+    grid-auto-rows:32px;
+    height:38px;
+}
+#salesPeriodSwitch .sales-period-button{
+    width:100%;
+    min-width:0;
+    padding:0 6px;
+    white-space:nowrap;
+}
+.sales-submit-cta{
+    width:158px;
+    min-width:158px;
+    max-width:158px;
+}
+/* The expanded preset menu gets its own stable header row on laptops. */
+@media(max-width:1440px){
+    .sales-portal-head{
+        grid-template-columns:minmax(0,1fr);
+        gap:14px;
+    }
+    .sales-portal-head-actions{
+        justify-content:start;
+    }
+}
+@media(max-width:1050px){
+    .nav{flex-wrap:wrap;}
+}
+@media(max-width:1000px){
+    .sales-portal-head-actions{
+        width:100%;
+        grid-template-columns:minmax(0,1fr);
+        gap:9px;
+    }
+    #salesPeriodSwitch{margin-top:0;}
+    .sales-submit-cta{margin-top:0;}
+}
+@media(max-width:500px){
+    #salesPeriodSwitch{
+        width:318px;
+        min-width:318px;
+        max-width:318px;
+        grid-template-columns:repeat(4,76px);
+        grid-auto-rows:32px;
+        height:auto;
+    }
+    #salesPeriodSwitch .sales-period-custom{grid-column:span 2;}
+}
+@media(max-width:359px){
+    #salesPeriodSwitch{
+        width:256px;
+        min-width:256px;
+        max-width:256px;
+        grid-template-columns:repeat(4,60.5px);
+    }
+    #salesPeriodSwitch .sales-period-custom{grid-column:span 4;}
+}
+@media(pointer:coarse){
+    #salesPeriodSwitch{
+        grid-auto-rows:38px;
+        height:auto;
+        min-height:44px;
+    }
+}
+/* Animate the entire colored stack as one bar; axes and labels stay still. */
+#salesActivityChartPanel .sales-chart-shell.sales-dashboard-changing{
+    transform:none;
+}
+#salesChartBars .sales-chart-segment{
+    pointer-events:auto !important;
+}
+#salesChartBars .sales-chart-stack-fill{
+    width:100%;
+    height:100%;
+    display:flex;
+    flex-direction:column-reverse;
+    justify-content:flex-start;
+    transform-origin:center bottom;
+}
+#salesChartBars .sales-chart-stack-fill.sales-chart-grow{
+    animation:salesChartGrowFromBottom .52s cubic-bezier(.22,.61,.36,1) both;
+}
+@keyframes salesChartGrowFromBottom{
+    from{transform:scaleY(0);}
+    to{transform:scaleY(1);}
+}
+@media(prefers-reduced-motion:reduce){
+    #salesChartBars .sales-chart-stack-fill.sales-chart-grow{animation:none;}
+}
+
+/* v0.1.68 — Restore the established Posts status segmented control. */
+.sales-range-post-head > :first-child{min-width:0;}
+.sales-range-post-head .sales-range-post-filter{
+    flex:0 1 auto;
+    min-width:0;
+    align-self:center;
+}
+.sales-range-post-filter .post-summary{
+    flex:0 0 auto;
+}
+@media(max-width:760px){
+    .sales-range-post-head .sales-range-post-filter{
+        width:auto;
+        max-width:100%;
+        align-self:flex-start;
+        justify-content:flex-start;
+    }
+}

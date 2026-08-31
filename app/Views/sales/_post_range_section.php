@@ -40,18 +40,17 @@ $salesPlatformIcon=static function(string $platform): string {
 <section class="sales-range-post-section" id="salesRangePostSection" data-active-post-filter="all">
     <div class="sales-range-post-head">
         <div>
-            <span class="eyebrow" data-sales-i18n="posts">Posts</span>
             <h2><span data-sales-i18n="posts">Posts</span><span class="sales-range-post-count"><?= $postCount ?></span></h2>
             <p class="sales-range-post-dates"><?= Util::e($formatRangeDate($from)) ?> — <?= Util::e($formatRangeDate($to)) ?></p>
         </div>
-        <div class="daily-post-summary sales-range-post-filter" role="group" aria-label="Filter posts by review status">
+        <div class="daily-post-summary sales-day-filter sales-range-post-filter" role="group" aria-label="Filter posts by review status">
             <button type="button" class="post-summary total active" data-sales-post-filter="all" aria-pressed="true" title="All: <?= $postCount ?>"><span data-sales-i18n="allPosts">All</span><strong><?= $postCount ?></strong></button>
             <button type="button" class="post-summary good" data-sales-post-filter="good" aria-pressed="false" title="Good: <?= $goodCount ?>"><span data-sales-i18n="good">Good</span><strong><?= $goodCount ?></strong></button>
             <button type="button" class="post-summary bad" data-sales-post-filter="bad" aria-pressed="false" title="Issues: <?= $badCount ?>"><span data-sales-i18n="issues">Issues</span><strong><?= $badCount ?></strong></button>
             <button type="button" class="post-summary neutral" data-sales-post-filter="unreviewed" aria-pressed="false" title="Unreviewed: <?= $unreviewedCount ?>"><span data-sales-i18n="unreviewed">Unreviewed</span><strong><?= $unreviewedCount ?></strong></button>
         </div>
     </div>
-    <div class="sales-post-card-grid sales-range-post-grid">
+    <div class="sales-post-card-grid sales-range-post-grid" id="salesRangePostGrid">
         <?php if (!$posts): ?>
             <div class="sales-empty-message sales-range-post-empty" role="status" data-sales-range-empty>
                 <span class="sales-empty-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4V4Zm2 2v12h12V6H6Zm2 2h8v2H8V8Zm0 4h5v2H8v-2Z"/></svg></span>
@@ -61,7 +60,8 @@ $salesPlatformIcon=static function(string $platform): string {
         <?php endif; ?>
         <?php foreach ($posts as $index => $p): ?>
             <?php
-            $status=(string)($p['current_review_status']??'');
+            $status=strtolower(trim((string)($p['current_review_status']??'')));
+            if(!in_array($status,['good','bad'],true)){$status='';}
             $statusClass=in_array($status,['good','bad'],true) ? ' review-'.$status : '';
             $publishedRaw=(string)($p['published_at']??$p['published_date']??'');
             ?>

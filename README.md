@@ -251,7 +251,7 @@ statuses, which still use pending/approved/rejected.
 
 ## Release versioning
 
-Current release: `v0.1.0`
+Current release: `v0.1.68`
 
 `VERSION` in the project root is the application version source of truth.
 The footer reads this value and displays it on every page.
@@ -1210,3 +1210,71 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - The existing AJAX route remains `/sales/daily-posts` for compatibility, but it now returns the complete range Posts module and `has_more=false`.
 - Hovering a chart color segment now calls out that segment count first (Good / Issues / Unreviewed), while still showing Total and Missing.
 - No database migration is required.
+
+## v0.1.67 — 1 Day default, stable menus, bottom-up bars
+
+- Added **1 Day** before **3 Days**, with English, Simplified Chinese, Traditional Chinese and Spanish labels.
+- Opening `/sales` without a date range or preset now selects 1 Day and sets From/To to today's existing business date. Explicit dates and presets remain respected.
+- The new one-day preset uses `period=single`; existing `period=day` links continue to mean 3 Days. Weekly and Monthly keep their existing rolling ranges.
+- Back to today preserves the active preset, including 1 Day. From Custom Range it returns to today in 1 Day mode.
+- Top navigation links, preset slots and Submit Post reserve fixed widths across languages. Narrow screens use viewport breakpoints to wrap controls without text-driven resizing.
+- On first render and each chart data/range/channel update, the colored stack grows upward from zero over 520ms. Axes, dates and target line stay stationary. Reduced-motion preferences are respected.
+- Legacy language/resize redraws now use the isolated controller's current data. Duplicate resize notifications do not interrupt growth.
+- Posts status filtering remains independent from the chart, channel and date controls. Its handler is now attached once, including on first load.
+- VERSION is 0.1.67 (the existing footer reads VERSION). No database migration or configuration change.
+
+### Applying this patch
+
+Overlay the included `sales-posts/` files onto the existing installation that already has v0.1.66 and its dependencies. This is a patch, not a standalone installation. It retains all eight files from the supplied v0.1.66 patch. Follow the existing stage/commit/push deployment workflow, then hard-refresh the browser if assets are cached.
+
+### Validation for v0.1.67
+
+- JavaScript syntax checks passed for app.js and sales-dashboard.js. All three supplied PHP files passed PHP 8.1 parser checks.
+- DOM simulation with the actual scripts/styles and mocked endpoint data passed: first-load 1 Day, all four presets, four-language labels/fixed CSS widths, independent Posts filters, current channel rows after language changes, repeated growth markup, resize preservation, historical dates, Back to today, and zero-result chart rows.
+- The test environment could not open a rendered browser preview and did not have the live PHP/MySQL application or Git checkout. Real browser layout/animation and live deployment were not verified.
+
+## v0.1.68 — Restore Posts filter UX and remove duplicate title
+
+- Removed the duplicate POST/Posts eyebrow: one Posts title, total count and selected dates remain.
+- Restored the existing `.sales-day-filter` segmented control styling that was missing on the range-wide Posts module: gray group, white active button, status text colors and separated counts.
+- Retained `data-sales-post-filter` as the module's own event namespace. The right-side status control never changes chart data, date range or channel.
+- Status changes now use both native `hidden` and the existing CSS class. All restores every card; zero-result filters show the same Empty component.
+- Review states are normalized; blank/unknown states count as Unreviewed. Counts, hover titles and accessible labels reflect the actual cards in the current range and channel. Labels and Empty feedback update with language changes.
+- The group can shrink/wrap on narrow screens without the old full-width stretch.
+- Preserved v0.1.67: 1 Day before 3 Days, today's default range, fixed top menu widths and bottom-up chart growth.
+- No database migration. VERSION/footer source is 0.1.68.
+
+Validation: all previous DOM simulation checks and PHP/JS syntax checks pass. Added the reported 10-post case (9 Good, 1 Issue, 0 Unreviewed), clicks on both labels and counts, All restoration, zero-result feedback, unchanged chart/date/channel, translated tooltips, and repeated AJAX replacements. These are local simulations; rendered browser layout and live deployment were not verified.
+
+### SSH and deployment
+
+The server address and project path come from this project's existing setup. The commands below assume a root SSH login; use your configured account and port if different. No passwords are included.
+
+From Windows PowerShell after downloading the patch to Downloads:
+
+```powershell
+scp "$env:USERPROFILE\Downloads\sales-posts-v0.1.68-posts-filter-ux-patch.zip" root@144.126.218.94:/tmp/
+ssh root@144.126.218.94
+```
+
+Then run in the server's Bash shell. This backs up only the eight patch files, never the database or secrets; it applies the patch and commits only those paths in the existing Git repository.
+
+```bash
+set -e
+cd /opt/coolerdepot/www/sales-posts
+patch_files=(VERSION README.md app/Controllers/SalesController.php app/Views/sales/dashboard.php app/Views/sales/_post_range_section.php public/assets/app.js public/assets/app.css public/assets/sales-dashboard.js)
+archive=/tmp/sales-posts-v0.1.68-posts-filter-ux-patch.zip
+backup="/tmp/sales-posts-before-v0.1.68-$(date +%Y%m%d-%H%M%S).tgz"
+test -f "$archive"
+git rev-parse --is-inside-work-tree
+unzip -t "$archive"
+tar -czf "$backup" -- "${patch_files[@]}"
+unzip -o "$archive" -d /opt/coolerdepot/www
+git diff --check -- "${patch_files[@]}"
+git add -- "${patch_files[@]}"
+git commit --only -m "v0.1.68: restore Posts filter UX" -- "${patch_files[@]}"
+git push
+cat VERSION
+```
+
+If commit/push fails, do not reset/discard local changes; inspect that error. The ZIP overlay has already updated the files on this server. Open the Sales page and use Ctrl+F5 if the browser cached the old assets; verify the footer shows 0.1.68.

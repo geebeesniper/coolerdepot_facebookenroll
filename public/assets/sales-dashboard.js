@@ -2,6 +2,12 @@
     'use strict';
 
     function ready(fn){
+        // Match app.js's ready queue so legacy handlers are bound before
+        // this controller detaches them, even with deferred script loading.
+        if(window.jQuery){
+            window.jQuery(fn);
+            return;
+        }
         if(document.readyState==='loading'){
             document.addEventListener(
                 'DOMContentLoaded',
@@ -404,7 +410,9 @@
             const to=new Date(anchor);
             let from=new Date(anchor);
 
-            if(period==='day'){
+            if(period==='single'){
+                from=new Date(to);
+            }else if(period==='day'){
                 from.setDate(
                     from.getDate()-2
                 );
@@ -460,6 +468,9 @@
         }
 
         function titleForPeriod(){
+            if(state.period==='single'){
+                return '1-Day Post Progress';
+            }
             if(state.period==='day'){
                 return '3-Day Post Progress';
             }
@@ -511,8 +522,17 @@
             }
 
             if(chartTitle){
-                chartTitle.textContent=
-                    titleForPeriod();
+                const titleKey={
+                    single:'oneDayProgressTitle',
+                    day:'dailyProgressTitle',
+                    week:'weeklyProgressTitle',
+                    month:'monthlyProgressTitle',
+                    custom:'customProgressTitle'
+                }[state.period]||'customProgressTitle';
+                chartTitle.setAttribute('data-sales-i18n',titleKey);
+                chartTitle.textContent=window.cdspSalesLanguage
+                    ?window.cdspSalesLanguage.translate(titleKey)
+                    :titleForPeriod();
             }
         }
 
@@ -778,7 +798,10 @@
             }
         }
 
-        function renderChart(){
+        let chartRenderKey='';
+
+        function renderChart(options){
+            const animate=!options||options.animate!==false;
             state.from=String(
                 fromInput.value||state.from
             );
@@ -804,6 +827,16 @@
                 target,
                 target*1.2
             );
+
+            // Ignore duplicate layout notifications without interrupting growth.
+            const renderKey=JSON.stringify([
+                state.from,state.to,state.channel,target,state.rows,
+                chartScroll?chartScroll.clientWidth:chartPanel?chartPanel.clientWidth:720
+            ]);
+            setPeriod(state.period);
+            if(!animate&&renderKey===chartRenderKey){return;}
+            chartRenderKey=renderKey;
+            if(tooltip){tooltip.classList.add('hidden');}
 
             renderAxis(
                 cap,
@@ -986,6 +1019,9 @@
                     +' class="sales-chart-day-plot">'
                     +'<div'
                     +' class="sales-chart-stack">'
+                    +'<div class="sales-chart-stack-fill'
+                    +(animate?' sales-chart-grow':'')
+                    +'">'
                     +'<span'
                     +' class="sales-chart-segment good"'
                     +' data-chart-segment="good"'
@@ -1007,6 +1043,7 @@
                     +' style="height:'
                     +unreviewedH
                     +'%"></span>'
+                    +'</div>'
                     +'</div>'
                     +'</div>'
                     +'<span'
@@ -1070,39 +1107,59 @@
             renderChart;
 
         function rangeStatusLabel(filter){
-            if(filter==='good'){return 'Good';}
-            if(filter==='bad'){return 'Issues';}
-            if(filter==='unreviewed'){return 'Unreviewed';}
-            return 'All';
+            const key={all:'allPosts',good:'good',bad:'issues',unreviewed:'unreviewed'}[filter]||'allPosts';
+            if(window.cdspSalesLanguage){return window.cdspSalesLanguage.translate(key);}
+            return {all:'All',good:'Good',bad:'Issues',unreviewed:'Unreviewed'}[filter]||'All';
         }
 
         function applyRangePostFilter(){
             const section=document.getElementById('salesRangePostSection');
             if(!section){return;}
-            const filter=String(state.postFilter||'all');
+            const allowed=['all','good','bad','unreviewed'];
+            const filter=allowed.includes(state.postFilter)?state.postFilter:'all';
+            state.postFilter=filter;
             const cards=Array.from(section.querySelectorAll('.sales-range-post-grid > .sales-self-post-card'));
+            const counts={all:cards.length,good:0,bad:0,unreviewed:0};
             let visible=0;
             cards.forEach(function(card){
-                const status=String(card.getAttribute('data-sales-post-status')||'unreviewed');
+                const raw=String(card.getAttribute('data-sales-post-status')||'').trim().toLowerCase();
+                const status=raw==='good'||raw==='bad'?raw:'unreviewed';
+                counts[status]++;
                 const show=filter==='all'||status===filter;
+                // Native hidden also removes filtered cards from keyboard focus.
+                card.hidden=!show;
                 card.classList.toggle('sales-card-filtered-out',!show);
                 card.setAttribute('aria-hidden',show?'false':'true');
                 if(show){visible++;}
             });
             section.querySelectorAll('[data-sales-post-filter]').forEach(function(button){
-                const active=String(button.getAttribute('data-sales-post-filter')||'all')===filter;
+                const value=String(button.getAttribute('data-sales-post-filter')||'all');
+                const active=value===filter;
+                const count=counts[value]||0;
                 button.classList.toggle('active',active);
                 button.setAttribute('aria-pressed',active?'true':'false');
+                button.setAttribute('aria-controls','salesRangePostGrid');
+                button.setAttribute('title',rangeStatusLabel(value)+': '+count);
+                button.setAttribute('aria-label',rangeStatusLabel(value)+': '+count);
+                const badge=button.querySelector('strong');
+                if(badge){badge.textContent=String(count);}
             });
             section.setAttribute('data-active-post-filter',filter);
             const filterEmpty=section.querySelector('[data-sales-post-filter-empty]');
             const rangeEmpty=section.querySelector('[data-sales-range-empty]');
             if(filterEmpty){
                 const copy=filterEmpty.querySelector('[data-sales-post-filter-empty-copy]');
-                if(copy){copy.textContent='No '+rangeStatusLabel(filter)+' posts in this range.';}
+                if(copy){copy.textContent=window.cdspSalesLanguage
+                    ?window.cdspSalesLanguage.translate('noFilteredPosts',{status:rangeStatusLabel(filter)})
+                    :'No '+rangeStatusLabel(filter)+' posts in this range.';}
                 filterEmpty.classList.toggle('hidden',!(cards.length>0&&visible===0));
             }
             if(rangeEmpty){rangeEmpty.classList.toggle('hidden',cards.length>0);}
+        }
+
+        if($){
+            $(document).off('cdsp:language-changed.cdspPostFilter')
+                .on('cdsp:language-changed.cdspPostFilter',applyRangePostFilter);
         }
 
         function setLoading(active,reason){
@@ -1306,18 +1363,7 @@
                 );
             }
 
-            if(dailyPosts){
-            dailyPosts.addEventListener('click',function(event){
-                const button=event.target.closest('[data-sales-post-filter]');
-                if(!button||!dailyPosts.contains(button)){return;}
-                event.preventDefault();
-                event.stopPropagation();
-                state.postFilter=String(button.getAttribute('data-sales-post-filter')||'all');
-                applyRangePostFilter();
-            },true);
-        }
-
-        if(loadMore){
+            if(loadMore){
                 const hasMore=
                     Boolean(
                         data.has_more
@@ -1338,6 +1384,7 @@
                 state.channel
             );
             applyRangePostFilter();
+            if(window.cdspSalesLanguage){window.cdspSalesLanguage.apply();}
             renderChart();
             updateBackToday();
             updateUrl();
@@ -1590,6 +1637,18 @@
                 'salesRangeForm'
             );
 
+        // Delegate once on the stable Posts container, including first load.
+        if(dailyPosts){
+            dailyPosts.addEventListener('click',function(event){
+                const button=event.target.closest('[data-sales-post-filter]');
+                if(!button||!dailyPosts.contains(button)){return;}
+                event.preventDefault();
+                event.stopPropagation();
+                state.postFilter=String(button.getAttribute('data-sales-post-filter')||'all');
+                applyRangePostFilter();
+            },true);
+        }
+
         if(rangeForm){
             rangeForm.addEventListener(
                 'submit',
@@ -1683,12 +1742,12 @@
                     event.preventDefault();
 
                     const period=
-                        ['day','week','month']
+                        ['single','day','week','month']
                             .includes(
                                 state.period
                             )
                             ?state.period
-                            :'day';
+                            :'single';
 
                     const range=
                         presetRange(
@@ -2211,11 +2270,7 @@
          */
         window.requestAnimationFrame(
             function(){
-                renderChart();
-
-                window.requestAnimationFrame(
-                    renderChart
-                );
+                renderChart({animate:false});
             }
         );
 
@@ -2230,7 +2285,7 @@
 
                 resizeTimer=
                     window.setTimeout(
-                        renderChart,
+                        function(){renderChart({animate:false});},
                         80
                     );
             }
