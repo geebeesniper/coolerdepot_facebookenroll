@@ -680,6 +680,90 @@ function closeSalesImageLightbox(){
         .attr('aria-hidden','true');
 }
 
+
+function applySalesDayFilter($section,filter){
+    const $cards=$section.find('.sales-self-post-card');
+
+    $cards.each(function(){
+        const status=String(
+            $(this).attr('data-sales-post-status')
+            ||'unreviewed'
+        );
+
+        const show=
+            filter==='all'
+            ||status===filter;
+
+        $(this).toggleClass('sales-filter-hidden',!show);
+    });
+
+    const visible=$cards.filter(
+        ':not(.sales-filter-hidden)'
+    ).length;
+
+    let $empty=$section.find(
+        '[data-sales-filter-empty]'
+    );
+
+    if(!$empty.length){
+        $empty=$(
+            '<div class="sales-filter-empty hidden" '
+            +'data-sales-filter-empty></div>'
+        );
+        $section
+            .find('.sales-post-card-grid')
+            .after($empty);
+    }
+
+    $empty
+        .toggleClass('hidden',visible!==0)
+        .text(
+            filter==='all'
+                ?salesTr('noPostsRange')
+                :(
+                    salesTr('noPostsRange')
+                    +' · '
+                    +salesPostStatusLabel(filter)
+                )
+        );
+
+    $section
+        .find('[data-sales-day-filter]')
+        .each(function(){
+            const active=
+                String($(this).data('sales-day-filter'))
+                ===filter;
+
+            $(this)
+                .toggleClass('active',active)
+                .attr(
+                    'aria-pressed',
+                    active?'true':'false'
+                );
+        });
+}
+
+$(document).on(
+    'click',
+    '[data-sales-day-filter]',
+    function(event){
+        event.preventDefault();
+
+        const $button=$(this);
+        const $section=$button.closest(
+            '.sales-day-section'
+        );
+        const filter=String(
+            $button.data('sales-day-filter')||'all'
+        );
+
+        applySalesDayFilter(
+            $section,
+            filter
+        );
+    }
+);
+
 $(document).on(
     'click',
     '.sales-self-post-card',

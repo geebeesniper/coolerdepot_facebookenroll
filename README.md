@@ -907,3 +907,17 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - Desktop remains six Sales cards per row; responsive breakpoints are 4 columns <=1150px, 3 <=900px, 2 <=680px, and 1 <=480px.
 - No database migration is required.
 - All border radius remains `4px`.
+
+## v0.1.46 — Daily status filters and compact date controls
+
+- Converted each Daily Posts `Posts / Good / Issues / Unreviewed` counter into an actual per-day filter.
+- `Posts` is the default All state; Good, Issues, and Unreviewed instantly filter that day's cards without a page reload.
+- Filtering uses delegated events, so sections loaded later through AJAX work immediately.
+- Filters expose pressed state for keyboard/screen-reader users and have 44px minimum targets on coarse-pointer/touch devices.
+- From / To date controls are visually compact on desktop: 132px fields, larger text, less empty horizontal space, and tighter spacing.
+- Touch devices keep 44px minimum input/button height despite the compact desktop presentation.
+- Long Sales card descriptions are explicitly clamped to two lines, and the card body has a fixed height so long descriptions cannot make one card taller than neighboring cards.
+- Titles are also clamped to two lines for a stable six-column grid.
+- Full title and description remain visible in the card detail popup.
+- No database migration is required.
+- All border radius remains `4px`.

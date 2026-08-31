@@ -60,23 +60,50 @@ $salesPlatformIcon = static function(string $platform): string
             <h2 data-sales-i18n="dailyPosts">Daily Posts</h2>
         </div>
 
-        <div class="daily-post-summary">
-            <span class="post-summary total">
+        <div
+            class="daily-post-summary sales-day-filter"
+            role="group"
+            aria-label="Filter posts by review status"
+        >
+            <button
+                type="button"
+                class="post-summary total active"
+                data-sales-day-filter="all"
+                aria-pressed="true"
+            >
                 <span data-sales-i18n="posts">Posts</span>
-                <?= $postCount ?>
-            </span>
-            <span class="post-summary good">
+                <strong><?= $postCount ?></strong>
+            </button>
+
+            <button
+                type="button"
+                class="post-summary good"
+                data-sales-day-filter="good"
+                aria-pressed="false"
+            >
                 <span data-sales-i18n="good">Good</span>
-                <?= $goodCount ?>
-            </span>
-            <span class="post-summary bad">
+                <strong><?= $goodCount ?></strong>
+            </button>
+
+            <button
+                type="button"
+                class="post-summary bad"
+                data-sales-day-filter="bad"
+                aria-pressed="false"
+            >
                 <span data-sales-i18n="issues">Issues</span>
-                <?= $badCount ?>
-            </span>
-            <span class="post-summary neutral">
+                <strong><?= $badCount ?></strong>
+            </button>
+
+            <button
+                type="button"
+                class="post-summary neutral"
+                data-sales-day-filter="unreviewed"
+                aria-pressed="false"
+            >
                 <span data-sales-i18n="unreviewed">Unreviewed</span>
-                <?= $unreviewedCount ?>
-            </span>
+                <strong><?= $unreviewedCount ?></strong>
+            </button>
         </div>
     </div>
 

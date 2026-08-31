@@ -6199,3 +6199,172 @@ body.sales-detail-open{
         justify-content:center;
     }
 }
+
+/* v0.1.46 Daily status filters + compact date controls */
+
+/* Per-day counts are now touch-friendly filters. */
+.sales-day-filter{
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:5px;
+    flex-wrap:wrap;
+}
+.sales-day-filter .post-summary{
+    min-height:28px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:4px;
+    padding:4px 7px;
+    border:1px solid transparent;
+    border-radius:4px;
+    cursor:pointer;
+    font:inherit;
+    line-height:1;
+    transition:
+        border-color .14s ease,
+        box-shadow .14s ease,
+        transform .14s ease;
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+}
+.sales-day-filter .post-summary strong{
+    font-size:8px;
+    font-weight:900;
+}
+.sales-day-filter .post-summary:hover,
+.sales-day-filter .post-summary:focus-visible{
+    border-color:#94a3b8;
+    box-shadow:0 2px 7px rgba(15,23,42,.08);
+    outline:none;
+}
+.sales-day-filter .post-summary.active{
+    border-color:#64748b;
+    box-shadow:0 0 0 1px rgba(100,116,139,.12);
+}
+.sales-day-filter .post-summary.good.active{
+    border-color:#22c55e;
+}
+.sales-day-filter .post-summary.bad.active{
+    border-color:#ef4444;
+}
+.sales-day-filter .post-summary.neutral.active{
+    border-color:#94a3b8;
+}
+.sales-filter-hidden{
+    display:none !important;
+}
+.sales-filter-empty{
+    margin:0 11px 11px;
+    padding:16px;
+    border:1px dashed #cbd5e1;
+    border-radius:4px;
+    background:#f8fafc;
+    color:#94a3b8;
+    text-align:center;
+    font-size:9px;
+    font-weight:800;
+}
+.sales-filter-empty.hidden{
+    display:none;
+}
+
+/* From / To should read like compact filters, not large form fields. */
+.sales-range-filter{
+    gap:6px;
+}
+.sales-range-filter label{
+    flex:0 0 auto;
+}
+.sales-range-filter label > span{
+    margin-bottom:3px;
+    font-size:9px;
+}
+.sales-range-filter input[type="date"]{
+    width:132px;
+    min-height:34px;
+    padding:5px 8px;
+    border:1px solid #cbd5e1;
+    border-radius:4px;
+    background:#fff;
+    color:#0f172a;
+    font-size:11px;
+    font-weight:800;
+    line-height:1.1;
+}
+.sales-range-filter input[type="date"]:focus{
+    border-color:#2563eb;
+    outline:none;
+    box-shadow:0 0 0 2px rgba(37,99,235,.12);
+}
+.sales-range-apply{
+    min-height:34px;
+    padding:5px 10px;
+    font-size:9px;
+}
+
+/* Explicit card-height protection:
+   long descriptions never stretch one card taller than its siblings.
+   Full content remains available in the post detail popup. */
+.sales-self-post-body{
+    height:92px;
+    min-height:92px;
+    max-height:92px;
+    overflow:hidden;
+}
+.sales-self-post-body h3{
+    display:-webkit-box;
+    min-height:26px;
+    max-height:26px;
+    overflow:hidden;
+    -webkit-box-orient:vertical;
+    -webkit-line-clamp:2;
+}
+.sales-self-post-body p{
+    display:-webkit-box;
+    min-height:22px;
+    max-height:22px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    -webkit-box-orient:vertical;
+    -webkit-line-clamp:2;
+}
+
+/* Keep touch targets comfortable even though desktop fields are compact. */
+@media(pointer:coarse){
+    .sales-day-filter .post-summary{
+        min-height:44px;
+        padding:8px 10px;
+    }
+    .sales-range-filter input[type="date"],
+    .sales-range-apply{
+        min-height:44px;
+        font-size:12px;
+    }
+}
+@media(max-width:560px){
+    .sales-range-filter{
+        display:grid;
+        grid-template-columns:repeat(2,minmax(0,1fr));
+        gap:7px;
+    }
+    .sales-range-filter label{
+        min-width:0;
+    }
+    .sales-range-filter input[type="date"]{
+        width:100%;
+    }
+    .sales-range-apply{
+        grid-column:1 / -1;
+        width:100%;
+    }
+    .sales-day-filter{
+        justify-content:flex-start;
+        width:100%;
+        margin-top:8px;
+    }
+    .sales-day-filter .post-summary{
+        flex:1 1 auto;
+    }
+}
