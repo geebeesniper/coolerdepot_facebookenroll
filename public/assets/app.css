@@ -6867,3 +6867,223 @@ body.sales-detail-open{
         margin-right:-4px;
     }
 }
+
+/* v0.1.48 adaptive chart + compact filters + grouped Admin six-column posts */
+
+/* Daily status filter: small SaaS segmented control, not large badges. */
+.sales-day-filter{
+    display:inline-flex;
+    width:auto;
+    max-width:100%;
+    align-items:center;
+    justify-content:flex-end;
+    gap:1px;
+    padding:2px;
+    overflow-x:auto;
+    border:1px solid #dbe3ee;
+    border-radius:4px;
+    background:#f1f5f9;
+    scrollbar-width:none;
+}
+.sales-day-filter::-webkit-scrollbar{
+    display:none;
+}
+.sales-day-filter .post-summary{
+    position:relative;
+    min-height:24px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:3px;
+    padding:3px 6px;
+    border:1px solid transparent;
+    border-radius:4px;
+    background:transparent !important;
+    color:#64748b !important;
+    box-shadow:none;
+    cursor:pointer;
+    white-space:nowrap;
+    font-size:7px !important;
+    font-weight:800;
+    line-height:1;
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+}
+.sales-day-filter .post-summary strong{
+    min-width:10px;
+    font-size:7px !important;
+    font-weight:900;
+}
+.sales-day-filter .post-summary:hover,
+.sales-day-filter .post-summary:focus-visible{
+    border-color:#cbd5e1;
+    background:#fff !important;
+    color:#0f172a !important;
+    outline:none;
+}
+.sales-day-filter .post-summary.active{
+    border-color:#cbd5e1 !important;
+    background:#fff !important;
+    color:#0f172a !important;
+    box-shadow:0 1px 3px rgba(15,23,42,.08);
+}
+.sales-day-filter .post-summary.good.active{
+    color:#15803d !important;
+}
+.sales-day-filter .post-summary.bad.active{
+    color:#b42318 !important;
+}
+.sales-day-filter .post-summary.neutral.active{
+    color:#475569 !important;
+}
+.sales-self-post-card[hidden],
+.sales-filter-hidden{
+    display:none !important;
+}
+
+/* Adaptive chart geometry. The JS sets the bar width and day count. */
+.sales-chart-bars{
+    grid-auto-flow:unset;
+    grid-auto-columns:unset;
+    gap:var(--sales-chart-gap,4px);
+}
+.sales-chart-stack{
+    left:50%;
+    right:auto;
+    width:min(
+        calc(100% - 6px),
+        var(--sales-chart-bar-width,40px)
+    );
+    transform:translateX(-50%);
+}
+.sales-chart-missing{
+    left:50%;
+    right:auto;
+    width:min(
+        calc(100% - 6px),
+        var(--sales-chart-bar-width,40px)
+    );
+    transform:translateX(-50%);
+}
+.sales-chart-x-label.hidden-label{
+    visibility:hidden;
+}
+.sales-chart-scroll{
+    scrollbar-width:thin;
+}
+.sales-activity-chart-panel:not(.sales-chart-scrollable)
+.sales-chart-scroll{
+    overflow-x:hidden;
+}
+.sales-chart-day{
+    min-width:0;
+}
+
+/* Admin expanded posts: date first, then six cards across that day. */
+.sales-expanded-grid.admin-grouped-posts{
+    display:block;
+    padding:0;
+}
+.sales-expanded-date-group{
+    padding:10px 10px 12px;
+    border-top:1px solid #e2e8f0;
+}
+.sales-expanded-date-group:first-child{
+    border-top:0;
+}
+.sales-expanded-date-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    min-height:30px;
+    margin-bottom:7px;
+    padding:0 2px;
+}
+.sales-expanded-date-head strong{
+    color:#0f172a;
+    font-size:10px;
+    font-weight:900;
+}
+.sales-expanded-date-head span{
+    color:#64748b;
+    font-size:8px;
+    font-weight:800;
+}
+.sales-expanded-date-grid{
+    display:grid;
+    grid-template-columns:repeat(6,minmax(0,1fr));
+    gap:7px;
+}
+.sales-expanded-date-grid .sales-post-card-media{
+    height:104px;
+}
+.sales-expanded-date-grid .sales-post-card-body{
+    height:82px;
+    min-height:82px;
+    max-height:82px;
+    overflow:hidden;
+    padding:8px 9px 7px;
+}
+.sales-expanded-date-grid .sales-post-card-body h3{
+    min-height:26px;
+    max-height:26px;
+    font-size:10px;
+    line-height:1.3;
+}
+.sales-expanded-date-grid .sales-post-card-body p{
+    min-height:21px;
+    max-height:21px;
+    margin-top:4px;
+    font-size:7px;
+    line-height:1.35;
+}
+.sales-expanded-date-grid .sales-post-card-footer{
+    min-height:34px;
+    padding:6px 8px;
+}
+.sales-expanded-date-grid .sales-post-card-time,
+.sales-expanded-date-grid .sales-post-tile-status{
+    font-size:7px;
+}
+
+/* Touch: visual filter stays small, but target stays usable. */
+@media(pointer:coarse){
+    .sales-day-filter .post-summary{
+        min-height:36px;
+        padding:7px 8px;
+        font-size:8px !important;
+    }
+    .sales-day-filter .post-summary strong{
+        font-size:8px !important;
+    }
+}
+
+@media(max-width:1120px){
+    .sales-expanded-date-grid{
+        grid-template-columns:repeat(4,minmax(0,1fr));
+    }
+}
+@media(max-width:900px){
+    .sales-expanded-date-grid{
+        grid-template-columns:repeat(3,minmax(0,1fr));
+    }
+}
+@media(max-width:680px){
+    .sales-expanded-date-grid{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+    .sales-day-head{
+        align-items:flex-start;
+        flex-direction:column;
+        gap:7px;
+    }
+    .sales-day-filter{
+        justify-content:flex-start;
+    }
+}
+@media(max-width:480px){
+    .sales-expanded-date-grid{
+        grid-template-columns:1fr;
+    }
+}

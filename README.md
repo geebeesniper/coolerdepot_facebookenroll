@@ -937,3 +937,19 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - Admin Daily Post Target is moved into a per-person `Settings` popup on each Sales progress card. It uses the existing `daily_post_target` database field and existing `/admin/sales-target` endpoint, so no migration is required.
 - Saving an Admin target immediately updates that person's Admin progress card; the target becomes the horizontal line on that Sales person's dashboard.
 - Touch targets remain at least 44px where needed, chart/filter controls support horizontal touch scrolling, and all border radius remains `4px`.
+
+## v0.1.48 — Adaptive Sales chart, working compact filters, grouped Admin Post List
+
+- Sales activity chart now scales its X axis dynamically from the selected From/To range instead of assigning a fixed pixel width per day.
+- Short and medium ranges fit the available chart width automatically. Long ranges reduce label density and bar width; only very long ranges switch to horizontal scrolling.
+- A ResizeObserver recalculates chart geometry when the browser, responsive layout, split view, tablet orientation, or dashboard container width changes.
+- Date labels are sampled automatically for larger ranges while the first and last dates always remain visible.
+- The 120% vertical cap, Daily Post Target line, Good/Issues/Unreviewed stack, Missing dashed section, hover tooltip, keyboard focus, and touch tooltip remain unchanged.
+- Daily `All / Good / Issues / Unreviewed` controls were redesigned as a compact segmented filter with substantially smaller typography.
+- Status filtering now sets the native `hidden` attribute on non-matching cards in addition to CSS state, so later stylesheet rules cannot accidentally prevent the filter from working.
+- Status filters continue to combine with the global platform filter.
+- Admin expanded Post List is now grouped by published date. Each date has its own heading and cards remain in chronological order within the period.
+- Admin expanded Post cards now render six columns on desktop, then 4 / 3 / 2 / 1 responsively.
+- Admin cards are compacted to match the six-column density while keeping title/description clamped and status visible.
+- No database migration is required.
+- All border radius remains `4px`.

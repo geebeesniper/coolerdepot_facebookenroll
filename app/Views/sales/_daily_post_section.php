@@ -71,7 +71,7 @@ $salesPlatformIcon = static function(string $platform): string
                 data-sales-day-filter="all"
                 aria-pressed="true"
             >
-                <span data-sales-i18n="posts">Posts</span>
+                <span data-sales-i18n="allPosts">All</span>
                 <strong><?= $postCount ?></strong>
             </button>
 

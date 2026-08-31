@@ -168,6 +168,8 @@ const salesI18n={
         allPlatforms:'All',
         missing:'Missing',
         total:'Total',
+        allPosts:'Todas',
+        allPosts:'All',
         viewDetails:'View details',
         noImage:'No listing image',
         close:'Close',
@@ -238,6 +240,7 @@ const salesI18n={
         allPlatforms:'全部',
         missing:'缺少',
         total:'总数',
+        allPosts:'全部',
         viewDetails:'查看详情',
         noImage:'没有帖子图片',
         close:'关闭',
@@ -308,6 +311,7 @@ const salesI18n={
         allPlatforms:'全部',
         missing:'缺少',
         total:'總數',
+        allPosts:'全部',
         viewDetails:'查看詳情',
         noImage:'沒有貼文圖片',
         close:'關閉',
@@ -721,6 +725,7 @@ function renderSalesChart(){
     const $bars=$('#salesChartBars');
     const $canvas=$('#salesChartCanvas');
     const $panel=$('#salesActivityChartPanel');
+    const $scroll=$('#salesChartScroll');
 
     if(!$bars.length||!$panel.length){
         return;
@@ -763,14 +768,85 @@ function renderSalesChart(){
 
     $panel.attr('data-daily-target',target);
 
+    /*
+     * SaaS-like X-axis scaling:
+     * - normal ranges fit the available viewport instead of using a fixed
+     *   50px/day width;
+     * - labels become less dense as the date range grows;
+     * - very long ranges switch to horizontal scrolling only when fitting
+     *   every day would make the bars unusably narrow.
+     */
+    const availableWidth=Math.max(
+        320,
+        Math.floor(
+            ($scroll.innerWidth()||$panel.innerWidth()||720)-2
+        )
+    );
+    const dayCount=Math.max(1,dates.length);
+    const coarse=Boolean(
+        window.matchMedia
+        &&window.matchMedia('(pointer:coarse)').matches
+    );
+
+    const minimumReadableSlot=coarse?30:22;
+    const naturalSlot=availableWidth/dayCount;
+    const needsScroll=
+        dayCount>45
+        ||naturalSlot<minimumReadableSlot;
+
+    const canvasWidth=needsScroll
+        ?Math.max(
+            availableWidth,
+            dayCount*(coarse?34:25)
+        )
+        :availableWidth;
+
+    const slotWidth=canvasWidth/dayCount;
+
+    let barWidth=54;
+
+    if(slotWidth<32){
+        barWidth=Math.max(10,slotWidth-7);
+    }else if(slotWidth<46){
+        barWidth=Math.max(16,slotWidth-10);
+    }else if(slotWidth<72){
+        barWidth=30;
+    }else if(slotWidth<105){
+        barWidth=40;
+    }
+
+    const desiredLabelWidth=coarse?58:52;
+    const maxLabels=Math.max(
+        2,
+        Math.floor(canvasWidth/desiredLabelWidth)
+    );
+    let labelStep=Math.max(
+        1,
+        Math.ceil(dayCount/maxLabels)
+    );
+
+    if(dayCount<=10){
+        labelStep=1;
+    }
+
     $canvas.css(
         'width',
-        'max(100%,'+Math.max(360,dates.length*50)+'px)'
+        Math.round(canvasWidth)+'px'
     );
+
+    $bars.css({
+        'grid-template-columns':
+            'repeat('+dayCount+',minmax(0,1fr))',
+        'grid-auto-columns':'unset',
+        '--sales-chart-bar-width':
+            Math.round(barWidth)+'px',
+        '--sales-chart-gap':
+            slotWidth<28?'2px':'4px'
+    });
 
     let html='';
 
-    dates.forEach(function(date){
+    dates.forEach(function(date,index){
         const data=aggregateSalesChartDate(
             date,
             salesPlatformFilter
@@ -799,6 +875,11 @@ function renderSalesChart(){
                     targetPercent-actualHeight
                 )
                 :0;
+
+        const showLabel=
+            index===0
+            ||index===dayCount-1
+            ||index%labelStep===0;
 
         html+=(
             '<div'
@@ -832,16 +913,26 @@ function renderSalesChart(){
                         ?'<span class="sales-chart-over-cap">120%+</span>'
                         :'')
                 +'</div>'
-                +'<span class="sales-chart-x-label">'
-                    +escapeHtml(salesShortDate(date))
+                +'<span class="sales-chart-x-label'
+                    +(showLabel?'':' hidden-label')
+                    +'">'
+                    +(showLabel
+                        ?escapeHtml(salesShortDate(date))
+                        :'')
                 +'</span>'
             +'</div>'
         );
     });
 
     $bars.html(html);
-}
 
+    $panel
+        .attr('data-range-days',dayCount)
+        .toggleClass(
+            'sales-chart-scrollable',
+            needsScroll
+        );
+}
 function showSalesChartTooltip($day,event){
     if(!$day||!$day.length||!$salesChartTooltip.length){
         return;
@@ -939,13 +1030,16 @@ function applySalesDayFilter($section,filter){
     const $cards=$section.find('.sales-self-post-card');
     const counts=updateSalesDayStatusCounts($section);
 
+    filter=String(filter||'all');
+
     $cards.each(function(){
+        const $card=$(this);
         const status=String(
-            $(this).attr('data-sales-post-status')
+            $card.attr('data-sales-post-status')
             ||'unreviewed'
         );
         const platform=String(
-            $(this).attr('data-sales-post-platform')
+            $card.attr('data-sales-post-platform')
             ||''
         );
 
@@ -955,16 +1049,26 @@ function applySalesDayFilter($section,filter){
         const statusMatch=
             filter==='all'
             ||status===filter;
+        const show=platformMatch&&statusMatch;
 
-        $(this).toggleClass(
-            'sales-filter-hidden',
-            !(platformMatch&&statusMatch)
-        );
+        /*
+         * Use the native hidden attribute in addition to a class.
+         * That makes the filter deterministic even if another CSS rule
+         * later changes the card's display value.
+         */
+        this.hidden=!show;
+
+        $card
+            .toggleClass('sales-filter-hidden',!show)
+            .attr(
+                'aria-hidden',
+                show?'false':'true'
+            );
     });
 
-    const visible=$cards.filter(
-        ':not(.sales-filter-hidden)'
-    ).length;
+    const visible=$cards.filter(function(){
+        return !this.hidden;
+    }).length;
 
     $section.toggleClass(
         'sales-platform-section-empty',
@@ -991,9 +1095,13 @@ function applySalesDayFilter($section,filter){
             visible!==0||counts.all===0
         )
         .text(
-            salesTr('noPostsRange')
-            +' · '
-            +salesPostStatusLabel(filter)
+            filter==='all'
+                ?salesTr('noPostsRange')
+                :(
+                    salesTr('noPostsRange')
+                    +' · '
+                    +salesPostStatusLabel(filter)
+                )
         );
 
     $section
@@ -1010,8 +1118,12 @@ function applySalesDayFilter($section,filter){
                     active?'true':'false'
                 );
         });
-}
 
+    $section.attr(
+        'data-active-status-filter',
+        filter
+    );
+}
 function applySalesPlatformFilterToCards(){
     $('.sales-day-section').each(function(){
         const $section=$(this);
@@ -1346,20 +1458,28 @@ $(document).on(
     '[data-sales-day-filter]',
     function(event){
         event.preventDefault();
+        event.stopPropagation();
 
         const $button=$(this);
         const $section=$button.closest(
             '.sales-day-section'
         );
+        const filter=String(
+            $button.attr('data-sales-day-filter')
+            ||'all'
+        );
 
         applySalesDayFilter(
             $section,
-            String(
-                $button.data(
-                    'sales-day-filter'
-                )||'all'
-            )
+            filter
         );
+
+        if(
+            event.detail>0
+            &&document.activeElement===this
+        ){
+            this.blur();
+        }
     }
 );
 
@@ -1521,6 +1641,43 @@ $(document).on('keydown',function(event){
 });
 
 parseSalesChartInitialData();
+
+let salesChartResizeTimer=null;
+
+if(
+    window.ResizeObserver
+    &&document.getElementById('salesChartScroll')
+){
+    const salesChartResizeObserver=new ResizeObserver(
+        function(){
+            clearTimeout(salesChartResizeTimer);
+
+            salesChartResizeTimer=setTimeout(
+                function(){
+                    renderSalesChart();
+                },
+                70
+            );
+        }
+    );
+
+    salesChartResizeObserver.observe(
+        document.getElementById('salesChartScroll')
+    );
+}else{
+    $(window).on('resize',function(){
+        clearTimeout(salesChartResizeTimer);
+
+        salesChartResizeTimer=setTimeout(
+            function(){
+                renderSalesChart();
+            },
+            100
+        );
+    });
+}
+
+
 syncSalesRangeConstraints('');
 renderSalesChart();
 applySalesPlatformFilterToCards();
@@ -3697,6 +3854,31 @@ function syncExpandedSalesCardFromTiles(){
         }
     }
 
+function postDateGroupLabel(value){
+    const raw=String(value||'').trim();
+    const match=raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+    if(!match){
+        return raw;
+    }
+
+    const d=new Date(
+        parseInt(match[1],10),
+        parseInt(match[2],10)-1,
+        parseInt(match[3],10),
+        12,0,0
+    );
+
+    return d.toLocaleDateString(
+        dashboardLocale(),
+        {
+            month:'short',
+            day:'numeric',
+            year:'numeric'
+        }
+    );
+}
+
 function postDateTimeLabel(value){
     const raw=String(value||'').trim();
     const match=raw.match(
@@ -3984,6 +4166,10 @@ function renderPostGrid(data){
         +tr('chronological')
     );
 
+    $expandedList.addClass(
+        'admin-grouped-posts'
+    );
+
     if(!posts.length){
         $expandedList.html(
             '<div class="sales-expanded-empty">'
@@ -3993,7 +4179,32 @@ function renderPostGrid(data){
         return;
     }
 
-    const html=posts.map(function(post){
+    const groups=[];
+    const byDate={};
+
+    posts.forEach(function(post){
+        const published=String(
+            post.published_date
+            ||post.published_at
+            ||''
+        );
+        const dateKey=(
+            published.match(/^\d{4}-\d{2}-\d{2}/)
+            ||['Unknown date']
+        )[0];
+
+        if(!byDate[dateKey]){
+            byDate[dateKey]={
+                date:dateKey,
+                posts:[]
+            };
+            groups.push(byDate[dateKey]);
+        }
+
+        byDate[dateKey].posts.push(post);
+    });
+
+    const cardHtml=function(post){
         const status=String(
             post.status||''
         ).toLowerCase();
@@ -4074,11 +4285,37 @@ function renderPostGrid(data){
                 '</div>'+
             '</article>'
         );
+    };
+
+    const html=groups.map(function(group){
+        const count=group.posts.length;
+
+        return (
+            '<section class="sales-expanded-date-group"'
+                +' data-expanded-date="'
+                +escapeHtml(group.date)
+                +'">'
+                +'<div class="sales-expanded-date-head">'
+                    +'<strong>'
+                        +escapeHtml(
+                            postDateGroupLabel(group.date)
+                        )
+                    +'</strong>'
+                    +'<span>'
+                        +count
+                        +' '
+                        +escapeHtml(tr('postsLower'))
+                    +'</span>'
+                +'</div>'
+                +'<div class="sales-expanded-date-grid">'
+                    +group.posts.map(cardHtml).join('')
+                +'</div>'
+            +'</section>'
+        );
     }).join('');
 
     $expandedList.html(html);
 }
-
     function openExpandedPosts($card){
         const salesId = parseInt(
             $card.attr('data-sales-id'),
