@@ -1196,3 +1196,17 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - The legacy dashed empty-card styles are explicitly neutralized to protect against stale markup or cached fragments.
 - No database migration is required.
 - Normal UI components remain 4px; chart bars remain square; the borderless Empty message intentionally has no radius because it has no box.
+
+## v0.1.66 — One Posts module per selected range
+
+- Removed the date-by-date `Daily Posts` modules from the Sales dashboard.
+- The selected From/To range now has exactly one `Posts` module.
+- Every post in the selected range is returned in one query and rendered in one six-column responsive grid.
+- Posts are ordered newest to oldest using `published_date DESC, published_at DESC, id DESC`.
+- Each post card now displays its own `Post date`, including date and time.
+- All / Good / Issues / Unreviewed is one filter belonging only to the single Posts module.
+- Channel filtering returns the exact same single Posts module; zero results use the same header, zero counts and centered Empty state.
+- Removed Load Earlier/calendar-day pagination from Sales; all posts in the selected range are returned as requested.
+- The existing AJAX route remains `/sales/daily-posts` for compatibility, but it now returns the complete range Posts module and `has_more=false`.
+- Hovering a chart color segment now calls out that segment count first (Good / Issues / Unreviewed), while still showing Total and Missing.
+- No database migration is required.

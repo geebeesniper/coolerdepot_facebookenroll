@@ -9633,3 +9633,22 @@ body.sales-detail-open{
         min-height:340px !important;
     }
 }
+
+
+/* v0.1.66 SINGLE RANGE POSTS MODULE */
+.sales-range-post-stage{margin-top:16px;min-height:310px;}
+.sales-range-post-wrap{width:100%;}
+.sales-range-post-section{overflow:hidden;border:1px solid #dbe3ee;border-radius:4px;background:#fff;box-shadow:0 10px 26px rgba(15,23,42,.04);}
+.sales-range-post-head{min-height:70px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:16px;border-bottom:1px solid #dbe3ee;background:#f8fafc;}
+.sales-range-post-head h2{margin:2px 0 0;display:flex;align-items:baseline;gap:7px;color:#0f172a;font-size:16px;line-height:1.2;}
+.sales-range-post-count{color:#64748b;font-size:11px;font-weight:800;}
+.sales-range-post-dates{margin:4px 0 0;color:#64748b;font-size:9px;font-weight:700;}
+.sales-range-post-filter{flex:0 0 auto;}
+.sales-range-post-grid{min-height:270px !important;padding:10px;align-content:start;}
+.sales-range-post-grid .sales-self-post-date{margin-bottom:5px;color:#64748b;font-size:7.5px;font-weight:900;letter-spacing:.01em;}
+.sales-range-post-grid .sales-self-post-card.sales-card-filtered-out{display:none !important;}
+.sales-range-post-empty,.sales-range-filter-empty{grid-column:1 / -1 !important;width:100% !important;min-height:252px !important;border:0 !important;background:transparent !important;box-shadow:none !important;}
+.sales-range-filter-empty.hidden,.sales-range-post-empty.hidden{display:none !important;}
+.sales-range-post-stage-empty{min-height:max(310px,var(--sales-preserved-height,310px));}
+.sales-chart-tooltip-focus{margin-bottom:2px;color:#0f172a;font-weight:900;}
+@media(max-width:760px){.sales-range-post-head{align-items:flex-start;flex-direction:column}.sales-range-post-filter{width:100%;overflow-x:auto}}

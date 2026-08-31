@@ -207,7 +207,8 @@
             rows:[],
             requestSeq:0,
             controller:null,
-            loadingTimer:null
+            loadingTimer:null,
+            postFilter:'all'
         };
 
         const chartHeight=280;
@@ -987,16 +988,22 @@
                     +' class="sales-chart-stack">'
                     +'<span'
                     +' class="sales-chart-segment good"'
+                    +' data-chart-segment="good"'
+                    +' data-chart-segment-count="'+good+'"'
                     +' style="height:'
                     +goodH
                     +'%"></span>'
                     +'<span'
                     +' class="sales-chart-segment bad"'
+                    +' data-chart-segment="bad"'
+                    +' data-chart-segment-count="'+bad+'"'
                     +' style="height:'
                     +badH
                     +'%"></span>'
                     +'<span'
                     +' class="sales-chart-segment unreviewed"'
+                    +' data-chart-segment="unreviewed"'
+                    +' data-chart-segment-count="'+unreviewed+'"'
                     +' style="height:'
                     +unreviewedH
                     +'%"></span>'
@@ -1061,6 +1068,42 @@
          */
         window.renderSalesChart=
             renderChart;
+
+        function rangeStatusLabel(filter){
+            if(filter==='good'){return 'Good';}
+            if(filter==='bad'){return 'Issues';}
+            if(filter==='unreviewed'){return 'Unreviewed';}
+            return 'All';
+        }
+
+        function applyRangePostFilter(){
+            const section=document.getElementById('salesRangePostSection');
+            if(!section){return;}
+            const filter=String(state.postFilter||'all');
+            const cards=Array.from(section.querySelectorAll('.sales-range-post-grid > .sales-self-post-card'));
+            let visible=0;
+            cards.forEach(function(card){
+                const status=String(card.getAttribute('data-sales-post-status')||'unreviewed');
+                const show=filter==='all'||status===filter;
+                card.classList.toggle('sales-card-filtered-out',!show);
+                card.setAttribute('aria-hidden',show?'false':'true');
+                if(show){visible++;}
+            });
+            section.querySelectorAll('[data-sales-post-filter]').forEach(function(button){
+                const active=String(button.getAttribute('data-sales-post-filter')||'all')===filter;
+                button.classList.toggle('active',active);
+                button.setAttribute('aria-pressed',active?'true':'false');
+            });
+            section.setAttribute('data-active-post-filter',filter);
+            const filterEmpty=section.querySelector('[data-sales-post-filter-empty]');
+            const rangeEmpty=section.querySelector('[data-sales-range-empty]');
+            if(filterEmpty){
+                const copy=filterEmpty.querySelector('[data-sales-post-filter-empty-copy]');
+                if(copy){copy.textContent='No '+rangeStatusLabel(filter)+' posts in this range.';}
+                filterEmpty.classList.toggle('hidden',!(cards.length>0&&visible===0));
+            }
+            if(rangeEmpty){rangeEmpty.classList.toggle('hidden',cards.length>0);}
+        }
 
         function setLoading(active,reason){
             if(
@@ -1263,7 +1306,18 @@
                 );
             }
 
-            if(loadMore){
+            if(dailyPosts){
+            dailyPosts.addEventListener('click',function(event){
+                const button=event.target.closest('[data-sales-post-filter]');
+                if(!button||!dailyPosts.contains(button)){return;}
+                event.preventDefault();
+                event.stopPropagation();
+                state.postFilter=String(button.getAttribute('data-sales-post-filter')||'all');
+                applyRangePostFilter();
+            },true);
+        }
+
+        if(loadMore){
                 const hasMore=
                     Boolean(
                         data.has_more
@@ -1283,6 +1337,7 @@
             setChannel(
                 state.channel
             );
+            applyRangePostFilter();
             renderChart();
             updateBackToday();
             updateUrl();
@@ -2025,6 +2080,15 @@
                             10
                         )||0;
 
+                    const segment=event.target.closest('.sales-chart-segment');
+                    let segmentLine='';
+                    if(segment&&day.contains(segment)){
+                        const type=String(segment.getAttribute('data-chart-segment')||'');
+                        const count=parseInt(segment.getAttribute('data-chart-segment-count')||'0',10)||0;
+                        const label=type==='good'?'Good':(type==='bad'?'Issues':'Unreviewed');
+                        segmentLine='<span class="sales-chart-tooltip-focus">'+label+': <b>'+count+'</b></span>';
+                    }
+
                     tooltip.innerHTML=
                         '<strong>'
                         +escapeHtml(
@@ -2033,6 +2097,7 @@
                             )||''
                         )
                         +'</strong>'
+                        +segmentLine
                         +'<span>Total: <b>'
                         +total
                         +'</b></span>'
@@ -2137,6 +2202,7 @@
         setPeriod(state.period);
         setChannel(state.channel);
         updateBackToday();
+        applyRangePostFilter();
         renderChart();
 
         /*

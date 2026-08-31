@@ -536,43 +536,9 @@ $chartTargetTop=
     | JSON_HEX_QUOT
 ) ?></script>
 
-<div
-    class="sales-daily-stage<?= $days ? '' : ' sales-daily-stage-empty' ?>"
-    id="salesDailyStage"
->
-    <div
-        id="dailyPosts"
-        class="daily-posts sales-daily-posts"
-        data-from="<?= Util::e($from) ?>"
-        data-to="<?= Util::e($to) ?>"
-        data-offset="<?= (int)$loadedDays ?>"
-        data-limit="<?= (int)$loadDays ?>"
-    >
-        <?php foreach ($days as $day): ?>
-            <?php require __DIR__ . '/_daily_post_section.php'; ?>
-        <?php endforeach; ?>
-    </div>
-
-    <div
-        id="dailyPostsEmpty"
-        class="panel empty sales-empty-state<?= $days ? ' hidden' : '' ?>"
-    >
-        <div
-            class="sales-empty-message sales-range-empty-message"
-            role="status"
-        >
-            <span class="sales-empty-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                    <path d="M4 4h16v16H4V4Zm2 2v12h12V6H6Zm2 2h8v2H8V8Zm0 4h5v2H8v-2Z"/>
-                </svg>
-            </span>
-            <strong data-sales-i18n="empty">
-                Empty
-            </strong>
-            <span data-sales-i18n="noPostsRange">
-                No posts in this date range.
-            </span>
-        </div>
+<div class="sales-range-post-stage<?= $posts ? '' : ' sales-range-post-stage-empty' ?>" id="salesDailyStage">
+    <div id="dailyPosts" class="sales-range-post-wrap" data-from="<?= Util::e($from) ?>" data-to="<?= Util::e($to) ?>">
+        <?php require __DIR__ . '/_post_range_section.php'; ?>
     </div>
 </div>
 
@@ -708,20 +674,4 @@ $chartTargetTop=
         src=""
         alt=""
     >
-</div>
-
-<div class="daily-load-more-wrap">
-    <button
-        type="button"
-        id="loadMoreDailyPosts"
-        class="btn"
-        <?= $loadedDays >= $totalDays ? 'hidden' : '' ?>
-    >
-        <span data-sales-i18n="loadEarlier">Load earlier days</span>
-    </button>
-
-    <div
-        id="dailyLoadStatus"
-        class="daily-load-status"
-    ></div>
 </div>
