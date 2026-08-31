@@ -1837,13 +1837,16 @@
                             );
 
                         empty.className=
-                            'sales-module-filter-empty';
+                            'sales-module-filter-empty sales-empty-message sales-filter-empty-message';
 
                         empty.innerHTML=
-                            '<div class="sales-filter-empty-card">'
+                            '<span class="sales-empty-icon" aria-hidden="true">'
+                            +'<svg viewBox="0 0 24 24">'
+                            +'<path d="M4 4h16v16H4V4Zm2 2v12h12V6H6Zm2 2h8v2H8V8Zm0 4h5v2H8v-2Z"/>'
+                            +'</svg>'
+                            +'</span>'
                             +'<strong>Empty</strong>'
-                            +'<span>No posts match this filter.</span>'
-                            +'</div>';
+                            +'<span>No posts match this filter.</span>';
 
                         const grid=
                             section.querySelector(

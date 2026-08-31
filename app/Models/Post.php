@@ -423,6 +423,61 @@ public static function forSalesOnDate(
 }
 
 
+public static function forSalesPublishedRange(
+    int $salesUserId,
+    string $from,
+    string $to,
+    ?string $platform = null
+): array {
+    $platformSql=$platform !== null
+        ? " AND LOWER(p.platform)=? "
+        : "";
+
+    $stmt=Database::connection()->prepare(
+        "SELECT
+            p.*,
+            COALESCE(
+                rh.decision,
+                p.admin_review_status
+            ) AS current_review_status
+         FROM cdsp_sales_posts p
+         LEFT JOIN (
+            SELECT h.post_id,h.decision
+            FROM cdsp_post_review_history h
+            INNER JOIN (
+                SELECT post_id,MAX(id) AS max_id
+                FROM cdsp_post_review_history
+                GROUP BY post_id
+            ) latest
+              ON latest.max_id=h.id
+         ) rh
+           ON rh.post_id=p.id
+         WHERE p.sales_user_id=?
+           AND p.deleted_at IS NULL
+           AND p.published_date BETWEEN ? AND ?"
+         .$platformSql.
+        " ORDER BY
+            p.published_date DESC,
+            p.published_at DESC,
+            p.id DESC"
+    );
+
+    $params=[
+        $salesUserId,
+        $from,
+        $to,
+    ];
+
+    if($platform !== null){
+        $params[]=strtolower($platform);
+    }
+
+    $stmt->execute($params);
+
+    return $stmt->fetchAll();
+}
+
+
 public static function salesChartRows(
     int $salesUserId,
     string $from,

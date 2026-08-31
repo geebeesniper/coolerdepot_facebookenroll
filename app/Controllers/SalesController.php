@@ -122,52 +122,22 @@ class SalesController extends Controller
             (int)($salesUser['daily_post_target']??10)
         );
 
-        $limit = max(
-            1,
+        $initialLimit=$this->salesCalendarInitialLimit(
+            $rangePeriod,
             (int)$config['app']['daily_posts_initial_days']
         );
 
-        if($rangePeriod==='day'){
-            $days=$this->salesCompleteDaySections(
-                (int)$u['id'],
-                $from,
-                $to,
-                $platformFilter
-            );
-            $totalDays=count($days);
-        }else{
-            $dayRows = Post::dailyDatesForSales(
-                (int)$u['id'],
-                $from,
-                $to,
-                $limit,
-                0,
-                $platformFilter
-            );
-            $days = [];
+        $calendarPage=$this->salesCalendarDaySections(
+            (int)$u['id'],
+            $from,
+            $to,
+            $platformFilter,
+            $initialLimit,
+            0
+        );
 
-            foreach ($dayRows as $row) {
-                $date = $row['published_date'];
-                $days[] = [
-                    'date' => $date,
-                    'post_count' => (int)$row['post_count'],
-                    'good_count' => (int)$row['good_count'],
-                    'bad_count' => (int)$row['bad_count'],
-                    'posts' => Post::forSalesOnDate(
-                        (int)$u['id'],
-                        $date,
-                        $platformFilter
-                    ),
-                ];
-            }
-
-            $totalDays = Post::dailyDateCountForSales(
-                (int)$u['id'],
-                $from,
-                $to,
-                $platformFilter
-            );
-        }
+        $days=$calendarPage['days'];
+        $totalDays=$calendarPage['total_days'];
 
         $this->render('sales/dashboard', [
             'user' => $u,
@@ -269,49 +239,25 @@ class SalesController extends Controller
             ?null
             :$activeChannel;
 
-        if($rangePeriod==='day'){
-            $days=$this->salesCompleteDaySections(
-                (int)$u['id'],
-                $from,
-                $to,
-                $platformFilter
-            );
-            $nextOffset=count($days);
-            $totalDays=count($days);
-        }else{
-            $rows = Post::dailyDatesForSales(
-                (int)$u['id'],
-                $from,
-                $to,
-                $limit,
-                $offset,
-                $platformFilter
-            );
-            $days = [];
-
-            foreach ($rows as $row) {
-                $date = $row['published_date'];
-                $days[] = [
-                    'date' => $date,
-                    'post_count' => (int)$row['post_count'],
-                    'good_count' => (int)$row['good_count'],
-                    'bad_count' => (int)$row['bad_count'],
-                    'posts' => Post::forSalesOnDate(
-                        (int)$u['id'],
-                        $date,
-                        $platformFilter
-                    ),
-                ];
-            }
-
-            $nextOffset = $offset + count($days);
-            $totalDays = Post::dailyDateCountForSales(
-                (int)$u['id'],
-                $from,
-                $to,
-                $platformFilter
+        if($offset===0){
+            $limit=$this->salesCalendarInitialLimit(
+                $rangePeriod,
+                $limit
             );
         }
+
+        $calendarPage=$this->salesCalendarDaySections(
+            (int)$u['id'],
+            $from,
+            $to,
+            $platformFilter,
+            $limit,
+            $offset
+        );
+
+        $days=$calendarPage['days'];
+        $nextOffset=$calendarPage['next_offset'];
+        $totalDays=$calendarPage['total_days'];
 
         ob_start();
         foreach ($days as $day) {
@@ -413,61 +359,157 @@ private function salesPresetRange(
     ];
 }
 
-private function salesCompleteDaySections(
+
+private function salesCalendarInitialLimit(
+    string $period,
+    int $configuredLimit
+): int {
+    if($period==='day'){
+        return 3;
+    }
+
+    if($period==='week'){
+        return 7;
+    }
+
+    /*
+     * Monthly / Custom should still surface a useful block immediately:
+     * enough calendar days to include nearby posts AND the empty dates
+     * around them. Older dates continue through Load Earlier.
+     */
+    return max(
+        10,
+        $configuredLimit
+    );
+}
+
+private function salesCalendarDaySections(
     int $salesUserId,
     string $from,
     string $to,
-    ?string $platformFilter
+    ?string $platformFilter,
+    int $limit,
+    int $offset
 ): array {
-    $rows=Post::dailyDatesForSales(
-        $salesUserId,
-        $from,
-        $to,
-        10,
-        0,
-        $platformFilter
-    );
-
-    $byDate=[];
-
-    foreach($rows as $row){
-        $byDate[(string)$row['published_date']]=$row;
-    }
-
     $start=new \DateTimeImmutable(
         $from.' 12:00:00'
     );
 
-    $cursor=new \DateTimeImmutable(
+    $end=new \DateTimeImmutable(
         $to.' 12:00:00'
     );
 
+    $totalDays=
+        (int)$start
+            ->diff($end)
+            ->days
+        +1;
+
+    $offset=max(
+        0,
+        min(
+            $offset,
+            $totalDays
+        )
+    );
+
+    $limit=max(
+        1,
+        $limit
+    );
+
+    $cursor=$end->modify(
+        '-'.$offset.' days'
+    );
+
+    $dates=[];
+
+    while(
+        $cursor >= $start
+        &&count($dates)<$limit
+    ){
+        $dates[]=$cursor->format(
+            'Y-m-d'
+        );
+
+        $cursor=$cursor->modify(
+            '-1 day'
+        );
+    }
+
+    if(!$dates){
+        return [
+            'days'=>[],
+            'total_days'=>$totalDays,
+            'next_offset'=>$offset,
+        ];
+    }
+
+    $pageFrom=end($dates);
+    $pageTo=$dates[0];
+
+    $posts=Post::forSalesPublishedRange(
+        $salesUserId,
+        $pageFrom,
+        $pageTo,
+        $platformFilter
+    );
+
+    $postsByDate=[];
+
+    foreach($posts as $post){
+        $date=(string)$post['published_date'];
+
+        if(!isset($postsByDate[$date])){
+            $postsByDate[$date]=[];
+        }
+
+        $postsByDate[$date][]=$post;
+    }
+
     $days=[];
 
-    while($cursor >= $start){
-        $date=$cursor->format('Y-m-d');
-        $row=$byDate[$date]??null;
+    foreach($dates as $date){
+        $datePosts=
+            $postsByDate[$date]
+            ??[];
+
+        $good=0;
+        $bad=0;
+
+        foreach($datePosts as $post){
+            $status=(string)(
+                $post['current_review_status']
+                ??''
+            );
+
+            if($status==='good'){
+                $good++;
+            }elseif($status==='bad'){
+                $bad++;
+            }
+        }
 
         $days[]=[
             'date'=>$date,
-            'post_count'=>
-                (int)($row['post_count']??0),
-            'good_count'=>
-                (int)($row['good_count']??0),
-            'bad_count'=>
-                (int)($row['bad_count']??0),
-            'posts'=>Post::forSalesOnDate(
-                $salesUserId,
-                $date,
-                $platformFilter
-            ),
+            'post_count'=>count($datePosts),
+            'good_count'=>$good,
+            'bad_count'=>$bad,
+            'posts'=>$datePosts,
         ];
-
-        $cursor=$cursor->modify('-1 day');
     }
 
-    return $days;
+    $nextOffset=
+        $offset
+        +count($dates);
+
+    return [
+        'days'=>$days,
+        'total_days'=>$totalDays,
+        'next_offset'=>$nextOffset,
+    ];
 }
+
 
     public function submitForm(): void
     {

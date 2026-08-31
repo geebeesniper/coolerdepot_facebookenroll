@@ -557,8 +557,11 @@ $chartTargetTop=
         id="dailyPostsEmpty"
         class="panel empty sales-empty-state<?= $days ? ' hidden' : '' ?>"
     >
-        <div class="sales-empty-card" role="status">
-            <span class="sales-empty-card-icon" aria-hidden="true">
+        <div
+            class="sales-empty-message sales-range-empty-message"
+            role="status"
+        >
+            <span class="sales-empty-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24">
                     <path d="M4 4h16v16H4V4Zm2 2v12h12V6H6Zm2 2h8v2H8V8Zm0 4h5v2H8v-2Z"/>
                 </svg>

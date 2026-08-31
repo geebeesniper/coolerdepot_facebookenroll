@@ -9498,3 +9498,138 @@ body.sales-detail-open{
         transform:none !important;
     }
 }
+
+/* v0.1.65 UNIFIED EMPTY STATE + CALENDAR-DAY SECTIONS */
+
+/*
+ * One Empty component everywhere:
+ * - empty Daily Posts date
+ * - entire range empty fallback
+ * - Good/Issues/Unreviewed filter empty
+ * - Channel result empty
+ *
+ * No inner card / no dashed border / no white box.
+ */
+.sales-empty-message{
+    box-sizing:border-box !important;
+    grid-column:1 / -1 !important;
+    width:100% !important;
+    min-height:252px !important;
+    padding:24px !important;
+    display:flex !important;
+    flex-direction:column !important;
+    align-items:center !important;
+    justify-content:center !important;
+    gap:6px !important;
+    border:0 !important;
+    outline:0 !important;
+    border-radius:0 !important;
+    background:transparent !important;
+    box-shadow:none !important;
+    color:#64748b !important;
+    text-align:center !important;
+}
+
+.sales-empty-icon{
+    width:26px !important;
+    height:26px !important;
+    display:inline-flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    color:#94a3b8 !important;
+}
+
+.sales-empty-icon svg{
+    width:23px !important;
+    height:23px !important;
+    fill:currentColor !important;
+}
+
+.sales-empty-message strong{
+    color:#334155 !important;
+    font-size:12px !important;
+    font-weight:900 !important;
+    line-height:1.2 !important;
+}
+
+.sales-empty-message > span:last-child{
+    max-width:220px !important;
+    color:#64748b !important;
+    font-size:9px !important;
+    line-height:1.45 !important;
+}
+
+/* The Daily Posts shell remains full width; Empty sits centered in it. */
+.sales-day-section .sales-post-card-grid{
+    min-height:252px !important;
+}
+
+.sales-day-empty-message{
+    min-height:252px !important;
+}
+
+/* Range-level fallback uses the same component, centered with no frame. */
+#dailyPostsEmpty.sales-empty-state{
+    min-height:280px !important;
+    padding:0 !important;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border:0 !important;
+    background:transparent !important;
+}
+
+#dailyPostsEmpty.sales-empty-state.hidden{
+    display:none !important;
+}
+
+#dailyPostsEmpty .sales-range-empty-message{
+    min-height:280px !important;
+}
+
+/* Status-filter Empty is exactly the same visual language. */
+.sales-module-filter-empty{
+    grid-column:1 / -1 !important;
+    width:100% !important;
+    min-height:252px !important;
+    margin:0 !important;
+}
+
+/*
+ * Retire every older empty "card" skin.
+ * Keep selectors so stale cached DOM cannot reintroduce dashed boxes.
+ */
+.sales-empty-card,
+.sales-filter-empty-card,
+.sales-day-empty-card{
+    border:0 !important;
+    outline:0 !important;
+    background:transparent !important;
+    box-shadow:none !important;
+}
+
+/*
+ * Calendar-day pagination:
+ * each returned date occupies a normal Daily Posts section whether its
+ * post count is 0 or greater than 0.
+ */
+.sales-day-section{
+    width:100%;
+}
+
+/* Mobile/touch keeps the same borderless centered state. */
+@media(max-width:680px){
+    .sales-empty-message,
+    .sales-day-empty-message,
+    .sales-module-filter-empty{
+        min-height:300px !important;
+    }
+}
+
+@media(max-width:480px){
+    .sales-empty-message,
+    .sales-day-empty-message,
+    .sales-module-filter-empty{
+        min-height:340px !important;
+    }
+}

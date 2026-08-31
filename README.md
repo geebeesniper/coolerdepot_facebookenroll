@@ -1181,3 +1181,18 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - AJAX uses `fetch()` with abort/request sequencing and `cache: no-store`.
 - No database migration is required.
 - Normal UI radius remains 4px; chart bars remain square.
+
+## v0.1.65 — Unified Empty state and calendar-day Daily Posts
+
+- Daily Posts are now paged by calendar date instead of by only the dates that contain posts.
+- Empty dates are therefore retained between populated dates. If August 28 has posts but August 29/30/31 do not, each empty date still renders its normal `date + Daily Posts + All/Good/Issues/Unreviewed` section with zero counts.
+- 3 Days always returns all 3 calendar days; Weekly always returns all 7 calendar days.
+- Monthly and Custom Range initially return the newest 10 calendar days and use Load Earlier for older calendar days, so nearby empty dates and populated dates remain visible together without rendering an unbounded number of sections.
+- Added `Post::forSalesPublishedRange()` so each calendar page loads its posts in one range query rather than one query per date.
+- Channel filtering uses the same calendar-day section builder. A Channel with zero posts no longer falls back to a different giant Empty layout; each visible date uses the same Daily Posts shell and the same Empty presentation.
+- Unified every Sales Empty presentation into `.sales-empty-message`.
+- Empty is centered in the available section, has no dashed border, no white inner card, no box-shadow, and no separate framing.
+- Good / Issues / Unreviewed zero-result filters use the exact same icon/title/message component.
+- The legacy dashed empty-card styles are explicitly neutralized to protect against stale markup or cached fragments.
+- No database migration is required.
+- Normal UI components remain 4px; chart bars remain square; the borderless Empty message intentionally has no radius because it has no box.
