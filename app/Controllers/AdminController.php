@@ -1744,7 +1744,7 @@ public function saveDailyReview():void{
         fwrite($out,"\xEF\xBB\xBF");
         fputcsv($out,[
             'Sales','Total','Facebook','OfferUp','Craigslist',
-            'Good','Bad','Good %','From','To'
+            'Good','Bad','Good %','Reviewed Days','Avg Rating','From','To'
         ]);
 
         foreach($rows as $row){
@@ -1752,6 +1752,7 @@ public function saveDailyReview():void{
             $pct=$reviewed
                 ?round(((int)$row['good_posts']/$reviewed)*100,1)
                 :0;
+            $avgRating=(float)($row['avg_daily_rating']??0);
             fputcsv($out,[
                 (string)$row['display_name'],
                 (int)$row['total_posts'],
@@ -1761,6 +1762,8 @@ public function saveDailyReview():void{
                 (int)$row['good_posts'],
                 (int)$row['bad_posts'],
                 $pct.'%',
+                (int)($row['daily_review_days']??0),
+                $avgRating>0 ? number_format($avgRating,1).'/5' : '',
                 $context['from'],
                 $context['to'],
             ]);
@@ -1806,30 +1809,94 @@ public function saveDailyReview():void{
         string $to,
         int $salesUserId
     ):array{
-        $params=[$from.' 00:00:00',$to.' 23:59:59'];
+        $params=[
+            $from,
+            $to,
+            $from,
+            $to,
+        ];
+
         $filter='';
         if($salesUserId>0){
             $filter=' AND u.id=?';
             $params[]=$salesUserId;
         }
 
+        /*
+         * Keep Reports aligned with the Admin/Sales activity dashboards:
+         * - post counts use the listing published date;
+         * - Good/Bad resolves the same current decision sources used by the
+         *   dashboard, including older review/history rows;
+         * - Daily Review statistics count one current review per work date,
+         *   not every edit in review history.
+         */
         $sql="SELECT
                 u.id sales_user_id,
                 u.display_name,
-                COUNT(p.id) total_posts,
-                COALESCE(SUM(p.platform='facebook'),0) facebook_posts,
-                COALESCE(SUM(p.platform='offerup'),0) offerup_posts,
-                COALESCE(SUM(p.platform='craigslist'),0) craigslist_posts,
-                COALESCE(SUM(p.admin_review_status='good'),0) good_posts,
-                COALESCE(SUM(p.admin_review_status='bad'),0) bad_posts
+                COALESCE(ps.total_posts,0) total_posts,
+                COALESCE(ps.facebook_posts,0) facebook_posts,
+                COALESCE(ps.offerup_posts,0) offerup_posts,
+                COALESCE(ps.craigslist_posts,0) craigslist_posts,
+                COALESCE(ps.good_posts,0) good_posts,
+                COALESCE(ps.bad_posts,0) bad_posts,
+                COALESCE(ds.daily_review_days,0) daily_review_days,
+                COALESCE(ds.avg_daily_rating,0) avg_daily_rating,
+                ds.last_daily_review_date
               FROM cdsp_users u
-              LEFT JOIN cdsp_sales_posts p
-                ON p.sales_user_id=u.id
-               AND p.created_at BETWEEN ? AND ?
-               AND p.deleted_at IS NULL
+              LEFT JOIN (
+                SELECT
+                    p.sales_user_id,
+                    COUNT(p.id) total_posts,
+                    COALESCE(SUM(p.platform='facebook'),0) facebook_posts,
+                    COALESCE(SUM(p.platform='offerup'),0) offerup_posts,
+                    COALESCE(SUM(p.platform='craigslist'),0) craigslist_posts,
+                    COALESCE(SUM(
+                        COALESCE(
+                            rh.decision,
+                            p.admin_review_status,
+                            pr.decision
+                        )='good'
+                    ),0) good_posts,
+                    COALESCE(SUM(
+                        COALESCE(
+                            rh.decision,
+                            p.admin_review_status,
+                            pr.decision
+                        )='bad'
+                    ),0) bad_posts
+                FROM cdsp_sales_posts p
+                LEFT JOIN cdsp_post_reviews pr
+                  ON pr.post_id=p.id
+                LEFT JOIN (
+                    SELECT h.post_id,h.decision
+                    FROM cdsp_post_review_history h
+                    INNER JOIN (
+                        SELECT post_id,MAX(id) max_id
+                        FROM cdsp_post_review_history
+                        GROUP BY post_id
+                    ) latest
+                      ON latest.max_id=h.id
+                ) rh
+                  ON rh.post_id=p.id
+                WHERE p.deleted_at IS NULL
+                  AND p.published_date BETWEEN ? AND ?
+                GROUP BY p.sales_user_id
+              ) ps
+                ON ps.sales_user_id=u.id
+              LEFT JOIN (
+                SELECT
+                    sales_user_id,
+                    COUNT(*) daily_review_days,
+                    ROUND(AVG(rating),1) avg_daily_rating,
+                    MAX(work_date) last_daily_review_date
+                FROM cdsp_daily_sales_reviews
+                WHERE work_date BETWEEN ? AND ?
+                  AND rating BETWEEN 1 AND 5
+                GROUP BY sales_user_id
+              ) ds
+                ON ds.sales_user_id=u.id
               WHERE u.role='sales'
                 AND u.active=1{$filter}
-              GROUP BY u.id,u.display_name
               ORDER BY total_posts DESC,u.display_name";
 
         $stmt=Database::connection()->prepare($sql);

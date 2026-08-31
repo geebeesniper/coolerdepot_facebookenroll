@@ -118,7 +118,12 @@ $downloadQuery=http_build_query([
     </div>
 
     <div class="report-result-meta">
-        <h2 id="reportSelectedSalesTitle"><?= Util::e($selectedSalesLabel) ?></h2>
+        <div>
+            <h2 id="reportSelectedSalesTitle"><?= Util::e($selectedSalesLabel) ?></h2>
+            <p class="report-review-explainer">
+                Good/Bad is post-level review. Reviewed Days and Avg Rating summarize the Admin Daily Review for this range.
+            </p>
+        </div>
     </div>
 
     <div class="tablewrap report-table-wrap" id="reportTableArea">
@@ -132,6 +137,8 @@ $downloadQuery=http_build_query([
                 <th>Good</th>
                 <th>Bad</th>
                 <th>Good %</th>
+                <th>Reviewed Days</th>
+                <th>Avg Rating</th>
             </tr>
 
             <?php foreach($rows as $r):
@@ -149,6 +156,13 @@ $downloadQuery=http_build_query([
                     <td><?= (int)$r['good_posts'] ?></td>
                     <td><?= (int)$r['bad_posts'] ?></td>
                     <td><?= $pct ?>%</td>
+                    <td><?= (int)($r['daily_review_days']??0) ?></td>
+                    <td><?php
+                        $avgRating=(float)($r['avg_daily_rating']??0);
+                        echo $avgRating>0
+                            ? Util::e(number_format($avgRating,1).'/5')
+                            : '—';
+                    ?></td>
                 </tr>
             <?php endforeach; ?>
         </table>

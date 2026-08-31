@@ -646,6 +646,9 @@ $adminPresetNames = [
                     Sales Review
                 </h2>
                 <p id="salesPeriodReviewModalSubtitle"></p>
+                <p class="sales-review-purpose">
+                    This is the Sales performance rating for the selected period. Post Good/Bad decisions are tracked separately; Daily Review ratings are summarized in Management Reports.
+                </p>
             </div>
 
             <button

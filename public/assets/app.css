@@ -10798,3 +10798,23 @@ body.sales-submit-modal-open,body.sales-detail-open,body.review-modal-open{overf
 @media(prefers-reduced-motion:reduce){
     #reportTableArea{transition:none;}
 }
+
+
+/* v0.1.82 report review statistics + clearer management review purpose */
+.report-review-explainer{
+    margin:4px 0 0;
+    color:#64748b;
+    font-size:10px;
+    line-height:1.45;
+}
+.report-table-wrap th:nth-last-child(-n+2),
+.report-table-wrap td:nth-last-child(-n+2){
+    white-space:nowrap;
+}
+.sales-review-purpose{
+    max-width:720px;
+    margin:6px 0 0;
+    color:#64748b;
+    font-size:10px;
+    line-height:1.5;
+}
