@@ -5652,3 +5652,178 @@ body.review-modal-open{
         justify-content:center;
     }
 }
+
+/* v0.1.44 Editor source UX + compact 6-column Sales cards */
+
+/* Visual / HTML switch always stays on the far right.
+   This also covers the older editor class names still present in the app. */
+.prose-mode-switch,
+.wp-note-mode-tabs,
+.note-mode-switch{
+    margin-left:auto;
+}
+
+/* HTML source mode: light editor everywhere. */
+.prose-code,
+.wp-code-editor,
+.note-code{
+    background:#fff;
+}
+
+.prose-code-gutter,
+.wp-code-gutter,
+.note-code-gutter{
+    border-right:1px solid #e2e8f0;
+    background:#f8fafc;
+    color:#94a3b8;
+}
+
+.prose-code-highlight,
+.wp-code-highlight,
+.note-code-highlight{
+    background:#fff;
+    color:#1e293b;
+}
+
+.prose-code-source,
+.wp-note-source,
+.note-code-source{
+    background:transparent !important;
+    color:transparent !important;
+    caret-color:#0f172a;
+    -webkit-text-fill-color:transparent;
+}
+
+.prose-code-source::selection,
+.wp-note-source::selection,
+.note-code-source::selection{
+    background:rgba(59,130,246,.18);
+}
+
+/* Syntax colors tuned for a white source-editor background. */
+.code-tag{
+    color:#0369a1;
+}
+.code-attr{
+    color:#7c3aed;
+}
+.code-string{
+    color:#15803d;
+}
+.code-punct{
+    color:#64748b;
+}
+.code-comment{
+    color:#6b7280;
+    font-style:italic;
+}
+
+/* Sales desktop: six compact cards per row. */
+.sales-post-card-grid{
+    grid-template-columns:repeat(6,minmax(0,1fr));
+    gap:8px;
+}
+
+.sales-self-post-card{
+    min-width:0;
+}
+
+.sales-self-post-media{
+    height:100px;
+}
+
+.sales-self-post-sequence{
+    left:6px;
+    top:6px;
+    min-width:25px;
+    height:25px;
+    padding:0 6px;
+    font-size:8px;
+}
+
+.sales-self-post-platform{
+    right:6px;
+    top:6px;
+}
+
+.sales-self-post-platform .platform-logo{
+    width:30px;
+    height:30px;
+    flex-basis:30px;
+}
+
+.sales-self-post-body{
+    min-height:92px;
+    padding:8px 9px 7px;
+}
+
+.sales-self-post-date{
+    margin-bottom:4px;
+    font-size:7px;
+}
+
+.sales-self-post-body h3{
+    font-size:10px;
+    line-height:1.3;
+    -webkit-line-clamp:2;
+}
+
+.sales-self-post-body p{
+    margin-top:4px;
+    font-size:8px;
+    line-height:1.35;
+    -webkit-line-clamp:2;
+}
+
+.sales-self-post-footer{
+    min-height:36px;
+    gap:5px;
+    padding:6px 8px;
+}
+
+.sales-open-original,
+.sales-self-post-status{
+    font-size:7px;
+}
+
+.sales-self-post-status{
+    min-height:22px;
+    padding:2px 5px;
+}
+
+.sales-delete-toggle{
+    min-height:31px;
+    padding:5px 8px;
+    font-size:7px;
+}
+
+/* Responsive density: keep six only where it actually fits. */
+@media(max-width:1200px){
+    .sales-post-card-grid{
+        grid-template-columns:repeat(4,minmax(0,1fr));
+    }
+}
+
+@media(max-width:900px){
+    .sales-post-card-grid{
+        grid-template-columns:repeat(3,minmax(0,1fr));
+    }
+}
+
+@media(max-width:720px){
+    .sales-post-card-grid{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+    .sales-self-post-media{
+        height:130px;
+    }
+}
+
+@media(max-width:560px){
+    .sales-post-card-grid{
+        grid-template-columns:1fr;
+    }
+    .sales-self-post-media{
+        height:180px;
+    }
+}

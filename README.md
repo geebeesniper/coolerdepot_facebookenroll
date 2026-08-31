@@ -880,3 +880,15 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - Legacy Daily/Weekly/Monthly save routes no longer write no-rating reviews; stale forms are redirected to the unified rating-enabled dashboard.
 - Post Good/Bad review remains separate from the person rating. No star rating was added back to individual Post Review.
 - All border radius remains `4px`.
+
+## v0.1.44 — Right-aligned HTML switch, light source editor, compact Sales grid
+
+- Visual / HTML mode controls are forced to the far right for the current Prose editor and older compatible editor class names.
+- Switching to HTML no longer causes the mode switch to jump to the left when the formatting toolbar is hidden.
+- HTML source mode now uses a white background, light line-number gutter, dark caret, and syntax colors designed for a light editor.
+- The same light-source treatment covers Prose, legacy WordPress-style, and Composer-style HTML editors for consistent UX.
+- Sales Daily Post cards now use six columns on desktop.
+- Sales cards were compacted together with the six-column layout: smaller media area, tighter body, metadata, footer, platform badge, status, and deletion control.
+- Responsive layout falls back to 4 columns at <=1200px, 3 at <=900px, 2 at <=720px, and 1 at <=560px.
+- No database migration is required.
+- All border radius remains `4px`.
