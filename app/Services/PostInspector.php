@@ -133,7 +133,16 @@ class PostInspector
             $canonical = $submitted;
         }
 
-        $eid = (string)($item['external_post_id'] ?? $eid ?? '');
+        $eid = trim((string)($item['external_post_id'] ?? $eid ?? ''));
+
+        // Facebook share links are transient aliases and do not contain the Marketplace
+        // listing ID. Once the provider resolves the real numeric ID, use the stable
+        // Marketplace item URL as the canonical URL. Keep submitted_url unchanged so
+        // the exact link entered by Sales is still available for audit/history.
+        if ($eid !== '' && ctype_digit($eid)) {
+            $canonical = 'https://www.facebook.com/marketplace/item/' . $eid;
+        }
+
         $title = trim((string)($item['title'] ?? ''));
         $desc = trim((string)($item['description'] ?? ''));
         $publishedRaw = trim((string)($item['published_raw'] ?? ''));

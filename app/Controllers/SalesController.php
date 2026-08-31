@@ -244,6 +244,12 @@ private function salesPresetRange(
                 }
             }
             elseif($e instanceof \PDOException&&(int)($e->errorInfo[1]??0)===1062){$error='This post ID or URL has already been saved.';}
+            elseif($e instanceof \PDOException
+                && (int)($e->errorInfo[1]??0)===1048
+                && stripos($e->getMessage(),'admin_review_status')!==false){
+                error_log('[CDSP save] '.$e->getMessage());
+                $error='Database review-status migration is required. Ask an administrator to run the v0.1.72 migration.';
+            }
             else{error_log('[CDSP save] '.$e->getMessage());$error='Post could not be saved. Please check it again and retry.';}
         }finally{
             if($locked){$release=$pdo->prepare('SELECT RELEASE_LOCK(?)');$release->execute([$lockName]);}

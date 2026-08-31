@@ -252,7 +252,7 @@ statuses, which still use pending/approved/rejected.
 
 ## Release versioning
 
-Current release: `v0.1.71`
+Current release: `v0.1.72`
 
 `VERSION` in the project root is the application version source of truth.
 The footer reads this value and displays it on every page.
@@ -1379,3 +1379,16 @@ cat VERSION
 ```
 
 After deployment, hard-refresh the browser. New/changed website image URLs can be indexed later with `docker compose exec -T php php /var/www/html/sales-posts/scripts/index_duplicate_images.php --website --limit=200`.
+
+
+## v0.1.72 — Facebook share canonical ID + review-status save fix
+
+- Fixes production Save failures caused by legacy `cdsp_sales_posts.admin_review_status` schemas that still reject `NULL`.
+- The v0.1.72 migration safely widens the legacy review enum, maps `approved -> good`, `rejected -> bad`, converts `pending -> NULL`, then makes the final `good/bad` column nullable.
+- Facebook `/share/...` links are still accepted as submitted URLs. After the provider returns the real numeric Marketplace post/listing ID, the verified record now uses `https://www.facebook.com/marketplace/item/{ID}` as its canonical URL.
+- Duplicate detection therefore checks the provider-resolved Facebook `external_post_id`, not the share token. Different share links that resolve to the same Marketplace ID are treated as the same post.
+- The originally submitted share URL remains stored separately in `submitted_url` for audit/history.
+
+### SSH upgrade for v0.1.72
+
+Upload `sales-posts-v0.1.72-share-id-save-fix.zip` to `/opt/coolerdepot/www/sales-posts/`, extract it into `/opt/coolerdepot/www`, then run `scripts/migrate_v0_1_72.php` inside the PHP container before testing Save again.

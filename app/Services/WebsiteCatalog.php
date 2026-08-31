@@ -390,7 +390,7 @@ class WebsiteCatalog
             CURLOPT_TIMEOUT=>18,
             CURLOPT_RETURNTRANSFER=>false,
             CURLOPT_HEADER=>false,
-            CURLOPT_USERAGENT=>'CoolerDepot-SalesPosts/0.1.71',
+            CURLOPT_USERAGENT=>'CoolerDepot-SalesPosts/0.1.72',
             CURLOPT_PROTOCOLS=>CURLPROTO_HTTPS,
             CURLOPT_REDIR_PROTOCOLS=>CURLPROTO_HTTPS,
             CURLOPT_WRITEFUNCTION=>static function($ch,$data)use(&$body){

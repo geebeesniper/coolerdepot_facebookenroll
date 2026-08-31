@@ -53,7 +53,7 @@ class ImageFingerprint
                 CURLOPT_FOLLOWLOCATION=>false,CURLOPT_CONNECTTIMEOUT=>3,CURLOPT_TIMEOUT=>7,
                 CURLOPT_PROTOCOLS=>CURLPROTO_HTTPS,CURLOPT_SSL_VERIFYPEER=>true,CURLOPT_SSL_VERIFYHOST=>2,
                 CURLOPT_PROXY=>'',CURLOPT_RESOLVE=>[$host.':443:'.$ips[0]],
-                CURLOPT_USERAGENT=>'CoolerDepot-Image-Comparison/0.1.71',
+                CURLOPT_USERAGENT=>'CoolerDepot-Image-Comparison/0.1.72',
                 CURLOPT_HTTPHEADER=>['Accept: image/jpeg,image/png,image/webp'],
                 CURLOPT_WRITEFUNCTION=>function($ch,$chunk)use(&$body,&$tooLarge){
                     if(strlen($body)+strlen($chunk)>8*1024*1024){$tooLarge=true;return 0;}
