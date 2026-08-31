@@ -252,7 +252,7 @@ statuses, which still use pending/approved/rejected.
 
 ## Release versioning
 
-Current release: `v0.1.75`
+Current release: `v0.1.76`
 
 `VERSION` in the project root is the application version source of truth.
 The footer reads this value and displays it on every page.
@@ -1425,3 +1425,11 @@ Upload `sales-posts-v0.1.74-chart-pointer-tooltip.zip` to `/opt/coolerdepot/www/
 - Removed the competing second tooltip controller from the dedicated dashboard module.
 - Renamed `Custom Range` to `Custom` and reduced the preset switch width on desktop and narrow screens.
 - No database migration is required.
+
+
+## v0.1.76 — 3-second desktop tooltip hover + matching Admin title
+
+- Desktop Sales Activity chart tooltips wait for a continuous 3-second mouse hover before appearing.
+- After appearing, the tooltip continues to follow the mouse and stays viewport-aware.
+- Touch/pen remains responsive: tap a day to show/pin the tooltip; no 3-second long-press is required.
+- Admin dashboard title now matches the Sales dashboard title (`My Sales Activity`) in all supported UI languages.

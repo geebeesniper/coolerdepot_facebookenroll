@@ -69,7 +69,7 @@ $periodNames = [
         </div>
 
         <h1 id="dashboardPageTitle">
-            Sales Activity &amp; Attendance
+            My Sales Activity
         </h1>
     </div>
 

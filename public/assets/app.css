@@ -10087,7 +10087,7 @@ body.sales-submit-modal-open,body.sales-detail-open,body.review-modal-open{overf
 .sales-inspection-progress div.skipped .inspection-step-state{color:#667085;}
 
 
-/* v0.1.75 — instant pointer/tap tooltip + compact Custom preset */
+/* v0.1.76 — 3s desktop hover / tap touch tooltip + compact Custom preset */
 #salesPeriodSwitch{
     width:286px;
     min-width:286px;

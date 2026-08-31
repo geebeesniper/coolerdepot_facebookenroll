@@ -927,6 +927,9 @@ let salesRangePeriod=String(
     ||'custom'
 );
 let salesTouchChartDay=null;
+let salesChartHoverTimer=null;
+let salesChartHoverDay=null;
+let salesChartHoverPoint=null;
 let salesRangeVisualTimer=null;
 
 function clearSalesRangeVisualState(){
@@ -1050,7 +1053,7 @@ if($salesChartTooltip.length&&!$salesChartTooltip.parent().is('body')){
 }
 
 /*
- * v0.1.75: app.js owns chart tooltip interaction. The dedicated dashboard
+ * v0.1.76: app.js owns chart tooltip interaction. The dedicated dashboard
  * module still owns chart data/rendering, but must not register a second
  * tooltip controller or the two positioning systems fight each other.
  */
@@ -1947,7 +1950,18 @@ function moveSalesChartTooltipWithPointer($day,event){
     );
 }
 
+function cancelSalesChartHoverTimer(){
+    if(salesChartHoverTimer){
+        window.clearTimeout(salesChartHoverTimer);
+        salesChartHoverTimer=null;
+    }
+
+    salesChartHoverDay=null;
+    salesChartHoverPoint=null;
+}
+
 function hideSalesChartTooltip(){
+    cancelSalesChartHoverTimer();
     $salesChartTooltip.addClass('hidden');
     salesTouchChartDay=null;
 }
@@ -3315,7 +3329,10 @@ $salesImageLightbox.on(
     }
 );
 
-/* Desktop: show immediately on pointer entry, then follow the pointer. */
+/*
+ * Desktop mouse: wait for a deliberate 3-second hover before showing.
+ * Once visible, the tooltip follows the pointer. Touch/pen remains tap-based.
+ */
 $(document).on(
     'pointerover',
     '.sales-chart-day',
@@ -3328,11 +3345,38 @@ $(document).on(
             return;
         }
 
+        cancelSalesChartHoverTimer();
         salesTouchChartDay=null;
-        showSalesChartTooltip(
-            $(this),
-            event,
-            'pointer'
+        $salesChartTooltip.addClass('hidden');
+
+        const day=this;
+        salesChartHoverDay=day;
+        salesChartHoverPoint={
+            clientX:Number(raw.clientX)||0,
+            clientY:Number(raw.clientY)||0,
+            pointerType:'mouse'
+        };
+
+        salesChartHoverTimer=window.setTimeout(
+            function(){
+                salesChartHoverTimer=null;
+
+                if(
+                    salesChartHoverDay!==day
+                    ||!document.documentElement.contains(day)
+                    ||!(day.matches&&day.matches(':hover'))
+                ){
+                    cancelSalesChartHoverTimer();
+                    return;
+                }
+
+                showSalesChartTooltip(
+                    $(day),
+                    salesChartHoverPoint,
+                    'pointer'
+                );
+            },
+            3000
         );
     }
 );
@@ -3348,12 +3392,15 @@ $(document).on(
             return;
         }
 
+        if(salesChartHoverDay===this){
+            salesChartHoverPoint={
+                clientX:Number(raw.clientX)||0,
+                clientY:Number(raw.clientY)||0,
+                pointerType:'mouse'
+            };
+        }
+
         if($salesChartTooltip.hasClass('hidden')){
-            showSalesChartTooltip(
-                $(this),
-                event,
-                'pointer'
-            );
             return;
         }
 
@@ -3468,7 +3515,11 @@ $(document).on(
 window.addEventListener(
     'resize',
     function(){
-        if(salesTouchChartDay){
+        if(
+            salesTouchChartDay
+            ||salesChartHoverTimer
+            ||!$salesChartTooltip.hasClass('hidden')
+        ){
             hideSalesChartTooltip();
         }
     },
@@ -3478,7 +3529,11 @@ window.addEventListener(
 window.addEventListener(
     'scroll',
     function(){
-        if(salesTouchChartDay){
+        if(
+            salesTouchChartDay
+            ||salesChartHoverTimer
+            ||!$salesChartTooltip.hasClass('hidden')
+        ){
             hideSalesChartTooltip();
         }
     },
@@ -4786,7 +4841,7 @@ $('[data-html-note]').each(function(){
 const dashboardI18n={
     en:{
         greeting:'Hi, {name}',
-        pageTitle:'Sales Activity & Attendance',
+        pageTitle:'My Sales Activity',
         view:'View',
         from:'From',
         to:'To',
@@ -4864,7 +4919,7 @@ const dashboardI18n={
     },
     'zh-CN':{
         greeting:'你好，{name}',
-        pageTitle:'销售活动与考勤',
+        pageTitle:'我的销售活动',
         view:'查看',
         from:'开始',
         to:'结束',
@@ -4942,7 +4997,7 @@ const dashboardI18n={
     },
     'zh-TW':{
         greeting:'你好，{name}',
-        pageTitle:'銷售活動與考勤',
+        pageTitle:'我的銷售活動',
         view:'查看',
         from:'開始',
         to:'結束',
@@ -5020,7 +5075,7 @@ const dashboardI18n={
     },
     es:{
         greeting:'Hola, {name}',
-        pageTitle:'Actividad y asistencia de ventas',
+        pageTitle:'Mi actividad de ventas',
         view:'Ver',
         from:'Desde',
         to:'Hasta',
