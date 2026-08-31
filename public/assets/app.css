@@ -8365,3 +8365,51 @@ body.sales-detail-open{
 .sales-chart-segment.unreviewed{
     border-radius:0 !important;
 }
+
+/* v0.1.58 exact target alignment + exact review colors */
+
+.sales-chart-legend i.good,
+.sales-chart-segment.good{
+    background:#22c55e !important;
+}
+
+.sales-chart-legend i.bad,
+.sales-chart-segment.bad{
+    background:#ef4444 !important;
+}
+
+.sales-chart-legend i.unreviewed,
+.sales-chart-segment.unreviewed{
+    background:#94a3b8 !important;
+}
+
+/*
+ * A bar whose Total equals Daily Target now lands on this line exactly.
+ * The line stays above the columns so the threshold remains visually clear.
+ */
+.sales-chart-target-line{
+    z-index:10;
+    border-top:1px solid #2563eb;
+}
+
+.sales-chart-target-line > span{
+    z-index:11;
+}
+
+.sales-chart-stack,
+.sales-chart-segment,
+.sales-chart-segment.good,
+.sales-chart-segment.bad,
+.sales-chart-segment.unreviewed{
+    border-radius:0 !important;
+}
+
+
+/* Explicit chart-only square-corner exception. */
+.sales-chart-stack,
+.sales-chart-segment,
+.sales-chart-segment.good,
+.sales-chart-segment.bad,
+.sales-chart-segment.unreviewed{
+    border-radius:0 !important;
+}

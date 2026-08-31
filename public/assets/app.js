@@ -839,6 +839,7 @@ function syncSalesRangeConstraints(changed){
     return range;
 }
 let salesRangeRequest=null;
+let salesRangeRequestSeq=0;
 let salesChartRows=[];
 let salesChartDailyTarget=10;
 let salesPlatformFilter=String(
@@ -1095,8 +1096,6 @@ function renderSalesChart(){
         return;
     }
 
-    mergeSalesChartRowsFromDom();
-
     const from=String(
         $('#salesRangeFrom').val()||''
     );
@@ -1105,11 +1104,6 @@ function renderSalesChart(){
     );
     const dates=salesDateRange(from,to);
 
-    /*
-     * Never leave stale date nodes on screen when a range becomes one day.
-     * This was the cause of the old month labels stacking vertically after
-     * Back to today.
-     */
     if(!dates.length){
         $bars.empty();
         return;
@@ -1120,13 +1114,11 @@ function renderSalesChart(){
         salesChartDailyTarget
     );
     const cap=Math.max(
-        1,
+        target,
         target*1.2
     );
-    const targetPercent=Math.min(
-        100,
-        (target/cap)*100
-    );
+    const targetPercent=
+        (target/cap)*100;
 
     $('#salesChartTargetCopy,#salesChartTargetLabel,#salesChartTargetLineValue')
         .text(target);
@@ -1138,7 +1130,16 @@ function renderSalesChart(){
     );
 
     const xAxisHeight=28;
-    const plotHeight=224;
+    const canvasHeight=Math.max(
+        xAxisHeight+1,
+        Math.round(
+            $canvas.innerHeight()||270
+        )
+    );
+    const plotHeight=Math.max(
+        1,
+        canvasHeight-xAxisHeight
+    );
     const targetBottom=
         xAxisHeight
         +(plotHeight*(targetPercent/100));
@@ -1162,7 +1163,6 @@ function renderSalesChart(){
 
     const dayCount=dates.length;
     const singleDay=dayCount===1;
-
     const coarse=Boolean(
         window.matchMedia
         &&window.matchMedia(
@@ -1173,7 +1173,6 @@ function renderSalesChart(){
     const minimumSlot=coarse?38:30;
     const naturalSlot=
         availableWidth/dayCount;
-
     const needsScroll=
         !singleDay
         &&naturalSlot<minimumSlot;
@@ -1215,98 +1214,79 @@ function renderSalesChart(){
     let html='';
 
     dates.forEach(function(date){
-        const data=aggregateSalesChartDate(
+        const raw=aggregateSalesChartDate(
             date,
             salesPlatformFilter
         );
 
-        const actual=data.post_count;
+        const actual=Math.max(
+            0,
+            parseInt(raw.post_count,10)||0
+        );
+
+        const good=Math.min(
+            actual,
+            Math.max(
+                0,
+                parseInt(raw.good_count,10)||0
+            )
+        );
+
+        const bad=Math.min(
+            Math.max(0,actual-good),
+            Math.max(
+                0,
+                parseInt(raw.bad_count,10)||0
+            )
+        );
+
+        const unreviewed=Math.max(
+            0,
+            actual-good-bad
+        );
+
         const scale=
             actual>cap
                 ?cap/actual
                 :1;
 
         const goodH=
-            (data.good_count*scale/cap)*100;
+            (good*scale/cap)*100;
         const badH=
-            (data.bad_count*scale/cap)*100;
+            (bad*scale/cap)*100;
         const unreviewedH=
-            (
-                data.unreviewed_count
-                *scale
-                /cap
-            )*100;
-
-        const actualH=Math.min(
-            100,
-            (
-                Math.min(actual,cap)
-                /cap
-            )*100
-        );
+            (unreviewed*scale/cap)*100;
 
         const missing=Math.max(
             0,
             target-actual
         );
 
-        const missingH=
-            actual>0
-            &&missing>0
-                ?Math.max(
-                    0,
-                    targetPercent-actualH
-                )
-                :0;
-
         html+=(
             '<div'
                 +' class="sales-chart-day"'
                 +' tabindex="0"'
-                +' data-chart-date="'
-                    +escapeHtml(date)
-                +'"'
-                +' data-chart-total="'
-                    +actual
-                +'"'
-                +' data-chart-good="'
-                    +data.good_count
-                +'"'
-                +' data-chart-bad="'
-                    +data.bad_count
-                +'"'
-                +' data-chart-unreviewed="'
-                    +data.unreviewed_count
-                +'"'
-                +' data-chart-missing="'
-                    +missing
-                +'"'
+                +' data-chart-date="'+escapeHtml(date)+'"'
+                +' data-chart-total="'+actual+'"'
+                +' data-chart-good="'+good+'"'
+                +' data-chart-bad="'+bad+'"'
+                +' data-chart-unreviewed="'+unreviewed+'"'
+                +' data-chart-missing="'+missing+'"'
             +'>'
                 +'<div class="sales-chart-day-plot">'
                     +'<div class="sales-chart-stack">'
-                        +'<span'
-                            +' class="sales-chart-segment good"'
-                            +' style="height:'
-                                +goodH
-                                +'%"'
+                        +'<span class="sales-chart-segment good"'
+                            +' style="height:'+goodH+'%"'
                         +'></span>'
-                        +'<span'
-                            +' class="sales-chart-segment bad"'
-                            +' style="height:'
-                                +badH
-                                +'%"'
+                        +'<span class="sales-chart-segment bad"'
+                            +' style="height:'+badH+'%"'
                         +'></span>'
-                        +'<span'
-                            +' class="sales-chart-segment unreviewed"'
-                            +' style="height:'
-                                +unreviewedH
-                                +'%"'
+                        +'<span class="sales-chart-segment unreviewed"'
+                            +' style="height:'+unreviewedH+'%"'
                         +'></span>'
                     +'</div>'
                     +(actual>cap
-                        ?'<span'
-                            +' class="sales-chart-over-cap"'
-                            +'>120%+</span>'
+                        ?'<span class="sales-chart-over-cap">120%+</span>'
                         :'')
                 +'</div>'
                 +'<span class="sales-chart-x-label">'
@@ -1318,10 +1298,6 @@ function renderSalesChart(){
         );
     });
 
-    /*
-     * Replace the children first, then apply the new grid geometry.
-     * Old month nodes can never be reflowed into a one-column daily grid.
-     */
     $bars.html(html);
 
     $canvas.css(
@@ -1331,9 +1307,7 @@ function renderSalesChart(){
 
     $bars.css({
         'grid-template-columns':
-            'repeat('
-            +dayCount
-            +',minmax(0,1fr))',
+            'repeat('+dayCount+',minmax(0,1fr))',
         'grid-auto-flow':'row',
         'grid-auto-columns':'unset',
         '--sales-chart-bar-width':
@@ -1362,6 +1336,7 @@ function renderSalesChart(){
             needsScroll
         );
 }
+
 function showSalesChartTooltip($day,event){
     if(!$day||!$day.length||!$salesChartTooltip.length){
         return;
@@ -1576,6 +1551,18 @@ function renderSalesRangeData(data,range,period,channel){
     const $empty=$('#dailyPostsEmpty');
     const $load=$('#loadMoreDailyPosts');
 
+    salesPlatformFilter=String(
+        channel
+        ||data.channel
+        ||salesPlatformFilter
+        ||'all'
+    ).trim().toLowerCase();
+
+    $('#salesPortalDashboard').attr(
+        'data-channel',
+        salesPlatformFilter
+    );
+
     $wrap
         .html(data.html||'')
         .attr('data-from',range.from)
@@ -1585,9 +1572,16 @@ function renderSalesRangeData(data,range,period,channel){
             data.next_offset||0
         );
 
-    salesChartRows=Array.isArray(data.chart_rows)
+    /*
+     * chart_rows covers the COMPLETE selected range.
+     * Do not replace it with only the currently paged DOM cards.
+     */
+    salesChartRows=Array.isArray(
+        data.chart_rows
+    )
         ?data.chart_rows
         :[];
+
     salesChartDailyTarget=Math.max(
         1,
         parseInt(data.daily_target,10)||10
@@ -1595,10 +1589,12 @@ function renderSalesRangeData(data,range,period,channel){
 
     const hasDays=
         (parseInt(data.total_days,10)||0)>0;
-
     const $dailyStage=$('#salesDailyStage');
 
-    $empty.toggleClass('hidden',hasDays);
+    $empty.toggleClass(
+        'hidden',
+        hasDays
+    );
 
     if($dailyStage.length){
         $dailyStage.toggleClass(
@@ -1621,14 +1617,15 @@ function renderSalesRangeData(data,range,period,channel){
             .find('[data-sales-i18n="loadEarlier"]')
             .text(salesTr('loadEarlier'));
     }else{
-        $load.prop('disabled',true).hide();
+        $load
+            .prop('disabled',true)
+            .hide();
     }
 
     $('#dailyLoadStatus').text('');
     $('#salesRangeStatus').text('');
 
     applySalesLanguage();
-    mergeSalesChartRowsFromDom();
     renderSalesChart();
     applySalesPlatformFilterToCards();
     updateSalesBackToday(range);
@@ -1641,9 +1638,18 @@ function renderSalesRangeData(data,range,period,channel){
         )
     );
 
-    const url=new URL(window.location.href);
-    url.searchParams.set('from',range.from);
-    url.searchParams.set('to',range.to);
+    const url=new URL(
+        window.location.href
+    );
+
+    url.searchParams.set(
+        'from',
+        range.from
+    );
+    url.searchParams.set(
+        'to',
+        range.to
+    );
 
     if(salesRangePeriod==='custom'){
         url.searchParams.delete('period');
@@ -1653,18 +1659,6 @@ function renderSalesRangeData(data,range,period,channel){
             salesRangePeriod
         );
     }
-
-    salesPlatformFilter=String(
-        channel
-        ||data.channel
-        ||salesPlatformFilter
-        ||'all'
-    ).trim().toLowerCase();
-
-    $('#salesPortalDashboard').attr(
-        'data-channel',
-        salesPlatformFilter
-    );
 
     if(salesPlatformFilter==='all'){
         url.searchParams.delete('channel');
@@ -1729,6 +1723,9 @@ function loadSalesRange(range,period,channel){
         }
     }
 
+    const requestSeq=
+        ++salesRangeRequestSeq;
+
     if(
         salesRangeRequest
         &&salesRangeRequest.readyState!==4
@@ -1765,6 +1762,10 @@ function loadSalesRange(range,period,channel){
         }
     })
     .done(function(data){
+        if(requestSeq!==salesRangeRequestSeq){
+            return;
+        }
+
         if(!data||!data.ok){
             $('#salesRangeStatus')
                 .addClass('error')
@@ -1783,7 +1784,10 @@ function loadSalesRange(range,period,channel){
         );
     })
     .fail(function(xhr,status){
-        if(status==='abort'){
+        if(
+            status==='abort'
+            ||requestSeq!==salesRangeRequestSeq
+        ){
             return;
         }
 
@@ -1798,6 +1802,10 @@ function loadSalesRange(range,period,channel){
             );
     })
     .always(function(){
+        if(requestSeq!==salesRangeRequestSeq){
+            return;
+        }
+
         $('#salesActivityChartPanel,#dailyPosts')
             .removeClass('sales-range-loading')
             .attr('aria-busy','false');
@@ -2012,10 +2020,6 @@ $('#salesBackToday').on('click',function(){
     syncSalesRangeConstraints('');
     setSalesRangePeriod(period);
 
-    $('#salesChartBars').empty();
-
-    renderSalesChart();
-
     loadSalesRange(
         range,
         period,
@@ -2077,14 +2081,6 @@ $(document).on(
 
         syncSalesRangeConstraints('');
         setSalesRangePeriod(period);
-
-        /*
-         * Clear stale chart DOM immediately. The AJAX response then
-         * repaints cards and chart from the exact preset range.
-         */
-        $('#salesChartBars').empty();
-
-        renderSalesChart();
 
         loadSalesRange(
             range,
@@ -2349,7 +2345,6 @@ $(document).on('keydown',function(event){
 });
 
 parseSalesChartInitialData();
-mergeSalesChartRowsFromDom();
 
 const initialSalesRange=
     syncSalesRangeConstraints('');

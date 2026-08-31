@@ -1078,3 +1078,18 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - Per-day Good / Issues / Unreviewed zero-result filters also retain a stable card-row height.
 - Database migration is required on existing installations.
 - Normal UI radius remains 4px; chart bars remain the explicit square-corner exception.
+
+## v0.1.58 — Exact target line and reliable period chart refresh
+
+- Fixed the plotting-coordinate mismatch that made exactly 10 posts appear above a Daily Target of 10.
+- The Target line now uses the actual rendered canvas height minus the X-axis row, exactly matching the coordinate system used by stacked bar percentage heights.
+- Exactly 10 posts meet Target 10; 11+ posts may extend above it.
+- Good / Bad / Unreviewed totals are normalized against the real post total before rendering.
+- Chart colors now exactly match review-state UI colors: Good #22c55e, Bad #ef4444, Unreviewed #94a3b8.
+- Fixed Monthly after Back to today losing the August 28 bar.
+- Full-range server chart_rows is authoritative; paged Daily Posts DOM no longer overwrites the complete chart data.
+- The selected Channel is set before chart rendering.
+- 3 Days / Weekly / Monthly / Back to today no longer blank the chart before AJAX returns.
+- Added request sequencing so an older aborted/slow range request cannot overwrite the newest period or Channel selection.
+- No database migration is required.
+- Normal UI radius remains 4px; chart columns remain square.
