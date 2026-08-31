@@ -8,5 +8,6 @@ window.CD_BASE_PATH = <?= json_encode($config['app']['base_path']) ?>;
 window.CD_APP_VERSION = <?= json_encode($config['app']['version']) ?>;
 </script>
 <script src="<?= \App\Core\Util::e($config['app']['base_path']) ?>/public/assets/app.js?v=<?= rawurlencode($config['app']['version']) ?>"></script>
+<script src="<?= \App\Core\Util::e($config['app']['base_path']) ?>/public/assets/sales-dashboard.js?v=<?= rawurlencode($config['app']['version']) ?>"></script>
 </body>
 </html>

@@ -1165,3 +1165,19 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - Period titles now update their `data-sales-i18n` key together with the visible text, preventing a later language refresh from changing Custom Range Progress back to Daily Post Progress.
 - Server-resolved period is applied before language/render on AJAX responses.
 - No database migration is required.
+
+## v0.1.64 — Isolated Sales dashboard controller
+
+- The screenshot from v0.1.63 proved the newer chart renderer was not actually controlling the visible Sales chart: date inputs could show 08/01 → 08/10 while the X axis stayed 08/01 → 08/31 and the Y-axis labels never appeared.
+- Sales range, period, channel and chart behavior is now isolated in `public/assets/sales-dashboard.js`, loaded after the legacy `app.js`.
+- On Sales pages, the new controller explicitly detaches the previous accumulated range/period/channel/status/chart handlers before binding one authoritative implementation.
+- Native `input` and `change` listeners are used for From/To. Changing To from 08/31 to 08/10 immediately rebuilds the X axis to 08/01 → 08/10 before any AJAX request finishes.
+- `window.renderSalesChart` is redirected to the isolated renderer so older ResizeObserver callbacks also use the new chart engine rather than the legacy renderer.
+- Y-axis tick labels and grid lines are also server-rendered as a fallback, so 0 / 2 / 4 / 6 / 8 / 10 / 12 are visible even before client rendering.
+- Target line receives a correct server-side top coordinate on first paint.
+- Good / Bad / Unreviewed segment `height` transitions are disabled. Bars no longer grow upward from zero on reload or filter changes.
+- Data replacement still uses a short whole-content fade/shift, preserving SaaS feedback without animating the numeric bar height.
+- Channel filtering, Custom Range, 3 Days, Weekly, Monthly, Back to today, Load Earlier and per-day review-state filters are handled by the isolated controller.
+- AJAX uses `fetch()` with abort/request sequencing and `cache: no-store`.
+- No database migration is required.
+- Normal UI radius remains 4px; chart bars remain square.

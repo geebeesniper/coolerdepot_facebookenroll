@@ -48,6 +48,65 @@ $chartTarget=max(1,(int)$dailyTarget);
 $chartCap=max(1,$chartTarget*1.2);
 $chartTargetPercent=min(100,($chartTarget/$chartCap)*100);
 $chartInitialWidth=max(100,count($chartDates)*30);
+
+/*
+ * Canonical chart fallback geometry.
+ * The dedicated sales-dashboard.js uses the exact same numbers.
+ */
+$chartHeight=280;
+$chartXAxisHeight=32;
+$chartPlotHeight=$chartHeight-$chartXAxisHeight;
+
+$roughStep=$chartCap/6;
+
+if($roughStep<=1){
+    $chartTickStep=1;
+}elseif($roughStep<=2){
+    $chartTickStep=2;
+}elseif($roughStep<=3){
+    $chartTickStep=3;
+}elseif($roughStep<=5){
+    $chartTickStep=5;
+}else{
+    $magnitude=10 ** floor(log10($roughStep));
+    $normalized=$roughStep/$magnitude;
+
+    if($normalized<=1){
+        $nice=1;
+    }elseif($normalized<=2){
+        $nice=2;
+    }elseif($normalized<=5){
+        $nice=5;
+    }else{
+        $nice=10;
+    }
+
+    $chartTickStep=$nice*$magnitude;
+}
+
+$chartTicks=[];
+
+for(
+    $tick=0;
+    $tick<=$chartCap+0.0001;
+    $tick+=$chartTickStep
+){
+    $chartTicks[]=round($tick,4);
+}
+
+if(
+    !$chartTicks
+    ||abs(
+        (float)end($chartTicks)
+        -(float)$chartCap
+    )>0.0001
+){
+    $chartTicks[]=$chartCap;
+}
+
+$chartTargetTop=
+    $chartPlotHeight
+    *(1-($chartTarget/$chartCap));
 ?>
 
 <div
@@ -296,7 +355,36 @@ $chartInitialWidth=max(100,count($chartDates)*30);
             <div
                 class="sales-chart-y-axis-ticks"
                 id="salesChartYAxisTicks"
-            ></div>
+            >
+                <?php foreach ($chartTicks as $tick): ?>
+                    <?php
+                    $tickTop=
+                        $chartPlotHeight
+                        *(1-((float)$tick/$chartCap));
+                    ?>
+                    <span
+                        class="sales-chart-y-tick<?= abs((float)$tick-$chartTarget)<0.0001 ? ' target' : '' ?>"
+                        style="top:<?= round($tickTop,4) ?>px"
+                    >
+                        <?= Util::e(
+                            floor((float)$tick)==(float)$tick
+                                ?(string)(int)$tick
+                                :rtrim(
+                                    rtrim(
+                                        number_format(
+                                            (float)$tick,
+                                            1,
+                                            '.',
+                                            ''
+                                        ),
+                                        '0'
+                                    ),
+                                    '.'
+                                )
+                        ) ?>
+                    </span>
+                <?php endforeach; ?>
+            </div>
         </div>
 
         <div class="sales-chart-scroll" id="salesChartScroll">
@@ -309,11 +397,24 @@ $chartInitialWidth=max(100,count($chartDates)*30);
                     class="sales-chart-grid-lines"
                     id="salesChartGridLines"
                     aria-hidden="true"
-                ></div>
+                >
+                    <?php foreach ($chartTicks as $tick): ?>
+                        <?php
+                        $tickTop=
+                            $chartPlotHeight
+                            *(1-((float)$tick/$chartCap));
+                        ?>
+                        <span
+                            class="sales-chart-grid-line<?= abs((float)$tick-$chartTarget)<0.0001 ? ' target' : '' ?>"
+                            style="top:<?= round($tickTop,4) ?>px"
+                        ></span>
+                    <?php endforeach; ?>
+                </div>
 
                 <div
                     class="sales-chart-target-line"
                     id="salesChartTargetLine"
+                    style="top:<?= round($chartTargetTop,4) ?>px"
                 >
                     <span>
                         <span data-sales-i18n="targetLine">Daily target</span>
