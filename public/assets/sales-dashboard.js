@@ -2091,7 +2091,7 @@
             );
         }
 
-        if(chartBars&&tooltip){
+        if(chartBars&&tooltip&&!window.CDSP_SALES_TOOLTIP_MANAGED){
             let tooltipDay=null;
             let tooltipSegment='';
 

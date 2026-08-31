@@ -252,7 +252,7 @@ statuses, which still use pending/approved/rejected.
 
 ## Release versioning
 
-Current release: `v0.1.74`
+Current release: `v0.1.75`
 
 `VERSION` in the project root is the application version source of truth.
 The footer reads this value and displays it on every page.
@@ -1416,3 +1416,12 @@ Upload `sales-posts-v0.1.73-chart-tooltip-overflow-fix.zip` to `/opt/coolerdepot
 ### SSH upgrade for v0.1.74
 
 Upload `sales-posts-v0.1.74-chart-pointer-tooltip.zip` to `/opt/coolerdepot/www/sales-posts/`, back up the current app, then extract it into `/opt/coolerdepot/www`. This release has no database migration.
+
+
+## v0.1.75 — instant responsive chart tooltip + compact Custom preset
+
+- Desktop chart tooltip appears immediately on pointer entry and follows the pointer with viewport collision handling.
+- Touch/pen taps pin a day tooltip; tapping another day switches it, and tapping outside closes it.
+- Removed the competing second tooltip controller from the dedicated dashboard module.
+- Renamed `Custom Range` to `Custom` and reduced the preset switch width on desktop and narrow screens.
+- No database migration is required.

@@ -10085,3 +10085,51 @@ body.sales-submit-modal-open,body.sales-detail-open,body.review-modal-open{overf
 .sales-inspection-progress div.skipped{opacity:.65;}
 .sales-inspection-progress div.skipped:before{background:#98a2b3;}
 .sales-inspection-progress div.skipped .inspection-step-state{color:#667085;}
+
+
+/* v0.1.75 — instant pointer/tap tooltip + compact Custom preset */
+#salesPeriodSwitch{
+    width:286px;
+    min-width:286px;
+    max-width:286px;
+    grid-template-columns:46px 48px 56px 56px 68px;
+}
+#salesPeriodSwitch .sales-period-custom{
+    min-width:0;
+    grid-column:auto;
+}
+
+/* The chart tooltip is immediate; positioning is entirely pointer/tap driven. */
+.sales-chart-tooltip{
+    transition:none !important;
+    animation:none !important;
+}
+
+@media(max-width:500px){
+    #salesPeriodSwitch{
+        width:280px;
+        min-width:280px;
+        max-width:280px;
+        grid-template-columns:repeat(5,minmax(0,1fr));
+    }
+    #salesPeriodSwitch .sales-period-custom{
+        grid-column:auto;
+    }
+}
+
+@media(max-width:359px){
+    #salesPeriodSwitch{
+        width:256px;
+        min-width:256px;
+        max-width:256px;
+        grid-template-columns:repeat(5,minmax(0,1fr));
+    }
+    #salesPeriodSwitch .sales-period-button{
+        padding-left:3px;
+        padding-right:3px;
+        font-size:7.5px;
+    }
+    #salesPeriodSwitch .sales-period-custom{
+        grid-column:auto;
+    }
+}

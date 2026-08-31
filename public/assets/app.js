@@ -183,7 +183,7 @@ const salesI18n={
         monthlyProgressTitle:'Monthly Post Progress',
         weekly:'Weekly',
         monthly:'Monthly',
-        customRange:'Custom Range',
+        customRange:'Custom',
         customProgressTitle:'Custom Range Progress',
         noPostsDay:'No posts on this day.',
         from:'From',
@@ -274,10 +274,10 @@ const salesI18n={
         monthlyProgressTitle:'每月发布进度',
         weekly:'每周',
         monthly:'每月',
-        customRange:'自訂範圍',
+        customRange:'自訂',
         customProgressTitle:'自訂範圍發佈進度',
         noPostsDay:'當天沒有發佈。',
-        customRange:'自定义范围',
+        customRange:'自定义',
         customProgressTitle:'自定义范围发布进度',
         noPostsDay:'当天没有发布。',
         from:'开始',
@@ -361,7 +361,7 @@ const salesI18n={
         dailyProgressTitle:'3天發文進度',
         weeklyProgressTitle:'每週發文進度',
         monthlyProgressTitle:'每月發文進度',
-        customRange:'自訂範圍',
+        customRange:'自訂',
         customProgressTitle:'自訂範圍發文進度',
         weekly:'每週',
         monthly:'每月',
@@ -448,7 +448,7 @@ const salesI18n={
         monthlyProgressTitle:'Progreso mensual de publicaciones',
         weekly:'Semanal',
         monthly:'Mensual',
-        customRange:'Rango personalizado',
+        customRange:'Personal.',
         customProgressTitle:'Progreso del rango personalizado',
         noPostsDay:'No hay publicaciones este día.',
         from:'Desde',
@@ -1048,6 +1048,13 @@ const $salesChartTooltip=$('#salesChartTooltip');
 if($salesChartTooltip.length&&!$salesChartTooltip.parent().is('body')){
     $salesChartTooltip.appendTo(document.body);
 }
+
+/*
+ * v0.1.75: app.js owns chart tooltip interaction. The dedicated dashboard
+ * module still owns chart data/rendering, but must not register a second
+ * tooltip controller or the two positioning systems fight each other.
+ */
+window.CDSP_SALES_TOOLTIP_MANAGED=true;
 
 function parseSalesChartInitialData(){
     const node=document.getElementById('salesChartInitialData');
@@ -1815,7 +1822,88 @@ function renderSalesChart(options){
         );
 }
 
-function showSalesChartTooltip($day,event){
+function salesChartEventPoint(event){
+    const raw=event&&event.originalEvent
+        ?event.originalEvent
+        :event;
+
+    if(
+        raw
+        &&typeof raw.clientX==='number'
+        &&typeof raw.clientY==='number'
+    ){
+        return {
+            x:raw.clientX,
+            y:raw.clientY,
+            pointerType:String(raw.pointerType||'')
+        };
+    }
+
+    return null;
+}
+
+function positionSalesChartTooltip($day,event,mode){
+    if(!$day||!$day.length||!$salesChartTooltip.length){
+        return;
+    }
+
+    const tooltip=$salesChartTooltip[0];
+    const width=$salesChartTooltip.outerWidth()||176;
+    const height=$salesChartTooltip.outerHeight()||120;
+    const viewportWidth=document.documentElement.clientWidth||window.innerWidth;
+    const viewportHeight=document.documentElement.clientHeight||window.innerHeight;
+    const edge=8;
+    const gap=12;
+    const point=salesChartEventPoint(event);
+    const rect=$day[0].getBoundingClientRect();
+
+    let left;
+    let top;
+
+    if(mode==='pointer'&&point){
+        left=point.x+gap;
+        top=point.y+gap;
+
+        if(left+width+edge>viewportWidth){
+            left=point.x-width-gap;
+        }
+
+        if(top+height+edge>viewportHeight){
+            top=point.y-height-gap;
+        }
+    }else{
+        /*
+         * Touch and keyboard interaction stays anchored to the selected day
+         * instead of following a finger and being covered by it.
+         */
+        left=rect.left+(rect.width/2)-(width/2);
+        top=rect.top-height-gap;
+
+        if(top<edge){
+            top=rect.bottom+gap;
+        }
+    }
+
+    left=Math.max(
+        edge,
+        Math.min(
+            Math.max(edge,viewportWidth-width-edge),
+            left
+        )
+    );
+    top=Math.max(
+        edge,
+        Math.min(
+            Math.max(edge,viewportHeight-height-edge),
+            top
+        )
+    );
+
+    tooltip.style.left=Math.round(left)+'px';
+    tooltip.style.top=Math.round(top)+'px';
+}
+
+function showSalesChartTooltip($day,event,mode){
     if(!$day||!$day.length||!$salesChartTooltip.length){
         return;
     }
@@ -1831,37 +1919,32 @@ function showSalesChartTooltip($day,event){
         )||0
     };
 
-    const rect=$day[0].getBoundingClientRect();
-
     $salesChartTooltip
         .html(buildSalesChartTooltipHtml(data))
         .removeClass('hidden');
 
-    const width=$salesChartTooltip.outerWidth()||170;
-    const height=$salesChartTooltip.outerHeight()||120;
-
-    let left=rect.left+(rect.width/2)-(width/2);
-    let top=rect.top-height-8;
-
-    left=Math.max(
-        8,
-        Math.min(
-            window.innerWidth-width-8,
-            left
-        )
+    positionSalesChartTooltip(
+        $day,
+        event,
+        mode||'anchor'
     );
+}
 
-    if(top<8){
-        top=Math.min(
-            window.innerHeight-height-8,
-            rect.bottom+8
-        );
+function moveSalesChartTooltipWithPointer($day,event){
+    if(
+        !$day
+        ||!$day.length
+        ||!$salesChartTooltip.length
+        ||$salesChartTooltip.hasClass('hidden')
+    ){
+        return;
     }
 
-    $salesChartTooltip.css({
-        left:left+'px',
-        top:top+'px'
-    });
+    positionSalesChartTooltip(
+        $day,
+        event,
+        'pointer'
+    );
 }
 
 function hideSalesChartTooltip(){
@@ -3232,11 +3315,49 @@ $salesImageLightbox.on(
     }
 );
 
+/* Desktop: show immediately on pointer entry, then follow the pointer. */
 $(document).on(
-    'mouseenter focus',
+    'pointerover',
     '.sales-chart-day',
     function(event){
+        const raw=event.originalEvent||event;
+        const pointerType=String(raw.pointerType||'mouse');
+        const relatedDay=$(raw.relatedTarget).closest('.sales-chart-day')[0]||null;
+
+        if(pointerType!=='mouse'||relatedDay===this){
+            return;
+        }
+
+        salesTouchChartDay=null;
         showSalesChartTooltip(
+            $(this),
+            event,
+            'pointer'
+        );
+    }
+);
+
+$(document).on(
+    'pointermove',
+    '.sales-chart-day',
+    function(event){
+        const raw=event.originalEvent||event;
+        const pointerType=String(raw.pointerType||'mouse');
+
+        if(pointerType!=='mouse'||salesTouchChartDay){
+            return;
+        }
+
+        if($salesChartTooltip.hasClass('hidden')){
+            showSalesChartTooltip(
+                $(this),
+                event,
+                'pointer'
+            );
+            return;
+        }
+
+        moveSalesChartTooltipWithPointer(
             $(this),
             event
         );
@@ -3244,7 +3365,44 @@ $(document).on(
 );
 
 $(document).on(
-    'mouseleave blur',
+    'pointerout',
+    '.sales-chart-day',
+    function(event){
+        const raw=event.originalEvent||event;
+        const pointerType=String(raw.pointerType||'mouse');
+        const relatedDay=$(raw.relatedTarget).closest('.sales-chart-day')[0]||null;
+
+        if(
+            pointerType!=='mouse'
+            ||relatedDay===this
+            ||salesTouchChartDay===this
+        ){
+            return;
+        }
+
+        hideSalesChartTooltip();
+    }
+);
+
+/* Keyboard focus uses the same stable, collision-safe anchored card. */
+$(document).on(
+    'focus',
+    '.sales-chart-day',
+    function(event){
+        if(salesTouchChartDay===this){
+            return;
+        }
+
+        showSalesChartTooltip(
+            $(this),
+            event,
+            'anchor'
+        );
+    }
+);
+
+$(document).on(
+    'blur',
     '.sales-chart-day',
     function(){
         if(salesTouchChartDay!==this){
@@ -3253,30 +3411,78 @@ $(document).on(
     }
 );
 
+/*
+ * Touch/pen: tap once to pin the selected day; tap another day to switch.
+ * A second tap on the same day closes it. No long-press or hover delay.
+ */
 $(document).on(
-    'click',
+    'pointerup',
     '.sales-chart-day',
     function(event){
-        if(
-            window.matchMedia
-            &&window.matchMedia(
-                '(pointer:coarse)'
-            ).matches
-        ){
-            event.preventDefault();
+        const raw=event.originalEvent||event;
+        const pointerType=String(raw.pointerType||'');
 
-            if(salesTouchChartDay===this){
-                hideSalesChartTooltip();
-                return;
-            }
-
-            salesTouchChartDay=this;
-            showSalesChartTooltip(
-                $(this),
-                event
-            );
+        if(pointerType!=='touch'&&pointerType!=='pen'){
+            return;
         }
+
+        event.preventDefault();
+
+        if(salesTouchChartDay===this){
+            hideSalesChartTooltip();
+            return;
+        }
+
+        salesTouchChartDay=this;
+        showSalesChartTooltip(
+            $(this),
+            event,
+            'anchor'
+        );
     }
+);
+
+/* Tapping outside the chart selection closes a pinned touch tooltip. */
+$(document).on(
+    'pointerdown',
+    function(event){
+        if(!salesTouchChartDay){
+            return;
+        }
+
+        const raw=event.originalEvent||event;
+        const pointerType=String(raw.pointerType||'');
+
+        if(pointerType!=='touch'&&pointerType!=='pen'){
+            return;
+        }
+
+        if($(event.target).closest('.sales-chart-day').length){
+            return;
+        }
+
+        hideSalesChartTooltip();
+    }
+);
+
+window.addEventListener(
+    'resize',
+    function(){
+        if(salesTouchChartDay){
+            hideSalesChartTooltip();
+        }
+    },
+    {passive:true}
+);
+
+window.addEventListener(
+    'scroll',
+    function(){
+        if(salesTouchChartDay){
+            hideSalesChartTooltip();
+        }
+    },
+    {passive:true,capture:true}
 );
 
 $(document).on('keydown',function(event){

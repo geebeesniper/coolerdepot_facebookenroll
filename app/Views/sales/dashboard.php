@@ -188,7 +188,7 @@ $chartTargetTop=
         aria-pressed="<?= ($rangePeriod ?? '') === 'custom' ? 'true' : 'false' ?>"
         title="Use the From and To dates"
     >
-        <span data-sales-i18n="customRange">Custom Range</span>
+        <span data-sales-i18n="customRange">Custom</span>
     </button>
 </div>
 
