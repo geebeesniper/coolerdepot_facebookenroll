@@ -201,6 +201,7 @@ const salesI18n={
         cancel:'Cancel',
         sendRequest:'Send request',
         deletionSent:'Deletion request sent.',
+        empty:'Empty',
         noPostsRange:'No posts in this date range.',
         loadEarlier:'Load earlier days',
         loading:'Loading…',
@@ -438,6 +439,7 @@ const salesI18n={
         cancel:'Cancelar',
         sendRequest:'Enviar solicitud',
         deletionSent:'Solicitud de eliminación enviada.',
+        empty:'Vacío',
         noPostsRange:'No hay publicaciones en este rango de fechas.',
         loadEarlier:'Cargar días anteriores',
         loading:'Cargando…',
@@ -1434,49 +1436,227 @@ function updateSalesDayStatusCounts($section){
     return counts;
 }
 
-function applySalesDayFilter($section,filter){
-    const $cards=$section.find('.sales-self-post-card');
-    const counts=updateSalesDayStatusCounts($section);
+function salesPrefersReducedMotion(){
+    return Boolean(
+        window.matchMedia
+        &&window.matchMedia(
+            '(prefers-reduced-motion: reduce)'
+        ).matches
+    );
+}
+
+function animateSalesContentIn(){
+    const $stage=$('#salesDailyStage');
+    const $chart=$('#salesActivityChartPanel');
+
+    $stage.removeClass(
+        'sales-content-changing sales-channel-changing'
+    );
+    $chart.removeClass(
+        'sales-content-changing sales-channel-changing'
+    );
+
+    if(salesPrefersReducedMotion()){
+        return;
+    }
+
+    $stage
+        .removeClass('sales-content-enter')
+        .addClass('sales-content-enter');
+
+    $chart
+        .removeClass('sales-chart-enter')
+        .addClass('sales-chart-enter');
+
+    $stage
+        .find('.sales-day-section')
+        .each(function(sectionIndex){
+            this.style.setProperty(
+                '--sales-section-index',
+                sectionIndex
+            );
+
+            $(this)
+                .find('.sales-self-post-card')
+                .each(function(cardIndex){
+                    this.style.setProperty(
+                        '--sales-card-index',
+                        cardIndex
+                    );
+                });
+        });
+
+    window.setTimeout(
+        function(){
+            $stage.removeClass(
+                'sales-content-enter'
+            );
+            $chart.removeClass(
+                'sales-chart-enter'
+            );
+        },
+        520
+    );
+}
+
+function applySalesDayFilter($section,filter,animate){
+    const $cards=$section.find(
+        '.sales-self-post-card'
+    );
+    const counts=updateSalesDayStatusCounts(
+        $section
+    );
 
     filter=String(filter||'all');
 
+    const reduced=
+        salesPrefersReducedMotion();
+    const useAnimation=
+        Boolean(animate&&!reduced);
+
+    let targetVisible=0;
+
     $cards.each(function(){
-        const $card=$(this);
+        const card=this;
+        const $card=$(card);
+
         const status=String(
-            $card.attr('data-sales-post-status')
-            ||'unreviewed'
+            $card.attr(
+                'data-sales-post-status'
+            )||'unreviewed'
         );
+
         const platform=String(
-            $card.attr('data-sales-post-platform')
-            ||''
+            $card.attr(
+                'data-sales-post-platform'
+            )||''
         ).trim().toLowerCase();
 
         const platformMatch=
             salesPlatformFilter==='all'
             ||platform===salesPlatformFilter;
+
         const statusMatch=
             filter==='all'
             ||status===filter;
-        const show=platformMatch&&statusMatch;
 
-        /*
-         * Use the native hidden attribute in addition to a class.
-         * That makes the filter deterministic even if another CSS rule
-         * later changes the card's display value.
-         */
-        this.hidden=!show;
+        const show=
+            platformMatch&&statusMatch;
 
-        $card
-            .toggleClass('sales-filter-hidden',!show)
-            .attr(
-                'aria-hidden',
-                show?'false':'true'
+        const oldTimer=$card.data(
+            'sales-filter-timer'
+        );
+
+        if(oldTimer){
+            window.clearTimeout(
+                oldTimer
             );
-    });
+            $card.removeData(
+                'sales-filter-timer'
+            );
+        }
 
-    const visible=$cards.filter(function(){
-        return !this.hidden;
-    }).length;
+        if(show){
+            targetVisible++;
+
+            const wasHidden=
+                card.hidden
+                ||$card.hasClass(
+                    'sales-filter-hidden'
+                );
+
+            card.hidden=false;
+
+            $card
+                .removeClass(
+                    'sales-filter-hidden sales-filter-leaving'
+                )
+                .attr(
+                    'aria-hidden',
+                    'false'
+                );
+
+            if(useAnimation&&wasHidden){
+                $card
+                    .removeClass(
+                        'sales-filter-entering'
+                    );
+
+                void card.offsetWidth;
+
+                $card.addClass(
+                    'sales-filter-entering'
+                );
+
+                const timer=
+                    window.setTimeout(
+                        function(){
+                            $card.removeClass(
+                                'sales-filter-entering'
+                            );
+                        },
+                        240
+                    );
+
+                $card.data(
+                    'sales-filter-timer',
+                    timer
+                );
+            }
+        }else{
+            $card.attr(
+                'aria-hidden',
+                'true'
+            );
+
+            if(
+                useAnimation
+                &&!card.hidden
+                &&!$card.hasClass(
+                    'sales-filter-hidden'
+                )
+            ){
+                $card
+                    .removeClass(
+                        'sales-filter-entering'
+                    )
+                    .addClass(
+                        'sales-filter-leaving'
+                    );
+
+                const timer=
+                    window.setTimeout(
+                        function(){
+                            card.hidden=true;
+
+                            $card
+                                .removeClass(
+                                    'sales-filter-leaving'
+                                )
+                                .addClass(
+                                    'sales-filter-hidden'
+                                );
+                        },
+                        135
+                    );
+
+                $card.data(
+                    'sales-filter-timer',
+                    timer
+                );
+            }else{
+                card.hidden=true;
+
+                $card
+                    .removeClass(
+                        'sales-filter-leaving sales-filter-entering'
+                    )
+                    .addClass(
+                        'sales-filter-hidden'
+                    );
+            }
+        }
+    });
 
     $section.toggleClass(
         'sales-platform-section-empty',
@@ -1489,18 +1669,40 @@ function applySalesDayFilter($section,filter){
 
     if(!$empty.length){
         $empty=$(
-            '<div class="sales-filter-empty hidden" '
-            +'data-sales-filter-empty></div>'
+            '<div'
+                +' class="sales-filter-empty hidden"'
+                +' data-sales-filter-empty'
+            +'>'
+                +'<div class="sales-filter-empty-card">'
+                    +'<span class="sales-filter-empty-icon" aria-hidden="true">'
+                        +'<svg viewBox="0 0 24 24">'
+                            +'<path d="M4 4h16v16H4V4Zm2 2v12h12V6H6Zm2 2h8v2H8V8Zm0 4h5v2H8v-2Z"/>'
+                        +'</svg>'
+                    +'</span>'
+                    +'<strong data-sales-filter-empty-title></strong>'
+                    +'<span data-sales-filter-empty-message></span>'
+                +'</div>'
+            +'</div>'
         );
+
         $section
-            .find('.sales-post-card-grid')
+            .find(
+                '.sales-post-card-grid'
+            )
             .append($empty);
     }
 
     $empty
-        .toggleClass(
-            'hidden',
-            visible!==0
+        .find(
+            '[data-sales-filter-empty-title]'
+        )
+        .text(
+            salesTr('empty')
+        );
+
+    $empty
+        .find(
+            '[data-sales-filter-empty-message]'
         )
         .text(
             filter==='all'
@@ -1508,22 +1710,87 @@ function applySalesDayFilter($section,filter){
                 :(
                     salesTr('noPostsRange')
                     +' · '
-                    +salesPostStatusLabel(filter)
+                    +salesPostStatusLabel(
+                        filter
+                    )
                 )
         );
 
+    const oldEmptyTimer=$empty.data(
+        'sales-empty-timer'
+    );
+
+    if(oldEmptyTimer){
+        window.clearTimeout(
+            oldEmptyTimer
+        );
+        $empty.removeData(
+            'sales-empty-timer'
+        );
+    }
+
+    if(targetVisible===0){
+        if(useAnimation){
+            const emptyTimer=
+                window.setTimeout(
+                    function(){
+                        $empty
+                            .removeClass(
+                                'hidden sales-filter-empty-enter'
+                            );
+
+                        void $empty[0].offsetWidth;
+
+                        $empty.addClass(
+                            'sales-filter-empty-enter'
+                        );
+
+                        $empty.removeData(
+                            'sales-empty-timer'
+                        );
+                    },
+                    110
+                );
+
+            $empty.data(
+                'sales-empty-timer',
+                emptyTimer
+            );
+        }else{
+            $empty.removeClass(
+                'hidden sales-filter-empty-enter'
+            );
+        }
+    }else{
+        $empty
+            .addClass('hidden')
+            .removeClass(
+                'sales-filter-empty-enter'
+            );
+    }
+
     $section
-        .find('[data-sales-day-filter]')
+        .find(
+            '[data-sales-day-filter]'
+        )
         .each(function(){
             const active=
-                String($(this).data('sales-day-filter'))
-                ===filter;
+                String(
+                    $(this).data(
+                        'sales-day-filter'
+                    )
+                )===filter;
 
             $(this)
-                .toggleClass('active',active)
+                .toggleClass(
+                    'active',
+                    active
+                )
                 .attr(
                     'aria-pressed',
-                    active?'true':'false'
+                    active
+                        ?'true'
+                        :'false'
                 );
         });
 
@@ -1532,6 +1799,7 @@ function applySalesDayFilter($section,filter){
         filter
     );
 }
+
 function applySalesPlatformFilterToCards(){
     $('.sales-day-section').each(function(){
         const $section=$(this);
@@ -1546,7 +1814,7 @@ function applySalesPlatformFilterToCards(){
     });
 }
 
-function renderSalesRangeData(data,range,period,channel){
+function renderSalesRangeData(data,range,period,channel,reason){
     const $wrap=$('#dailyPosts');
     const $empty=$('#dailyPostsEmpty');
     const $load=$('#loadMoreDailyPosts');
@@ -1597,12 +1865,25 @@ function renderSalesRangeData(data,range,period,channel){
     );
 
     if($dailyStage.length){
+        const preserveFilterHeight=
+            String(reason||'range')
+                ==='channel';
+
         $dailyStage.toggleClass(
             'sales-daily-stage-empty',
             !hasDays
         );
 
-        if(hasDays){
+        $dailyStage.toggleClass(
+            'sales-daily-stage-preserved',
+            !hasDays
+            &&preserveFilterHeight
+        );
+
+        if(
+            hasDays
+            ||!preserveFilterHeight
+        ){
             $dailyStage.css(
                 '--sales-preserved-height',
                 ''
@@ -1675,53 +1956,64 @@ function renderSalesRangeData(data,range,period,channel){
         url.toString()
     );
 
-    const $channelTargets=$(
-        '#salesDailyStage,#salesActivityChartPanel'
-    );
-
-    if(
-        $channelTargets.hasClass(
-            'sales-channel-changing'
-        )
-    ){
-        $channelTargets
-            .removeClass(
-                'sales-channel-changing'
-            )
-            .addClass(
-                'sales-channel-enter'
-            );
-
-        window.setTimeout(
-            function(){
-                $channelTargets.removeClass(
-                    'sales-channel-enter'
-                );
-            },
-            220
-        );
-    }
+    animateSalesContentIn();
 }
 
-function loadSalesRange(range,period,channel){
+function loadSalesRange(range,period,channel,reason){
     if(!range){
         return;
     }
 
-    const $dailyStage=$('#salesDailyStage');
+    reason=String(
+        reason||'range'
+    );
+
+    const $dailyStage=$(
+        '#salesDailyStage'
+    );
+    const $chart=$(
+        '#salesActivityChartPanel'
+    );
 
     if($dailyStage.length){
-        const currentHeight=Math.ceil(
-            $dailyStage.outerHeight()||0
-        );
+        if(reason==='channel'){
+            const currentHeight=Math.ceil(
+                $dailyStage.outerHeight()||0
+            );
 
-        if(currentHeight>0){
+            if(currentHeight>0){
+                $dailyStage.css(
+                    '--sales-preserved-height',
+                    currentHeight+'px'
+                );
+            }
+        }else{
             $dailyStage.css(
                 '--sales-preserved-height',
-                currentHeight+'px'
+                ''
             );
         }
     }
+
+    $dailyStage
+        .removeClass(
+            'sales-content-enter sales-channel-enter'
+        )
+        .addClass(
+            'sales-content-changing'
+        )
+        .attr(
+            'data-transition-reason',
+            reason
+        );
+
+    $chart
+        .removeClass(
+            'sales-chart-enter sales-channel-enter'
+        )
+        .addClass(
+            'sales-content-changing'
+        );
 
     const requestSeq=
         ++salesRangeRequestSeq;
@@ -1780,7 +2072,8 @@ function loadSalesRange(range,period,channel){
             data,
             range,
             period,
-            channel
+            channel,
+            reason
         );
     })
     .fail(function(xhr,status){
@@ -1810,13 +2103,10 @@ function loadSalesRange(range,period,channel){
             .removeClass('sales-range-loading')
             .attr('aria-busy','false');
 
-        if(
-            $('#salesDailyStage,#salesActivityChartPanel')
-                .hasClass('sales-channel-changing')
-        ){
-            $('#salesDailyStage,#salesActivityChartPanel')
-                .removeClass('sales-channel-changing');
-        }
+        $('#salesDailyStage,#salesActivityChartPanel')
+            .removeClass(
+                'sales-content-changing sales-channel-changing'
+            );
     });
 }
 
@@ -2103,14 +2393,20 @@ $(document).on(
             )||'all'
         ).trim().toLowerCase();
 
-        salesPlatformFilter=nextChannel;
+        if(
+            nextChannel
+            ===salesPlatformFilter
+        ){
+            return;
+        }
 
-        $('#salesDailyStage,#salesActivityChartPanel')
-            .removeClass('sales-channel-enter')
-            .addClass('sales-channel-changing');
+        salesPlatformFilter=
+            nextChannel;
 
         $('#salesPlatformFilter')
-            .find('[data-sales-platform-filter]')
+            .find(
+                '[data-sales-platform-filter]'
+            )
             .each(function(){
                 const active=String(
                     $(this).attr(
@@ -2120,20 +2416,17 @@ $(document).on(
                     ===salesPlatformFilter;
 
                 $(this)
-                    .toggleClass('active',active)
+                    .toggleClass(
+                        'active',
+                        active
+                    )
                     .attr(
                         'aria-pressed',
-                        active?'true':'false'
+                        active
+                            ?'true'
+                            :'false'
                     );
             });
-
-        /*
-         * Instant local response first.
-         * The AJAX response below then replaces the list/chart with the
-         * authoritative server-filtered result.
-         */
-        applySalesPlatformFilterToCards();
-        renderSalesChart();
 
         const range=
             syncSalesRangeConstraints('');
@@ -2145,7 +2438,8 @@ $(document).on(
         loadSalesRange(
             range,
             salesRangePeriod,
-            salesPlatformFilter
+            salesPlatformFilter,
+            'channel'
         );
 
         if(
@@ -2175,7 +2469,8 @@ $(document).on(
 
         applySalesDayFilter(
             $section,
-            filter
+            filter,
+            true
         );
 
         if(

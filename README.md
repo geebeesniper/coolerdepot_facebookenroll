@@ -1093,3 +1093,17 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - Added request sequencing so an older aborted/slow range request cannot overwrite the newest period or Channel selection.
 - No database migration is required.
 - Normal UI radius remains 4px; chart columns remain square.
+
+## v0.1.59 — SaaS-style Sales transitions and stable Empty states
+
+- Date changes, 3 Days / Weekly / Monthly changes, Back to today, and Channels now use a consistent content-replacement transition instead of abruptly replacing the Sales dashboard.
+- Existing Daily Posts and chart softly fade/shift while the AJAX request runs; the new chart, date sections, and post cards animate into place after the authoritative response arrives.
+- New date sections and cards use short staggered enter animations so large ranges still feel responsive rather than flashing all at once.
+- Good / Issues / Unreviewed per-day filters now animate cards out before the grid reflows and animate newly visible cards back in.
+- Channels no longer immediately hide the current cards before the server response; the active Channel button changes immediately while the content transitions to the authoritative server-filtered result.
+- An entirely empty date range now always renders a real `Empty` placeholder card with at least one normal Sales-card footprint.
+- An empty Good / Issues / Unreviewed filter also renders one card-sized Empty placeholder inside the day grid.
+- Channel filtering to zero posts preserves the pre-filter Daily Posts area height; a date/range with zero posts uses the normal one-card minimum height.
+- Added reduced-motion handling so users who disable animation do not receive transition effects.
+- No database migration is required.
+- Normal UI radius remains 4px; chart bars remain square.

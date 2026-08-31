@@ -8413,3 +8413,360 @@ body.sales-detail-open{
 .sales-chart-segment.unreviewed{
     border-radius:0 !important;
 }
+
+/* v0.1.59 SaaS-style content transitions + real Empty cards */
+
+/* ------------------------------------------------------------
+ * Date / period / channel replacement animation
+ * ---------------------------------------------------------- */
+#salesDailyStage,
+#salesActivityChartPanel{
+    will-change:opacity,transform;
+}
+
+#salesDailyStage.sales-content-changing,
+#salesActivityChartPanel.sales-content-changing{
+    opacity:.42;
+    transform:translateY(5px);
+    pointer-events:none;
+    transition:
+        opacity .15s ease,
+        transform .15s ease;
+}
+
+#salesDailyStage.sales-content-enter{
+    animation:salesStageEnter .26s cubic-bezier(.2,.72,.28,1) both;
+}
+
+#salesActivityChartPanel.sales-chart-enter{
+    animation:salesChartPanelEnter .24s cubic-bezier(.2,.72,.28,1) both;
+}
+
+#salesDailyStage.sales-content-enter
+.sales-day-section{
+    animation:salesDaySectionEnter .30s cubic-bezier(.2,.72,.28,1) both;
+    animation-delay:
+        calc(
+            min(
+                var(--sales-section-index,0),
+                5
+            )
+            * 38ms
+        );
+}
+
+#salesDailyStage.sales-content-enter
+.sales-self-post-card{
+    animation:salesPostCardEnter .30s cubic-bezier(.2,.72,.28,1) both;
+    animation-delay:
+        calc(
+            min(
+                var(--sales-card-index,0),
+                6
+            )
+            * 25ms
+            + 28ms
+        );
+}
+
+@keyframes salesStageEnter{
+    from{
+        opacity:.52;
+        transform:translateY(5px);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+
+@keyframes salesChartPanelEnter{
+    from{
+        opacity:.56;
+        transform:translateY(3px);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+
+@keyframes salesDaySectionEnter{
+    from{
+        opacity:0;
+        transform:translateY(7px);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+
+@keyframes salesPostCardEnter{
+    from{
+        opacity:0;
+        transform:translateY(7px) scale(.992);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0) scale(1);
+    }
+}
+
+/* ------------------------------------------------------------
+ * Good / Issues / Unreviewed filter transitions
+ * ---------------------------------------------------------- */
+.sales-self-post-card.sales-filter-leaving{
+    opacity:0;
+    transform:translateY(4px) scale(.985);
+    pointer-events:none;
+    transition:
+        opacity .13s ease,
+        transform .13s ease;
+}
+
+.sales-self-post-card.sales-filter-entering{
+    animation:salesFilteredCardEnter .22s cubic-bezier(.2,.72,.28,1) both;
+}
+
+@keyframes salesFilteredCardEnter{
+    from{
+        opacity:0;
+        transform:translateY(5px) scale(.99);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0) scale(1);
+    }
+}
+
+/* ------------------------------------------------------------
+ * Entire selected date range = 0 posts.
+ * Always show at least one normal card footprint.
+ * ---------------------------------------------------------- */
+.sales-daily-stage{
+    min-height:280px;
+}
+
+.sales-empty-state{
+    box-sizing:border-box;
+    min-height:280px;
+    margin:0;
+    padding:12px;
+    display:grid;
+    grid-template-columns:repeat(6,minmax(0,1fr));
+    gap:8px;
+    align-items:stretch;
+    border:0;
+    background:transparent;
+}
+
+.sales-empty-state.hidden{
+    display:none;
+}
+
+.sales-empty-card{
+    box-sizing:border-box;
+    min-height:252px;
+    padding:20px 14px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:7px;
+    border:1px dashed #cbd5e1;
+    border-radius:4px;
+    background:#fff;
+    color:#64748b;
+    text-align:center;
+}
+
+.sales-empty-card-icon{
+    width:28px;
+    height:28px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    color:#94a3b8;
+}
+
+.sales-empty-card-icon svg{
+    width:24px;
+    height:24px;
+    fill:currentColor;
+}
+
+.sales-empty-card strong{
+    color:#334155;
+    font-size:12px;
+    font-weight:900;
+}
+
+.sales-empty-card span:last-child{
+    max-width:150px;
+    font-size:9px;
+    line-height:1.45;
+}
+
+/*
+ * Channel filter -> 0 results:
+ * preserve the old section height as requested.
+ * Date/range -> 0 results:
+ * only the normal one-card minimum is required.
+ */
+.sales-daily-stage.sales-daily-stage-empty{
+    min-height:280px;
+}
+
+.sales-daily-stage.sales-daily-stage-empty.sales-daily-stage-preserved{
+    min-height:max(
+        280px,
+        var(--sales-preserved-height,280px)
+    );
+}
+
+.sales-daily-stage.sales-daily-stage-empty.sales-daily-stage-preserved
+.sales-empty-state{
+    min-height:max(
+        280px,
+        var(--sales-preserved-height,280px)
+    );
+}
+
+/* ------------------------------------------------------------
+ * Per-day status filter = zero cards.
+ * Also keep a single-card footprint rather than collapsing.
+ * ---------------------------------------------------------- */
+.sales-post-card-grid{
+    min-height:252px;
+    align-content:start;
+}
+
+.sales-filter-empty{
+    grid-column:auto !important;
+    min-height:252px !important;
+    margin:0 !important;
+    padding:0 !important;
+    display:block;
+    border:0 !important;
+    background:transparent !important;
+}
+
+.sales-filter-empty.hidden{
+    display:none;
+}
+
+.sales-filter-empty-card{
+    box-sizing:border-box;
+    width:100%;
+    min-height:252px;
+    padding:18px 12px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:7px;
+    border:1px dashed #cbd5e1;
+    border-radius:4px;
+    background:#fff;
+    color:#64748b;
+    text-align:center;
+}
+
+.sales-filter-empty-icon{
+    width:25px;
+    height:25px;
+    display:inline-flex;
+    color:#94a3b8;
+}
+
+.sales-filter-empty-icon svg{
+    width:100%;
+    height:100%;
+    fill:currentColor;
+}
+
+.sales-filter-empty-card strong{
+    color:#334155;
+    font-size:11px;
+    font-weight:900;
+}
+
+.sales-filter-empty-card span:last-child{
+    font-size:8.5px;
+    line-height:1.4;
+}
+
+.sales-filter-empty.sales-filter-empty-enter{
+    animation:salesEmptyCardEnter .22s cubic-bezier(.2,.72,.28,1) both;
+}
+
+@keyframes salesEmptyCardEnter{
+    from{
+        opacity:0;
+        transform:translateY(5px);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+
+/* Same card-column count as real Sales cards. */
+@media(max-width:1150px){
+    .sales-empty-state{
+        grid-template-columns:repeat(4,minmax(0,1fr));
+    }
+}
+
+@media(max-width:900px){
+    .sales-empty-state{
+        grid-template-columns:repeat(3,minmax(0,1fr));
+    }
+}
+
+@media(max-width:680px){
+    .sales-empty-state{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+
+    .sales-empty-card,
+    .sales-filter-empty-card,
+    .sales-post-card-grid{
+        min-height:300px;
+    }
+}
+
+@media(max-width:480px){
+    .sales-empty-state{
+        grid-template-columns:1fr;
+    }
+
+    .sales-empty-card,
+    .sales-filter-empty-card,
+    .sales-post-card-grid{
+        min-height:350px;
+    }
+}
+
+@media(prefers-reduced-motion:reduce){
+    #salesDailyStage,
+    #salesActivityChartPanel,
+    .sales-day-section,
+    .sales-self-post-card,
+    .sales-filter-empty{
+        animation:none !important;
+        transition:none !important;
+        transform:none !important;
+    }
+}
+
+
+/* Explicit chart-only square-corner exception. */
+.sales-chart-stack,
+.sales-chart-segment,
+.sales-chart-segment.good,
+.sales-chart-segment.bad,
+.sales-chart-segment.unreviewed{
+    border-radius:0 !important;
+}
