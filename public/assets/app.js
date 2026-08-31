@@ -1053,6 +1053,8 @@ if($salesChartTooltip.length&&!$salesChartTooltip.parent().is('body')){
 }
 
 /*
+ * v0.1.77: successful Sales deletion requests finish the submit state and
+ * reload the current dashboard instead of leaving the request button on Sending….
  * v0.1.76: app.js owns chart tooltip interaction. The dedicated dashboard
  * module still owns chart data/rendering, but must not register a second
  * tooltip controller or the two positioning systems fight each other.
@@ -3277,9 +3279,22 @@ $('#salesPostDeleteRequestForm').on('submit',function(event){
         const postId=String($('#salesPostDeleteRequestId').val()||'');
         $('.sales-self-post-card[data-sales-post-id="'+postId+'"]')
             .attr('data-sales-post-delete-status','pending');
-        $('#salesPostDeleteRequestOpen').prop('disabled',true).text('Deletion requested');
-        $('#salesPostDeleteRequestMessage').addClass('ok').text((data&&data.message)||'Deletion request sent.');
+        $('#salesPostDeleteRequestOpen')
+            .prop('disabled',true)
+            .text('Deletion requested');
+        $('#salesPostDeleteRequestMessage')
+            .removeClass('error')
+            .addClass('ok')
+            .text((data&&data.message)||'Deletion request sent to Admin.');
         $('#salesPostDeleteRequestReason').val('');
+        $send.prop('disabled',true).text('Sent');
+
+        // The server has accepted the request. Reload the current dashboard so
+        // every copy of this post reflects its pending-deletion state instead
+        // of leaving the modal sitting on a stale "Sending…" control.
+        window.setTimeout(function(){
+            window.location.reload();
+        },650);
     }).fail(function(xhr){
         $('#salesPostDeleteRequestMessage').addClass('error').text(
             (xhr.responseJSON&&xhr.responseJSON.message)||'Deletion request could not be sent.'

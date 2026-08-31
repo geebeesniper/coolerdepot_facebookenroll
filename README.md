@@ -252,7 +252,7 @@ statuses, which still use pending/approved/rejected.
 
 ## Release versioning
 
-Current release: `v0.1.76`
+Current release: `v0.1.77`
 
 `VERSION` in the project root is the application version source of truth.
 The footer reads this value and displays it on every page.
@@ -1433,3 +1433,11 @@ Upload `sales-posts-v0.1.74-chart-pointer-tooltip.zip` to `/opt/coolerdepot/www/
 - After appearing, the tooltip continues to follow the mouse and stays viewport-aware.
 - Touch/pen remains responsive: tap a day to show/pin the tooltip; no 3-second long-press is required.
 - Admin dashboard title now matches the Sales dashboard title (`My Sales Activity`) in all supported UI languages.
+
+
+## v0.1.77 — deletion request completion state
+
+- Fixes the Sales post detail deletion-request form staying on `Sending…` after the server already accepted the request.
+- On success the request button changes to `Deletion requested`, the send button changes to `Sent`, and the current dashboard reloads after a short confirmation delay so all visible post cards reflect the pending request.
+- Failed requests restore the send control and keep the existing error message behavior.
+- No database migration is required.
