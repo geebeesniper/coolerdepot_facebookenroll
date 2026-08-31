@@ -1410,7 +1410,7 @@
     gap:7px;
     margin-top:6px;
 }
-.sales-period-target-copy span{
+.sales-period-target-copy > span{
     padding:3px 5px;
     border:1px solid #e3e8ef;
     border-radius:4px;
@@ -11069,4 +11069,23 @@ body.admin-delete-request-modal-open{overflow:hidden;}
     .admin-delete-request-footer{display:grid;grid-template-columns:1fr 1fr;}
     .admin-delete-request-footer .btn:first-child{grid-column:1/-1;}
     .report-range-control{grid-column:1/-1;}
+}
+
+
+/* v0.1.84 — target period label cleanup + compact report download */
+.sales-period-target-copy > span > span{
+    padding:0;
+    border:0;
+    border-radius:0;
+    background:transparent;
+    color:inherit;
+    font:inherit;
+}
+.report-download-button{
+    height:38px;
+    min-height:38px;
+    padding:0 12px;
+    font-size:11px;
+    line-height:1;
+    font-weight:800;
 }

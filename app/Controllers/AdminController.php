@@ -1870,10 +1870,25 @@ public function saveDailyReview():void{
             $reviewFilter=' AND sales_user_id=?';
             $reviewParams[]=$salesUserId;
         }
+
+        // A Daily Rating belongs only to this exact Sales + work_date.
+        // The schema has a unique key for that pair, but selecting MAX(id)
+        // also protects older/partially migrated databases from duplicate rows.
         $reviewStmt=$pdo->prepare(
-            "SELECT sales_user_id,work_date,rating,note,reviewed_at
-             FROM cdsp_daily_sales_reviews
-             WHERE work_date BETWEEN ? AND ?{$reviewFilter}"
+            "SELECT
+                r.id,
+                r.sales_user_id,
+                r.work_date,
+                r.rating,
+                r.note,
+                r.reviewed_at
+             FROM cdsp_daily_sales_reviews r
+             INNER JOIN (
+                SELECT sales_user_id,work_date,MAX(id) AS max_id
+                FROM cdsp_daily_sales_reviews
+                WHERE work_date BETWEEN ? AND ?{$reviewFilter}
+                GROUP BY sales_user_id,work_date
+             ) latest ON latest.max_id=r.id"
         );
         $reviewStmt->execute($reviewParams);
         $reviewMap=[];

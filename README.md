@@ -1470,3 +1470,11 @@ Upload `sales-posts-v0.1.74-chart-pointer-tooltip.zip` to `/opt/coolerdepot/www/
 - Aligns `Download CSV` with the report control bar on desktop and stacks it cleanly on narrow screens.
 - Live report refresh now updates only the result table, selected Sales label, and download URL so the moved toolbar remains interactive after every AJAX refresh.
 - No database migration is required.
+
+
+## v0.1.84
+
+- Admin sales progress target/period labels no longer inherit a second nested border around `/day` or `day(s)`.
+- Management Reports use an exact Sales + work_date Daily Review mapping and defensively select only the latest row for that exact pair on legacy databases. Ratings are never carried from one date to another.
+- Download CSV button typography is reduced to match the report toolbar.
+- No database migration. VERSION/footer source is 0.1.84.
