@@ -112,6 +112,16 @@ $chartInitialWidth=max(100,count($chartDates)*30);
     >
         <span data-sales-i18n="monthly">Monthly</span>
     </button>
+
+    <button
+        type="button"
+        class="sales-period-button sales-period-custom<?= ($rangePeriod ?? '') === 'custom' ? ' active' : '' ?>"
+        data-sales-period="custom"
+        aria-pressed="<?= ($rangePeriod ?? '') === 'custom' ? 'true' : 'false' ?>"
+        title="Use the From and To dates"
+    >
+        <span data-sales-i18n="customRange">Custom Range</span>
+    </button>
 </div>
 
         <form

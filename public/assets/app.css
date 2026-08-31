@@ -9005,3 +9005,92 @@ body.sales-detail-open{
 .sales-chart-segment.unreviewed{
     border-radius:0 !important;
 }
+
+/* v0.1.62 true 3-Day range + Custom Range + per-day Empty states */
+
+/* Four explicit range states: 3 Days / Weekly / Monthly / Custom Range. */
+.sales-head-period-switch{
+    grid-template-columns:repeat(4,max-content);
+}
+
+.sales-period-custom{
+    min-width:84px;
+}
+
+/* A missing day in the 3-Day view keeps the exact Daily Posts shell. */
+.sales-day-empty-card{
+    box-sizing:border-box;
+    min-height:252px;
+    padding:18px 12px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:7px;
+    border:1px dashed #cbd5e1;
+    border-radius:4px;
+    background:#fff;
+    color:#64748b;
+    text-align:center;
+}
+
+.sales-day-empty-icon{
+    width:26px;
+    height:26px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    color:#94a3b8;
+}
+
+.sales-day-empty-icon svg{
+    width:24px;
+    height:24px;
+    fill:currentColor;
+}
+
+.sales-day-empty-card strong{
+    color:#334155;
+    font-size:11px;
+    font-weight:900;
+}
+
+.sales-day-empty-card span:last-child{
+    font-size:8.5px;
+    line-height:1.4;
+}
+
+/*
+ * 3 Days always has exactly three Daily Posts sections from server,
+ * including zero-post days. Do not let empty grids collapse.
+ */
+.sales-day-section .sales-post-card-grid{
+    min-height:252px;
+}
+
+@media(max-width:980px){
+    .sales-head-period-switch{
+        grid-template-columns:repeat(4,minmax(0,1fr));
+        width:100%;
+    }
+
+    .sales-period-custom{
+        min-width:0;
+    }
+}
+
+@media(max-width:560px){
+    .sales-head-period-switch{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+}
+
+
+/* Explicit chart-only square-corner exception. */
+.sales-chart-stack,
+.sales-chart-segment,
+.sales-chart-segment.good,
+.sales-chart-segment.bad,
+.sales-chart-segment.unreviewed{
+    border-radius:0 !important;
+}

@@ -107,6 +107,20 @@ $salesPlatformIcon = static function(string $platform): string
     </div>
 
     <div class="sales-post-card-grid">
+        <?php if (empty($day['posts'])): ?>
+            <div class="sales-day-empty-card" role="status">
+                <span class="sales-day-empty-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M4 4h16v16H4V4Zm2 2v12h12V6H6Zm2 2h8v2H8V8Zm0 4h5v2H8v-2Z"/>
+                    </svg>
+                </span>
+                <strong data-sales-i18n="empty">Empty</strong>
+                <span data-sales-i18n="noPostsDay">
+                    No posts on this day.
+                </span>
+            </div>
+        <?php endif; ?>
+
         <?php foreach ($day['posts'] as $index => $p): ?>
             <?php
             $status=(string)($p['current_review_status']??'');

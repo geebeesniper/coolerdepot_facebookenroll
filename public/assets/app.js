@@ -180,6 +180,9 @@ const salesI18n={
         monthlyProgressTitle:'Monthly Post Progress',
         weekly:'Weekly',
         monthly:'Monthly',
+        customRange:'Custom Range',
+        customProgressTitle:'Custom Range Progress',
+        noPostsDay:'No posts on this day.',
         from:'From',
         to:'To',
         backToday:'Back to today',
@@ -264,6 +267,12 @@ const salesI18n={
         monthlyProgressTitle:'每月发布进度',
         weekly:'每周',
         monthly:'每月',
+        customRange:'自訂範圍',
+        customProgressTitle:'自訂範圍發佈進度',
+        noPostsDay:'當天沒有發佈。',
+        customRange:'自定义范围',
+        customProgressTitle:'自定义范围发布进度',
+        noPostsDay:'当天没有发布。',
         from:'开始',
         to:'结束',
         backToday:'返回今天',
@@ -418,6 +427,9 @@ const salesI18n={
         monthlyProgressTitle:'Progreso mensual de publicaciones',
         weekly:'Semanal',
         monthly:'Mensual',
+        customRange:'Rango personalizado',
+        customProgressTitle:'Progreso del rango personalizado',
+        noPostsDay:'No hay publicaciones este día.',
         from:'Desde',
         to:'Hasta',
         backToday:'Volver a hoy',
@@ -749,7 +761,11 @@ function setSalesRangePeriod(period){
             :(
                 salesRangePeriod==='month'
                     ?'monthlyProgressTitle'
-                    :'dailyProgressTitle'
+                    :(
+                        salesRangePeriod==='custom'
+                            ?'customProgressTitle'
+                            :'dailyProgressTitle'
+                    )
             );
 
     $('#salesChartPeriodTitle').text(
@@ -758,14 +774,23 @@ function setSalesRangePeriod(period){
 }
 
 function detectSalesRangePeriod(from,to){
-    if(from===to){
-        return 'day';
-    }
-
     const toDate=salesParseIsoDate(to);
 
     if(!toDate){
         return 'custom';
+    }
+
+    const threeDays=salesPresetRange(
+        'day',
+        to
+    );
+
+    if(
+        threeDays
+        &&threeDays.from===from
+        &&threeDays.to===to
+    ){
+        return 'day';
     }
 
     const week=salesPresetRange(
@@ -2069,6 +2094,35 @@ function renderSalesRangeData(data,range,period,channel,reason){
     const $empty=$('#dailyPostsEmpty');
     const $load=$('#loadMoreDailyPosts');
 
+    range={
+        from:String(
+            data.from
+            ||range.from
+            ||''
+        ),
+        to:String(
+            data.to
+            ||range.to
+            ||''
+        )
+    };
+
+    period=String(
+        data.period
+        ||period
+        ||'custom'
+    );
+
+    $('#salesRangeFrom').val(
+        range.from
+    );
+
+    $('#salesRangeTo').val(
+        range.to
+    );
+
+    syncSalesRangeConstraints('');
+
     salesPlatformFilter=String(
         channel
         ||data.channel
@@ -2182,14 +2236,10 @@ function renderSalesRangeData(data,range,period,channel,reason){
         range.to
     );
 
-    if(salesRangePeriod==='custom'){
-        url.searchParams.delete('period');
-    }else{
-        url.searchParams.set(
-            'period',
-            salesRangePeriod
-        );
-    }
+    url.searchParams.set(
+        'period',
+        salesRangePeriod
+    );
 
     if(salesPlatformFilter==='all'){
         url.searchParams.delete('channel');
@@ -2298,7 +2348,12 @@ function loadSalesRange(range,period,channel,reason){
                 channel
                 ||salesPlatformFilter
                 ||'all'
-            ).trim().toLowerCase()
+            ).trim().toLowerCase(),
+            period:String(
+                period
+                ||salesRangePeriod
+                ||'custom'
+            )
         }
     })
     .done(function(data){
@@ -2494,12 +2549,13 @@ $('#salesRangeFrom').on('change',function(){
         return;
     }
 
+    setSalesRangePeriod(
+        'custom'
+    );
+
     loadSalesRange(
         range,
-        detectSalesRangePeriod(
-            range.from,
-            range.to
-        ),
+        'custom',
         salesPlatformFilter
     );
 });
@@ -2511,12 +2567,13 @@ $('#salesRangeTo').on('change',function(){
         return;
     }
 
+    setSalesRangePeriod(
+        'custom'
+    );
+
     loadSalesRange(
         range,
-        detectSalesRangePeriod(
-            range.from,
-            range.to
-        ),
+        'custom',
         salesPlatformFilter
     );
 });
@@ -2571,14 +2628,15 @@ $('#salesRangeForm').on(
             return;
         }
 
+        setSalesRangePeriod(
+            'custom'
+        );
+
         loadSalesRange(
-        range,
-        detectSalesRangePeriod(
-            range.from,
-            range.to
-        ),
-        salesPlatformFilter
-    );
+            range,
+            'custom',
+            salesPlatformFilter
+        );
     }
 );
 
@@ -2598,6 +2656,27 @@ $(document).on(
             ||salesTodayValue()
             ||''
         );
+
+        if(period==='custom'){
+            const customRange=
+                syncSalesRangeConstraints('');
+
+            if(!customRange){
+                return;
+            }
+
+            setSalesRangePeriod(
+                'custom'
+            );
+
+            loadSalesRange(
+                customRange,
+                'custom',
+                salesPlatformFilter
+            );
+
+            return;
+        }
 
         const range=salesPresetRange(
             period,
@@ -2908,16 +2987,8 @@ const initialSalesRange=
     syncSalesRangeConstraints('');
 
 if(initialSalesRange){
-    const detectedInitialPeriod=
-        salesRangePeriod==='custom'
-            ?detectSalesRangePeriod(
-                initialSalesRange.from,
-                initialSalesRange.to
-            )
-            :salesRangePeriod;
-
     setSalesRangePeriod(
-        detectedInitialPeriod
+        salesRangePeriod
     );
 }
 

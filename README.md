@@ -1134,3 +1134,19 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - Back-to-today visibility also treats the To picker's own `max` value as the latest day, preventing timezone/cache drift from showing the link when the picker is already at its newest date.
 - No database migration is required.
 - Normal UI radius remains 4px; chart bars remain square; the tiny loading spinner remains circular.
+
+## v0.1.62 — True 3-Day view, Custom Range state, and per-day Empty sections
+
+- `3 Days` is now a real authoritative period, not only a button label.
+- When `period=day`, the server forces the range to exactly `To - 2 days` through `To`. A contradictory URL such as `period=day&from=08/01&to=08/31` is normalized to `08/29 → 08/31`.
+- The Sales chart therefore renders exactly three X-axis dates in 3 Days mode.
+- 3 Days always returns all three calendar-day sections, even when one or all days contain zero posts.
+- A zero-post day uses the same Daily Posts section header/status-filter framework and shows one card-sized Empty placeholder instead of removing the entire day.
+- Added a fourth period state: `Custom Range`.
+- Manually changing either From or To always activates Custom Range; 3 Days / Weekly / Monthly are all inactive.
+- Custom Range is persisted explicitly as `period=custom` in the browser URL, so reloads keep the correct state.
+- Clicking Custom Range keeps the current From/To values and reloads that exact range.
+- Period is now sent with Sales AJAX requests and returned by the server together with authoritative From/To values.
+- The client updates both date inputs from the server-resolved range before rendering the chart, preventing stale month X-axis labels after selecting 3 Days.
+- No database migration is required.
+- Normal UI radius remains 4px; chart bars remain square.
