@@ -40,6 +40,30 @@ class SalesController extends Controller
             $from=$to;
         }
 
+        $activeChannel=strtolower(
+            trim((string)($_GET['channel']??'all'))
+        );
+
+        $allowedChannels=[
+            'all',
+            'facebook',
+            'instagram',
+            'offerup',
+            'craigslist',
+        ];
+
+        if(!in_array(
+            $activeChannel,
+            $allowedChannels,
+            true
+        )){
+            $activeChannel='all';
+        }
+
+        $platformFilter=$activeChannel==='all'
+            ?null
+            :$activeChannel;
+
         $rangePeriod=(string)($_GET['period']??'');
 
         if(!in_array($rangePeriod,['day','week','month','custom'],true)){
@@ -62,12 +86,14 @@ class SalesController extends Controller
         $summary = Post::salesRangeSummary(
             (int)$u['id'],
             $from,
-            $to
+            $to,
+            $platformFilter
         );
         $chartRows=Post::salesChartRows(
             (int)$u['id'],
             $from,
-            $to
+            $to,
+            $platformFilter
         );
         $salesUser=User::find((int)$u['id']);
         $dailyTarget=max(
@@ -76,7 +102,14 @@ class SalesController extends Controller
         );
 
         $limit = max(1, (int)$config['app']['daily_posts_initial_days']);
-        $dayRows = Post::dailyDatesForSales((int)$u['id'], $from, $to, $limit, 0);
+        $dayRows = Post::dailyDatesForSales(
+            (int)$u['id'],
+            $from,
+            $to,
+            $limit,
+            0,
+            $platformFilter
+        );
         $days = [];
 
         foreach ($dayRows as $row) {
@@ -86,11 +119,20 @@ class SalesController extends Controller
                 'post_count' => (int)$row['post_count'],
                 'good_count' => (int)$row['good_count'],
                 'bad_count' => (int)$row['bad_count'],
-                'posts' => Post::forSalesOnDate((int)$u['id'], $date),
+                'posts' => Post::forSalesOnDate(
+                    (int)$u['id'],
+                    $date,
+                    $platformFilter
+                ),
             ];
         }
 
-        $totalDays = Post::dailyDateCountForSales((int)$u['id'], $from, $to);
+        $totalDays = Post::dailyDateCountForSales(
+            (int)$u['id'],
+            $from,
+            $to,
+            $platformFilter
+        );
 
         $this->render('sales/dashboard', [
             'user' => $u,
@@ -98,6 +140,7 @@ class SalesController extends Controller
             'to' => $to,
             'today'=>$today,
             'rangePeriod'=>$rangePeriod,
+            'activeChannel'=>$activeChannel,
             'counts' => $counts,
             'summary' => $summary,
             'chartRows'=>$chartRows,
@@ -137,7 +180,38 @@ class SalesController extends Controller
             $from=$to;
         }
 
-        $rows = Post::dailyDatesForSales((int)$u['id'], $from, $to, $limit, $offset);
+        $activeChannel=strtolower(
+            trim((string)($_GET['channel']??'all'))
+        );
+
+        $allowedChannels=[
+            'all',
+            'facebook',
+            'instagram',
+            'offerup',
+            'craigslist',
+        ];
+
+        if(!in_array(
+            $activeChannel,
+            $allowedChannels,
+            true
+        )){
+            $activeChannel='all';
+        }
+
+        $platformFilter=$activeChannel==='all'
+            ?null
+            :$activeChannel;
+
+        $rows = Post::dailyDatesForSales(
+            (int)$u['id'],
+            $from,
+            $to,
+            $limit,
+            $offset,
+            $platformFilter
+        );
         $days = [];
 
         foreach ($rows as $row) {
@@ -147,7 +221,11 @@ class SalesController extends Controller
                 'post_count' => (int)$row['post_count'],
                 'good_count' => (int)$row['good_count'],
                 'bad_count' => (int)$row['bad_count'],
-                'posts' => Post::forSalesOnDate((int)$u['id'], $date),
+                'posts' => Post::forSalesOnDate(
+                    (int)$u['id'],
+                    $date,
+                    $platformFilter
+                ),
             ];
         }
 
@@ -158,12 +236,23 @@ class SalesController extends Controller
         $html = ob_get_clean();
 
         $nextOffset = $offset + count($days);
-        $totalDays = Post::dailyDateCountForSales((int)$u['id'], $from, $to);
-        $summary=Post::salesRangeSummary((int)$u['id'],$from,$to);
+        $totalDays = Post::dailyDateCountForSales(
+            (int)$u['id'],
+            $from,
+            $to,
+            $platformFilter
+        );
+        $summary=Post::salesRangeSummary(
+            (int)$u['id'],
+            $from,
+            $to,
+            $platformFilter
+        );
         $chartRows=Post::salesChartRows(
             (int)$u['id'],
             $from,
-            $to
+            $to,
+            $platformFilter
         );
         $salesUser=User::find((int)$u['id']);
         $dailyTarget=max(
@@ -183,6 +272,7 @@ class SalesController extends Controller
             'summary'=>$summary,
             'chart_rows'=>$chartRows,
             'daily_target'=>$dailyTarget,
+            'channel'=>$activeChannel,
         ]);
     }
 

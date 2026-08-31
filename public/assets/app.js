@@ -820,7 +820,10 @@ function syncSalesRangeConstraints(changed){
 let salesRangeRequest=null;
 let salesChartRows=[];
 let salesChartDailyTarget=10;
-let salesPlatformFilter='all';
+let salesPlatformFilter=String(
+    $('#salesPortalDashboard').attr('data-channel')
+    ||'all'
+).trim().toLowerCase();
 let salesRangePeriod=String(
     $('#salesPortalDashboard').attr('data-range-period')
     ||'custom'
@@ -1547,7 +1550,7 @@ function applySalesPlatformFilterToCards(){
     });
 }
 
-function renderSalesRangeData(data,range,period){
+function renderSalesRangeData(data,range,period,channel){
     const $wrap=$('#dailyPosts');
     const $empty=$('#dailyPostsEmpty');
     const $load=$('#loadMoreDailyPosts');
@@ -1613,6 +1616,28 @@ function renderSalesRangeData(data,range,period){
             salesRangePeriod
         );
     }
+
+    salesPlatformFilter=String(
+        channel
+        ||data.channel
+        ||salesPlatformFilter
+        ||'all'
+    ).trim().toLowerCase();
+
+    $('#salesPortalDashboard').attr(
+        'data-channel',
+        salesPlatformFilter
+    );
+
+    if(salesPlatformFilter==='all'){
+        url.searchParams.delete('channel');
+    }else{
+        url.searchParams.set(
+            'channel',
+            salesPlatformFilter
+        );
+    }
+
     window.history.replaceState(
         {},
         '',
@@ -1620,7 +1645,7 @@ function renderSalesRangeData(data,range,period){
     );
 }
 
-function loadSalesRange(range,period){
+function loadSalesRange(range,period,channel){
     if(!range){
         return;
     }
@@ -1652,7 +1677,12 @@ function loadSalesRange(range,period){
             limit:parseInt(
                 $('#dailyPosts').data('limit')||3,
                 10
-            )
+            ),
+            channel:String(
+                channel
+                ||salesPlatformFilter
+                ||'all'
+            ).trim().toLowerCase()
         }
     })
     .done(function(data){
@@ -1669,7 +1699,8 @@ function loadSalesRange(range,period){
         renderSalesRangeData(
             data,
             range,
-            period
+            period,
+            channel
         );
     })
     .fail(function(xhr,status){
@@ -1842,7 +1873,8 @@ $('#salesRangeFrom').on('change',function(){
         detectSalesRangePeriod(
             range.from,
             range.to
-        )
+        ),
+        salesPlatformFilter
     );
 });
 
@@ -1858,7 +1890,8 @@ $('#salesRangeTo').on('change',function(){
         detectSalesRangePeriod(
             range.from,
             range.to
-        )
+        ),
+        salesPlatformFilter
     );
 });
 
@@ -1895,7 +1928,8 @@ $('#salesBackToday').on('click',function(){
 
     loadSalesRange(
         range,
-        'day'
+        'day',
+        salesPlatformFilter
     );
 });
 
@@ -1912,12 +1946,13 @@ $('#salesRangeForm').on(
         }
 
         loadSalesRange(
-            range,
-            detectSalesRangePeriod(
-                range.from,
-                range.to
-            )
-        );
+        range,
+        detectSalesRangePeriod(
+            range.from,
+            range.to
+        ),
+        salesPlatformFilter
+    );
     }
 );
 
@@ -1963,7 +1998,8 @@ $(document).on(
 
         loadSalesRange(
             range,
-            period
+            period,
+            salesPlatformFilter
         );
     }
 );
@@ -1973,12 +2009,15 @@ $(document).on(
     '[data-sales-platform-filter]',
     function(event){
         event.preventDefault();
+        event.stopPropagation();
 
-        salesPlatformFilter=String(
+        const nextChannel=String(
             $(this).attr(
                 'data-sales-platform-filter'
             )||'all'
         ).trim().toLowerCase();
+
+        salesPlatformFilter=nextChannel;
 
         $('#salesPlatformFilter')
             .find('[data-sales-platform-filter]')
@@ -1998,8 +2037,26 @@ $(document).on(
                     );
             });
 
-        renderSalesChart();
+        /*
+         * Instant local response first.
+         * The AJAX response below then replaces the list/chart with the
+         * authoritative server-filtered result.
+         */
         applySalesPlatformFilterToCards();
+        renderSalesChart();
+
+        const range=
+            syncSalesRangeConstraints('');
+
+        if(!range){
+            return;
+        }
+
+        loadSalesRange(
+            range,
+            salesRangePeriod,
+            salesPlatformFilter
+        );
 
         if(
             event.detail>0
@@ -2505,7 +2562,8 @@ $('#salesVerifiedSaveForm').on('submit',function(event){
             from: from,
             to: to,
             offset: offset,
-            limit: limit
+            limit: limit,
+            channel: salesPlatformFilter
         })
         .done(function(d){
             if(!d || !d.ok){

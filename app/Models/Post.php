@@ -285,96 +285,154 @@ class Post {
         $s->execute([$uid,$from.' 00:00:00',$to.' 00:00:00']);return$s->fetchAll();
     }
 
-    public static function dailyDatesForSales(int $salesUserId, string $from, string $to, int $limit, int $offset = 0): array
-    {
-        $stmt = Database::connection()->prepare(
-            "SELECT
-                p.published_date,
-                COUNT(*) AS post_count,
-                COALESCE(
-                    SUM(
-                        COALESCE(
-                            rh.decision,
-                            p.admin_review_status
-                        )='good'
-                    ),
-                    0
-                ) AS good_count,
-                COALESCE(
-                    SUM(
-                        COALESCE(
-                            rh.decision,
-                            p.admin_review_status
-                        )='bad'
-                    ),
-                    0
-                ) AS bad_count
-             FROM cdsp_sales_posts p
-             LEFT JOIN (
-                SELECT h.post_id,h.decision
-                FROM cdsp_post_review_history h
-                INNER JOIN (
-                    SELECT post_id,MAX(id) AS max_id
-                    FROM cdsp_post_review_history
-                    GROUP BY post_id
-                ) latest
-                  ON latest.max_id=h.id
-             ) rh
-               ON rh.post_id=p.id
-             WHERE p.sales_user_id = ?
-               AND p.deleted_at IS NULL
-               AND p.published_date BETWEEN ? AND ?
-             GROUP BY p.published_date
-             ORDER BY p.published_date DESC
-             LIMIT ? OFFSET ?"
-        );
-        $stmt->bindValue(1, $salesUserId, \PDO::PARAM_INT);
-        $stmt->bindValue(2, $from);
-        $stmt->bindValue(3, $to);
-        $stmt->bindValue(4, $limit, \PDO::PARAM_INT);
-        $stmt->bindValue(5, $offset, \PDO::PARAM_INT);
-        $stmt->execute();
+public static function dailyDatesForSales(
+    int $salesUserId,
+    string $from,
+    string $to,
+    int $limit,
+    int $offset = 0,
+    ?string $platform = null
+): array {
+    $platformSql=$platform !== null
+        ? " AND LOWER(p.platform)=? "
+        : "";
 
-        return $stmt->fetchAll();
+    $stmt = Database::connection()->prepare(
+        "SELECT
+            p.published_date,
+            COUNT(*) AS post_count,
+            COALESCE(
+                SUM(
+                    COALESCE(
+                        rh.decision,
+                        p.admin_review_status
+                    )='good'
+                ),
+                0
+            ) AS good_count,
+            COALESCE(
+                SUM(
+                    COALESCE(
+                        rh.decision,
+                        p.admin_review_status
+                    )='bad'
+                ),
+                0
+            ) AS bad_count
+         FROM cdsp_sales_posts p
+         LEFT JOIN (
+            SELECT h.post_id,h.decision
+            FROM cdsp_post_review_history h
+            INNER JOIN (
+                SELECT post_id,MAX(id) AS max_id
+                FROM cdsp_post_review_history
+                GROUP BY post_id
+            ) latest
+              ON latest.max_id=h.id
+         ) rh
+           ON rh.post_id=p.id
+         WHERE p.sales_user_id = ?
+           AND p.deleted_at IS NULL
+           AND p.published_date BETWEEN ? AND ?"
+         .$platformSql.
+        " GROUP BY p.published_date
+          ORDER BY p.published_date DESC
+          LIMIT ? OFFSET ?"
+    );
+
+    $index=1;
+
+    $stmt->bindValue(
+        $index++,
+        $salesUserId,
+        \PDO::PARAM_INT
+    );
+    $stmt->bindValue($index++,$from);
+    $stmt->bindValue($index++,$to);
+
+    if($platform !== null){
+        $stmt->bindValue(
+            $index++,
+            strtolower($platform)
+        );
     }
 
-    public static function forSalesOnDate(int $salesUserId, string $date): array
-    {
-        $stmt = Database::connection()->prepare(
-            "SELECT
-                p.*,
-                COALESCE(
-                    rh.decision,
-                    p.admin_review_status
-                ) AS current_review_status
-             FROM cdsp_sales_posts p
-             LEFT JOIN (
-                SELECT h.post_id,h.decision
-                FROM cdsp_post_review_history h
-                INNER JOIN (
-                    SELECT post_id,MAX(id) AS max_id
-                    FROM cdsp_post_review_history
-                    GROUP BY post_id
-                ) latest
-                  ON latest.max_id=h.id
-             ) rh
-               ON rh.post_id=p.id
-             WHERE p.sales_user_id = ?
-               AND p.deleted_at IS NULL
-               AND p.published_date = ?
-             ORDER BY p.published_at DESC,p.id DESC"
-        );
-        $stmt->execute([$salesUserId, $date]);
+    $stmt->bindValue(
+        $index++,
+        $limit,
+        \PDO::PARAM_INT
+    );
+    $stmt->bindValue(
+        $index,
+        $offset,
+        \PDO::PARAM_INT
+    );
 
-        return $stmt->fetchAll();
+    $stmt->execute();
+
+    return $stmt->fetchAll();
+}
+
+public static function forSalesOnDate(
+    int $salesUserId,
+    string $date,
+    ?string $platform = null
+): array {
+    $platformSql=$platform !== null
+        ? " AND LOWER(p.platform)=? "
+        : "";
+
+    $stmt = Database::connection()->prepare(
+        "SELECT
+            p.*,
+            COALESCE(
+                rh.decision,
+                p.admin_review_status
+            ) AS current_review_status
+         FROM cdsp_sales_posts p
+         LEFT JOIN (
+            SELECT h.post_id,h.decision
+            FROM cdsp_post_review_history h
+            INNER JOIN (
+                SELECT post_id,MAX(id) AS max_id
+                FROM cdsp_post_review_history
+                GROUP BY post_id
+            ) latest
+              ON latest.max_id=h.id
+         ) rh
+           ON rh.post_id=p.id
+         WHERE p.sales_user_id = ?
+           AND p.deleted_at IS NULL
+           AND p.published_date = ?"
+         .$platformSql.
+        " ORDER BY p.published_at DESC,p.id DESC"
+    );
+
+    $params=[
+        $salesUserId,
+        $date,
+    ];
+
+    if($platform !== null){
+        $params[]=strtolower($platform);
     }
+
+    $stmt->execute($params);
+
+    return $stmt->fetchAll();
+}
 
 
 public static function salesChartRows(
     int $salesUserId,
     string $from,
-    string $to
+    string $to,
+    ?string $platform = null
 ): array {
+    $platformSql=$platform !== null
+        ? " AND LOWER(p.platform)=? "
+        : "";
+
     $stmt=Database::connection()->prepare(
         "SELECT
             p.published_date,
@@ -412,16 +470,23 @@ public static function salesChartRows(
            ON rh.post_id=p.id
          WHERE p.sales_user_id=?
            AND p.deleted_at IS NULL
-           AND p.published_date BETWEEN ? AND ?
-         GROUP BY p.published_date,p.platform
-         ORDER BY p.published_date ASC,p.platform ASC"
+           AND p.published_date BETWEEN ? AND ?"
+         .$platformSql.
+        " GROUP BY p.published_date,p.platform
+          ORDER BY p.published_date ASC,p.platform ASC"
     );
 
-    $stmt->execute([
+    $params=[
         $salesUserId,
         $from,
         $to,
-    ]);
+    ];
+
+    if($platform !== null){
+        $params[]=strtolower($platform);
+    }
+
+    $stmt->execute($params);
 
     $rows=[];
 
@@ -446,84 +511,117 @@ public static function salesChartRows(
     return $rows;
 }
 
-    public static function salesRangeSummary(
-        int $salesUserId,
-        string $from,
-        string $to
-    ): array {
-        $stmt=Database::connection()->prepare(
-            "SELECT
-                COUNT(p.id) AS post_count,
-                COALESCE(
-                    SUM(
-                        COALESCE(
-                            rh.decision,
-                            p.admin_review_status
-                        )='good'
-                    ),
-                    0
-                ) AS good_count,
-                COALESCE(
-                    SUM(
-                        COALESCE(
-                            rh.decision,
-                            p.admin_review_status
-                        )='bad'
-                    ),
-                    0
-                ) AS bad_count
-             FROM cdsp_sales_posts p
-             LEFT JOIN (
-                SELECT h.post_id,h.decision
-                FROM cdsp_post_review_history h
-                INNER JOIN (
-                    SELECT post_id,MAX(id) AS max_id
-                    FROM cdsp_post_review_history
-                    GROUP BY post_id
-                ) latest
-                  ON latest.max_id=h.id
-             ) rh
-               ON rh.post_id=p.id
-             WHERE p.sales_user_id=?
-               AND p.deleted_at IS NULL
-               AND p.published_date BETWEEN ? AND ?"
-        );
+public static function salesRangeSummary(
+    int $salesUserId,
+    string $from,
+    string $to,
+    ?string $platform = null
+): array {
+    $platformSql=$platform !== null
+        ? " AND LOWER(p.platform)=? "
+        : "";
 
-        $stmt->execute([
-            $salesUserId,
-            $from,
-            $to,
-        ]);
+    $stmt=Database::connection()->prepare(
+        "SELECT
+            COUNT(p.id) AS post_count,
+            COALESCE(
+                SUM(
+                    COALESCE(
+                        rh.decision,
+                        p.admin_review_status
+                    )='good'
+                ),
+                0
+            ) AS good_count,
+            COALESCE(
+                SUM(
+                    COALESCE(
+                        rh.decision,
+                        p.admin_review_status
+                    )='bad'
+                ),
+                0
+            ) AS bad_count
+         FROM cdsp_sales_posts p
+         LEFT JOIN (
+            SELECT h.post_id,h.decision
+            FROM cdsp_post_review_history h
+            INNER JOIN (
+                SELECT post_id,MAX(id) AS max_id
+                FROM cdsp_post_review_history
+                GROUP BY post_id
+            ) latest
+              ON latest.max_id=h.id
+         ) rh
+           ON rh.post_id=p.id
+         WHERE p.sales_user_id=?
+           AND p.deleted_at IS NULL
+           AND p.published_date BETWEEN ? AND ?"
+         .$platformSql
+    );
 
-        $row=$stmt->fetch() ?: [];
+    $params=[
+        $salesUserId,
+        $from,
+        $to,
+    ];
 
-        $posts=(int)($row['post_count']??0);
-        $good=(int)($row['good_count']??0);
-        $bad=(int)($row['bad_count']??0);
-
-        return [
-            'post_count'=>$posts,
-            'good_count'=>$good,
-            'bad_count'=>$bad,
-            'unreviewed_count'=>max(
-                0,
-                $posts-$good-$bad
-            ),
-        ];
+    if($platform !== null){
+        $params[]=strtolower($platform);
     }
 
-    public static function dailyDateCountForSales(int $salesUserId, string $from, string $to): int
-    {
-        $stmt = Database::connection()->prepare(
-            "SELECT COUNT(DISTINCT published_date)
-             FROM cdsp_sales_posts
-             WHERE sales_user_id = ?
-               AND deleted_at IS NULL
-               AND published_date BETWEEN ? AND ?"
-        );
-        $stmt->execute([$salesUserId, $from, $to]);
+    $stmt->execute($params);
 
-        return (int)$stmt->fetchColumn();
+    $row=$stmt->fetch() ?: [];
+
+    $posts=(int)($row['post_count']??0);
+    $good=(int)($row['good_count']??0);
+    $bad=(int)($row['bad_count']??0);
+
+    return [
+        'post_count'=>$posts,
+        'good_count'=>$good,
+        'bad_count'=>$bad,
+        'unreviewed_count'=>max(
+            0,
+            $posts-$good-$bad
+        ),
+    ];
+}
+
+public static function dailyDateCountForSales(
+    int $salesUserId,
+    string $from,
+    string $to,
+    ?string $platform = null
+): int {
+    $platformSql=$platform !== null
+        ? " AND LOWER(platform)=? "
+        : "";
+
+    $stmt = Database::connection()->prepare(
+        "SELECT COUNT(DISTINCT published_date)
+         FROM cdsp_sales_posts
+         WHERE sales_user_id = ?
+           AND deleted_at IS NULL
+           AND published_date BETWEEN ? AND ?"
+         .$platformSql
+    );
+
+    $params=[
+        $salesUserId,
+        $from,
+        $to,
+    ];
+
+    if($platform !== null){
+        $params[]=strtolower($platform);
     }
+
+    $stmt->execute($params);
+
+    return (int)$stmt->fetchColumn();
+}
+
 
 }

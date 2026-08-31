@@ -57,6 +57,7 @@ $chartInitialWidth=max(100,count($chartDates)*30);
     data-to="<?= Util::e($to) ?>"
     data-today="<?= Util::e($today) ?>"
     data-range-period="<?= Util::e($rangePeriod ?? 'custom') ?>"
+    data-channel="<?= Util::e($activeChannel ?? 'all') ?>"
 ></div>
 
 <div class="page-head sales-portal-head">
@@ -218,42 +219,52 @@ $chartInitialWidth=max(100,count($chartDates)*30);
 >
     <button
         type="button"
-        class="sales-platform-filter-button active"
+        class="sales-platform-filter-button<?= ($activeChannel ?? 'all') === 'all' ? ' active' : '' ?>"
         data-sales-platform-filter="all"
-        aria-pressed="true"
+        aria-pressed="<?= ($activeChannel ?? 'all') === 'all' ? 'true' : 'false' ?>"
+        title="All channels"
     >
+        <svg class="sales-platform-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h8v8H3V3Zm10 0h8v8h-8V3ZM3 13h8v8H3v-8Zm10 0h8v8h-8v-8ZM5 5v4h4V5H5Zm10 0v4h4V5h-4ZM5 15v4h4v-4H5Zm10 0v4h4v-4h-4Z"/></svg>
         <span data-sales-i18n="allPlatforms">All</span>
     </button>
     <button
         type="button"
-        class="sales-platform-filter-button"
+        class="sales-platform-filter-button<?= ($activeChannel ?? 'all') === 'facebook' ? ' active' : '' ?>"
         data-sales-platform-filter="facebook"
-        aria-pressed="false"
+        aria-pressed="<?= ($activeChannel ?? 'all') === 'facebook' ? 'true' : 'false' ?>"
+        title="Facebook"
     >
+        <svg class="sales-platform-icon facebook" viewBox="0 0 24 24" aria-hidden="true"><path d="M13.6 21v-8h2.7l.4-3.1h-3.1V8c0-.9.3-1.5 1.6-1.5h1.7V3.7c-.3 0-1.3-.1-2.5-.1-2.5 0-4.2 1.5-4.2 4.3v2H7.4V13h2.8v8h3.4Z"/></svg>
         Facebook
     </button>
     <button
         type="button"
-        class="sales-platform-filter-button"
+        class="sales-platform-filter-button<?= ($activeChannel ?? 'all') === 'instagram' ? ' active' : '' ?>"
         data-sales-platform-filter="instagram"
-        aria-pressed="false"
+        aria-pressed="<?= ($activeChannel ?? 'all') === 'instagram' ? 'true' : 'false' ?>"
+        title="Instagram"
     >
+        <svg class="sales-platform-icon instagram" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.4 2h9.2A5.4 5.4 0 0 1 22 7.4v9.2a5.4 5.4 0 0 1-5.4 5.4H7.4A5.4 5.4 0 0 1 2 16.6V7.4A5.4 5.4 0 0 1 7.4 2Zm0 2A3.4 3.4 0 0 0 4 7.4v9.2A3.4 3.4 0 0 0 7.4 20h9.2a3.4 3.4 0 0 0 3.4-3.4V7.4A3.4 3.4 0 0 0 16.6 4H7.4Zm9.8 1.5a1.3 1.3 0 1 1 0 2.6 1.3 1.3 0 0 1 0-2.6ZM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z"/></svg>
         Instagram
     </button>
     <button
         type="button"
-        class="sales-platform-filter-button"
+        class="sales-platform-filter-button<?= ($activeChannel ?? 'all') === 'offerup' ? ' active' : '' ?>"
         data-sales-platform-filter="offerup"
-        aria-pressed="false"
+        aria-pressed="<?= ($activeChannel ?? 'all') === 'offerup' ? 'true' : 'false' ?>"
+        title="OfferUp"
     >
+        <svg class="sales-platform-icon offerup" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3h-5l-4.5 4v-4H6a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3Zm6 3.5A3.5 3.5 0 1 0 12 13.5a3.5 3.5 0 0 0 0-7Zm0 2a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Z"/></svg>
         OfferUp
     </button>
     <button
         type="button"
-        class="sales-platform-filter-button"
+        class="sales-platform-filter-button<?= ($activeChannel ?? 'all') === 'craigslist' ? ' active' : '' ?>"
         data-sales-platform-filter="craigslist"
-        aria-pressed="false"
+        aria-pressed="<?= ($activeChannel ?? 'all') === 'craigslist' ? 'true' : 'false' ?>"
+        title="Craigslist"
     >
+        <svg class="sales-platform-icon craigslist" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 3h2v6.1l4.3-4.3 1.4 1.4-4.3 4.3H21v2h-6.6l4.3 4.3-1.4 1.4-4.3-4.3V21h-2v-7.1l-4.3 4.3-1.4-1.4 4.3-4.3H3v-2h6.6L5.3 6.2l1.4-1.4L11 9.1V3Z"/></svg>
         Craigslist
     </button>
 </div>
