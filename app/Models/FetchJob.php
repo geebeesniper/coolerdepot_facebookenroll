@@ -72,26 +72,44 @@ class FetchJob
         ]);
     }
 
-    public static function recentReady(string $platform, ?string $externalPostId, int $minutes = 10): ?array
-    {
+    public static function recentReady(
+        string $platform,
+        ?string $externalPostId,
+        int $minutes = 10,
+        ?string $provider = null
+    ): ?array {
         if (!$externalPostId) {
             return null;
         }
 
-        $stmt = Database::connection()->prepare(
+        $sql =
             "SELECT *
              FROM cdsp_fetch_jobs
              WHERE platform=?
                AND external_post_id=?
                AND status='ready'
                AND response_json IS NOT NULL
-               AND completed_at >= DATE_SUB(NOW(), INTERVAL ? MINUTE)
-             ORDER BY completed_at DESC
-             LIMIT 1"
-        );
-        $stmt->bindValue(1, $platform);
-        $stmt->bindValue(2, $externalPostId);
-        $stmt->bindValue(3, max(1, $minutes), \PDO::PARAM_INT);
+               AND completed_at >= DATE_SUB(NOW(), INTERVAL ? MINUTE)";
+
+        $params = [$platform, $externalPostId, max(1, $minutes)];
+
+        if ($provider !== null) {
+            $sql .= " AND provider=?";
+            $params[] = $provider;
+        }
+
+        $sql .= " ORDER BY completed_at DESC LIMIT 1";
+
+        $stmt = Database::connection()->prepare($sql);
+
+        foreach ($params as $i => $value) {
+            $stmt->bindValue(
+                $i + 1,
+                $value,
+                is_int($value) ? \PDO::PARAM_INT : \PDO::PARAM_STR
+            );
+        }
+
         $stmt->execute();
         $row = $stmt->fetch();
 

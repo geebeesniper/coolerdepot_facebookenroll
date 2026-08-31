@@ -37,10 +37,10 @@ Fresh install creates:
 - Share-link redirect resolution.
 - Title, description, canonical URL, platform item/post ID extraction.
 - Publication-date verification in `America/Los_Angeles`.
-- Sales can submit only posts verified as published today.
-- Company-wide duplicate canonical URL blocking.
-- Company-wide duplicate platform + item/post ID blocking.
-- Same Sales + same platform exact normalized title blocking.
+- Sales can submit verified historical or current posts; attribution follows the original publication date. Future or unverified dates are rejected.
+- Company-wide duplicate canonical URL blocking for active posts.
+- Company-wide duplicate platform + item/post ID blocking for active posts.
+- Company-wide same-platform byte-for-byte exact title blocking (all salespeople).
 - Same Sales + same platform exact normalized description blocking.
 - jQuery inspect-first UI: Save stays disabled until verification succeeds.
 - Server-side duplicate re-check immediately before INSERT.
@@ -180,7 +180,7 @@ server configuration and secrets.
 5. Redirects are resolved only while remaining on the selected platform.
 6. Page metadata is extracted.
 7. Publication timestamp is normalized to `America/Los_Angeles`.
-8. Publication date must equal today's business date.
+8. Publication date may be today or earlier; future/unverifiable dates are rejected.
 9. Duplicate rules are checked.
 10. A short-lived inspection token is stored.
 11. Save becomes enabled only for a verified token.
@@ -188,11 +188,12 @@ server configuration and secrets.
 
 ## Duplicate rules
 
-A post is blocked when any of these match a non-deleted post:
+A post is blocked by these rules:
 
-- Canonical URL.
-- Platform + external post/item ID.
-- Same Sales + same platform + exact normalized title.
+- Canonical URL among active posts.
+- Platform + external post/item ID among active posts.
+- Any Sales + same platform + byte-for-byte exact title among active posts.
+- Any Sales + same platform + identical indexed image file among active posts.
 - Same Sales + same platform + exact normalized description.
 
 The database also contains unique keys for canonical URL and platform/external item ID.
@@ -208,7 +209,7 @@ The database also contains unique keys for canonical URL and platform/external i
 - Platform host allow-listing.
 - Private/reserved IP blocking.
 - Image MIME validation and size limit.
-- Soft deletion via Admin approval.
+- Sales deletion requests with permanent Admin hard delete on approval.
 - Inspection token expiration and single-use consumption.
 
 ## Recommended next production upgrades
@@ -251,7 +252,7 @@ statuses, which still use pending/approved/rejected.
 
 ## Release versioning
 
-Current release: `v0.1.69`
+Current release: `v0.1.71`
 
 `VERSION` in the project root is the application version source of truth.
 The footer reads this value and displays it on every page.
@@ -1287,3 +1288,94 @@ cat VERSION
 ```
 
 If commit/push fails, do not reset/discard local changes; inspect that error. The ZIP overlay has already updated the files on this server. Open the Sales page and use Ctrl+F5 if the browser cached the old assets; verify the footer shows 0.1.69.
+
+## v0.1.70 — Historical submissions and duplicate comparison
+
+- `Posts` has one heading without a repeated total. Status filters retain their counts.
+- Compact fixed menu slots keep the same widths in all four languages. Arial, 1 Day/default today, status filters and chart growth from v0.1.67–69 remain unchanged.
+- Verified past/current listings are saved under their original publication date in the configured company timezone. The success link opens that day. Unknown/invalid/future dates remain blocked.
+- Canonical URL and platform + external ID duplicates block across all salespeople and dates, including deleted records. Existing database unique constraints remain in place.
+- Exact normalized titles and identical image files on the same platform block across all active salespeople. Existing own-description blocking remains.
+- Save acquires a platform-level MySQL advisory lock, re-reads/locks the unconsumed inspection, and repeats duplicate checks in the insertion transaction. Old inspection tokens must be checked again after this upgrade.
+- Image downloads use public HTTPS destinations with DNS pinning, redirect validation, bounded sizes and supported raster formats. Up to eight listing photos are checked per inspection. Exact file hashes block; GD perceptual hashes identify possible re-encoded/resized images for review without automatic blocking.
+- Seller avatars, logos and related listings are excluded. Missing/failed images, unavailable GD, absent website references and unindexed records are reported explicitly. Comparison covers available indexed photos, not all images on the public internet.
+- Website matches are advisory with source links. Import your company's UTF-8 CSV in Admin Settings (`page_url,title,image_url`, exact product-page host, HTTPS image URLs; CDN hosts allowed). This compares the supplied primary image per product, not an automatic full-site crawl. Reimport and reindex when products change; old references are retained, not silently deleted.
+
+### Upgrade from v0.1.69
+
+The ZIP belongs in `/opt/coolerdepot/www/sales-posts`; it contains a `sales-posts/` root and must be extracted into `/opt/coolerdepot/www`. Back up application files and the database using your normal backup process first.
+
+```bash
+ssh root@144.126.218.94
+cd /opt/coolerdepot/www/sales-posts
+unzip -o sales-posts-v0.1.70-history-duplicate-patch.zip -d /opt/coolerdepot/www
+cd /opt/coolerdepot
+docker compose exec -T php php /var/www/html/sales-posts/scripts/migrate_v0_1_70.php
+docker compose exec -T php php /var/www/html/sales-posts/scripts/index_duplicate_images.php --limit=200
+```
+
+The migration only adds comparison tables. It is repeatable and does not rewrite post dates, delete data, change provider credentials or remove unique constraints. New submissions report comparison unavailable until the migration succeeds.
+
+Index historical images using stored listing metadata; the indexer makes no paid listing-provider queries. It reports missing sources, download failures and a last ID. For additional batches repeat with the printed `--after=ID` value. Exit code 2 means incomplete checks; do not interpret it as complete coverage. For listings with no stored photos, fetch their content in Admin, then rerun indexing. Use `--all` to retry/refresh already indexed records.
+
+After importing the company website CSV, run:
+
+```bash
+cd /opt/coolerdepot
+docker compose exec -T php php /var/www/html/sales-posts/scripts/index_duplicate_images.php --website --limit=200
+```
+
+Continue additional batches with `--website --after=ID`; add `--all` when refreshing existing image URLs. The website cannot actually be compared until real product references and images have been supplied/indexed. GD is optional for exact file comparison but required for perceptual similarity.
+
+### Validation
+
+`php tests/duplicate_comparison.php` uses an isolated in-memory SQLite fixture, never production credentials. It verifies historical dates/timezone boundaries, invalid/future dates, own/other-user ID/title/image checks, save-time duplicate rechecks, website warnings/sources and image extraction/security/hash behavior. Requires CLI PDO SQLite + mbstring; DOM/GD enable metadata/image decoding cases.
+
+Local validation: 32 backend regression checks, 85 PHP syntax checks, JavaScript syntax, and dashboard DOM regressions for dates, filters, languages and bar redraws. Live MySQL advisory-lock behavior, real provider image downloads and production browser rendering still need deployment verification.
+
+## v0.1.71 — UI refinement, exact-title duplicate blocking, website library, hard delete
+
+- Removed visible post sequence/number badges from Sales cards and Admin expanded post cards.
+- Submit Post opens in a dashboard modal. A successful save refreshes the Sales dashboard.
+- Exact same-platform titles now block only when the stored title text is byte-for-byte identical. Duplicate responses include a clickable original post URL.
+- Sales can request deletion only. Admin approval or direct Admin deletion permanently removes the post and its post-level dependent database records.
+- Deleted/legacy soft-deleted posts no longer participate in URL, external ID, title, description, or image duplicate lookup.
+- Admin Settings now owns the company website URL. Website/sitemap scan, URL CSV import, manual title/description/image URL entry, search, and permanent reference deletion are available there.
+- Added a downloadable sample CSV from Admin Settings.
+- Added a plain-text Company Name setting used by the visible application branding.
+- Long-running post inspections release the PHP session lock so checks from the same user are not serialized.
+- Run `php scripts/migrate_v0_1_71.php` after the existing v0.1.70 migration.
+
+
+### SSH upgrade for v0.1.71
+
+From Windows PowerShell after downloading `sales-posts-v0.1.71-ui-website-hard-delete.zip`:
+
+```powershell
+scp "$env:USERPROFILE\Downloads\sales-posts-v0.1.71-ui-website-hard-delete.zip" root@144.126.218.94:/opt/coolerdepot/www/sales-posts/
+ssh root@144.126.218.94
+```
+
+Then on the server:
+
+```bash
+set -e
+cd /opt/coolerdepot/www/sales-posts
+archive=/opt/coolerdepot/www/sales-posts/sales-posts-v0.1.71-ui-website-hard-delete.zip
+backup="/tmp/sales-posts-before-v0.1.71-$(date +%Y%m%d-%H%M%S).tgz"
+unzip -t "$archive"
+tar --exclude=.git --exclude='*.zip' -czf "$backup" .
+unzip -o "$archive" -d /opt/coolerdepot/www
+
+cd /opt/coolerdepot
+docker compose exec -T php php /var/www/html/sales-posts/scripts/migrate_v0_1_71.php
+
+cd /opt/coolerdepot/www/sales-posts
+git diff --check
+git add .
+git commit -m "v0.1.71: refine UI website checks and hard delete"
+git push
+cat VERSION
+```
+
+After deployment, hard-refresh the browser. New/changed website image URLs can be indexed later with `docker compose exec -T php php /var/www/html/sales-posts/scripts/index_duplicate_images.php --website --limit=200`.

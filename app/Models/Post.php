@@ -6,23 +6,66 @@ class Post {
     public static function duplicate(int $uid,string $platform,?string $url,?string $eid,?string $title,?string $desc):?array{
         $pdo=Database::connection();
         $checks=[];
-        if($url)$checks[]=["SELECT id,title FROM cdsp_sales_posts WHERE canonical_url_hash=? AND deleted_at IS NULL LIMIT 1",[Util::urlHash($url)],"This URL has already been submitted."];
-        if($eid)$checks[]=["SELECT id,title FROM cdsp_sales_posts WHERE platform=? AND external_post_id=? AND deleted_at IS NULL LIMIT 1",[$platform,$eid],"This platform post ID already exists."];
-        if($title)$checks[]=["SELECT id,title FROM cdsp_sales_posts WHERE sales_user_id=? AND platform=? AND normalized_title_hash=? AND deleted_at IS NULL LIMIT 1",[$uid,$platform,Util::hashText($title)],"You already used exactly the same title on this platform."];
-        if($desc && Util::normalizeText($desc)!=='')$checks[]=["SELECT id,title FROM cdsp_sales_posts WHERE sales_user_id=? AND platform=? AND description_hash=? AND deleted_at IS NULL LIMIT 1",[$uid,$platform,Util::hashText($desc)],"You already used exactly the same description on this platform."];
-        foreach($checks as [$sql,$args,$msg]){$s=$pdo->prepare($sql);$s->execute($args);if($r=$s->fetch()){$r['reason']=$msg;return$r;}}
+        if($url)$checks[]=[
+            "SELECT id,title,canonical_url,platform FROM cdsp_sales_posts WHERE canonical_url_hash=? AND deleted_at IS NULL LIMIT 1",
+            [Util::urlHash($url)],
+            "This URL has already been submitted.",
+            'url'
+        ];
+        if($eid)$checks[]=[
+            "SELECT id,title,canonical_url,platform FROM cdsp_sales_posts WHERE platform=? AND external_post_id=? AND deleted_at IS NULL LIMIT 1",
+            [$platform,$eid],
+            "This platform post ID already exists.",
+            'external_id'
+        ];
+        // Title blocking is intentionally literal. Different case, spacing or punctuation
+        // is not treated as the same title. Only an exact byte-for-byte title on the
+        // same platform blocks the save.
+        if($title!==null && $title!=='')$checks[]=[
+            "SELECT id,title,canonical_url,platform FROM cdsp_sales_posts WHERE platform=? AND BINARY title=BINARY ? AND deleted_at IS NULL LIMIT 1",
+            [$platform,$title],
+            "This exact title already exists on this platform.",
+            'exact_title'
+        ];
+        if($desc && Util::normalizeText($desc)!=='')$checks[]=[
+            "SELECT id,title,canonical_url,platform FROM cdsp_sales_posts WHERE sales_user_id=? AND platform=? AND description_hash=? AND deleted_at IS NULL LIMIT 1",
+            [$uid,$platform,Util::hashText($desc)],
+            "You already used exactly the same description on this platform.",
+            'description'
+        ];
+        foreach($checks as [$sql,$args,$msg,$kind]){
+            $s=$pdo->prepare($sql);$s->execute($args);
+            if($r=$s->fetch()){
+                $r['reason']=$msg;
+                $r['kind']=$kind;
+                return$r;
+            }
+        }
         return null;
     }
     public static function create(array $i):int{
+        // Never trust a preflight result at save time. All callers must serialize
+        // same-platform saves and own the surrounding transaction.
+        if(!Database::connection()->inTransaction()){throw new \LogicException('Post creation requires a transaction.');}
+        if($duplicate=self::duplicate((int)$i['sales_user_id'],$i['platform'],$i['canonical_url'],$i['external_post_id'],$i['title'],$i['description'])){
+            throw new \DomainException($duplicate['reason']);
+        }
+        $meta=json_decode($i['raw_meta_json']??'{}',true)?:[];
+        if(($meta['duplicate_report']['version']??0)!==1){throw new \DomainException('Check this post again to run the updated image comparison.');}
+        $assets=$meta['duplicate_report']['assets']??[];
+        $report=\App\Services\DuplicateIndex::compare($i['platform'],$i['title'],$assets);
+        if($report['blocked']){throw new \DomainException($report['blocked']);}
         $s=Database::connection()->prepare("INSERT INTO cdsp_sales_posts
-        (sales_user_id,platform,submitted_url,resolved_url,canonical_url,canonical_url_hash,external_post_id,title,normalized_title_hash,description,description_hash,published_at,published_date,fetched_at,verification_status,admin_review_status,created_at,updated_at)
-        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,'verified',NULL,NOW(),NOW())");
-        $s->execute([$i['sales_user_id'],$i['platform'],$i['submitted_url'],$i['resolved_url'],$i['canonical_url'],Util::urlHash($i['canonical_url']),$i['external_post_id']?:null,$i['title'],Util::hashText($i['title']),$i['description'],Util::hashText($i['description']),$i['published_at'],$i['published_date'],$i['fetched_at']]);
-        return(int)Database::connection()->lastInsertId();
+        (sales_user_id,platform,submitted_url,resolved_url,canonical_url,canonical_url_hash,external_post_id,title,normalized_title_hash,description,description_hash,published_at,published_date,fetched_at,fetched_image_url,verification_status,admin_review_status,created_at,updated_at)
+        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'verified',NULL,NOW(),NOW())");
+        $s->execute([$i['sales_user_id'],$i['platform'],$i['submitted_url'],$i['resolved_url'],$i['canonical_url'],Util::urlHash($i['canonical_url']),$i['external_post_id']?:null,$i['title'],Util::hashText($i['title']),$i['description'],Util::hashText($i['description']),$i['published_at'],$i['published_date'],$i['fetched_at'],$assets[0]['url']??null]);
+        $id=(int)Database::connection()->lastInsertId();
+        \App\Services\DuplicateIndex::storePost($id,$assets);
+        return $id;
     }
     public static function forSales(int $uid,string $from,string $to):array{
-        $s=Database::connection()->prepare("SELECT p.*,r.decision review_decision FROM cdsp_sales_posts p LEFT JOIN cdsp_post_reviews r ON r.post_id=p.id WHERE p.sales_user_id=? AND p.created_at>=? AND p.created_at<DATE_ADD(?,INTERVAL 1 DAY) AND p.deleted_at IS NULL ORDER BY p.created_at DESC");
-        $s->execute([$uid,$from.' 00:00:00',$to.' 00:00:00']);return$s->fetchAll();
+        $s=Database::connection()->prepare("SELECT p.*,r.decision review_decision FROM cdsp_sales_posts p LEFT JOIN cdsp_post_reviews r ON r.post_id=p.id WHERE p.sales_user_id=? AND p.published_date BETWEEN ? AND ? AND p.deleted_at IS NULL ORDER BY p.published_at DESC,p.id DESC");
+        $s->execute([$uid,$from,$to]);return$s->fetchAll();
     }
     public static function find(int $id):?array{
         $s=Database::connection()->prepare("SELECT p.*,u.display_name,u.sales_id FROM cdsp_sales_posts p JOIN cdsp_users u ON u.id=p.sales_user_id WHERE p.id=? LIMIT 1");
@@ -388,7 +431,14 @@ public static function forSalesOnDate(
             COALESCE(
                 rh.decision,
                 p.admin_review_status
-            ) AS current_review_status
+            ) AS current_review_status,
+            (
+                SELECT d.status
+                FROM cdsp_deletion_requests d
+                WHERE d.post_id=p.id
+                ORDER BY d.id DESC
+                LIMIT 1
+            ) AS deletion_request_status
          FROM cdsp_sales_posts p
          LEFT JOIN (
             SELECT h.post_id,h.decision
@@ -678,5 +728,73 @@ public static function dailyDateCountForSales(
     return (int)$stmt->fetchColumn();
 }
 
+
+
+public static function requestDeletion(int $salesUserId,int $postId,string $reason): void
+{
+    $pdo=Database::connection();
+    $reason=trim($reason);
+    if($postId<1){throw new \DomainException('Post was not found.');}
+    if($reason===''){throw new \DomainException('Enter a reason for the deletion request.');}
+    if(mb_strlen($reason)>1000){throw new \DomainException('Deletion reason must be 1000 characters or fewer.');}
+
+    $check=$pdo->prepare("SELECT id FROM cdsp_sales_posts WHERE id=? AND sales_user_id=? AND deleted_at IS NULL LIMIT 1");
+    $check->execute([$postId,$salesUserId]);
+    if(!$check->fetchColumn()){throw new \DomainException('Post was not found.');}
+
+    $pending=$pdo->prepare("SELECT id FROM cdsp_deletion_requests WHERE post_id=? AND requested_by=? AND status='pending' LIMIT 1");
+    $pending->execute([$postId,$salesUserId]);
+    if($pending->fetchColumn()){throw new \DomainException('A deletion request for this post is already pending.');}
+
+    $q=$pdo->prepare("INSERT INTO cdsp_deletion_requests(post_id,requested_by,reason,status,created_at,updated_at) VALUES(?,?,?,'pending',NOW(),NOW())");
+    $q->execute([$postId,$salesUserId,$reason]);
+}
+
+public static function hardDelete(int $postId): void
+{
+    if($postId<1){throw new \DomainException('Post was not found.');}
+    $pdo=Database::connection();
+    $ownsTransaction=!$pdo->inTransaction();
+    if($ownsTransaction){$pdo->beginTransaction();}
+    try{
+        $exists=$pdo->prepare("SELECT id FROM cdsp_sales_posts WHERE id=? FOR UPDATE");
+        $exists->execute([$postId]);
+        if(!$exists->fetchColumn()){throw new \DomainException('Post was not found.');}
+
+        $reviewIds=[];
+        $q=$pdo->prepare("SELECT id FROM cdsp_post_reviews WHERE post_id=?");
+        $q->execute([$postId]);
+        $reviewIds=array_map('intval',$q->fetchAll(\PDO::FETCH_COLUMN));
+
+        $commentIds=[];
+        $q=$pdo->prepare("SELECT id FROM cdsp_post_review_comments WHERE post_id=?");
+        $q->execute([$postId]);
+        $commentIds=array_map('intval',$q->fetchAll(\PDO::FETCH_COLUMN));
+
+        $pdo->prepare("DELETE FROM cdsp_review_attachments WHERE entity_type='post_note' AND entity_id=?")->execute([$postId]);
+        if($reviewIds){
+            $marks=implode(',',array_fill(0,count($reviewIds),'?'));
+            $pdo->prepare("DELETE FROM cdsp_review_attachments WHERE entity_type='post_review' AND entity_id IN ($marks)")->execute($reviewIds);
+        }
+        if($commentIds){
+            $marks=implode(',',array_fill(0,count($commentIds),'?'));
+            $pdo->prepare("DELETE FROM cdsp_review_attachments WHERE entity_type='post_comment' AND entity_id IN ($marks)")->execute($commentIds);
+        }
+
+        $pdo->prepare("DELETE FROM cdsp_post_image_fingerprints WHERE post_id=?")->execute([$postId]);
+        $pdo->prepare("DELETE FROM cdsp_deletion_requests WHERE post_id=?")->execute([$postId]);
+        $pdo->prepare("DELETE FROM cdsp_post_review_comments WHERE post_id=?")->execute([$postId]);
+        $pdo->prepare("DELETE FROM cdsp_post_review_history WHERE post_id=?")->execute([$postId]);
+        $pdo->prepare("DELETE FROM cdsp_post_reviews WHERE post_id=?")->execute([$postId]);
+        $delete=$pdo->prepare("DELETE FROM cdsp_sales_posts WHERE id=?");
+        $delete->execute([$postId]);
+        if($delete->rowCount()!==1){throw new \RuntimeException('Post could not be deleted.');}
+
+        if($ownsTransaction){$pdo->commit();}
+    }catch(\Throwable $e){
+        if($ownsTransaction&&$pdo->inTransaction()){$pdo->rollBack();}
+        throw $e;
+    }
+}
 
 }

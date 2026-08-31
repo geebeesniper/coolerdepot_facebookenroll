@@ -2,19 +2,25 @@
 use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Util;
+use App\Models\Setting;
 
 $u = Auth::user();
 $base = $config['app']['base_path'];
 $ok = $_SESSION['flash_success'] ?? null;
 $bad = $_SESSION['flash_error'] ?? null;
 unset($_SESSION['flash_success'], $_SESSION['flash_error']);
+try {
+    $companyName = trim((string)Setting::get('company_name', 'CoolerDepot')) ?: 'CoolerDepot';
+} catch (\Throwable $e) {
+    $companyName = 'CoolerDepot';
+}
 ?>
 <!doctype html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title><?= Util::e($config['app']['name']) ?></title>
+    <title><?= Util::e($companyName) ?> Sales Post Tracker</title>
     <link
         rel="stylesheet"
         href="<?= Util::e($base) ?>/public/assets/app.css?v=<?= rawurlencode($config['app']['version']) ?>"
@@ -27,7 +33,7 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
     data-user-role="<?= $u ? Util::e((string)$u['role']) : '' ?>"
 >
     <a class="brand" href="<?= Util::e($base) ?>/">
-        CoolerDepot <span>Sales Posts</span>
+        <?= Util::e($companyName) ?> <span>Sales Posts</span>
     </a>
 
     <?php if ($u): ?>
@@ -89,6 +95,7 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
                 <a
                     href="<?= Util::e($base) ?>/sales/submit"
                     data-nav-i18n="submit"
+                    data-open-sales-submit
                 >
                     Submit
                 </a>

@@ -10,8 +10,8 @@ class Inspection {
         $s->execute([$t,$d['sales_user_id'],$d['platform'],$d['submitted_url'],$d['resolved_url']??null,$d['canonical_url']??null,$d['external_post_id']??null,$d['title']??null,$d['description']??null,$d['published_at']??null,$d['published_date']??null,$d['fetched_at']??date('Y-m-d H:i:s'),$d['verification_status'],$d['failure_code']??null,$d['failure_message']??null,json_encode($d['raw_meta']??[],JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE),(int)$config['app']['inspection_ttl_minutes']]);
         return$t;
     }
-    public static function verified(string $token,int $uid):?array{
-        $s=Database::connection()->prepare("SELECT * FROM cdsp_post_inspections WHERE token=? AND sales_user_id=? AND verification_status='verified' AND consumed_at IS NULL AND expires_at>=NOW() LIMIT 1");
+    public static function verified(string $token,int $uid,bool $lock=false):?array{
+        $s=Database::connection()->prepare("SELECT * FROM cdsp_post_inspections WHERE token=? AND sales_user_id=? AND verification_status='verified' AND consumed_at IS NULL AND expires_at>=NOW() LIMIT 1".($lock?' FOR UPDATE':''));
         $s->execute([$token,$uid]);return$s->fetch()?:null;
     }
     public static function consume(int $id):void{$s=Database::connection()->prepare("UPDATE cdsp_post_inspections SET consumed_at=NOW() WHERE id=?");$s->execute([$id]);}

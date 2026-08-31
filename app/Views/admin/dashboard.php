@@ -984,6 +984,15 @@ $periodNames = [
                 </div>
 
                 <div class="review-modal-footer-actions">
+                    <span class="admin-post-delete-hint" id="dashboardPostDeleteHint" aria-live="polite"></span>
+                    <button
+                        type="button"
+                        class="btn danger-soft"
+                        id="dashboardPostDelete"
+                        data-delete-url="<?= Util::e($base) ?>/admin/post/delete"
+                    >
+                        Delete Post
+                    </button>
                     <button
                         type="button"
                         class="btn"

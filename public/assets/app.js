@@ -1033,6 +1033,7 @@ function startSalesRangeVisualState(reason){
 }
 
 
+const $salesSubmitModal=$('#salesSubmitModal');
 const $salesPostDetailModal=$('#salesPostDetailModal');
 const $salesPostDetailImageButton=$('#salesPostDetailImageButton');
 const $salesImageLightbox=$('#salesImageLightbox');
@@ -2598,11 +2599,34 @@ function loadSalesRange(range,period,channel,reason){
     });
 }
 
+function openSalesSubmitModal(){
+    if(!$salesSubmitModal.length){return false;}
+    $salesSubmitModal.removeClass('hidden').attr('aria-hidden','false');
+    $('body').addClass('sales-submit-modal-open');
+    setTimeout(function(){
+        $('#postUrl').trigger('focus');
+        updateDetectedPlatform();
+    },0);
+    return true;
+}
+
+function closeSalesSubmitModal(){
+    if(!$salesSubmitModal.length){return;}
+    $salesSubmitModal.addClass('hidden').attr('aria-hidden','true');
+    $('body').removeClass('sales-submit-modal-open');
+}
+
 function openSalesPostDetail($card){
     if(!$card||!$card.length){
         return;
     }
 
+    const postId=String(
+        $card.attr('data-sales-post-id')||''
+    );
+    const deleteStatus=String(
+        $card.attr('data-sales-post-delete-status')||''
+    ).toLowerCase();
     const platform=String(
         $card.attr('data-sales-post-platform')||''
     );
@@ -2654,6 +2678,13 @@ function openSalesPostDetail($card){
     $('#salesPostDetailExternalId').text(
         externalId||'—'
     );
+    $('#salesPostDeleteRequestId').val(postId);
+    $('#salesPostDeleteRequestForm').addClass('hidden');
+    $('#salesPostDeleteRequestReason').val('');
+    $('#salesPostDeleteRequestMessage').text('');
+    $('#salesPostDeleteRequestOpen')
+        .prop('disabled',deleteStatus==='pending')
+        .text(deleteStatus==='pending'?'Deletion requested':'Request deletion');
 
     $('#salesPostDetailStatus')
         .attr(
@@ -2709,6 +2740,7 @@ function closeSalesPostDetail(){
         .attr('aria-hidden','true');
 
     $('body').removeClass('sales-detail-open');
+    $('#salesPostDeleteRequestForm').addClass('hidden');
 }
 
 function openSalesImageLightbox(){
@@ -3094,6 +3126,65 @@ $(document).on(
     }
 );
 
+$(document).on('click','[data-open-sales-submit]',function(event){
+    if(!$salesSubmitModal.length){return;}
+    event.preventDefault();
+    openSalesSubmitModal();
+});
+
+$('#salesSubmitModalClose').on('click',function(){
+    closeSalesSubmitModal();
+});
+
+$salesSubmitModal.on('click',function(event){
+    if(event.target===this){closeSalesSubmitModal();}
+});
+
+$('#salesPostDeleteRequestOpen').on('click',function(){
+    if($(this).prop('disabled'))return;
+    $('#salesPostDeleteRequestForm').removeClass('hidden');
+    $('#salesPostDeleteRequestMessage').text('');
+    setTimeout(function(){$('#salesPostDeleteRequestReason').trigger('focus');},0);
+});
+
+$('#salesPostDeleteRequestCancel').on('click',function(){
+    $('#salesPostDeleteRequestForm').addClass('hidden');
+    $('#salesPostDeleteRequestMessage').text('');
+});
+
+$('#salesPostDeleteRequestForm').on('submit',function(event){
+    event.preventDefault();
+    const $form=$(this);
+    const $send=$('#salesPostDeleteRequestSend');
+    const reason=$('#salesPostDeleteRequestReason').val().trim();
+    if(!reason){
+        $('#salesPostDeleteRequestMessage').text('Enter a reason.').addClass('error');
+        return;
+    }
+    $send.prop('disabled',true).text('Sending…');
+    $('#salesPostDeleteRequestMessage').removeClass('error ok').text('');
+    $.ajax({
+        url:$form.attr('action'),method:'POST',dataType:'json',data:$form.serialize(),
+        headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'}
+    }).done(function(data){
+        const postId=String($('#salesPostDeleteRequestId').val()||'');
+        $('.sales-self-post-card[data-sales-post-id="'+postId+'"]')
+            .attr('data-sales-post-delete-status','pending');
+        $('#salesPostDeleteRequestOpen').prop('disabled',true).text('Deletion requested');
+        $('#salesPostDeleteRequestMessage').addClass('ok').text((data&&data.message)||'Deletion request sent.');
+        $('#salesPostDeleteRequestReason').val('');
+    }).fail(function(xhr){
+        $('#salesPostDeleteRequestMessage').addClass('error').text(
+            (xhr.responseJSON&&xhr.responseJSON.message)||'Deletion request could not be sent.'
+        );
+        $send.prop('disabled',false).text('Send request');
+    }).always(function(){
+        if(!$('#salesPostDeleteRequestOpen').prop('disabled')){
+            $send.prop('disabled',false).text('Send request');
+        }
+    });
+});
+
 $('#salesPostDetailClose,#salesPostDetailFooterClose')
     .on('click',function(){
         closeSalesPostDetail();
@@ -3185,6 +3276,11 @@ $(document).on('keydown',function(event){
 
     if(!$salesImageLightbox.hasClass('hidden')){
         closeSalesImageLightbox();
+        return;
+    }
+
+    if($salesSubmitModal.length&&!$salesSubmitModal.hasClass('hidden')){
+        closeSalesSubmitModal();
         return;
     }
 
@@ -3280,6 +3376,15 @@ function setSalesSubmitMessage(message,type){
         .text(message);
 }
 
+
+function setInspectionStep(step,state,label){
+    const $step=$('#inspectionProgress [data-inspection-step="'+step+'"]');
+    if(!$step.length)return;
+    $step.removeClass('active done failed skipped');
+    if(state){$step.addClass(state);}
+    $step.find('.inspection-step-state').text(label||'Waiting');
+}
+
 $('#inspectForm').on('submit',function(e){
     e.preventDefault();
 
@@ -3298,6 +3403,8 @@ $('#inspectForm').on('submit',function(e){
     setSalesSubmitMessage('',null);
 
     $('#salesPostSaveComplete').addClass('hidden');
+    $('#salesDuplicateSource').addClass('hidden').attr('href','#');
+    $('#resultTitle').removeClass('duplicate-title');
     $('#saveButton')
         .removeClass('saved')
         .find('span')
@@ -3311,25 +3418,81 @@ $('#inspectForm').on('submit',function(e){
         .prop('disabled',true)
         .text(salesTr('checking'));
 
-    $p
-        .removeClass('hidden')
-        .find('div')
-        .removeClass()
-        .addClass('active');
+    $p.removeClass('hidden');
+    $p.find('div').removeClass('active done failed skipped');
+    $p.find('.inspection-step-state').text('Waiting');
+    setInspectionStep('platform','done','OK');
+    setInspectionStep('duplicate','active',salesTr('checking'));
+    setInspectionStep('fetch','active',salesTr('checking'));
 
     $('#inspectionEmpty').addClass('hidden');
+    $('#duplicateComparisonWarnings').empty().addClass('hidden');
     $r.addClass('hidden');
     $('#saveButton').prop('disabled',true);
 
+    const inspectPayload=$(this).serialize();
+
+    // Cheap duplicate preflight runs independently from the full provider
+    // inspection. It can finish first and update only its own status row.
+    $.post(
+        window.CD_BASE_PATH+'/api/inspect/preflight',
+        inspectPayload
+    )
+    .done(function(preflight){
+        if(preflight&&preflight.ok){
+            if($('#inspectionProgress [data-inspection-step="duplicate"]').hasClass('active')){
+                setInspectionStep('duplicate','done','OK');
+            }
+            return;
+        }
+        if($('#inspectionProgress [data-inspection-step="duplicate"]').hasClass('active')){
+            setInspectionStep('duplicate','failed','Issue');
+        }
+        if(preflight&&preflight.duplicate_url){
+            $('#salesDuplicateSource')
+                .attr('href',preflight.duplicate_url)
+                .removeClass('hidden')
+                .text('Duplicate exists — open original post ↗');
+        }
+    })
+    .fail(function(){
+        if($('#inspectionProgress [data-inspection-step="duplicate"]').hasClass('active')){
+            setInspectionStep('duplicate','failed','Issue');
+        }
+    });
+
     $.post(
         window.CD_BASE_PATH+'/api/inspect',
-        $(this).serialize()
+        inspectPayload
     )
     .done(function(d){
+        const $warnings=$('#duplicateComparisonWarnings').empty();
+        (d.duplicate_warnings||[]).forEach(function(message){
+            $('<p>').text(message).appendTo($warnings);
+        });
+        (d.duplicate_matches||[]).forEach(function(match){
+            try{
+                const link=new URL(match.url);
+                if(link.protocol!=='https:')return;
+                $('<a>').attr({href:link.href,target:'_blank',rel:'noopener noreferrer'})
+                    .text(link.hostname+' — '+match.kind.replace(/_/g,' ')).appendTo($warnings);
+            }catch(error){/* Ignore malformed source URLs. */}
+        });
+        $warnings.toggleClass('hidden',!$warnings.children().length);
         $('#resultPlatform').text(
             platformLabel(d.platform)||d.platform||'—'
         );
-        $('#resultTitle').text(d.title||'—');
+        $('#resultTitle')
+            .text(d.title||d.duplicate_title||'—')
+            .toggleClass('duplicate-title',d.failure_code==='DUPLICATE'&&d.duplicate_kind==='exact_title');
+        if(d.duplicate_url){
+            $('#salesDuplicateSource')
+                .attr('href',d.duplicate_url)
+                .removeClass('hidden')
+                .text('Duplicate exists — open original post ↗');
+        }else{
+            $('#salesDuplicateSource').addClass('hidden').attr('href','#');
+        }
         $('#resultDate').text(d.published_at||'—');
         $('#resultExternalId').text(
             d.external_post_id||'—'
@@ -3370,12 +3533,42 @@ $('#inspectForm').on('submit',function(e){
         $r.removeClass('hidden');
         $('#saveButton').prop('disabled',!d.ok);
 
-        $p
-            .find('div')
-            .attr(
-                'class',
-                d.ok?'done':'failed'
-            );
+        const code=String(d.failure_code||'');
+        const fetchFailed=[
+            'FETCH_FAILED','FACEBOOK_PROVIDER_FAILED','TITLE_NOT_VERIFIABLE'
+        ].indexOf(code)!==-1;
+        const earlyBlocked=[
+            'PLATFORM_INVALID','URL_INVALID'
+        ].indexOf(code)!==-1;
+
+        if(code==='DUPLICATE' && !d.title){
+            setInspectionStep('fetch','skipped','Skipped');
+            setInspectionStep('date','skipped','Skipped');
+            setInspectionStep('final','skipped','Skipped');
+        }else{
+            setInspectionStep('fetch',fetchFailed?'failed':'done',fetchFailed?'Issue':'OK');
+            if(code==='DATE_NOT_VERIFIABLE'||code==='FUTURE_DATE'){
+                setInspectionStep('date','failed','Issue');
+            }else if(earlyBlocked||fetchFailed){
+                setInspectionStep('date','skipped','Skipped');
+            }else{
+                setInspectionStep('date','done','OK');
+            }
+
+            if(code==='DUPLICATE'||code==='DUPLICATE_IMAGE'||code==='COMPARISON_UNAVAILABLE'){
+                setInspectionStep('final','failed','Issue');
+            }else if(earlyBlocked||fetchFailed||code==='DATE_NOT_VERIFIABLE'||code==='FUTURE_DATE'){
+                setInspectionStep('final','skipped','Skipped');
+            }else{
+                setInspectionStep('final','done','OK');
+            }
+        }
+
+        if(code==='DUPLICATE'){
+            setInspectionStep('duplicate','failed','Issue');
+        }else{
+            setInspectionStep('duplicate','done','OK');
+        }
 
         if(!d.ok){
             setSalesSubmitMessage(
@@ -3395,6 +3588,12 @@ $('#inspectForm').on('submit',function(e){
             ||salesTr('inspectionFailed');
 
         setSalesSubmitMessage(message,'error');
+        if(x.responseJSON&&x.responseJSON.duplicate_url){
+            $('#salesDuplicateSource')
+                .attr('href',x.responseJSON.duplicate_url)
+                .removeClass('hidden')
+                .text('Duplicate exists — open original post ↗');
+        }
 
         $('#verificationBanner')
             .attr('class','banner bad')
@@ -3405,7 +3604,12 @@ $('#inspectForm').on('submit',function(e){
             );
 
         $r.removeClass('hidden');
-        $p.find('div').attr('class','failed');
+        ['fetch','date','final'].forEach(function(step){
+            setInspectionStep(step,'failed','Issue');
+        });
+        if($('#inspectionProgress [data-inspection-step="duplicate"]').hasClass('active')){
+            setInspectionStep('duplicate','failed','Issue');
+        }
     })
     .always(function(){
         $b
@@ -3446,10 +3650,25 @@ $('#salesVerifiedSaveForm').on('submit',function(event){
         setSalesSubmitMessage(data.message||salesTr('postSaved'),'ok');
         $button.addClass('saved').find('span').text('Saved ✓');
         $('#inspectionToken').val('');
-        $('#salesPostSaveComplete').removeClass('hidden').find('span').first().text(salesTr('postSaved'));
+        if($('#salesPortalDashboard').length){
+            window.location.reload();
+            return;
+        }
+        if(data.dashboard_url){
+            window.location.href=data.dashboard_url;
+            return;
+        }
+        window.location.reload();
     })
     .fail(function(xhr){
         setSalesSubmitMessage((xhr.responseJSON&&xhr.responseJSON.message)||salesTr('inspectionFailed'),'error');
+        if(xhr.responseJSON&&xhr.responseJSON.duplicate_url){
+            $('#salesDuplicateSource')
+                .attr('href',xhr.responseJSON.duplicate_url)
+                .removeClass('hidden')
+                .text('Duplicate exists — open original post ↗');
+            $('#resultTitle').toggleClass('duplicate-title',xhr.responseJSON.duplicate_kind==='exact_title');
+        }
         $button.prop('disabled',false).find('span').text(salesTr('saveVerified'));
     });
 });
@@ -5746,9 +5965,6 @@ function renderPostGrid(data){
 
                 '<div class="sales-post-card-media">'
                     +postThumbnailHtml(post)+
-                    '<span class="sales-post-card-sequence">'
-                        +escapeHtml(post.sequence)
-                    +'</span>'+
                     '<span class="sales-post-card-platform">'
                         +platformLogoHtml(post.platform)
                     +'</span>'+
@@ -8225,4 +8441,144 @@ $('#salesPersonSettingsSave').on('click',function(){
 
 
 ;
+
+/* v0.1.71 — permanent post delete + website reference browser */
+let adminPostDeleteArmed=false;
+let adminPostDeleteTimer=null;
+
+function resetAdminPostDelete(){
+    adminPostDeleteArmed=false;
+    clearTimeout(adminPostDeleteTimer);
+    $('#dashboardPostDelete').prop('disabled',false).removeClass('danger-confirm').text('Delete Post');
+    $('#dashboardPostDeleteHint').text('');
+}
+
+$(document).on('click','.sales-post-tile,[data-post-id],#dashboardReviewClose,#dashboardReviewCancel',function(){
+    resetAdminPostDelete();
+});
+
+$('#dashboardPostDelete').on('click',function(){
+    const $button=$(this);
+    const postId=parseInt($('#dashboardReviewPostId').val()||'0',10);
+    if(!postId)return;
+
+    if(!adminPostDeleteArmed){
+        adminPostDeleteArmed=true;
+        $button.addClass('danger-confirm').text('Confirm permanent delete');
+        $('#dashboardPostDeleteHint').text('This removes the post from the database. Click again to confirm.');
+        adminPostDeleteTimer=setTimeout(resetAdminPostDelete,6000);
+        return;
+    }
+
+    clearTimeout(adminPostDeleteTimer);
+    $button.prop('disabled',true).text('Deleting…');
+    $('#dashboardPostDeleteHint').text('');
+    $.ajax({
+        url:$button.data('delete-url'),
+        method:'POST',
+        dataType:'json',
+        data:{
+            _csrf:$('#dashboardReviewForm input[name="_csrf"]').val(),
+            post_id:postId
+        },
+        headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'}
+    }).done(function(data){
+        if(!data||!data.ok){
+            $('#dashboardReviewMessage').text((data&&data.message)||'Post could not be deleted.').addClass('error');
+            resetAdminPostDelete();
+            return;
+        }
+        window.location.reload();
+    }).fail(function(xhr){
+        $('#dashboardReviewMessage').text(
+            (xhr.responseJSON&&xhr.responseJSON.message)||'Post could not be deleted.'
+        ).addClass('error');
+        resetAdminPostDelete();
+    });
+});
+
+function websiteReferenceRow(row){
+    const title=escapeHtml(String(row.title||''));
+    const description=escapeHtml(String(row.description||''));
+    const page=escapeHtml(String(row.page_url||''));
+    const image=escapeHtml(String(row.image_url||''));
+    const indexed=row.sha256?'Yes':'Pending';
+    return '<tr data-website-reference-id="'+escapeHtml(row.id)+'">'
+        +'<td><strong>'+title+'</strong></td>'
+        +'<td class="website-reference-description">'+description+'</td>'
+        +'<td><a href="'+page+'" target="_blank" rel="noopener noreferrer">Open page ↗</a></td>'
+        +'<td>'+(image?'<a href="'+image+'" target="_blank" rel="noopener noreferrer">Image ↗</a>':'—')+'</td>'
+        +'<td>'+indexed+'</td>'
+        +'<td><button type="button" class="tiny badbtn website-reference-delete" data-reference-id="'+escapeHtml(row.id)+'">Delete</button></td>'
+        +'</tr>';
+}
+
+function setWebsiteReferenceMessage(message,type){
+    const $box=$('#websiteReferenceMessage');
+    if(!$box.length)return;
+    if(!message){$box.addClass('hidden').removeClass('ok error').text('');return;}
+    $box.removeClass('hidden ok error').addClass(type==='ok'?'ok':'error').text(message);
+}
+
+function loadWebsiteReferences(){
+    const $library=$('#website-comparison');
+    if(!$library.length)return;
+    const q=$('#websiteReferenceSearch').val()||'';
+    const $button=$('#websiteReferenceSearchButton');
+    $button.prop('disabled',true).text('Searching…');
+    $.getJSON($library.data('search-url'),{q:q})
+        .done(function(data){
+            if(!data||!data.ok){setWebsiteReferenceMessage((data&&data.message)||'Search failed.','error');return;}
+            const rows=Array.isArray(data.rows)?data.rows:[];
+            $('#websiteReferenceRows').html(
+                rows.length
+                    ?rows.map(websiteReferenceRow).join('')
+                    :'<tr class="website-reference-empty"><td colspan="6">No matching website references.</td></tr>'
+            );
+            setWebsiteReferenceMessage(rows.length+' reference'+(rows.length===1?'':'s')+' found.','ok');
+        })
+        .fail(function(xhr){
+            setWebsiteReferenceMessage((xhr.responseJSON&&xhr.responseJSON.message)||'Search failed.','error');
+        })
+        .always(function(){$button.prop('disabled',false).text('Search');});
+}
+
+$('#websiteReferenceSearchButton').on('click',loadWebsiteReferences);
+$('#websiteReferenceSearch').on('keydown',function(event){
+    if(event.key==='Enter'){event.preventDefault();loadWebsiteReferences();}
+});
+
+$(document).on('click','.website-reference-delete',function(){
+    const $button=$(this);
+    const $library=$('#website-comparison');
+    const id=parseInt($button.data('reference-id')||'0',10);
+    if(!id)return;
+
+    if(!$button.hasClass('delete-armed')){
+        $('.website-reference-delete').removeClass('delete-armed').text('Delete');
+        $button.addClass('delete-armed').text('Confirm');
+        setWebsiteReferenceMessage('Click Confirm to permanently remove this website reference.','error');
+        return;
+    }
+
+    $button.prop('disabled',true).text('Deleting…');
+    $.ajax({
+        url:$library.data('delete-url'),
+        method:'POST',
+        dataType:'json',
+        data:{_csrf:$library.data('csrf'),id:id},
+        headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'}
+    }).done(function(data){
+        if(!data||!data.ok){setWebsiteReferenceMessage((data&&data.message)||'Delete failed.','error');return;}
+        $('tr[data-website-reference-id="'+id+'"]').remove();
+        if(!$('#websiteReferenceRows tr').length){
+            $('#websiteReferenceRows').html('<tr class="website-reference-empty"><td colspan="6">No matching website references.</td></tr>');
+        }
+        setWebsiteReferenceMessage('Website reference deleted.','ok');
+    }).fail(function(xhr){
+        setWebsiteReferenceMessage((xhr.responseJSON&&xhr.responseJSON.message)||'Delete failed.','error');
+        $button.prop('disabled',false).removeClass('delete-armed').text('Delete');
+    });
+});
+
 });

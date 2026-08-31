@@ -211,27 +211,66 @@ private function salesPresetRange(
             $this->redirect('/sales/submit');
         }
         $pdo=Database::connection();
-        $pdo->beginTransaction();
-
+        $lockName='cdsp-save-'.substr(hash('sha256',($config['db']['name']??'').':'.$inspection['platform']),0,48);
+        $locked=false;$error=null;$duplicateUrl=null;$duplicateTitle=null;$duplicateKind=null;
         try{
+            $lock=$pdo->prepare('SELECT GET_LOCK(?,10)');$lock->execute([$lockName]);
+            $locked=(int)$lock->fetchColumn()===1;
+            if(!$locked){throw new \DomainException('Another post is being saved. Please try again.');}
+            $pdo->beginTransaction();
+            $inspection=Inspection::verified($token,(int)$u['id'],true);
+            if(!$inspection){throw new \DomainException('Verification expired or was already saved. Check the post again.');}
             $postId=Post::create($inspection);
             Inspection::consume((int)$inspection['id']);
             $pdo->commit();
         }catch(\Throwable $e){
             if($pdo->inTransaction())$pdo->rollBack();
-            if($isAjax){$this->json(['ok'=>false,'message'=>$e->getMessage()],422);}
-            throw $e;
+            if($e instanceof \DomainException){
+                $error=$e->getMessage();
+                if(isset($inspection) && is_array($inspection)){
+                    $dup=Post::duplicate(
+                        (int)$inspection['sales_user_id'],
+                        (string)$inspection['platform'],
+                        $inspection['canonical_url']??null,
+                        $inspection['external_post_id']??null,
+                        $inspection['title']??null,
+                        $inspection['description']??null
+                    );
+                    if($dup){
+                        $duplicateUrl=$dup['canonical_url']??null;
+                        $duplicateTitle=$dup['title']??null;
+                        $duplicateKind=$dup['kind']??null;
+                    }
+                }
+            }
+            elseif($e instanceof \PDOException&&(int)($e->errorInfo[1]??0)===1062){$error='This post ID or URL has already been saved.';}
+            else{error_log('[CDSP save] '.$e->getMessage());$error='Post could not be saved. Please check it again and retry.';}
+        }finally{
+            if($locked){$release=$pdo->prepare('SELECT RELEASE_LOCK(?)');$release->execute([$lockName]);}
         }
+        if($error!==null){
+            if($isAjax){$this->json([
+                'ok'=>false,
+                'message'=>$error,
+                'duplicate_url'=>$duplicateUrl,
+                'duplicate_title'=>$duplicateTitle,
+                'duplicate_kind'=>$duplicateKind,
+            ],422);}
+            $_SESSION['flash_error']=$error;$this->redirect('/sales/submit');
+        }
+        $dashboardPath='/sales?period=single&to='.rawurlencode($inspection['published_date']);
+        $savedMessage='Post saved to '.$inspection['published_date'].'.';
         if($isAjax){
             $this->json([
                 'ok'=>true,
                 'post_id'=>(int)$postId,
-                'message'=>'Post saved.',
-                'dashboard_url'=>rtrim($config['app']['base_path'],'/').'/sales',
+                'message'=>$savedMessage,
+                'published_date'=>$inspection['published_date'],
+                'dashboard_url'=>rtrim($config['app']['base_path'],'/').$dashboardPath,
             ]);
         }
-        $_SESSION['flash_success']='Post saved.';
-        $this->redirect('/sales');
+        $_SESSION['flash_success']=$savedMessage;
+        $this->redirect($dashboardPath);
     }
 
     public function requestDelete(): void
@@ -242,11 +281,17 @@ private function salesPresetRange(
         $postId = (int)($_POST['post_id'] ?? 0);
         $reason = trim((string)($_POST['reason'] ?? ''));
 
-        Post::requestDeletion((int)$u['id'], $postId, $reason);
-
         $isAjax=strtolower(
             (string)($_SERVER['HTTP_X_REQUESTED_WITH']??'')
         )==='xmlhttprequest';
+
+        try{
+            Post::requestDeletion((int)$u['id'], $postId, $reason);
+        }catch(\DomainException $e){
+            if($isAjax){$this->json(['ok'=>false,'message'=>$e->getMessage()],422);}
+            $_SESSION['flash_error']=$e->getMessage();
+            $this->redirect('/sales');
+        }
 
         if($isAjax){
             $this->json([

@@ -172,11 +172,7 @@ class AdminController extends Controller{
 
         $items=[];
 
-        $sequence=0;
-
         foreach ($posts as $post) {
-            $sequence++;
-
             $status=in_array(
                 ($post['current_review_status']??null),
                 ['good','bad'],
@@ -186,7 +182,6 @@ class AdminController extends Controller{
                 : null;
 
             $items[]=[
-                'sequence'=>$sequence,
                 'id'=>(int)$post['id'],
                 'platform'=>ucfirst((string)$post['platform']),
                 'title'=>(string)$post['title'],
@@ -1650,12 +1645,58 @@ public function savePeriodReview():void{
 }
 
     public function handleDeleteRequest():void{
-        $admin=Auth::requireRole('admin');Csrf::verify($_POST['_csrf']??null);$id=(int)$_POST['request_id'];$action=(string)$_POST['action'];$pdo=Database::connection();$pdo->beginTransaction();
-        try{$s=$pdo->prepare("SELECT * FROM cdsp_deletion_requests WHERE id=? AND status='pending' FOR UPDATE");$s->execute([$id]);$r=$s->fetch();if(!$r)throw new \RuntimeException('Request not found');
-            $status=$action==='approve'?'approved':'rejected';if($status==='approved'){$s=$pdo->prepare("UPDATE cdsp_sales_posts SET deleted_at=NOW(),deleted_by=?,updated_at=NOW() WHERE id=?");$s->execute([(int)$admin['id'],$r['post_id']]);}
-            $s=$pdo->prepare("UPDATE cdsp_deletion_requests SET status=?,reviewed_by=?,reviewed_at=NOW(),updated_at=NOW() WHERE id=?");$s->execute([$status,(int)$admin['id'],$id]);$pdo->commit();}
-        catch(\Throwable $e){if($pdo->inTransaction())$pdo->rollBack();$_SESSION['flash_error']=$e->getMessage();$this->redirect('/admin');}
-        $_SESSION['flash_success']='Deletion request '.$status.'.';$this->redirect('/admin');
+        $admin=Auth::requireRole('admin');
+        Csrf::verify($_POST['_csrf']??null);
+        $id=(int)($_POST['request_id']??0);
+        $action=(string)($_POST['action']??'');
+        $pdo=Database::connection();
+        $pdo->beginTransaction();
+        try{
+            $s=$pdo->prepare("SELECT * FROM cdsp_deletion_requests WHERE id=? AND status='pending' FOR UPDATE");
+            $s->execute([$id]);
+            $r=$s->fetch();
+            if(!$r)throw new \RuntimeException('Request not found');
+
+            if($action==='approve'){
+                // Approval is a permanent delete. Remove the post and its
+                // post-level dependent records so deleted content cannot
+                // participate in later duplicate checks or searches.
+                Post::hardDelete((int)$r['post_id']);
+                $status='approved';
+            }else{
+                $status='rejected';
+                $s=$pdo->prepare("UPDATE cdsp_deletion_requests SET status='rejected',reviewed_by=?,reviewed_at=NOW(),updated_at=NOW() WHERE id=?");
+                $s->execute([(int)$admin['id'],$id]);
+            }
+            $pdo->commit();
+        }catch(\Throwable $e){
+            if($pdo->inTransaction())$pdo->rollBack();
+            $_SESSION['flash_error']=$e->getMessage();
+            $this->redirect('/admin');
+        }
+        $_SESSION['flash_success']=$status==='approved'
+            ?'Post permanently deleted.'
+            :'Deletion request rejected.';
+        $this->redirect('/admin');
+    }
+
+    public function deletePost():void{
+        Auth::requireRole('admin');
+        $this->verifyAjaxCsrf();
+        $postId=(int)($_POST['post_id']??0);
+        try{
+            Post::hardDelete($postId);
+            $this->json([
+                'ok'=>true,
+                'post_id'=>$postId,
+                'message'=>'Post permanently deleted.',
+            ]);
+        }catch(\DomainException $e){
+            $this->json(['ok'=>false,'message'=>$e->getMessage()],404);
+        }catch(\Throwable $e){
+            error_log('[CDSP hard delete] '.$e->getMessage());
+            $this->json(['ok'=>false,'message'=>'Post could not be deleted.'],500);
+        }
     }
     private function isAjaxRequest():bool{
         return strtolower((string)($_SERVER['HTTP_X_REQUESTED_WITH']??''))==='xmlhttprequest'

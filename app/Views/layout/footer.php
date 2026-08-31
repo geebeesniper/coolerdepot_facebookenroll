@@ -1,6 +1,6 @@
 </main>
 <footer class="app-footer">
-    <span>CoolerDepot Sales Post Tracker</span>
+    <span><?= \App\Core\Util::e($companyName ?? 'CoolerDepot') ?> Sales Post Tracker</span>
     <span class="footer-version">v<?= \App\Core\Util::e($config['app']['version']) ?></span>
 </footer>
 <script>

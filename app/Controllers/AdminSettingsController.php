@@ -6,10 +6,12 @@ use App\Core\Controller;
 use App\Core\Csrf;
 use App\Models\FetchJob;
 use App\Models\ProviderProfile;
+use App\Models\Setting;
 use App\Services\MarketplaceProviderDraft;
 use App\Services\MarketplaceProviderFactory;
 use App\Services\PlatformUrl;
 use App\Services\ProviderValidationException;
+use App\Services\WebsiteCatalog;
 
 class AdminSettingsController extends Controller
 {
@@ -22,6 +24,20 @@ class AdminSettingsController extends Controller
         $providers = ProviderProfile::allAdmin();
         $jobs = FetchJob::recent(20);
         $registryReady = ProviderProfile::registryEnabled();
+        $websiteStats = \App\Services\DuplicateIndex::websiteStats();
+        $companyName = trim((string)Setting::get('company_name', 'CoolerDepot')) ?: 'CoolerDepot';
+        $websiteUrl = trim((string)Setting::get('company_website_url', ''));
+        $websiteQuery = trim((string)($_GET['website_q'] ?? ''));
+        $websiteReferences = [];
+        $websiteStats['library_ready'] = false;
+        if (!empty($websiteStats['ready'])) {
+            try {
+                $websiteReferences = WebsiteCatalog::search($websiteQuery, 100);
+                $websiteStats['library_ready'] = true;
+            } catch (\Throwable $e) {
+                $websiteReferences = [];
+            }
+        }
         $providerNames = [];
 
         foreach ($providers as $provider) {
@@ -34,7 +50,12 @@ class AdminSettingsController extends Controller
             'providers',
             'jobs',
             'registryReady',
-            'providerNames'
+            'providerNames',
+            'websiteStats',
+            'companyName',
+            'websiteUrl',
+            'websiteQuery',
+            'websiteReferences'
         ));
     }
 
@@ -87,6 +108,33 @@ class AdminSettingsController extends Controller
             'jobs' => $out,
             'server_time' => date('Y-m-d H:i:s'),
         ]);
+    }
+
+    public function importWebsiteCatalog(): void
+    {
+        Auth::requireRole('admin');
+        Csrf::verify($_POST['_csrf'] ?? null);
+        try {
+            $websiteUrl=trim((string)Setting::get('company_website_url',''));
+            if($websiteUrl===''){
+                throw new \DomainException('Save the company website URL in Settings first.');
+            }
+            $file=$_FILES['catalog']??[];
+            if(($file['error']??UPLOAD_ERR_NO_FILE)!==UPLOAD_ERR_OK||!is_uploaded_file($file['tmp_name']??'')){
+                throw new \DomainException('Choose a CSV file smaller than 5 MB.');
+            }
+            $result=WebsiteCatalog::importCsv($file['tmp_name'],$websiteUrl);
+            $_SESSION['flash_success']=(int)$result['saved'].' website references imported from '.(int)$result['processed'].' CSV rows.';
+            if(!empty($result['failed'])){
+                $_SESSION['flash_success'].=' Some rows failed; search the website library to review the imported records.';
+            }
+        } catch (\DomainException $e) {
+            $_SESSION['flash_error']=$e->getMessage();
+        } catch (\Throwable $e) {
+            error_log('[CDSP website catalog] '.$e->getMessage());
+            $_SESSION['flash_error']='Website catalog could not be imported. Check the migration and CSV, then retry.';
+        }
+        $this->redirect('/admin/settings#website-comparison');
     }
 
     public function testProvider(): void
@@ -365,6 +413,120 @@ class AdminSettingsController extends Controller
         $_SESSION['flash_error'] =
             'Use + Add Provider, test it, then add it to the provider chain.';
         $this->redirect('/admin/settings');
+    }
+
+    public function saveBrand(): void
+    {
+        $admin=Auth::requireRole('admin');
+        Csrf::verify($_POST['_csrf']??null);
+        $name=trim(strip_tags((string)($_POST['company_name']??'')));
+        if($name===''||mb_strlen($name)>80||str_contains($name,'<')||str_contains($name,'>')){
+            $_SESSION['flash_error']='Company name must be plain text, 1–80 characters.';
+            $this->redirect('/admin/settings#application-settings');
+        }
+        Setting::set('company_name',$name,(int)$admin['id']);
+        $_SESSION['flash_success']='Company name updated.';
+        $this->redirect('/admin/settings#application-settings');
+    }
+
+    public function saveWebsiteSource(): void
+    {
+        $admin=Auth::requireRole('admin');
+        Csrf::verify($_POST['_csrf']??null);
+        try{
+            $url=WebsiteCatalog::normalizeUrl((string)($_POST['website_url']??''));
+            Setting::set('company_website_url',$url,(int)$admin['id']);
+            $_SESSION['flash_success']='Company website URL saved.';
+        }catch(\Throwable $e){
+            $_SESSION['flash_error']=$e->getMessage();
+        }
+        $this->redirect('/admin/settings#website-comparison');
+    }
+
+    public function scanWebsite(): void
+    {
+        Auth::requireRole('admin');
+        Csrf::verify($_POST['_csrf']??null);
+        try{
+            $website=trim((string)Setting::get('company_website_url',''));
+            if($website===''){throw new \DomainException('Save the company website URL first.');}
+            $source=trim((string)($_POST['source_url']??''));
+
+            // Website scans can take several seconds. Release the session lock so
+            // other admin checks remain independent and can finish first.
+            if(session_status()===PHP_SESSION_ACTIVE){session_write_close();}
+
+            $result=WebsiteCatalog::scan($website,$source);
+            $message=(int)$result['saved'].' URLs checked and saved';
+            if((int)$result['failed']>0){$message.=', '.(int)$result['failed'].' had problems';}
+            if(!empty($result['limited'])){$message.=' (first 75 URLs this run)';}
+            // Reopen session only to store a flash message for the redirect.
+            if(session_status()!==PHP_SESSION_ACTIVE){@session_start();}
+            $_SESSION['flash_success']=$message.'.';
+        }catch(\Throwable $e){
+            if(session_status()!==PHP_SESSION_ACTIVE){@session_start();}
+            $_SESSION['flash_error']=$e->getMessage();
+        }
+        $this->redirect('/admin/settings#website-comparison');
+    }
+
+    public function addWebsiteReference(): void
+    {
+        Auth::requireRole('admin');
+        Csrf::verify($_POST['_csrf']??null);
+        try{
+            $website=trim((string)Setting::get('company_website_url',''));
+            if($website===''){throw new \DomainException('Save the company website URL first.');}
+            WebsiteCatalog::addManual(
+                $website,
+                (string)($_POST['page_url']??''),
+                (string)($_POST['title']??''),
+                (string)($_POST['description']??''),
+                (string)($_POST['image_url']??'')
+            );
+            $_SESSION['flash_success']='Website reference saved.';
+        }catch(\Throwable $e){
+            $_SESSION['flash_error']=$e->getMessage();
+        }
+        $this->redirect('/admin/settings#website-comparison');
+    }
+
+    public function websiteReferences(): void
+    {
+        Auth::requireRole('admin');
+        if(session_status()===PHP_SESSION_ACTIVE){session_write_close();}
+        try{
+            $rows=WebsiteCatalog::search(trim((string)($_GET['q']??'')),100);
+            $this->json(['ok'=>true,'rows'=>$rows]);
+        }catch(\Throwable $e){
+            $this->json(['ok'=>false,'message'=>$e->getMessage()],422);
+        }
+    }
+
+    public function deleteWebsiteReference(): void
+    {
+        Auth::requireRole('admin');
+        Csrf::verify($_POST['_csrf']??null);
+        try{
+            $id=(int)($_POST['id']??0);
+            if(!WebsiteCatalog::deleteReference($id)){
+                throw new \DomainException('Website reference was not found.');
+            }
+            $this->json(['ok'=>true,'id'=>$id,'message'=>'Website reference deleted.']);
+        }catch(\Throwable $e){
+            $this->json(['ok'=>false,'message'=>$e->getMessage()],422);
+        }
+    }
+
+    public function websiteCatalogSample(): void
+    {
+        Auth::requireRole('admin');
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="website-reference-sample.csv"');
+        header('Cache-Control: no-store');
+        echo "page_url,title,description,image_url\n";
+        echo "https://example.com/product/example-product,Example Product,Example product description,https://example.com/images/example-product.jpg\n";
+        exit;
     }
 
     private function pruneTickets(): void

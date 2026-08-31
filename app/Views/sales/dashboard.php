@@ -245,13 +245,14 @@ $chartTargetTop=
             ></span>
         </form>
 
-        <a
+        <button
             class="btn primary sales-submit-cta"
-            href="<?= Util::e($config['app']['base_path']) ?>/sales/submit"
+            type="button"
+            data-open-sales-submit
         >
             <span class="sales-submit-plus">+</span>
             <span data-sales-i18n="submitPost">Submit Post</span>
-        </a>
+        </button>
     </div>
 </div>
 
@@ -551,6 +552,21 @@ $chartTargetTop=
     </div>
 </div>
 
+<div class="sales-submit-modal-backdrop hidden" id="salesSubmitModal" aria-hidden="true">
+    <section class="sales-submit-modal" role="dialog" aria-modal="true" aria-labelledby="salesSubmitModalTitle">
+        <div class="sales-submit-modal-head">
+            <div>
+                <div class="eyebrow">New Post</div>
+                <h2 id="salesSubmitModalTitle" data-sales-i18n="submitTitle">Submit Marketplace Post</h2>
+            </div>
+            <button type="button" class="icon-close" id="salesSubmitModalClose" aria-label="Close submit post" title="Close">×</button>
+        </div>
+        <div class="sales-submit-modal-scroll">
+            <?php require __DIR__ . '/_submit_form.php'; ?>
+        </div>
+    </section>
+</div>
+
 <div
     class="sales-post-detail-backdrop hidden"
     id="salesPostDetailModal"
@@ -652,6 +668,8 @@ $chartTargetTop=
                 <span data-sales-i18n="close">Close</span>
             </button>
 
+            <button type="button" class="btn danger-soft" id="salesPostDeleteRequestOpen">Request deletion</button>
+
             <a
                 class="btn primary"
                 id="salesPostDetailOriginal"
@@ -662,6 +680,19 @@ $chartTargetTop=
                 <span data-sales-i18n="openOriginal">Open original</span>
             </a>
         </div>
+
+        <form class="sales-delete-request-form hidden" id="salesPostDeleteRequestForm" action="<?= Util::e($config['app']['base_path']) ?>/sales/delete-request">
+            <input type="hidden" name="_csrf" value="<?= Util::e(\App\Core\Csrf::token()) ?>">
+            <input type="hidden" name="post_id" id="salesPostDeleteRequestId" value="">
+            <label>Reason for deletion
+                <input type="text" name="reason" id="salesPostDeleteRequestReason" maxlength="1000" required placeholder="Why should Admin delete this post?">
+            </label>
+            <div class="sales-delete-request-actions">
+                <span id="salesPostDeleteRequestMessage" aria-live="polite"></span>
+                <button type="button" class="btn" id="salesPostDeleteRequestCancel">Cancel</button>
+                <button type="submit" class="btn danger-soft" id="salesPostDeleteRequestSend">Send request</button>
+            </div>
+        </form>
     </section>
 </div>
 

@@ -160,10 +160,6 @@ $salesPlatformIcon = static function(string $platform): string
                         </div>
                     <?php endif; ?>
 
-                    <span class="sales-self-post-sequence">
-                        <?= (int)$index + 1 ?>
-                    </span>
-
                     <span class="sales-self-post-platform">
                         <?= $salesPlatformIcon((string)$p['platform']) ?>
                     </span>

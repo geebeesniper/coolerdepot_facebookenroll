@@ -4,6 +4,8 @@ use App\Core\Util;
 use App\Services\MarketplaceProviderDraft;
 ?>
 
+
+
 <div class="page-head provider-page-head">
     <div>
         <div class="eyebrow">Administrator</div>
@@ -27,6 +29,24 @@ use App\Services\MarketplaceProviderDraft;
 <?php endif; ?>
 
 <div id="providerPageNotice" class="provider-page-notice hidden" role="status"></div>
+
+<section class="panel settings-card" id="application-settings">
+    <div class="panel-head settings-section-head">
+        <div>
+            <div class="eyebrow">Application</div>
+            <h2>Display Name</h2>
+            <p class="settings-subtitle">Change the company name shown in this Sales Post Tracker. Plain text only.</p>
+        </div>
+    </div>
+    <form method="post" class="settings-inline-form" action="<?= Util::e($config['app']['base_path']) ?>/admin/settings/brand">
+        <input type="hidden" name="_csrf" value="<?= Util::e(Csrf::token()) ?>">
+        <label>
+            Company name
+            <input type="text" name="company_name" maxlength="80" required value="<?= Util::e((string)$companyName) ?>" placeholder="CoolerDepot">
+        </label>
+        <button class="btn primary" type="submit">Save Name</button>
+    </form>
+</section>
 
 <section class="panel provider-manager">
     <div class="panel-head">
@@ -487,4 +507,123 @@ use App\Services\MarketplaceProviderDraft;
             <?php endif; ?>
         </table>
     </div>
+</section>
+
+<section class="panel website-library" id="website-comparison"
+    data-search-url="<?= Util::e($config['app']['base_path']) ?>/admin/website/references"
+    data-delete-url="<?= Util::e($config['app']['base_path']) ?>/admin/website/reference/delete"
+    data-csrf="<?= Util::e(Csrf::token()) ?>">
+    <div class="panel-head settings-section-head">
+        <div>
+            <div class="eyebrow">Duplicate Sources</div>
+            <h2>Company Website Library</h2>
+            <p class="settings-subtitle">The checker uses the website URL saved here. Nothing is pre-filled with coolerdepotusa.com.</p>
+        </div>
+        <?php if (!empty($websiteStats['library_ready'])): ?>
+            <div class="website-library-stats">
+                <strong><?= (int)$websiteStats['total'] ?></strong>
+                <span>references</span>
+                <strong><?= (int)$websiteStats['pending'] ?></strong>
+                <span>images pending</span>
+            </div>
+        <?php endif; ?>
+    </div>
+
+    <?php if (empty($websiteStats['library_ready'])): ?>
+        <div class="banner bad">Run <code>php scripts/migrate_v0_1_70.php</code>, then <code>php scripts/migrate_v0_1_71.php</code>.</div>
+    <?php else: ?>
+        <div class="website-settings-grid">
+            <form method="post" class="website-source-card" action="<?= Util::e($config['app']['base_path']) ?>/admin/settings/website">
+                <input type="hidden" name="_csrf" value="<?= Util::e(Csrf::token()) ?>">
+                <div class="website-card-title">
+                    <span class="settings-step">1</span>
+                    <div><strong>Website URL</strong><small>Admin controls which company website is checked.</small></div>
+                </div>
+                <label>Company website
+                    <input type="url" name="website_url" required value="<?= Util::e((string)$websiteUrl) ?>" placeholder="https://your-company.com">
+                </label>
+                <button class="btn primary" type="submit">Save Website</button>
+            </form>
+
+            <form method="post" class="website-source-card" action="<?= Util::e($config['app']['base_path']) ?>/admin/website/scan">
+                <input type="hidden" name="_csrf" value="<?= Util::e(Csrf::token()) ?>">
+                <div class="website-card-title">
+                    <span class="settings-step">2</span>
+                    <div><strong>Website / Sitemap Scan</strong><small>Paste a page, website root, or sitemap URL on the saved host.</small></div>
+                </div>
+                <label>URL to scan
+                    <input type="url" name="source_url" value="<?= Util::e((string)$websiteUrl) ?>" placeholder="https://your-company.com/sitemap.xml">
+                </label>
+                <button class="btn" type="submit" <?= $websiteUrl===''?'disabled':'' ?>>Scan &amp; Import</button>
+            </form>
+
+            <form method="post" enctype="multipart/form-data" class="website-source-card"
+                action="<?= Util::e($config['app']['base_path']) ?>/admin/duplicate-catalog/import">
+                <input type="hidden" name="_csrf" value="<?= Util::e(Csrf::token()) ?>">
+                <div class="website-card-title">
+                    <span class="settings-step">3</span>
+                    <div><strong>URL CSV</strong><small>URL-only rows can be fetched automatically; metadata columns can also be supplied.</small></div>
+                </div>
+                <label>CSV file
+                    <input type="file" name="catalog" accept=".csv,text/csv" required>
+                </label>
+                <div class="website-card-actions">
+                    <button class="btn" type="submit" <?= $websiteUrl===''?'disabled':'' ?>>Import CSV</button>
+                    <a class="btn ghost" href="<?= Util::e($config['app']['base_path']) ?>/admin/website-catalog/sample.csv">Download Sample CSV</a>
+                </div>
+            </form>
+        </div>
+
+        <form method="post" class="website-manual-form" action="<?= Util::e($config['app']['base_path']) ?>/admin/website/reference/add">
+            <input type="hidden" name="_csrf" value="<?= Util::e(Csrf::token()) ?>">
+            <div class="website-card-title">
+                <span class="settings-step">+</span>
+                <div><strong>Manual Reference</strong><small>Add the title, description and image URL yourself when you do not want to crawl a page.</small></div>
+            </div>
+            <div class="website-manual-grid">
+                <label>Page URL<input type="url" name="page_url" required placeholder="https://your-company.com/product/example"></label>
+                <label>Title<input type="text" name="title" maxlength="500" required placeholder="Product title"></label>
+                <label class="website-manual-wide">Description<textarea name="description" rows="3" placeholder="Product description"></textarea></label>
+                <label class="website-manual-wide">Image URL<input type="url" name="image_url" placeholder="https://cdn.example.com/image.jpg"></label>
+            </div>
+            <button class="btn" type="submit" <?= $websiteUrl===''?'disabled':'' ?>>Add Reference</button>
+        </form>
+
+        <div class="website-library-browser">
+            <div class="website-library-toolbar">
+                <div>
+                    <strong>Search Website References</strong>
+                    <small>Search by URL, title or description. Delete removes the record from the comparison database immediately.</small>
+                </div>
+                <div class="website-library-search-row">
+                    <input type="search" id="websiteReferenceSearch" value="<?= Util::e((string)$websiteQuery) ?>" placeholder="Search URL, title or description">
+                    <button type="button" class="btn" id="websiteReferenceSearchButton">Search</button>
+                </div>
+            </div>
+            <div id="websiteReferenceMessage" class="provider-page-notice hidden" role="status"></div>
+            <div class="tablewrap website-reference-tablewrap">
+                <table class="website-reference-table">
+                    <thead><tr><th>Title</th><th>Description</th><th>Page</th><th>Image</th><th>Indexed</th><th></th></tr></thead>
+                    <tbody id="websiteReferenceRows">
+                        <?php foreach ($websiteReferences as $reference): ?>
+                            <tr data-website-reference-id="<?= (int)$reference['id'] ?>">
+                                <td><strong><?= Util::e((string)$reference['title']) ?></strong></td>
+                                <td class="website-reference-description"><?= Util::e((string)($reference['description']??'')) ?></td>
+                                <td><a href="<?= Util::e((string)$reference['page_url']) ?>" target="_blank" rel="noopener noreferrer">Open page ↗</a></td>
+                                <td><?php if (!empty($reference['image_url'])): ?><a href="<?= Util::e((string)$reference['image_url']) ?>" target="_blank" rel="noopener noreferrer">Image ↗</a><?php else: ?>—<?php endif; ?></td>
+                                <td><?= !empty($reference['sha256'])?'Yes':'Pending' ?></td>
+                                <td><button type="button" class="tiny badbtn website-reference-delete" data-reference-id="<?= (int)$reference['id'] ?>">Delete</button></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        <?php if (!$websiteReferences): ?><tr class="website-reference-empty"><td colspan="6">No matching website references.</td></tr><?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="website-index-note">
+            <strong>Image comparison</strong>
+            <span>After new image URLs are imported, run <code>php scripts/index_duplicate_images.php --website --limit=200</code> until pending images reach 0.</span>
+        </div>
+    <?php endif; ?>
 </section>

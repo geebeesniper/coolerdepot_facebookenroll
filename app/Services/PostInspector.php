@@ -99,7 +99,8 @@ class PostInspector
                     $dup['reason'],
                     $submitted,
                     $submitted,
-                    $eid
+                    $eid,
+                    ['duplicate_match'=>$dup]
                 );
             }
         }
@@ -152,6 +153,7 @@ class PostInspector
                 ?? $item['provider_name']
                 ?? null,
             'provider_record' => $item['raw'] ?? [],
+            'images' => ImageFingerprint::urls($item),
         ];
 
         if ($publishedRaw === '') {
@@ -238,13 +240,13 @@ class PostInspector
         $today = (new DateTime('now', $tz))->format('Y-m-d');
         $pd = $dt->format('Y-m-d');
 
-        if ($pd !== $today) {
+        if ($pd > $today) {
             return $this->fail(
                 $uid,
                 $platform,
                 $submitted,
-                'DATE_MISMATCH',
-                "Post date is {$pd}; only today's posts ({$today}) are allowed.",
+                'FUTURE_DATE',
+                "Post date is {$pd}; future-dated posts cannot be saved.",
                 $resolved,
                 $canonical,
                 $eid,
@@ -272,8 +274,27 @@ class PostInspector
                     'description' => $desc,
                     'published_at' => $dt->format('Y-m-d H:i:s'),
                     'published_date' => $pd,
+                    'duplicate_match' => $dup,
                 ]
             );
+        }
+
+        try {
+            $report = DuplicateIndex::inspect($platform, $title, $meta);
+        } catch (\Throwable $e) {
+            error_log('[CDSP duplicate comparison] '.$e->getMessage());
+            return $this->fail($uid, $platform, $submitted, 'COMPARISON_UNAVAILABLE',
+                'Duplicate comparison is unavailable. Ask an administrator to run the v0.1.70 migration, then try again.',
+                $resolved, $canonical, $eid, $meta);
+        }
+        $report['version'] = 1;
+        $meta['duplicate_report'] = $report;
+        if ($report['blocked']) {
+            return $this->fail($uid, $platform, $submitted, 'DUPLICATE_IMAGE', $report['blocked'],
+                $resolved, $canonical, $eid, array_merge($meta, [
+                    'title'=>$title, 'description'=>$desc,
+                    'published_at'=>$dt->format('Y-m-d H:i:s'), 'published_date'=>$pd,
+                ]));
         }
 
         return [
@@ -302,6 +323,7 @@ class PostInspector
             'description' => null,
             'published_at' => null,
             'canonical_url' => null,
+            'images' => [],
         ];
 
         libxml_use_internal_errors(true);
@@ -350,12 +372,16 @@ class PostInspector
                 }
             }
 
+            foreach ($x->query("//meta[@property='og:image' or @property='og:image:secure_url' or @name='twitter:image']/@content | //link[@rel='image_src']/@href") ?: [] as $image) {
+                $r['images'][] = html_entity_decode(trim($image->nodeValue), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            }
             foreach ($x->query("//script[@type='application/ld+json']") ?: [] as $node) {
                 $j = json_decode(trim($node->nodeValue), true);
 
                 if (!is_array($j)) {
                     continue;
                 }
+                $r['images'] = array_merge($r['images'], ImageFingerprint::urls($j));
 
                 $items = isset($j[0]) ? $j : [$j];
 
@@ -503,6 +529,8 @@ class PostInspector
         try {
             $z = new DateTimeZone($tz);
             $d = new DateTime($raw, $z);
+            $errors = DateTime::getLastErrors();
+            if ($errors && ($errors['warning_count'] || $errors['error_count'])) {return null;}
 
             if ($raw[0] === '@') {
                 $d->setTimezone($z);

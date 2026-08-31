@@ -40,7 +40,7 @@ $salesPlatformIcon=static function(string $platform): string {
 <section class="sales-range-post-section" id="salesRangePostSection" data-active-post-filter="all">
     <div class="sales-range-post-head">
         <div>
-            <h2><span data-sales-i18n="posts">Posts</span><span class="sales-range-post-count"><?= $postCount ?></span></h2>
+            <h2><span data-sales-i18n="posts">Posts</span></h2>
             <p class="sales-range-post-dates"><?= Util::e($formatRangeDate($from)) ?> — <?= Util::e($formatRangeDate($to)) ?></p>
         </div>
         <div class="daily-post-summary sales-day-filter sales-range-post-filter" role="group" aria-label="Filter posts by review status">
@@ -76,6 +76,7 @@ $salesPlatformIcon=static function(string $platform): string {
                 data-sales-post-image="<?= Util::e((string)($p['fetched_image_url']??'')) ?>"
                 data-sales-post-status="<?= Util::e($status ?: 'unreviewed') ?>"
                 data-sales-post-external-id="<?= Util::e((string)($p['external_post_id']??'')) ?>"
+                data-sales-post-delete-status="<?= Util::e((string)($p['deletion_request_status']??'')) ?>"
                 role="button" tabindex="0" aria-label="View post details: <?= Util::e((string)$p['title']) ?>">
                 <div class="sales-self-post-media">
                     <?php if (!empty($p['fetched_image_url'])): ?>
@@ -83,7 +84,6 @@ $salesPlatformIcon=static function(string $platform): string {
                     <?php else: ?>
                         <div class="sales-self-post-placeholder"><?= $salesPlatformIcon((string)$p['platform']) ?><span><?= Util::e(ucfirst((string)$p['platform'])) ?></span></div>
                     <?php endif; ?>
-                    <span class="sales-self-post-sequence"><?= (int)$index+1 ?></span>
                     <span class="sales-self-post-platform"><?= $salesPlatformIcon((string)$p['platform']) ?></span>
                 </div>
                 <div class="sales-self-post-body">
