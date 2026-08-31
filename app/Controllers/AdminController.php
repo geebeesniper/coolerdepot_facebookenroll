@@ -1740,11 +1740,10 @@ public function saveDailyReview():void{
             exit('Could not create report download.');
         }
 
-        // Excel-friendly UTF-8 BOM.
         fwrite($out,"\xEF\xBB\xBF");
         fputcsv($out,[
-            'Sales','Total','Facebook','OfferUp','Craigslist',
-            'Good','Bad','Good %','Reviewed Days','Avg Rating','From','To'
+            'Date','Sales','Total','Facebook','OfferUp','Craigslist',
+            'Good','Bad','Good %','Daily Rating'
         ]);
 
         foreach($rows as $row){
@@ -1752,8 +1751,9 @@ public function saveDailyReview():void{
             $pct=$reviewed
                 ?round(((int)$row['good_posts']/$reviewed)*100,1)
                 :0;
-            $avgRating=(float)($row['avg_daily_rating']??0);
+            $rating=(int)($row['daily_rating']??0);
             fputcsv($out,[
+                (string)$row['work_date'],
                 (string)$row['display_name'],
                 (int)$row['total_posts'],
                 (int)$row['facebook_posts'],
@@ -1762,10 +1762,7 @@ public function saveDailyReview():void{
                 (int)$row['good_posts'],
                 (int)$row['bad_posts'],
                 $pct.'%',
-                (int)($row['daily_review_days']??0),
-                $avgRating>0 ? number_format($avgRating,1).'/5' : '',
-                $context['from'],
-                $context['to'],
+                $rating>0 ? $rating.'/5' : '',
             ]);
         }
 
@@ -1809,99 +1806,110 @@ public function saveDailyReview():void{
         string $to,
         int $salesUserId
     ):array{
-        $params=[
-            $from,
-            $to,
-            $from,
-            $to,
-        ];
+        $pdo=Database::connection();
 
-        $filter='';
+        $salesSql="SELECT id,display_name FROM cdsp_users WHERE role='sales' AND active=1";
+        $salesParams=[];
         if($salesUserId>0){
-            $filter=' AND u.id=?';
-            $params[]=$salesUserId;
+            $salesSql.=' AND id=?';
+            $salesParams[]=$salesUserId;
+        }
+        $salesSql.=' ORDER BY display_name';
+        $salesStmt=$pdo->prepare($salesSql);
+        $salesStmt->execute($salesParams);
+        $salesRows=$salesStmt->fetchAll();
+
+        if(!$salesRows){
+            return [];
         }
 
-        /*
-         * Keep Reports aligned with the Admin/Sales activity dashboards:
-         * - post counts use the listing published date;
-         * - Good/Bad resolves the same current decision sources used by the
-         *   dashboard, including older review/history rows;
-         * - Daily Review statistics count one current review per work date,
-         *   not every edit in review history.
-         */
-        $sql="SELECT
-                u.id sales_user_id,
-                u.display_name,
-                COALESCE(ps.total_posts,0) total_posts,
-                COALESCE(ps.facebook_posts,0) facebook_posts,
-                COALESCE(ps.offerup_posts,0) offerup_posts,
-                COALESCE(ps.craigslist_posts,0) craigslist_posts,
-                COALESCE(ps.good_posts,0) good_posts,
-                COALESCE(ps.bad_posts,0) bad_posts,
-                COALESCE(ds.daily_review_days,0) daily_review_days,
-                COALESCE(ds.avg_daily_rating,0) avg_daily_rating,
-                ds.last_daily_review_date
-              FROM cdsp_users u
-              LEFT JOIN (
-                SELECT
+        $postParams=[$from,$to];
+        $postFilter='';
+        if($salesUserId>0){
+            $postFilter=' AND p.sales_user_id=?';
+            $postParams[]=$salesUserId;
+        }
+
+        $postSql="SELECT
                     p.sales_user_id,
+                    p.published_date AS work_date,
                     COUNT(p.id) total_posts,
                     COALESCE(SUM(p.platform='facebook'),0) facebook_posts,
                     COALESCE(SUM(p.platform='offerup'),0) offerup_posts,
                     COALESCE(SUM(p.platform='craigslist'),0) craigslist_posts,
                     COALESCE(SUM(
-                        COALESCE(
-                            rh.decision,
-                            p.admin_review_status,
-                            pr.decision
-                        )='good'
+                        COALESCE(rh.decision,p.admin_review_status,pr.decision)='good'
                     ),0) good_posts,
                     COALESCE(SUM(
-                        COALESCE(
-                            rh.decision,
-                            p.admin_review_status,
-                            pr.decision
-                        )='bad'
+                        COALESCE(rh.decision,p.admin_review_status,pr.decision)='bad'
                     ),0) bad_posts
-                FROM cdsp_sales_posts p
-                LEFT JOIN cdsp_post_reviews pr
-                  ON pr.post_id=p.id
-                LEFT JOIN (
+                  FROM cdsp_sales_posts p
+                  LEFT JOIN cdsp_post_reviews pr ON pr.post_id=p.id
+                  LEFT JOIN (
                     SELECT h.post_id,h.decision
                     FROM cdsp_post_review_history h
                     INNER JOIN (
                         SELECT post_id,MAX(id) max_id
                         FROM cdsp_post_review_history
                         GROUP BY post_id
-                    ) latest
-                      ON latest.max_id=h.id
-                ) rh
-                  ON rh.post_id=p.id
-                WHERE p.deleted_at IS NULL
-                  AND p.published_date BETWEEN ? AND ?
-                GROUP BY p.sales_user_id
-              ) ps
-                ON ps.sales_user_id=u.id
-              LEFT JOIN (
-                SELECT
-                    sales_user_id,
-                    COUNT(*) daily_review_days,
-                    ROUND(AVG(rating),1) avg_daily_rating,
-                    MAX(work_date) last_daily_review_date
-                FROM cdsp_daily_sales_reviews
-                WHERE work_date BETWEEN ? AND ?
-                  AND rating BETWEEN 1 AND 5
-                GROUP BY sales_user_id
-              ) ds
-                ON ds.sales_user_id=u.id
-              WHERE u.role='sales'
-                AND u.active=1{$filter}
-              ORDER BY total_posts DESC,u.display_name";
+                    ) latest ON latest.max_id=h.id
+                  ) rh ON rh.post_id=p.id
+                  WHERE p.deleted_at IS NULL
+                    AND p.published_date BETWEEN ? AND ?{$postFilter}
+                  GROUP BY p.sales_user_id,p.published_date";
+        $postStmt=$pdo->prepare($postSql);
+        $postStmt->execute($postParams);
+        $postMap=[];
+        foreach($postStmt->fetchAll() as $row){
+            $postMap[(int)$row['sales_user_id'].'|'.(string)$row['work_date']]=$row;
+        }
 
-        $stmt=Database::connection()->prepare($sql);
-        $stmt->execute($params);
-        return $stmt->fetchAll();
+        $reviewParams=[$from,$to];
+        $reviewFilter='';
+        if($salesUserId>0){
+            $reviewFilter=' AND sales_user_id=?';
+            $reviewParams[]=$salesUserId;
+        }
+        $reviewStmt=$pdo->prepare(
+            "SELECT sales_user_id,work_date,rating,note,reviewed_at
+             FROM cdsp_daily_sales_reviews
+             WHERE work_date BETWEEN ? AND ?{$reviewFilter}"
+        );
+        $reviewStmt->execute($reviewParams);
+        $reviewMap=[];
+        foreach($reviewStmt->fetchAll() as $row){
+            $reviewMap[(int)$row['sales_user_id'].'|'.(string)$row['work_date']]=$row;
+        }
+
+        $rows=[];
+        $cursor=new \DateTimeImmutable($to);
+        $first=new \DateTimeImmutable($from);
+        while($cursor >= $first){
+            $date=$cursor->format('Y-m-d');
+            foreach($salesRows as $sales){
+                $sid=(int)$sales['id'];
+                $key=$sid.'|'.$date;
+                $stats=$postMap[$key]??[];
+                $review=$reviewMap[$key]??[];
+                $rows[]=[
+                    'work_date'=>$date,
+                    'sales_user_id'=>$sid,
+                    'display_name'=>(string)$sales['display_name'],
+                    'total_posts'=>(int)($stats['total_posts']??0),
+                    'facebook_posts'=>(int)($stats['facebook_posts']??0),
+                    'offerup_posts'=>(int)($stats['offerup_posts']??0),
+                    'craigslist_posts'=>(int)($stats['craigslist_posts']??0),
+                    'good_posts'=>(int)($stats['good_posts']??0),
+                    'bad_posts'=>(int)($stats['bad_posts']??0),
+                    'daily_rating'=>(int)($review['rating']??0),
+                    'daily_review_note'=>(string)($review['note']??''),
+                    'daily_reviewed_at'=>(string)($review['reviewed_at']??''),
+                ];
+            }
+            $cursor=$cursor->modify('-1 day');
+        }
+
+        return $rows;
     }
 
 public function savePeriodReview():void{

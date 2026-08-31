@@ -104,10 +104,6 @@ $downloadQuery=http_build_query([
                 </select>
             </label>
 
-            <div class="report-control report-run-control">
-                <span class="report-control-label" aria-hidden="true">&nbsp;</span>
-                <button class="btn report-run-button" id="reportRunButton" type="submit">Run</button>
-            </div>
         </form>
 
         <a
@@ -121,7 +117,7 @@ $downloadQuery=http_build_query([
         <div>
             <h2 id="reportSelectedSalesTitle"><?= Util::e($selectedSalesLabel) ?></h2>
             <p class="report-review-explainer">
-                Good/Bad is post-level review. Reviewed Days and Avg Rating summarize the Admin Daily Review for this range.
+                One row per Sales person per day. Daily Rating is the Admin Daily Review for that Sales + date.
             </p>
         </div>
     </div>
@@ -129,6 +125,7 @@ $downloadQuery=http_build_query([
     <div class="tablewrap report-table-wrap" id="reportTableArea">
         <table>
             <tr>
+                <th>Date</th>
                 <th>Sales</th>
                 <th>Total</th>
                 <th>Facebook</th>
@@ -137,8 +134,7 @@ $downloadQuery=http_build_query([
                 <th>Good</th>
                 <th>Bad</th>
                 <th>Good %</th>
-                <th>Reviewed Days</th>
-                <th>Avg Rating</th>
+                <th>Daily Rating</th>
             </tr>
 
             <?php foreach($rows as $r):
@@ -146,8 +142,10 @@ $downloadQuery=http_build_query([
                 $pct=$reviewed
                     ?round((int)$r['good_posts']/$reviewed*100,1)
                     :0;
+                $dailyRating=(int)($r['daily_rating']??0);
             ?>
                 <tr>
+                    <td><?= Util::e($r['work_date']) ?></td>
                     <td><?= Util::e($r['display_name']) ?></td>
                     <td><?= (int)$r['total_posts'] ?></td>
                     <td><?= (int)$r['facebook_posts'] ?></td>
@@ -156,13 +154,7 @@ $downloadQuery=http_build_query([
                     <td><?= (int)$r['good_posts'] ?></td>
                     <td><?= (int)$r['bad_posts'] ?></td>
                     <td><?= $pct ?>%</td>
-                    <td><?= (int)($r['daily_review_days']??0) ?></td>
-                    <td><?php
-                        $avgRating=(float)($r['avg_daily_rating']??0);
-                        echo $avgRating>0
-                            ? Util::e(number_format($avgRating,1).'/5')
-                            : '—';
-                    ?></td>
+                    <td title="<?= Util::e((string)($r['daily_review_note']??'')) ?>"><?= $dailyRating>0 ? Util::e($dailyRating.'/5') : '—' ?></td>
                 </tr>
             <?php endforeach; ?>
         </table>

@@ -71,6 +71,28 @@ class Post {
         $s=Database::connection()->prepare("SELECT p.*,u.display_name,u.sales_id FROM cdsp_sales_posts p JOIN cdsp_users u ON u.id=p.sales_user_id WHERE p.id=? LIMIT 1");
         $s->execute([$id]);return$s->fetch()?:null;
     }
+    public static function pendingDeletionRequests():array{
+        $s=Database::connection()->query(
+            "SELECT
+                d.id,
+                d.post_id,
+                d.reason,
+                d.created_at,
+                p.title,
+                p.canonical_url,
+                p.platform,
+                p.external_post_id,
+                u.display_name,
+                u.sales_id
+             FROM cdsp_deletion_requests d
+             JOIN cdsp_sales_posts p ON p.id=d.post_id
+             JOIN cdsp_users u ON u.id=p.sales_user_id
+             WHERE d.status='pending'
+               AND p.deleted_at IS NULL
+             ORDER BY d.created_at DESC,d.id DESC"
+        );
+        return $s->fetchAll();
+    }
     public static function adminQueue(string $date, int $salesUserId = 0):array{
         $sql = "SELECT p.*,u.display_name,u.sales_id,r.decision
                 FROM cdsp_sales_posts p

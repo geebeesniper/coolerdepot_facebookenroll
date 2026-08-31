@@ -95,81 +95,168 @@ $('#appLanguageSwitch').on(
         event.stopPropagation();
     });
 
-    $('#adminInfoPanel').on('click','.admin-info-summary',function(event){
-        event.preventDefault();
-        const $summary=$(this);
-        const $item=$summary.closest('.admin-info-item');
-        const $detail=$item.find('.admin-info-detail').first();
-        const opening=!$summary.hasClass('is-open');
+    const $deleteRequestModal=$('#adminDeleteRequestPostModal');
+    let activeDeleteRequestId=0;
+    let activeDeletePostId=0;
+    let activeDeleteRequestRow=null;
+    let deleteRequestPostXhr=null;
 
-        $('#adminInfoPanel .admin-info-summary.is-open').not($summary).each(function(){
-            const $other=$(this);
-            const $otherDetail=$other.closest('.admin-info-item').find('.admin-info-detail').first();
-            $other.removeClass('is-open').attr('aria-expanded','false');
-            $otherDetail.stop(true,true).slideUp(140,function(){
-                $(this).addClass('hidden').removeAttr('style');
-            });
-        });
+    function infoEscapeHtml(value){
+        return $('<div>').text(value==null?'':String(value)).html();
+    }
 
-        $summary.toggleClass('is-open',opening).attr('aria-expanded',opening?'true':'false');
-        if(opening){
-            $detail.removeClass('hidden').hide().stop(true,true).slideDown(160);
-        }else{
-            $detail.stop(true,true).slideUp(140,function(){
-                $(this).addClass('hidden').removeAttr('style');
-            });
+    function updateAdminInfoCount(){
+        const count=$('#adminInfoList .admin-info-item').length;
+        $('#adminInfoPendingCount').text(count+' pending');
+        const $badge=$('.admin-info-badge');
+        $badge.text(count).toggleClass('hidden',count<1);
+        if(count<1){
+            $('#adminInfoList').html('<div class="admin-info-empty">No new notifications.</div>');
         }
+    }
+
+    function closeDeleteRequestPostModal(){
+        if(deleteRequestPostXhr&&deleteRequestPostXhr.readyState!==4){
+            deleteRequestPostXhr.abort();
+        }
+        deleteRequestPostXhr=null;
+        activeDeleteRequestId=0;
+        activeDeletePostId=0;
+        activeDeleteRequestRow=null;
+        $deleteRequestModal.addClass('hidden').attr('aria-hidden','true');
+        $('body').removeClass('admin-delete-request-modal-open');
+        $('#adminDeleteRequestBody,#adminDeleteRequestFooter').addClass('hidden');
+        $('#adminDeleteRequestLoading').removeClass('hidden').text('Loading post…');
+        $('#adminDeleteRequestStatus').removeClass('error ok').text('');
+        $('#adminDeleteRequestPhotos').empty();
+        $('#adminDeleteRequestOriginal').addClass('hidden').attr('href','#');
+        $('#adminDeleteRequestApprove,#adminDeleteRequestReject').prop('disabled',false);
+    }
+
+    function deleteRequestPhotoHtml(url){
+        const safe=String(url||'');
+        if(!safe)return '';
+        return '<a href="'+infoEscapeHtml(safe)+'" target="_blank" rel="noopener noreferrer" class="admin-delete-request-photo">'
+            +'<img src="'+infoEscapeHtml(safe)+'" alt="Post image" loading="lazy">'
+            +'</a>';
+    }
+
+    function openDeleteRequestPostModal($row){
+        const requestId=parseInt($row.attr('data-info-request-id')||'0',10)||0;
+        const postId=parseInt($row.attr('data-info-post-id')||'0',10)||0;
+        if(!requestId||!postId||!$deleteRequestModal.length)return;
+
+        if(deleteRequestPostXhr&&deleteRequestPostXhr.readyState!==4){
+            deleteRequestPostXhr.abort();
+        }
+
+        activeDeleteRequestId=requestId;
+        activeDeletePostId=postId;
+        activeDeleteRequestRow=$row;
+        $('#adminInfoPanel').addClass('hidden');
+        $('#adminInfoToggle').attr('aria-expanded','false');
+        $('#adminDeleteRequestBody,#adminDeleteRequestFooter').addClass('hidden');
+        $('#adminDeleteRequestLoading').removeClass('hidden').text('Loading post…');
+        $('#adminDeleteRequestStatus').removeClass('error ok').text('');
+        $('#adminDeleteRequestReason').text(String($row.attr('data-info-reason')||'—'));
+        $deleteRequestModal.removeClass('hidden').attr('aria-hidden','false');
+        $('body').addClass('admin-delete-request-modal-open');
+
+        deleteRequestPostXhr=$.ajax({
+            url:$deleteRequestModal.attr('data-post-url'),
+            method:'GET',
+            dataType:'json',
+            cache:false,
+            data:{id:postId,_:Date.now()},
+            headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'}
+        }).done(function(data){
+            if(!data||!data.ok||activeDeletePostId!==postId)return;
+            const post=data.post||{};
+            const content=data.content||{};
+            $('#adminDeleteRequestTitle').text(content.title||'Post details');
+            $('#adminDeleteRequestSubtitle').text('Delete request · '+(post.sales_name||'Sales'));
+            $('#adminDeleteRequestSales').text(post.sales_name||'—');
+            $('#adminDeleteRequestPlatform').text(post.platform||'—');
+            $('#adminDeleteRequestPublished').text(post.published_at||post.published_date||'—');
+            $('#adminDeleteRequestPostId').text(post.external_post_id||post.id||'—');
+            $('#adminDeleteRequestPostTitle').text(content.title||'Untitled post');
+            $('#adminDeleteRequestDescription').text(content.description||'No description saved.');
+            const photos=Array.isArray(content.photos)?content.photos:[];
+            $('#adminDeleteRequestPhotos').html(photos.map(deleteRequestPhotoHtml).join(''));
+            if(post.canonical_url){
+                $('#adminDeleteRequestOriginal').removeClass('hidden').attr('href',post.canonical_url);
+            }else{
+                $('#adminDeleteRequestOriginal').addClass('hidden').attr('href','#');
+            }
+            $('#adminDeleteRequestLoading').addClass('hidden');
+            $('#adminDeleteRequestBody,#adminDeleteRequestFooter').removeClass('hidden');
+        }).fail(function(xhr,status){
+            if(status==='abort')return;
+            const data=xhr.responseJSON||{};
+            $('#adminDeleteRequestLoading').text(data.message||'Post could not be loaded.');
+        });
+    }
+
+    $('#adminInfoPanel').on('click','[data-info-open-post]',function(event){
+        event.preventDefault();
+        event.stopPropagation();
+        openDeleteRequestPostModal($(this).closest('.admin-info-item'));
     });
 
-    $('#adminInfoPanel').on('submit','[data-admin-delete-request-form]',function(event){
+    $(document).on('click','[data-delete-request-modal-close]',function(event){
         event.preventDefault();
-        const $form=$(this);
-        const $item=$form.closest('.admin-info-item');
-        const $status=$item.find('.admin-info-action-status');
-        const $buttons=$form.find('button');
-        const submitter=event.originalEvent&&event.originalEvent.submitter
-            ?event.originalEvent.submitter
-            :document.activeElement;
-        const action=String($(submitter).val()||'');
-        let payload=$form.serializeArray();
+        closeDeleteRequestPostModal();
+    });
 
-        if(action){
-            payload=payload.filter(function(field){return field.name!=='action';});
-            payload.push({name:'action',value:action});
-        }
-
-        $buttons.prop('disabled',true);
-        $status.removeClass('error ok').text(action==='approve'?'Deleting post…':'Updating request…');
-
+    function submitDeleteRequestAction(action){
+        if(!activeDeleteRequestId)return;
+        const $approve=$('#adminDeleteRequestApprove');
+        const $reject=$('#adminDeleteRequestReject');
+        const $status=$('#adminDeleteRequestStatus');
+        $approve.add($reject).prop('disabled',true);
+        $status.removeClass('error ok').text(action==='approve'?'Deleting post…':'Rejecting request…');
         $.ajax({
-            url:$form.attr('action'),
+            url:$deleteRequestModal.attr('data-action-url'),
             method:'POST',
             dataType:'json',
-            data:$.param(payload),
+            data:{
+                _csrf:$deleteRequestModal.attr('data-csrf'),
+                request_id:activeDeleteRequestId,
+                action:action
+            },
             headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'}
         }).done(function(data){
             if(!data||!data.ok){
                 $status.addClass('error').text((data&&data.message)||'Request could not be updated.');
-                $buttons.prop('disabled',false);
+                $approve.add($reject).prop('disabled',false);
                 return;
             }
-
             $status.addClass('ok').text(data.message||'Updated.');
-            $item.stop(true,true).slideUp(180,function(){
-                $(this).remove();
-                const count=$('#adminInfoList .admin-info-item').length;
-                $('.admin-info-head > span').text(count+' pending');
-                if(count>0){
-                    $('.admin-info-badge').text(count).removeClass('hidden');
+            const $row=activeDeleteRequestRow;
+            window.setTimeout(function(){
+                closeDeleteRequestPostModal();
+                if($row&&$row.length){
+                    $row.stop(true,true).slideUp(160,function(){
+                        $(this).remove();
+                        updateAdminInfoCount();
+                    });
                 }else{
-                    $('.admin-info-badge').addClass('hidden');
-                    $('#adminInfoList').html('<div class="admin-info-empty">No new notifications.</div>');
+                    updateAdminInfoCount();
                 }
-            });
+            },280);
         }).fail(function(xhr){
             $status.addClass('error').text((xhr.responseJSON&&xhr.responseJSON.message)||'Request could not be updated.');
-            $buttons.prop('disabled',false);
+            $approve.add($reject).prop('disabled',false);
         });
+    }
+
+    $('#adminDeleteRequestApprove').on('click',function(){submitDeleteRequestAction('approve');});
+    $('#adminDeleteRequestReject').on('click',function(){submitDeleteRequestAction('reject');});
+
+    $(document).on('keydown',function(event){
+        if(event.key==='Escape'&&!$deleteRequestModal.hasClass('hidden')){
+            closeDeleteRequestPostModal();
+        }
     });
 
     $(document).on('click',function(){
@@ -9345,7 +9432,6 @@ $(document).on('click','.website-reference-delete',function(){
     const $to=$('#reportRangeTo');
     const $period=$('#reportPeriodValue');
     const $sales=$('#reportSalesSelect');
-    const $run=$('#reportRunButton');
     let refreshTimer=null;
     let activeRequest=null;
     let refreshSeq=0;
@@ -9402,7 +9488,6 @@ $(document).on('click','.website-reference-delete',function(){
     }
     function setLoading(loading){
         $('#reportResultPanel').toggleClass('report-loading',loading).attr('aria-busy',loading?'true':'false');
-        $run.toggleClass('report-loading',loading).prop('disabled',loading).text(loading?'Running…':'Run');
     }
     function refreshReport(pushUrl){
         if(!sync(''))return;
@@ -9450,7 +9535,7 @@ $(document).on('click','.website-reference-delete',function(){
             const $panel=$('#reportResultPanel');
             $panel.removeClass('report-loading');
             if(!$panel.find('.report-live-error').length){
-                $panel.prepend('<div class="notice bad report-live-error">Report could not be refreshed. Use Run to retry.</div>');
+                $panel.prepend('<div class="notice bad report-live-error">Report could not be refreshed. Change a filter to retry.</div>');
             }
         }).always(function(){
             if(seq!==refreshSeq)return;

@@ -3,6 +3,7 @@ use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Util;
 use App\Models\Setting;
+use App\Models\Post;
 
 $u = Auth::user();
 $base = $config['app']['base_path'];
@@ -13,6 +14,14 @@ try {
     $companyName = trim((string)Setting::get('company_name', 'CoolerDepot')) ?: 'CoolerDepot';
 } catch (\Throwable $e) {
     $companyName = 'CoolerDepot';
+}
+$deletionRequests = [];
+if ($u && ($u['role'] ?? '') === 'admin') {
+    try {
+        $deletionRequests = Post::pendingDeletionRequests();
+    } catch (\Throwable $e) {
+        $deletionRequests = [];
+    }
 }
 ?>
 <!doctype html>
@@ -85,7 +94,7 @@ try {
                 </button>
             </div>
 
-            <?php if ($u['role'] === 'admin' && isset($deletionRequests)): ?>
+            <?php if ($u['role'] === 'admin'): ?>
                 <?php $infoRequestCount = count($deletionRequests); ?>
                 <div class="admin-info-menu" id="adminInfoMenu">
                     <button
@@ -99,9 +108,7 @@ try {
                         <svg viewBox="0 0 24 24" aria-hidden="true">
                             <path d="M12 22a2.6 2.6 0 0 0 2.45-1.75h-4.9A2.6 2.6 0 0 0 12 22Zm7-5.1-1.55-1.75V10a5.46 5.46 0 0 0-4.2-5.3V4a1.25 1.25 0 0 0-2.5 0v.7A5.46 5.46 0 0 0 6.55 10v5.15L5 16.9V18h14v-1.1Z"/>
                         </svg>
-                        <?php if ($infoRequestCount > 0): ?>
-                            <span class="admin-info-badge"><?= (int)$infoRequestCount ?></span>
-                        <?php endif; ?>
+                        <span class="admin-info-badge<?= $infoRequestCount > 0 ? '' : ' hidden' ?>"><?= (int)$infoRequestCount ?></span>
                     </button>
 
                     <section
@@ -114,7 +121,7 @@ try {
                                 <span class="eyebrow">Information Center</span>
                                 <strong>Notifications</strong>
                             </div>
-                            <span><?= (int)$infoRequestCount ?> pending</span>
+                            <span id="adminInfoPendingCount"><?= (int)$infoRequestCount ?> pending</span>
                         </div>
 
                         <div class="admin-info-list" id="adminInfoList">
@@ -123,72 +130,25 @@ try {
                                     <article
                                         class="admin-info-item"
                                         data-info-request-id="<?= (int)$request['id'] ?>"
+                                        data-info-post-id="<?= (int)$request['post_id'] ?>"
+                                        data-info-sales="<?= Util::e((string)$request['display_name']) ?>"
+                                        data-info-reason="<?= Util::e((string)$request['reason']) ?>"
                                     >
                                         <button
                                             type="button"
-                                            class="admin-info-summary"
-                                            aria-expanded="false"
+                                            class="admin-info-post-open"
+                                            data-info-open-post
+                                            data-request-id="<?= (int)$request['id'] ?>"
+                                            data-post-id="<?= (int)$request['post_id'] ?>"
                                         >
-                                            <span class="admin-info-summary-main">
-                                                <span class="admin-info-item-meta">
-                                                    <span>Delete request</span>
-                                                    <b><?= Util::e((string)$request['display_name']) ?></b>
-                                                </span>
-                                                <strong class="admin-info-summary-title">
-                                                    <?= Util::e((string)$request['title']) ?>
-                                                </strong>
-                                                <span class="admin-info-summary-reason">
-                                                    <?= Util::e((string)$request['reason']) ?>
-                                                </span>
+                                            <span class="admin-info-item-meta">
+                                                <span>Delete request</span>
+                                                <b><?= Util::e((string)$request['display_name']) ?></b>
                                             </span>
-                                            <svg class="admin-info-chevron" viewBox="0 0 24 24" aria-hidden="true">
-                                                <path d="m7.4 8.6 4.6 4.6 4.6-4.6L18 10l-6 6-6-6 1.4-1.4Z"/>
-                                            </svg>
+                                            <strong class="admin-info-summary-title"><?= Util::e((string)$request['title']) ?></strong>
+                                            <span class="admin-info-summary-reason"><?= Util::e((string)$request['reason']) ?></span>
+                                            <span class="admin-info-open-label">Open post →</span>
                                         </button>
-
-                                        <div class="admin-info-detail hidden">
-                                            <div class="admin-info-detail-card">
-                                                <div class="admin-info-detail-row">
-                                                    <span>Sales</span>
-                                                    <strong><?= Util::e((string)$request['display_name']) ?></strong>
-                                                </div>
-                                                <div class="admin-info-detail-row admin-info-detail-post">
-                                                    <span>Post</span>
-                                                    <a
-                                                        class="admin-info-post-link"
-                                                        href="<?= Util::e((string)($request['canonical_url'] ?? '#')) ?>"
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        title="Open original post"
-                                                    ><?= Util::e((string)$request['title']) ?></a>
-                                                </div>
-                                                <div class="admin-info-detail-row">
-                                                    <span>Reason</span>
-                                                    <p><?= Util::e((string)$request['reason']) ?></p>
-                                                </div>
-                                            </div>
-
-                                            <form
-                                                class="admin-info-actions"
-                                                data-admin-delete-request-form
-                                                method="post"
-                                                action="<?= Util::e($base) ?>/admin/delete-request"
-                                            >
-                                                <input type="hidden" name="_csrf" value="<?= Util::e(Csrf::token()) ?>">
-                                                <input type="hidden" name="request_id" value="<?= (int)$request['id'] ?>">
-                                                <button
-                                                    name="action"
-                                                    value="approve"
-                                                    class="tiny admin-info-approve"
-                                                >Approve delete</button>
-                                                <button
-                                                    name="action"
-                                                    value="reject"
-                                                    class="tiny admin-info-reject"
-                                                >Reject</button>
-                                            </form>
-                                            <div class="admin-info-action-status" aria-live="polite"></div>
-                                        </div>
                                     </article>
                                 <?php endforeach; ?>
                             <?php else: ?>
@@ -245,6 +205,60 @@ try {
         </div>
     <?php endif; ?>
 </header>
+
+<?php if ($u && ($u['role'] ?? '') === 'admin'): ?>
+<div
+    class="admin-delete-request-modal hidden"
+    id="adminDeleteRequestPostModal"
+    aria-hidden="true"
+    data-post-url="<?= Util::e($base) ?>/admin/dashboard/post-review"
+    data-action-url="<?= Util::e($base) ?>/admin/delete-request"
+    data-csrf="<?= Util::e(Csrf::token()) ?>"
+>
+    <div class="admin-delete-request-backdrop" data-delete-request-modal-close></div>
+    <section class="admin-delete-request-card" role="dialog" aria-modal="true" aria-labelledby="adminDeleteRequestTitle">
+        <header class="admin-delete-request-head">
+            <div>
+                <span class="eyebrow">Delete Request</span>
+                <h2 id="adminDeleteRequestTitle">Post details</h2>
+                <p id="adminDeleteRequestSubtitle"></p>
+            </div>
+            <button type="button" class="admin-delete-request-close" data-delete-request-modal-close aria-label="Close">×</button>
+        </header>
+
+        <div class="admin-delete-request-loading" id="adminDeleteRequestLoading">Loading post…</div>
+
+        <div class="admin-delete-request-body hidden" id="adminDeleteRequestBody">
+            <div class="admin-delete-request-meta">
+                <div><span>Sales</span><strong id="adminDeleteRequestSales">—</strong></div>
+                <div><span>Platform</span><strong id="adminDeleteRequestPlatform">—</strong></div>
+                <div><span>Published</span><strong id="adminDeleteRequestPublished">—</strong></div>
+                <div><span>Post ID</span><strong id="adminDeleteRequestPostId">—</strong></div>
+            </div>
+
+            <section class="admin-delete-request-content">
+                <h3 id="adminDeleteRequestPostTitle">—</h3>
+                <div class="admin-delete-request-description" id="adminDeleteRequestDescription"></div>
+                <div class="admin-delete-request-photos" id="adminDeleteRequestPhotos"></div>
+                <a class="btn admin-delete-request-original hidden" id="adminDeleteRequestOriginal" href="#" target="_blank" rel="noopener noreferrer">Open original</a>
+            </section>
+
+            <section class="admin-delete-request-reason-card">
+                <span>Sales reason for deletion</span>
+                <p id="adminDeleteRequestReason">—</p>
+            </section>
+
+            <div class="admin-delete-request-status" id="adminDeleteRequestStatus" aria-live="polite"></div>
+        </div>
+
+        <footer class="admin-delete-request-footer hidden" id="adminDeleteRequestFooter">
+            <button type="button" class="btn" data-delete-request-modal-close>Close</button>
+            <button type="button" class="btn danger-soft" id="adminDeleteRequestReject">Reject</button>
+            <button type="button" class="btn danger-confirm" id="adminDeleteRequestApprove">Approve &amp; Delete</button>
+        </footer>
+    </section>
+</div>
+<?php endif; ?>
 
 <main class="container">
     <?php if ($ok): ?>
