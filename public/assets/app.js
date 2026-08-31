@@ -165,6 +165,7 @@ const salesI18n={
         activityChart:'Posting Activity',
         dailyProgress:'Daily Post Progress',
         targetLine:'Daily target',
+        channels:'Channels',
         allPlatforms:'All',
         missing:'Missing',
         total:'Total',
@@ -243,6 +244,7 @@ const salesI18n={
         activityChart:'发帖活动',
         dailyProgress:'每日发帖进度',
         targetLine:'每日目标',
+        channels:'渠道',
         allPlatforms:'全部',
         missing:'缺少',
         total:'总数',
@@ -399,6 +401,7 @@ const salesI18n={
         activityChart:'Actividad de publicaciones',
         dailyProgress:'Progreso diario de publicaciones',
         targetLine:'Meta diaria',
+        channels:'Canales',
         allPlatforms:'Todas',
         missing:'Faltantes',
         total:'Total',
@@ -1392,11 +1395,15 @@ function hideSalesChartTooltip(){
 function updateSalesDayStatusCounts($section){
     const $all=$section.find('.sales-self-post-card');
     const $platformCards=$all.filter(function(){
+        const cardPlatform=String(
+            $(this).attr(
+                'data-sales-post-platform'
+            )||''
+        ).trim().toLowerCase();
+
         return (
             salesPlatformFilter==='all'
-            ||String(
-                $(this).attr('data-sales-post-platform')||''
-            )===salesPlatformFilter
+            ||cardPlatform===salesPlatformFilter
         );
     });
 
@@ -1443,7 +1450,7 @@ function applySalesDayFilter($section,filter){
         const platform=String(
             $card.attr('data-sales-post-platform')
             ||''
-        );
+        ).trim().toLowerCase();
 
         const platformMatch=
             salesPlatformFilter==='all'
@@ -1916,23 +1923,72 @@ $('#salesRangeForm').on(
 
 $(document).on(
     'click',
-    '[data-sales-platform-filter]',
-    function(){
-        salesPlatformFilter=String(
-            $(this).data(
-                'sales-platform-filter'
-            )||'all'
+    '[data-sales-period]',
+    function(event){
+        event.preventDefault();
+
+        const period=String(
+            $(this).attr('data-sales-period')
+            ||'day'
         );
+
+        const anchor=String(
+            $('#salesRangeTo').val()
+            ||salesTodayValue()
+            ||''
+        );
+
+        const range=salesPresetRange(
+            period,
+            anchor
+        );
+
+        if(!range){
+            return;
+        }
+
+        $('#salesRangeFrom').val(range.from);
+        $('#salesRangeTo').val(range.to);
+
+        syncSalesRangeConstraints('');
+        setSalesRangePeriod(period);
+
+        /*
+         * Clear stale chart DOM immediately. The AJAX response then
+         * repaints cards and chart from the exact preset range.
+         */
+        $('#salesChartBars').empty();
+
+        renderSalesChart();
+
+        loadSalesRange(
+            range,
+            period
+        );
+    }
+);
+
+$(document).on(
+    'click',
+    '[data-sales-platform-filter]',
+    function(event){
+        event.preventDefault();
+
+        salesPlatformFilter=String(
+            $(this).attr(
+                'data-sales-platform-filter'
+            )||'all'
+        ).trim().toLowerCase();
 
         $('#salesPlatformFilter')
             .find('[data-sales-platform-filter]')
             .each(function(){
-                const active=
-                    String(
-                        $(this).data(
-                            'sales-platform-filter'
-                        )
-                    )===salesPlatformFilter;
+                const active=String(
+                    $(this).attr(
+                        'data-sales-platform-filter'
+                    )||''
+                ).trim().toLowerCase()
+                    ===salesPlatformFilter;
 
                 $(this)
                     .toggleClass('active',active)
@@ -1944,6 +2000,13 @@ $(document).on(
 
         renderSalesChart();
         applySalesPlatformFilterToCards();
+
+        if(
+            event.detail>0
+            &&document.activeElement===this
+        ){
+            this.blur();
+        }
     }
 );
 

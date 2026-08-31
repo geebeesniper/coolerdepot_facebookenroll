@@ -99,26 +99,32 @@ $periodNames = [
                     >
                 </label>
 
-                <label class="admin-range-field">
-                    <span data-dashboard-i18n="to">To</span>
-                    <input
-                        type="date"
-                        name="to"
-                        id="dashboardToInput"
-                        value="<?= Util::e((string)$periodInfo['to']) ?>"
-                        min="<?= Util::e((string)$periodInfo['from']) ?>"
-                        max="<?= Util::e($today) ?>"
-                    >
-                </label>
+                <div class="admin-range-field-stack">
+                    <label class="admin-range-field">
+                        <span data-dashboard-i18n="to">To</span>
+                        <input
+                            type="date"
+                            name="to"
+                            id="dashboardToInput"
+                            value="<?= Util::e((string)$periodInfo['to']) ?>"
+                            min="<?= Util::e((string)$periodInfo['from']) ?>"
+                            max="<?= Util::e($today) ?>"
+                        >
+                    </label>
 
-                <button type="button"
-                    class="dashboard-back-today<?= (
-                        (string)$periodInfo['from'] === $today
-                        && (string)$periodInfo['to'] === $today
-                    ) ? ' hidden' : '' ?>"
-                    id="dashboardBackToday">
-                    <span data-dashboard-i18n="backToday">Back to today</span>
-                </button>
+                    <button
+                        type="button"
+                        class="dashboard-back-today<?= (
+                            (string)$periodInfo['from'] === $today
+                            && (string)$periodInfo['to'] === $today
+                        ) ? ' hidden' : '' ?>"
+                        id="dashboardBackToday"
+                    >
+                        <span data-dashboard-i18n="backToday">
+                            Back to today
+                        </span>
+                    </button>
+                </div>
             </div>
         </form>
     </div>

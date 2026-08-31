@@ -79,6 +79,40 @@ $chartInitialWidth=max(100,count($chartDates)*30);
     </div>
 
     <div class="sales-portal-head-actions">
+<div
+    class="sales-period-switch sales-head-period-switch"
+    id="salesPeriodSwitch"
+    role="group"
+    aria-label="Sales activity period"
+>
+    <button
+        type="button"
+        class="sales-period-button<?= ($rangePeriod ?? '') === 'day' ? ' active' : '' ?>"
+        data-sales-period="day"
+        aria-pressed="<?= ($rangePeriod ?? '') === 'day' ? 'true' : 'false' ?>"
+    >
+        <span data-sales-i18n="daily">Daily</span>
+    </button>
+
+    <button
+        type="button"
+        class="sales-period-button<?= ($rangePeriod ?? '') === 'week' ? ' active' : '' ?>"
+        data-sales-period="week"
+        aria-pressed="<?= ($rangePeriod ?? '') === 'week' ? 'true' : 'false' ?>"
+    >
+        <span data-sales-i18n="weekly">Weekly</span>
+    </button>
+
+    <button
+        type="button"
+        class="sales-period-button<?= ($rangePeriod ?? '') === 'month' ? ' active' : '' ?>"
+        data-sales-period="month"
+        aria-pressed="<?= ($rangePeriod ?? '') === 'month' ? 'true' : 'false' ?>"
+    >
+        <span data-sales-i18n="monthly">Monthly</span>
+    </button>
+</div>
+
         <form
             class="filters dashboard-date-controls admin-range-controls sales-range-filter"
             id="salesRangeForm"
@@ -98,30 +132,32 @@ $chartInitialWidth=max(100,count($chartDates)*30);
                     >
                 </label>
 
-                <label class="admin-range-field">
-                    <span data-sales-i18n="to">To</span>
-                    <input
-                        type="date"
-                        name="to"
-                        id="salesRangeTo"
-                        value="<?= Util::e($to) ?>"
-                        min="<?= Util::e($from) ?>"
-                        max="<?= Util::e($today) ?>"
-                    >
-                </label>
+                <div class="admin-range-field-stack sales-to-field-stack">
+                    <label class="admin-range-field">
+                        <span data-sales-i18n="to">To</span>
+                        <input
+                            type="date"
+                            name="to"
+                            id="salesRangeTo"
+                            value="<?= Util::e($to) ?>"
+                            min="<?= Util::e($from) ?>"
+                            max="<?= Util::e($today) ?>"
+                        >
+                    </label>
 
-                <button
-                    type="button"
-                    class="dashboard-back-today sales-back-today<?= (
-                        $from===$today
-                        &&$to===$today
-                    ) ? ' hidden' : '' ?>"
-                    id="salesBackToday"
-                >
-                    <span data-sales-i18n="backToday">
-                        Back to today
-                    </span>
-                </button>
+                    <button
+                        type="button"
+                        class="dashboard-back-today sales-back-today<?= (
+                            $from===$today
+                            &&$to===$today
+                        ) ? ' hidden' : '' ?>"
+                        id="salesBackToday"
+                    >
+                        <span data-sales-i18n="backToday">
+                            Back to today
+                        </span>
+                    </button>
+                </div>
             </div>
 
             <span
@@ -166,87 +202,62 @@ $chartInitialWidth=max(100,count($chartDates)*30);
         </div>
 
         <div class="sales-chart-toolbar">
-            <div
-                class="sales-period-switch"
-                id="salesPeriodSwitch"
-                role="group"
-                aria-label="Sales activity period"
-            >
-                <button
-                    type="button"
-                    class="sales-period-button<?= ($rangePeriod ?? '') === 'day' ? ' active' : '' ?>"
-                    data-sales-period="day"
-                    aria-pressed="<?= ($rangePeriod ?? '') === 'day' ? 'true' : 'false' ?>"
-                >
-                    <span data-sales-i18n="daily">Daily</span>
-                </button>
+<div class="sales-channel-control">
+    <div class="sales-channel-title">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M7 3a3 3 0 1 1-1 5.83v3.34A3.001 3.001 0 1 1 4 12.17V8.83A3 3 0 0 1 7 3Zm10 0a3 3 0 1 1-1 5.83v1.34A3 3 0 0 1 13 13h-2a1 1 0 0 0-1 1v1.17a3 3 0 1 1-2 0V14a3 3 0 0 1 3-3h2a1 1 0 0 0 1-1V8.83A3 3 0 0 1 17 3ZM7 5a1 1 0 1 0 0 2 1 1 0 0 0 0-2Zm10 0a1 1 0 1 0 0 2 1 1 0 0 0 0-2ZM5 15a1 1 0 1 0 0 2 1 1 0 0 0 0-2Zm4 2a1 1 0 1 0 0 2 1 1 0 0 0 0-2Z"/>
+        </svg>
+        <strong data-sales-i18n="channels">Channels</strong>
+    </div>
 
-                <button
-                    type="button"
-                    class="sales-period-button<?= ($rangePeriod ?? '') === 'week' ? ' active' : '' ?>"
-                    data-sales-period="week"
-                    aria-pressed="<?= ($rangePeriod ?? '') === 'week' ? 'true' : 'false' ?>"
-                >
-                    <span data-sales-i18n="weekly">Weekly</span>
-                </button>
-
-                <button
-                    type="button"
-                    class="sales-period-button<?= ($rangePeriod ?? '') === 'month' ? ' active' : '' ?>"
-                    data-sales-period="month"
-                    aria-pressed="<?= ($rangePeriod ?? '') === 'month' ? 'true' : 'false' ?>"
-                >
-                    <span data-sales-i18n="monthly">Monthly</span>
-                </button>
-            </div>
-
-        <div
-            class="sales-platform-filter"
-            id="salesPlatformFilter"
-            role="group"
-            aria-label="Filter dashboard by platform"
-        >
-            <button
-                type="button"
-                class="sales-platform-filter-button active"
-                data-sales-platform-filter="all"
-                aria-pressed="true"
-            >
-                <span data-sales-i18n="allPlatforms">All</span>
-            </button>
-            <button
-                type="button"
-                class="sales-platform-filter-button"
-                data-sales-platform-filter="facebook"
-                aria-pressed="false"
-            >
-                Facebook
-            </button>
-            <button
-                type="button"
-                class="sales-platform-filter-button"
-                data-sales-platform-filter="instagram"
-                aria-pressed="false"
-            >
-                Instagram
-            </button>
-            <button
-                type="button"
-                class="sales-platform-filter-button"
-                data-sales-platform-filter="offerup"
-                aria-pressed="false"
-            >
-                OfferUp
-            </button>
-            <button
-                type="button"
-                class="sales-platform-filter-button"
-                data-sales-platform-filter="craigslist"
-                aria-pressed="false"
-            >
-                Craigslist
-            </button>
-        </div>
+<div
+    class="sales-platform-filter"
+    id="salesPlatformFilter"
+    role="group"
+    aria-label="Filter dashboard by platform"
+>
+    <button
+        type="button"
+        class="sales-platform-filter-button active"
+        data-sales-platform-filter="all"
+        aria-pressed="true"
+    >
+        <span data-sales-i18n="allPlatforms">All</span>
+    </button>
+    <button
+        type="button"
+        class="sales-platform-filter-button"
+        data-sales-platform-filter="facebook"
+        aria-pressed="false"
+    >
+        Facebook
+    </button>
+    <button
+        type="button"
+        class="sales-platform-filter-button"
+        data-sales-platform-filter="instagram"
+        aria-pressed="false"
+    >
+        Instagram
+    </button>
+    <button
+        type="button"
+        class="sales-platform-filter-button"
+        data-sales-platform-filter="offerup"
+        aria-pressed="false"
+    >
+        OfferUp
+    </button>
+    <button
+        type="button"
+        class="sales-platform-filter-button"
+        data-sales-platform-filter="craigslist"
+        aria-pressed="false"
+    >
+        Craigslist
+    </button>
+</div>
+</div>
         </div>
     </div>
 

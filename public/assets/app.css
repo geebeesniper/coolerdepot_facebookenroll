@@ -7588,3 +7588,189 @@ body.sales-detail-open{
 .sales-chart-segment.unreviewed{
     border-radius:0 !important;
 }
+
+/* v0.1.54 control placement + working period/channel filters */
+
+/* From and To stay top-aligned; Back to today lives directly below To. */
+.dashboard-date-control-row,
+.sales-date-control-row{
+    align-items:flex-start;
+}
+
+.admin-range-field-stack{
+    display:flex;
+    flex:0 0 auto;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:3px;
+}
+
+.admin-range-field-stack .admin-range-field{
+    margin:0;
+}
+
+.admin-range-field-stack .dashboard-back-today{
+    min-height:24px;
+    margin:0;
+    padding:0 2px;
+    align-self:flex-start;
+    font-size:8px;
+    line-height:1.15;
+}
+
+.sales-to-field-stack{
+    min-width:144px;
+}
+
+/* Daily / Weekly / Monthly belongs immediately LEFT of the date picker. */
+.sales-portal-head-actions{
+    display:flex;
+    align-items:flex-start;
+    justify-content:flex-end;
+    gap:10px;
+    flex-wrap:wrap;
+}
+
+.sales-head-period-switch{
+    align-self:flex-start;
+    margin-top:18px;
+    flex:0 0 auto;
+}
+
+/* Chart toolbar now contains Channels only. */
+.sales-chart-toolbar{
+    display:flex;
+    align-items:flex-start;
+    justify-content:flex-end;
+    gap:8px;
+}
+
+.sales-channel-control{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    gap:5px;
+}
+
+.sales-channel-title{
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    color:#475569;
+    font-size:8px;
+    font-weight:900;
+    text-transform:uppercase;
+    letter-spacing:.03em;
+}
+
+.sales-channel-title svg{
+    width:14px;
+    height:14px;
+    flex:0 0 14px;
+    fill:currentColor;
+}
+
+.sales-channel-control .sales-platform-filter{
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:4px;
+}
+
+/* Clearer click state for Channels. */
+.sales-platform-filter-button{
+    cursor:pointer;
+    touch-action:manipulation;
+    -webkit-tap-highlight-color:transparent;
+}
+
+.sales-platform-filter-button.active{
+    border-color:#9db7dc;
+    background:#fff;
+    color:#365f98;
+    box-shadow:0 1px 3px rgba(15,23,42,.06);
+}
+
+/* Old chart-toolbar period rules no longer control layout. */
+.sales-chart-toolbar .sales-period-switch{
+    order:initial;
+}
+
+@media(pointer:coarse){
+    .admin-range-field-stack .dashboard-back-today{
+        min-height:36px;
+        padding:4px 2px;
+        font-size:9px;
+    }
+
+    .sales-channel-title{
+        min-height:28px;
+    }
+}
+
+@media(max-width:980px){
+    .sales-portal-head-actions{
+        width:100%;
+        justify-content:flex-start;
+    }
+
+    .sales-head-period-switch{
+        margin-top:0;
+    }
+
+    .sales-channel-control{
+        align-items:flex-start;
+    }
+}
+
+@media(max-width:720px){
+    .sales-head-period-switch{
+        width:100%;
+        order:1;
+        grid-template-columns:repeat(3,minmax(0,1fr));
+    }
+
+    .sales-range-filter{
+        width:100%;
+        order:2;
+    }
+
+    .sales-submit-cta{
+        order:3;
+    }
+
+    .sales-channel-control{
+        width:100%;
+    }
+
+    .sales-channel-control .sales-platform-filter{
+        max-width:100%;
+        justify-content:flex-start;
+        overflow-x:auto;
+    }
+}
+
+@media(max-width:560px){
+    .admin-range-field-stack{
+        flex:1 1 130px;
+        min-width:0;
+    }
+
+    .admin-range-field-stack .admin-range-field{
+        width:100%;
+    }
+
+    .admin-range-field-stack .admin-range-field input{
+        width:100%;
+    }
+}
+
+
+/* Chart-only square corner exception. */
+.sales-chart-stack,
+.sales-chart-segment,
+.sales-chart-segment.good,
+.sales-chart-segment.bad,
+.sales-chart-segment.unreviewed{
+    border-radius:0 !important;
+}

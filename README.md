@@ -1012,3 +1012,17 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - Daily still renders one wider centered bar; Weekly and Monthly show one rectangular bar per day in their clamped range.
 - Platform filtering remains independent of the period switch.
 - No database migration is required.
+
+## v0.1.54 — Working Sales period/channel controls and Back-to-today placement
+
+- Moved Sales Daily / Weekly / Monthly back to the page-head actions immediately left of the From/To date picker.
+- Added the missing delegated click handler for Daily / Weekly / Monthly. These buttons now calculate the correct preset range, clear stale chart state, update the date fields, and reload Sales cards/chart through AJAX.
+- Daily uses one day; Weekly uses the anchor date's Monday-through-Sunday range clamped to today; Monthly uses the anchor month clamped to today.
+- Back to today is now directly below the To date picker on both Admin and Sales.
+- Added a Channels title and channel/network icon above the All / Facebook / Instagram / OfferUp / Craigslist controls.
+- Fixed Channels filtering by normalizing platform values to lowercase before comparing card data with the selected channel.
+- Channel changes now update active button state, chart aggregation, per-day status counters, and visible post cards with a single chart redraw.
+- Removed the accidental duplicate chart redraw in the previous platform-filter handler.
+- Touch controls remain delegated and AJAX-loaded post sections participate automatically.
+- No database migration is required.
+- All normal UI border radius remains 4px; chart bars remain the explicit square-corner exception.
