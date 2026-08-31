@@ -999,3 +999,16 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - Period state is reflected in the URL as `period=day|week|month`; custom manual ranges omit the period query parameter.
 - No database migration is required.
 - All border radius remains `4px`.
+
+## v0.1.53 — Rectangular stacked bars and visible Daily / Weekly / Monthly controls
+
+- Removed the dashed Missing visual from the Sales activity chart completely. Missing count is still available in the hover/touch tooltip, but it is no longer drawn as a dashed box.
+- The Admin Daily Post Target remains a horizontal reference line only.
+- Sales bars now use a classic stacked-column UX: Good on the bottom, Issues in the middle, Unreviewed on top.
+- Bar colors remain muted management-dashboard colors rather than bright red/green.
+- Chart bars and stacked segments explicitly use square corners (`border-radius: 0`) per the requested graph style; the rest of the application continues using 4px UI radius.
+- Daily / Weekly / Monthly was moved from the page-head actions into the Posting Activity panel toolbar beside the platform filters, so the period controls stay visible at desktop/tablet widths.
+- The activity title changes with the selected preset: Daily Post Progress / Weekly Post Progress / Monthly Post Progress.
+- Daily still renders one wider centered bar; Weekly and Monthly show one rectangular bar per day in their clamped range.
+- Platform filtering remains independent of the period switch.
+- No database migration is required.

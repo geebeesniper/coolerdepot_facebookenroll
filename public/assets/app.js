@@ -173,6 +173,9 @@ const salesI18n={
         noImage:'No listing image',
         close:'Close',
         daily:'Daily',
+        dailyProgressTitle:'Daily Post Progress',
+        weeklyProgressTitle:'Weekly Post Progress',
+        monthlyProgressTitle:'Monthly Post Progress',
         weekly:'Weekly',
         monthly:'Monthly',
         from:'From',
@@ -248,6 +251,12 @@ const salesI18n={
         noImage:'没有帖子图片',
         close:'关闭',
         daily:'每日',
+        dailyProgressTitle:'每日發佈進度',
+        weeklyProgressTitle:'每週發佈進度',
+        monthlyProgressTitle:'每月發佈進度',
+        dailyProgressTitle:'每日发布进度',
+        weeklyProgressTitle:'每周发布进度',
+        monthlyProgressTitle:'每月发布进度',
         weekly:'每周',
         monthly:'每月',
         from:'开始',
@@ -397,6 +406,9 @@ const salesI18n={
         noImage:'Sin imagen',
         close:'Cerrar',
         daily:'Diario',
+        dailyProgressTitle:'Progreso diario de publicaciones',
+        weeklyProgressTitle:'Progreso semanal de publicaciones',
+        monthlyProgressTitle:'Progreso mensual de publicaciones',
         weekly:'Semanal',
         monthly:'Mensual',
         from:'Desde',
@@ -691,6 +703,19 @@ function setSalesRangePeriod(period){
                     active?'true':'false'
                 );
         });
+
+    const titleKey=
+        salesRangePeriod==='week'
+            ?'weeklyProgressTitle'
+            :(
+                salesRangePeriod==='month'
+                    ?'monthlyProgressTitle'
+                    :'dailyProgressTitle'
+            );
+
+    $('#salesChartPeriodTitle').text(
+        salesTr(titleKey)
+    );
 }
 
 function detectSalesRangePeriod(from,to){
@@ -1231,16 +1256,6 @@ function renderSalesChart(){
                 +'"'
             +'>'
                 +'<div class="sales-chart-day-plot">'
-                    +(missingH>0
-                        ?'<span'
-                            +' class="sales-chart-missing"'
-                            +' style="bottom:'
-                                +actualH
-                                +'%;height:'
-                                +missingH
-                                +'%"'
-                            +'></span>'
-                        :'')
                     +'<div class="sales-chart-stack">'
                         +'<span'
                             +' class="sales-chart-segment good"'

@@ -7448,3 +7448,143 @@ body.sales-detail-open{
         padding-right:5px;
     }
 }
+
+/* v0.1.53 rectangular stacked bar UX + visible period controls */
+
+/*
+ * Period switch lives inside the Posting Activity panel so it can never
+ * disappear from the page-head row when dates / Submit Post consume width.
+ */
+.sales-chart-toolbar{
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:8px;
+    flex-wrap:wrap;
+}
+.sales-chart-toolbar .sales-period-switch{
+    order:1;
+    align-self:auto;
+}
+.sales-chart-toolbar .sales-platform-filter{
+    order:2;
+}
+
+/* More explicit, reference-style period selector. */
+.sales-chart-toolbar .sales-period-switch{
+    padding:2px;
+    border:1px solid #d7dee8;
+    background:#f1f4f8;
+}
+.sales-chart-toolbar .sales-period-button{
+    min-height:30px;
+    padding:4px 9px;
+    font-size:8px;
+}
+.sales-chart-toolbar .sales-period-button.active{
+    border-color:#9db7dc;
+    background:#fff;
+    color:#365f98;
+}
+
+/*
+ * Bar UX now matches a classic stacked-column chart:
+ * - actual posts only
+ * - Good at bottom
+ * - Bad in the middle
+ * - Unreviewed at top
+ * - square corners, no rounded bars
+ * - no dashed Missing geometry
+ */
+.sales-chart-stack{
+    overflow:visible;
+    border-radius:0 !important;
+}
+.sales-chart-segment{
+    border-radius:0 !important;
+    box-shadow:none !important;
+}
+.sales-chart-segment.good{
+    background:#739c82;
+}
+.sales-chart-segment.bad{
+    background:#bc7f7f;
+}
+.sales-chart-segment.unreviewed{
+    background:#98a3b0;
+}
+.sales-chart-missing{
+    display:none !important;
+}
+
+/* Remove hover tint behind columns; hover information belongs in tooltip. */
+.sales-chart-day:hover .sales-chart-day-plot,
+.sales-chart-day:focus-visible .sales-chart-day-plot{
+    background:transparent;
+}
+
+/* Reference-chart proportions: wider rectangular columns with modest gaps. */
+.sales-chart-bars{
+    gap:var(--sales-chart-gap,6px);
+}
+.sales-chart-stack{
+    width:min(
+        calc(100% - 4px),
+        var(--sales-chart-bar-width,38px)
+    );
+}
+
+/* Single Daily range: one substantial rectangular column. */
+.sales-activity-chart-panel.sales-chart-single-day
+.sales-chart-stack{
+    width:var(--sales-chart-bar-width,76px);
+    max-width:88px;
+}
+
+/* Missing is no longer a visual legend category. */
+.sales-chart-legend i.missing{
+    display:none;
+}
+
+/* Keep target as a reference line only. */
+.sales-chart-target-line{
+    border-top-width:1px;
+}
+
+/* Panel header remains tidy with two filter groups. */
+@media(max-width:980px){
+    .sales-activity-chart-head{
+        align-items:flex-start;
+        flex-direction:column;
+    }
+    .sales-chart-toolbar{
+        width:100%;
+        justify-content:flex-start;
+    }
+}
+
+@media(max-width:640px){
+    .sales-chart-toolbar{
+        align-items:stretch;
+        flex-direction:column;
+    }
+    .sales-chart-toolbar .sales-period-switch{
+        width:100%;
+        grid-template-columns:repeat(3,minmax(0,1fr));
+    }
+    .sales-chart-toolbar .sales-platform-filter{
+        justify-content:flex-start;
+        overflow-x:auto;
+        max-width:100%;
+    }
+}
+
+
+/* Explicit user exception: chart bars are square, not 4px UI cards. */
+.sales-chart-stack,
+.sales-chart-segment,
+.sales-chart-segment.good,
+.sales-chart-segment.bad,
+.sales-chart-segment.unreviewed{
+    border-radius:0 !important;
+}
