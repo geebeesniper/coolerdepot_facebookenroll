@@ -85,6 +85,77 @@ try {
                 </button>
             </div>
 
+            <?php if ($u['role'] === 'admin' && isset($deletionRequests)): ?>
+                <?php $infoRequestCount = count($deletionRequests); ?>
+                <div class="admin-info-menu" id="adminInfoMenu">
+                    <button
+                        type="button"
+                        class="admin-info-toggle"
+                        id="adminInfoToggle"
+                        aria-expanded="false"
+                        aria-controls="adminInfoPanel"
+                        title="Information Center"
+                    >
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M12 22a2.6 2.6 0 0 0 2.45-1.75h-4.9A2.6 2.6 0 0 0 12 22Zm7-5.1-1.55-1.75V10a5.46 5.46 0 0 0-4.2-5.3V4a1.25 1.25 0 0 0-2.5 0v.7A5.46 5.46 0 0 0 6.55 10v5.15L5 16.9V18h14v-1.1Z"/>
+                        </svg>
+                        <?php if ($infoRequestCount > 0): ?>
+                            <span class="admin-info-badge"><?= (int)$infoRequestCount ?></span>
+                        <?php endif; ?>
+                    </button>
+
+                    <section
+                        class="admin-info-panel hidden"
+                        id="adminInfoPanel"
+                        aria-label="Information Center"
+                    >
+                        <div class="admin-info-head">
+                            <div>
+                                <span class="eyebrow">Information Center</span>
+                                <strong>Notifications</strong>
+                            </div>
+                            <span><?= (int)$infoRequestCount ?> pending</span>
+                        </div>
+
+                        <div class="admin-info-list">
+                            <?php if ($deletionRequests): ?>
+                                <?php foreach ($deletionRequests as $request): ?>
+                                    <article class="admin-info-item">
+                                        <div class="admin-info-item-copy">
+                                            <div class="admin-info-item-meta">
+                                                <span>Delete request</span>
+                                                <b><?= Util::e((string)$request['display_name']) ?></b>
+                                            </div>
+                                            <a
+                                                class="admin-info-post-link"
+                                                href="<?= Util::e((string)($request['canonical_url'] ?? '#')) ?>"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                title="Open original post"
+                                            ><?= Util::e((string)$request['title']) ?></a>
+                                            <p><?= Util::e((string)$request['reason']) ?></p>
+                                        </div>
+
+                                        <form
+                                            class="admin-info-actions"
+                                            method="post"
+                                            action="<?= Util::e($base) ?>/admin/delete-request"
+                                        >
+                                            <input type="hidden" name="_csrf" value="<?= Util::e(Csrf::token()) ?>">
+                                            <input type="hidden" name="request_id" value="<?= (int)$request['id'] ?>">
+                                            <button name="action" value="approve" class="tiny okbtn">Approve</button>
+                                            <button name="action" value="reject" class="tiny badbtn">Reject</button>
+                                        </form>
+                                    </article>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <div class="admin-info-empty">No new notifications.</div>
+                            <?php endif; ?>
+                        </div>
+                    </section>
+                </div>
+            <?php endif; ?>
+
             <?php if ($u['role'] === 'sales'): ?>
                 <a
                     href="<?= Util::e($base) ?>/sales"

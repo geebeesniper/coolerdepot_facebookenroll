@@ -82,6 +82,24 @@ $('#appLanguageSwitch').on(
     }
 );
 
+    $('#adminInfoToggle').on('click',function(event){
+        event.preventDefault();
+        event.stopPropagation();
+        const $panel=$('#adminInfoPanel');
+        const opening=$panel.hasClass('hidden');
+        $panel.toggleClass('hidden',!opening);
+        $(this).attr('aria-expanded',opening?'true':'false');
+    });
+
+    $('#adminInfoPanel').on('click',function(event){
+        event.stopPropagation();
+    });
+
+    $(document).on('click',function(){
+        $('#adminInfoPanel').addClass('hidden');
+        $('#adminInfoToggle').attr('aria-expanded','false');
+    });
+
     function detectPlatform(url){
         try{
             const u = new URL((url || '').trim());
@@ -2793,7 +2811,8 @@ function openSalesPostDetail($card){
     $('#salesPostDeleteRequestMessage').text('');
     $('#salesPostDeleteRequestOpen')
         .prop('disabled',deleteStatus==='pending')
-        .text(deleteStatus==='pending'?'Deletion requested':'Request deletion');
+        .toggleClass('delete-requested',deleteStatus==='pending')
+        .text(deleteStatus==='pending'?'Deletion requested ✓':'Request deletion');
 
     $('#salesPostDetailStatus')
         .attr(
@@ -3281,20 +3300,17 @@ $('#salesPostDeleteRequestForm').on('submit',function(event){
             .attr('data-sales-post-delete-status','pending');
         $('#salesPostDeleteRequestOpen')
             .prop('disabled',true)
-            .text('Deletion requested');
-        $('#salesPostDeleteRequestMessage')
-            .removeClass('error')
-            .addClass('ok')
-            .text((data&&data.message)||'Deletion request sent to Admin.');
+            .addClass('delete-requested')
+            .text('Deletion requested ✓');
         $('#salesPostDeleteRequestReason').val('');
         $send.prop('disabled',true).text('Sent');
 
-        // The server has accepted the request. Reload the current dashboard so
-        // every copy of this post reflects its pending-deletion state instead
-        // of leaving the modal sitting on a stale "Sending…" control.
-        window.setTimeout(function(){
-            window.location.reload();
-        },650);
+        // The request is already persisted. Collapse the reason editor
+        // immediately so the remaining state is unambiguous to Sales.
+        $form.addClass('hidden');
+        $('#salesPostDeleteRequestMessage')
+            .removeClass('error ok')
+            .text('');
     }).fail(function(xhr){
         $('#salesPostDeleteRequestMessage').addClass('error').text(
             (xhr.responseJSON&&xhr.responseJSON.message)||'Deletion request could not be sent.'
@@ -3345,26 +3361,20 @@ $salesImageLightbox.on(
 );
 
 /*
- * Desktop mouse: wait for a deliberate 3-second hover before showing.
- * Once visible, the tooltip follows the pointer. Touch/pen remains tap-based.
+ * Desktop mouse: show only after a continuous 3-second hover. jQuery's
+ * mouseenter/mouseleave avoids child-element pointer transitions resetting the
+ * timer. Once visible, the tooltip follows the mouse.
  */
 $(document).on(
-    'pointerover',
+    'mouseenter',
     '.sales-chart-day',
     function(event){
-        const raw=event.originalEvent||event;
-        const pointerType=String(raw.pointerType||'mouse');
-        const relatedDay=$(raw.relatedTarget).closest('.sales-chart-day')[0]||null;
-
-        if(pointerType!=='mouse'||relatedDay===this){
-            return;
-        }
-
         cancelSalesChartHoverTimer();
         salesTouchChartDay=null;
         $salesChartTooltip.addClass('hidden');
 
         const day=this;
+        const raw=event.originalEvent||event;
         salesChartHoverDay=day;
         salesChartHoverPoint={
             clientX:Number(raw.clientX)||0,
@@ -3379,7 +3389,6 @@ $(document).on(
                 if(
                     salesChartHoverDay!==day
                     ||!document.documentElement.contains(day)
-                    ||!(day.matches&&day.matches(':hover'))
                 ){
                     cancelSalesChartHoverTimer();
                     return;
@@ -3397,17 +3406,15 @@ $(document).on(
 );
 
 $(document).on(
-    'pointermove',
+    'mousemove',
     '.sales-chart-day',
     function(event){
-        const raw=event.originalEvent||event;
-        const pointerType=String(raw.pointerType||'mouse');
-
-        if(pointerType!=='mouse'||salesTouchChartDay){
+        if(salesTouchChartDay){
             return;
         }
 
         if(salesChartHoverDay===this){
+            const raw=event.originalEvent||event;
             salesChartHoverPoint={
                 clientX:Number(raw.clientX)||0,
                 clientY:Number(raw.clientY)||0,
@@ -3427,18 +3434,10 @@ $(document).on(
 );
 
 $(document).on(
-    'pointerout',
+    'mouseleave',
     '.sales-chart-day',
-    function(event){
-        const raw=event.originalEvent||event;
-        const pointerType=String(raw.pointerType||'mouse');
-        const relatedDay=$(raw.relatedTarget).closest('.sales-chart-day')[0]||null;
-
-        if(
-            pointerType!=='mouse'
-            ||relatedDay===this
-            ||salesTouchChartDay===this
-        ){
+    function(){
+        if(salesTouchChartDay===this){
             return;
         }
 
@@ -3452,6 +3451,10 @@ $(document).on(
     '.sales-chart-day',
     function(event){
         if(salesTouchChartDay===this){
+            return;
+        }
+
+        if(this.matches&& !this.matches(':focus-visible')){
             return;
         }
 
@@ -4863,8 +4866,11 @@ const dashboardI18n={
         range:'Range',
         backToday:'Back to today',
         daily:'Daily',
+        oneDay:'1 Day',
+        threeDays:'3 Days',
         weekly:'Weekly',
         monthly:'Monthly',
+        custom:'Custom',
         sales:'Sales',
         posts:'Posts',
         postingProgress:'{period} Posting Progress',
@@ -4941,8 +4947,11 @@ const dashboardI18n={
         range:'日期范围',
         backToday:'返回今天',
         daily:'每日',
+        oneDay:'1天',
+        threeDays:'3天',
         weekly:'每周',
         monthly:'每月',
+        custom:'自定义',
         sales:'销售',
         posts:'帖子',
         postingProgress:'{period}发帖进度',
@@ -5019,8 +5028,11 @@ const dashboardI18n={
         range:'日期範圍',
         backToday:'返回今天',
         daily:'每日',
+        oneDay:'1天',
+        threeDays:'3天',
         weekly:'每週',
         monthly:'每月',
+        custom:'自訂',
         sales:'銷售',
         posts:'貼文',
         postingProgress:'{period}發文進度',
@@ -5097,8 +5109,11 @@ const dashboardI18n={
         range:'Rango',
         backToday:'Volver a hoy',
         daily:'Diario',
+        oneDay:'1 Día',
+        threeDays:'3 Días',
         weekly:'Semanal',
         monthly:'Mensual',
+        custom:'Personal.',
         sales:'Ventas',
         posts:'Publicaciones',
         postingProgress:'Progreso de publicaciones · {period}',
@@ -5285,17 +5300,29 @@ function applyDashboardLanguage(){
         }
     });
 
-    $('#dashboardPeriodSwitch [data-period]').each(function(){
-        const period=String($(this).data('period')||'day');
-
-        $(this)
-            .find('[data-dashboard-period-label]')
-            .text(translatedPeriodName(period));
+    const adminPresetLabels={
+        single:tr('oneDay'),
+        day:tr('threeDays'),
+        week:tr('weekly'),
+        month:tr('monthly'),
+        custom:tr('custom')
+    };
+    $('#dashboardPeriodSwitch [data-admin-preset]').each(function(){
+        const preset=String($(this).attr('data-admin-preset')||'single');
+        $(this).text(adminPresetLabels[preset]||preset);
     });
 
     $('#dashboardProgressTitle').text(
         tr('postingProgress',{
-            period:translatedPeriodName(currentPeriod)
+            period:currentPreset==='single'
+                ?tr('oneDay')
+                :currentPreset==='day'
+                    ?tr('threeDays')
+                    :currentPreset==='week'
+                        ?tr('weekly')
+                        :currentPreset==='month'
+                            ?tr('monthly')
+                            :tr('range')
         })
     );
 
@@ -5385,6 +5412,7 @@ function applyDashboardLanguage(){
     let currentFrom = String($live.attr('data-from') || currentDate);
     let currentTo = String($live.attr('data-to') || currentDate);
     let currentPeriod = String($live.attr('data-period') || 'day');
+    let currentPreset = String($live.attr('data-preset') || (currentPeriod==='day'?'single':currentPeriod));
     let currentPeriodDays = parseInt(
         $live.attr('data-period-days'),
         10
@@ -5404,6 +5432,8 @@ function applyDashboardLanguage(){
     let noticeShown = false;
     let expandedSalesId = 0;
     let expandedRequest = null;
+    let currentExpandedData = null;
+    let adminExpandedChannel = 'all';
     let reviewRequest = null;
     let activePostId = 0;
 
@@ -5422,6 +5452,11 @@ function applyDashboardLanguage(){
     const $expandedReviewMeta = $('#salesExpandedReviewMeta');
     const $expandedReviewEdit = $('#salesExpandedReviewEdit');
     const $expandedReviewRating = $('#salesExpandedReviewRating');
+    const $adminSalesActivity = $('#adminSalesActivityChartPanel');
+    const $adminSalesChartBars = $('#adminSalesChartBars');
+    const $adminSalesChartCanvas = $('#adminSalesChartCanvas');
+    const $adminSalesChartScroll = $('#adminSalesChartScroll');
+    const $adminSalesChartYAxis = $('#adminSalesChartYAxis');
 
     const $periodReviewModal = $('#salesPeriodReviewModal');
     const $periodReviewForm = $('#salesPeriodReviewForm');
@@ -5528,6 +5563,193 @@ function platformLogoHtml(platform){
     );
 }
 
+    function adminSalesActivityAggregate(data,date,channel){
+        const result={
+            date:date,
+            post_count:0,
+            good_count:0,
+            bad_count:0,
+            unreviewed_count:0
+        };
+        const rows=Array.isArray(data&&data.chart_rows)
+            ?data.chart_rows
+            :[];
+
+        rows.forEach(function(row){
+            if(String(row.date||'')!==date){
+                return;
+            }
+
+            const platform=String(row.platform||'').toLowerCase();
+            if(channel!=='all'&&platform!==channel){
+                return;
+            }
+
+            result.post_count+=parseInt(row.post_count,10)||0;
+            result.good_count+=parseInt(row.good_count,10)||0;
+            result.bad_count+=parseInt(row.bad_count,10)||0;
+            result.unreviewed_count+=parseInt(row.unreviewed_count,10)||0;
+        });
+
+        return result;
+    }
+
+    function renderAdminSalesChartAxis(cap,target,plotHeight){
+        const step=salesChartTickStep(cap);
+        const values=[];
+        for(let value=0;value<=cap+0.0001;value+=step){
+            values.push(Number(value.toFixed(4)));
+        }
+        if(!values.length||Math.abs(values[values.length-1]-cap)>0.0001){
+            values.push(cap);
+        }
+
+        const seen=new Set();
+        let ticks='';
+        let grid='';
+        values.forEach(function(value){
+            const key=String(value);
+            if(seen.has(key)){return;}
+            seen.add(key);
+            const top=plotHeight*(1-(value/cap));
+            const label=Number.isInteger(value)
+                ?String(value)
+                :String(Number(value.toFixed(1)));
+            const cls=Math.abs(value-target)<0.0001?' target':'';
+            ticks+='<span class="sales-chart-y-tick'+cls+'" style="top:'+top+'px">'+escapeHtml(label)+'</span>';
+            grid+='<span class="sales-chart-grid-line'+cls+'" style="top:'+top+'px"></span>';
+        });
+        $('#adminSalesChartYAxisTicks').html(ticks);
+        $('#adminSalesChartGridLines').html(grid);
+    }
+
+    function renderAdminSalesActivity(data){
+        if(!$adminSalesActivity.length||!data){
+            return;
+        }
+
+        currentExpandedData=data;
+        const from=String(data.from||currentFrom||currentDate);
+        const to=String(data.to||currentTo||currentDate);
+        const dates=salesDateRange(from,to);
+        const target=Math.max(1,parseInt(data.daily_target,10)||10);
+        const cap=Math.max(target,target*1.2);
+        const chartHeight=280;
+        const xAxisHeight=32;
+        const plotHeight=chartHeight-xAxisHeight;
+
+        // The shared tooltip reads this target. Admin and Sales dashboards are
+        // separate pages, so this safely keeps the displayed Missing value exact.
+        salesChartDailyTarget=target;
+
+        $('#adminSalesChartTargetCopy,#adminSalesChartTargetLineValue').text(target);
+        $('#adminSalesChartPeriodTitle').text(
+            currentPreset==='single'
+                ?'1 Day Posting Activity'
+                :currentPreset==='day'
+                    ?'3 Days Posting Activity'
+                    :currentPreset==='week'
+                        ?'Weekly Posting Activity'
+                        :currentPreset==='month'
+                            ?'Monthly Posting Activity'
+                            :'Custom Range Posting Activity'
+        );
+
+        $adminSalesChartCanvas.css({
+            height:chartHeight+'px',
+            '--sales-chart-height':chartHeight+'px',
+            '--sales-plot-height':plotHeight+'px',
+            '--sales-x-axis-height':xAxisHeight+'px'
+        });
+        $adminSalesChartYAxis.css('height',chartHeight+'px');
+        renderAdminSalesChartAxis(cap,target,plotHeight);
+        $('#adminSalesChartTargetLine').css(
+            'top',
+            (plotHeight*(1-(target/cap)))+'px'
+        );
+
+        const availableWidth=Math.max(
+            320,
+            Math.floor(
+                ($adminSalesChartScroll.innerWidth()
+                    ||$adminSalesActivity.innerWidth()
+                    ||720)-2
+            )
+        );
+        const dayCount=Math.max(1,dates.length);
+        const coarse=Boolean(
+            window.matchMedia
+            &&window.matchMedia('(pointer:coarse)').matches
+        );
+        let minimumSlot;
+        if(dayCount<=3){minimumSlot=coarse?96:82;}
+        else if(dayCount<=7){minimumSlot=coarse?64:52;}
+        else{minimumSlot=coarse?40:34;}
+
+        const naturalSlot=availableWidth/dayCount;
+        const needsScroll=naturalSlot<minimumSlot;
+        const canvasWidth=needsScroll
+            ?Math.max(availableWidth,dayCount*minimumSlot)
+            :availableWidth;
+        const slotWidth=canvasWidth/dayCount;
+        let barWidth;
+        if(dayCount<=3){barWidth=Math.min(74,Math.max(46,slotWidth*.46));}
+        else if(dayCount<=7){barWidth=Math.min(48,Math.max(24,slotWidth*.45));}
+        else{barWidth=Math.min(34,Math.max(12,slotWidth*.58));}
+
+        let html='';
+        dates.forEach(function(date){
+            const raw=adminSalesActivityAggregate(
+                data,
+                date,
+                adminExpandedChannel
+            );
+            const actual=Math.max(0,parseInt(raw.post_count,10)||0);
+            const good=Math.min(actual,Math.max(0,parseInt(raw.good_count,10)||0));
+            const bad=Math.min(Math.max(0,actual-good),Math.max(0,parseInt(raw.bad_count,10)||0));
+            const unreviewed=Math.max(0,actual-good-bad);
+            const visibleTotal=Math.min(actual,cap);
+            const scale=actual>0?visibleTotal/actual:0;
+            const goodH=(good*scale/cap)*100;
+            const badH=(bad*scale/cap)*100;
+            const unreviewedH=(unreviewed*scale/cap)*100;
+            const missing=Math.max(0,target-actual);
+
+            html+='<div class="sales-chart-day" tabindex="0"'
+                +' data-chart-date="'+escapeHtml(date)+'"'
+                +' data-chart-total="'+actual+'"'
+                +' data-chart-good="'+good+'"'
+                +' data-chart-bad="'+bad+'"'
+                +' data-chart-unreviewed="'+unreviewed+'"'
+                +' data-chart-missing="'+missing+'">'
+                +'<div class="sales-chart-day-plot">'
+                    +'<div class="sales-chart-stack">'
+                        +'<span class="sales-chart-segment good" style="height:'+goodH+'%"></span>'
+                        +'<span class="sales-chart-segment bad" style="height:'+badH+'%"></span>'
+                        +'<span class="sales-chart-segment unreviewed" style="height:'+unreviewedH+'%"></span>'
+                    +'</div>'
+                    +(actual>cap?'<span class="sales-chart-over-cap">120%+</span>':'')
+                +'</div>'
+                +'<span class="sales-chart-x-label">'+escapeHtml(salesShortDate(date))+'</span>'
+            +'</div>';
+        });
+
+        $adminSalesChartBars.html(html).css({
+            'grid-template-columns':'repeat('+dayCount+',minmax(0,1fr))',
+            'grid-auto-flow':'row',
+            'grid-auto-columns':'unset',
+            '--sales-chart-bar-width':Math.round(barWidth)+'px'
+        });
+        $adminSalesChartCanvas.css('width',Math.round(canvasWidth)+'px');
+        $adminSalesActivity
+            .attr('data-daily-target',target)
+            .attr('data-range-days',dayCount)
+            .toggleClass('sales-chart-single-day',dayCount===1)
+            .toggleClass('sales-chart-short-range',dayCount<=7)
+            .toggleClass('sales-chart-scrollable',needsScroll)
+            .removeClass('hidden');
+    }
+
     function periodName(period){
         return translatedPeriodName(period);
     }
@@ -5573,6 +5795,7 @@ function platformLogoHtml(platform){
 
         const url=new URL(window.location.href);
 
+        url.searchParams.set('preset',currentPreset);
         if(currentPeriod==='range'){
             url.searchParams.delete('date');
             url.searchParams.set('period','range');
@@ -5632,6 +5855,7 @@ function platformLogoHtml(platform){
 
     function adminAjaxRangeData(extra){
         const data=Object.assign({},extra||{});
+        data.preset=currentPreset;
         if(currentPeriod==='range'){
             data.from=currentFrom;
             data.to=currentTo;
@@ -5643,16 +5867,47 @@ function platformLogoHtml(platform){
         return data;
     }
 
-    function updatePeriodButtons(period){
-        $('#dashboardPeriodSwitch [data-period]').each(function(){
-            const active = $(this).data('period') === period;
-
+    function updatePeriodButtons(preset){
+        currentPreset=String(preset||'custom');
+        $('#dashboardPeriodSwitch [data-admin-preset]').each(function(){
+            const active=String($(this).attr('data-admin-preset'))===currentPreset;
             $(this)
-                .toggleClass('active', active)
-                .attr('aria-pressed', active ? 'true' : 'false');
+                .toggleClass('active',active)
+                .attr('aria-pressed',active?'true':'false');
         });
+        $live.attr('data-preset',currentPreset);
+    }
 
-        $('#dashboardPeriodFormValue').val(period);
+    function adminPresetRange(preset,anchorValue){
+        const parse=function(value){
+            const m=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if(!m)return null;
+            const d=new Date(+m[1],+m[2]-1,+m[3],12,0,0);
+            return Number.isNaN(d.getTime())?null:d;
+        };
+        const iso=function(d){
+            return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+        };
+        let anchor=parse(anchorValue)||parse(today);
+        const todayDate=parse(today);
+        if(!anchor)return null;
+        if(todayDate&&anchor>todayDate)anchor=new Date(todayDate);
+        const toDate=new Date(anchor);
+        let fromDate=new Date(anchor);
+
+        if(preset==='day'){
+            fromDate.setDate(fromDate.getDate()-2);
+        }else if(preset==='week'){
+            fromDate.setDate(fromDate.getDate()-6);
+        }else if(preset==='month'){
+            const anchorDay=toDate.getDate();
+            const prevStart=new Date(toDate.getFullYear(),toDate.getMonth()-1,1,12,0,0);
+            const prevLastDay=new Date(toDate.getFullYear(),toDate.getMonth(),0,12,0,0).getDate();
+            fromDate=new Date(prevStart.getFullYear(),prevStart.getMonth(),Math.min(anchorDay,prevLastDay),12,0,0);
+            fromDate.setDate(fromDate.getDate()+1);
+        }
+
+        return {from:iso(fromDate),to:iso(toDate)};
     }
 
 function updateReviewProgressSegments(
@@ -5847,6 +6102,16 @@ function syncExpandedSalesCardFromTiles(){
 
         $expanded.addClass('hidden');
         $expandedList.empty();
+        $adminSalesActivity.addClass('hidden');
+        $adminSalesChartBars.empty();
+        currentExpandedData=null;
+        adminExpandedChannel='all';
+        $('#adminSalesPlatformFilter [data-admin-sales-platform]')
+            .removeClass('active')
+            .attr('aria-pressed','false')
+            .filter('[data-admin-sales-platform="all"]')
+            .addClass('active')
+            .attr('aria-pressed','true');
         $expandedReview.addClass('hidden');
         currentSalesPeriodReview=null;
         $expandedLoading.addClass('hidden');
@@ -6146,16 +6411,22 @@ function closeSalesPeriodReviewEditor(){
 }
 
 function renderPostGrid(data){
-    const posts=Array.isArray(data.posts)
+    const allPosts=Array.isArray(data.posts)
         ?data.posts
         :[];
+    const posts=adminExpandedChannel==='all'
+        ?allPosts
+        :allPosts.filter(function(post){
+            return String(post.platform||'').toLowerCase()===adminExpandedChannel;
+        });
 
     renderSalesPeriodReview(data.review||null);
+    renderAdminSalesActivity(data);
 
     $expandedTitle.text(
         data.sales.name
         +' · '
-        +data.count
+        +posts.length
         +' '
         +tr('postsLower')
     );
@@ -6351,9 +6622,18 @@ function renderPostGrid(data){
             + ' · '+tr('loading')
         );
         $expandedSubtitle.text(
-            periodName(currentPeriod) + ' · ' + tr('posts')
+            (currentPreset==='single'?tr('oneDay'):currentPreset==='day'?tr('threeDays'):currentPreset==='week'?tr('weekly'):currentPreset==='month'?tr('monthly'):tr('range')) + ' · ' + tr('posts')
         );
         $expandedList.empty();
+        $adminSalesActivity.addClass('hidden');
+        currentExpandedData=null;
+        adminExpandedChannel='all';
+        $('#adminSalesPlatformFilter [data-admin-sales-platform]')
+            .removeClass('active')
+            .attr('aria-pressed','false')
+            .filter('[data-admin-sales-platform="all"]')
+            .addClass('active')
+            .attr('aria-pressed','true');
         $expandedReview.addClass('hidden');
         currentSalesPeriodReview=null;
         $expandedLoading.removeClass('hidden');
@@ -6374,6 +6654,7 @@ function renderPostGrid(data){
                 &&data.ok
                 &&expandedSalesId===salesId
             ){
+                currentExpandedData=data;
                 renderPostGrid(data);
 
                 if(openReviewAfterExpand){
@@ -6408,6 +6689,7 @@ function renderPostGrid(data){
 
     function applyProgress(data){
         currentPeriod=data.period||'day';
+        currentPreset=String(data.preset||currentPreset||(currentPeriod==='day'?'single':'custom'));
         currentFrom=String(data.from||currentFrom||currentDate);
         currentTo=String(data.to||currentTo||currentDate);
         currentDate=String(data.date||currentTo||currentDate);
@@ -6427,7 +6709,7 @@ function renderPostGrid(data){
             .attr('data-max-post-id', baselineMaxId);
 
         syncAdminRangeInputs();
-        updatePeriodButtons(currentPeriod);
+        updatePeriodButtons(currentPreset);
         updateBackToday();
         updateHistory();
 
@@ -6439,7 +6721,15 @@ function renderPostGrid(data){
 
         $('#dashboardProgressTitle').text(
             tr('postingProgress',{
-                period:periodName(currentPeriod)
+                period:currentPreset==='single'
+                    ?tr('oneDay')
+                    :currentPreset==='day'
+                        ?tr('threeDays')
+                        :currentPreset==='week'
+                            ?tr('weekly')
+                            :currentPreset==='month'
+                                ?tr('monthly')
+                                :tr('range')
             })
         );
         $('#dashboardProgressSubtitle').text(
@@ -6479,9 +6769,18 @@ function renderPostGrid(data){
         let requestData={};
 
         if(options.from&&options.to){
-            requestData={from:String(options.from),to:String(options.to),period:'range'};
+            requestData={
+                from:String(options.from),
+                to:String(options.to),
+                period:'range',
+                preset:String(options.preset||'custom')
+            };
         }else{
-            requestData={date:String(options.date||currentDate),period:String(options.period||currentPeriod)};
+            requestData={
+                date:String(options.date||currentDate),
+                period:String(options.period||currentPeriod),
+                preset:String(options.preset||currentPreset||'single')
+            };
         }
 
         closeExpandedPosts();
@@ -6490,7 +6789,7 @@ function renderPostGrid(data){
             periodRequest.abort();
         }
 
-        $('#dashboardPeriodSwitch [data-period]').prop('disabled',true);
+        $('#dashboardPeriodSwitch [data-admin-preset]').prop('disabled',true);
         $('body').addClass('dashboard-ajax-loading');
         $grid.addClass(initial?'dashboard-date-syncing':'period-loading');
 
@@ -6509,7 +6808,7 @@ function renderPostGrid(data){
         .always(function(){
             $('body').removeClass('dashboard-ajax-loading');
             $grid.removeClass('dashboard-date-syncing period-loading');
-            $('#dashboardPeriodSwitch [data-period]').prop('disabled',false);
+            $('#dashboardPeriodSwitch [data-admin-preset]').prop('disabled',false);
         });
 
         return periodRequest;
@@ -6517,6 +6816,7 @@ function renderPostGrid(data){
 
     function reloadCurrentProgress(options){
         options=Object.assign({},options||{});
+        options.preset=currentPreset;
         if(currentPeriod==='range'){
             options.from=currentFrom;
             options.to=currentTo;
@@ -6571,20 +6871,28 @@ $('#appLanguageSwitch').on(
 
     $('#dashboardPeriodSwitch').on(
         'click',
-        '[data-period]',
+        '[data-admin-preset]',
         function(){
-            const period = String(
-                $(this).data('period') || 'day'
-            );
+            const preset=String($(this).attr('data-admin-preset')||'single');
+            const anchor=String($('#dashboardToInput').val()||today||currentTo);
 
-            if(period === currentPeriod){
+            if(preset==='custom'){
+                applyAdminRangeChange('');
                 return;
             }
 
-            loadProgress({
-                date:currentTo||currentDate,
-                period:period
-            });
+            const range=adminPresetRange(preset,anchor);
+            if(!range)return;
+
+            $('#dashboardFromInput').val(range.from);
+            $('#dashboardToInput').val(range.to);
+            currentPreset=preset;
+
+            if(preset==='single'){
+                loadProgress({date:range.to,period:'day',preset:'single'});
+            }else{
+                loadProgress({from:range.from,to:range.to,preset:preset});
+            }
         }
     );
 
@@ -6634,9 +6942,11 @@ $('#appLanguageSwitch').on(
             .attr('min',from)
             .attr('max',today||'');
 
+        currentPreset='custom';
         loadProgress({
             from:from,
-            to:to
+            to:to,
+            preset:'custom'
         });
     }
 
@@ -6649,7 +6959,7 @@ $('#appLanguageSwitch').on(
         currentFrom=today;
         currentTo=today;
         currentDate=today;
-        loadProgress({date:today,period:'day'});
+        loadProgress({date:today,period:'day',preset:'single'});
     });
 
     $grid.on('click','[data-daily-review]',function(event){
@@ -6696,6 +7006,45 @@ $('#appLanguageSwitch').on(
 
     $('#salesExpandedClose').on('click', function(){
         closeExpandedPosts();
+    });
+
+    $('#adminSalesPlatformFilter').on(
+        'click',
+        '[data-admin-sales-platform]',
+        function(event){
+            event.preventDefault();
+            event.stopPropagation();
+            if(!currentExpandedData){return;}
+
+            adminExpandedChannel=String(
+                $(this).attr('data-admin-sales-platform')||'all'
+            ).toLowerCase();
+
+            $('#adminSalesPlatformFilter [data-admin-sales-platform]')
+                .each(function(){
+                    const active=String(
+                        $(this).attr('data-admin-sales-platform')||''
+                    ).toLowerCase()===adminExpandedChannel;
+                    $(this)
+                        .toggleClass('active',active)
+                        .attr('aria-pressed',active?'true':'false');
+                });
+
+            renderPostGrid(currentExpandedData);
+        }
+    );
+
+    let adminSalesChartResizeTimer=null;
+    $(window).on('resize',function(){
+        if(!currentExpandedData||$adminSalesActivity.hasClass('hidden')){
+            return;
+        }
+        if(adminSalesChartResizeTimer){
+            window.clearTimeout(adminSalesChartResizeTimer);
+        }
+        adminSalesChartResizeTimer=window.setTimeout(function(){
+            renderAdminSalesActivity(currentExpandedData);
+        },120);
     });
 
 $periodReviewStars.on('click','[data-rating-star]',function(){
@@ -8866,5 +9215,81 @@ $(document).on('click','.website-reference-delete',function(){
         $button.prop('disabled',false).removeClass('delete-armed').text('Delete');
     });
 });
+
+
+// v0.1.79 Management Reports use the same rolling date controls as Sales.
+(function(){
+    const $reports=$('#managementReports');
+    if(!$reports.length)return;
+
+    const today=String($reports.attr('data-today')||'');
+    const $from=$('#reportRangeFrom');
+    const $to=$('#reportRangeTo');
+    const $period=$('#reportPeriodValue');
+
+    function parseIso(value){
+        const m=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if(!m)return null;
+        const d=new Date(+m[1],+m[2]-1,+m[3],12,0,0);
+        return Number.isNaN(d.getTime())?null:d;
+    }
+    function iso(d){
+        return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    }
+    function rangeFor(preset,anchorValue){
+        let anchor=parseIso(anchorValue)||parseIso(today);
+        const todayDate=parseIso(today);
+        if(!anchor)return null;
+        if(todayDate&&anchor>todayDate)anchor=new Date(todayDate);
+        const toDate=new Date(anchor);
+        let fromDate=new Date(anchor);
+        if(preset==='day')fromDate.setDate(fromDate.getDate()-2);
+        else if(preset==='week')fromDate.setDate(fromDate.getDate()-6);
+        else if(preset==='month'){
+            const day=toDate.getDate();
+            const prevStart=new Date(toDate.getFullYear(),toDate.getMonth()-1,1,12,0,0);
+            const prevLast=new Date(toDate.getFullYear(),toDate.getMonth(),0,12,0,0).getDate();
+            fromDate=new Date(prevStart.getFullYear(),prevStart.getMonth(),Math.min(day,prevLast),12,0,0);
+            fromDate.setDate(fromDate.getDate()+1);
+        }
+        return {from:iso(fromDate),to:iso(toDate)};
+    }
+    function selectPreset(preset){
+        $period.val(preset);
+        $('#reportPeriodSwitch [data-report-period]').each(function(){
+            const active=String($(this).attr('data-report-period'))===preset;
+            $(this).toggleClass('active',active).attr('aria-pressed',active?'true':'false');
+        });
+    }
+    function sync(changed){
+        let from=String($from.val()||'');
+        let to=String($to.val()||'');
+        if(!parseIso(from)||!parseIso(to))return false;
+        if(today&&to>today){to=today;$to.val(to);}
+        if(today&&from>today){from=today;$from.val(from);}
+        if(changed==='from'&&from>to){to=from;$to.val(to);}
+        else if(changed==='to'&&to<from){from=to;$from.val(from);}
+        $from.attr('max',to);
+        $to.attr('min',from).attr('max',today);
+        return true;
+    }
+
+    $('#reportPeriodSwitch').on('click','[data-report-period]',function(){
+        const preset=String($(this).attr('data-report-period')||'single');
+        if(preset==='custom'){
+            selectPreset('custom');
+            sync('');
+            return;
+        }
+        const range=rangeFor(preset,String($to.val()||today));
+        if(!range)return;
+        $from.val(range.from);
+        $to.val(range.to);
+        sync('');
+        selectPreset(preset);
+    });
+    $from.on('change',function(){if(sync('from'))selectPreset('custom');});
+    $to.on('change',function(){if(sync('to'))selectPreset('custom');});
+})();
 
 });

@@ -10,6 +10,15 @@ $periodNames = [
     'day' => 'Daily',
     'week' => 'Weekly',
     'month' => 'Monthly',
+    'range' => 'Range',
+];
+$adminPreset = $preset ?? ($period === 'day' ? 'single' : $period);
+$adminPresetNames = [
+    'single' => '1 Day',
+    'day' => '3 Days',
+    'week' => 'Weekly',
+    'month' => 'Monthly',
+    'custom' => 'Custom Range',
 ];
 ?>
 
@@ -32,6 +41,7 @@ $periodNames = [
     data-from="<?= Util::e((string)$periodInfo['from']) ?>"
     data-to="<?= Util::e((string)$periodInfo['to']) ?>"
     data-period="<?= Util::e($period) ?>"
+    data-preset="<?= Util::e($adminPreset) ?>"
     data-initial-sales-id="<?= (int)($_GET['sales_id'] ?? 0) ?>"
     data-initial-open-review="<?= !empty($_GET['review']) ? '1' : '0' ?>"
     data-period-days="<?= (int)$periodInfo['days'] ?>"
@@ -58,7 +68,7 @@ $periodNames = [
     </button>
 </div>
 
-<div class="page-head admin-page-head">
+<div class="page-head admin-page-head sales-portal-head">
     <div class="admin-dashboard-heading">
         <div
             class="eyebrow"
@@ -68,21 +78,39 @@ $periodNames = [
             Hi, <?= Util::e((string)($admin['display_name'] ?? 'Administrator')) ?>
         </div>
 
-        <h1 id="dashboardPageTitle">
-            My Sales Activity
-        </h1>
+        <h1 id="dashboardPageTitle">My Sales Activity</h1>
     </div>
 
-    <div class="dashboard-head-controls">
+    <div class="sales-portal-head-actions admin-portal-head-actions">
+        <div
+            class="sales-period-switch sales-head-period-switch"
+            id="dashboardPeriodSwitch"
+            role="group"
+            aria-label="Admin sales activity period"
+        >
+            <?php foreach([
+                'single'=>'1 Day',
+                'day'=>'3 Days',
+                'week'=>'Weekly',
+                'month'=>'Monthly',
+                'custom'=>'Custom',
+            ] as $presetKey=>$presetLabel): ?>
+                <button
+                    type="button"
+                    class="sales-period-button<?= $adminPreset===$presetKey?' active':'' ?>"
+                    data-admin-preset="<?= Util::e($presetKey) ?>"
+                    aria-pressed="<?= $adminPreset===$presetKey?'true':'false' ?>"
+                ><?= Util::e($presetLabel) ?></button>
+            <?php endforeach; ?>
+        </div>
+
         <form
-            class="filters dashboard-date-controls admin-range-controls"
+            class="filters dashboard-date-controls admin-range-controls sales-range-filter"
             method="get"
             id="dashboardDateForm"
             novalidate
         >
-            <input type="hidden" name="period" value="<?= Util::e($period) ?>" id="dashboardPeriodFormValue">
-
-            <div class="dashboard-date-control-row">
+            <div class="dashboard-date-control-row sales-date-control-row">
                 <label class="admin-range-field">
                     <span data-dashboard-i18n="from">From</span>
                     <input
@@ -90,16 +118,11 @@ $periodNames = [
                         name="from"
                         id="dashboardFromInput"
                         value="<?= Util::e((string)$periodInfo['from']) ?>"
-                        max="<?= Util::e(
-                            min(
-                                (string)$periodInfo['to'],
-                                $today
-                            )
-                        ) ?>"
+                        max="<?= Util::e(min((string)$periodInfo['to'],$today)) ?>"
                     >
                 </label>
 
-                <div class="admin-range-field-stack">
+                <div class="admin-range-field-stack sales-to-field-stack">
                     <label class="admin-range-field">
                         <span data-dashboard-i18n="to">To</span>
                         <input
@@ -114,14 +137,10 @@ $periodNames = [
 
                     <button
                         type="button"
-                        class="dashboard-back-today<?= (
-                            (string)$periodInfo['to'] === $today
-                        ) ? ' hidden' : '' ?>"
+                        class="dashboard-back-today sales-back-today<?= ((string)$periodInfo['to']===$today)?' hidden':'' ?>"
                         id="dashboardBackToday"
                     >
-                        <span data-dashboard-i18n="backToday">
-                            Back to today
-                        </span>
+                        <span data-dashboard-i18n="backToday">Back to today</span>
                     </button>
                 </div>
             </div>
@@ -131,27 +150,6 @@ $periodNames = [
 
 <section class="admin-sales-progress-section">
     <div class="admin-progress-toolbar">
-        <div
-            class="dashboard-period-switch"
-            id="dashboardPeriodSwitch"
-            aria-label="Sales progress period"
-        >
-            <?php foreach ($periodNames as $periodKey => $periodName): ?>
-                <button
-                    type="button"
-                    class="dashboard-period-button<?= $period === $periodKey ? ' active' : '' ?>"
-                    data-period="<?= Util::e($periodKey) ?>"
-                    aria-pressed="<?= $period === $periodKey ? 'true' : 'false' ?>"
-                >
-                    <span
-                        data-dashboard-period-label="<?= Util::e($periodKey) ?>"
-                    >
-                        <?= Util::e($periodName) ?>
-                    </span>
-                </button>
-            <?php endforeach; ?>
-        </div>
-
         <div class="admin-section-summary">
             <strong id="dashboardSalesCount">
                 <?= count($salesProgress) ?>
@@ -168,7 +166,7 @@ $periodNames = [
     <div class="admin-section-head compact">
         <div>
             <h2 id="dashboardProgressTitle">
-                <?= Util::e($periodNames[$period]) ?> Posting Progress
+                <?= Util::e($adminPresetNames[$adminPreset] ?? $periodNames[$period]) ?> Posting Progress
             </h2>
             <p id="dashboardProgressSubtitle">
                 Daily target × <?= (int)$periodInfo['days'] ?>
@@ -476,6 +474,88 @@ $periodNames = [
                 ×
             </button>
         </div>
+
+        <section
+            class="sales-activity-chart-panel admin-sales-activity-panel hidden"
+            id="adminSalesActivityChartPanel"
+            data-daily-target="10"
+        >
+            <div class="sales-activity-chart-head">
+                <div>
+                    <span class="eyebrow">Posting Activity</span>
+                    <h2 id="adminSalesChartPeriodTitle">Daily Post Progress</h2>
+                    <p>
+                        Daily target
+                        <strong id="adminSalesChartTargetCopy">10</strong>
+                    </p>
+                </div>
+
+                <div class="sales-chart-toolbar">
+                    <div class="sales-channel-control">
+                        <div class="sales-channel-title">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M7 3a3 3 0 1 1-1 5.83v3.34A3.001 3.001 0 1 1 4 12.17V8.83A3 3 0 0 1 7 3Zm10 0a3 3 0 1 1-1 5.83v1.34A3 3 0 0 1 13 13h-2a1 1 0 0 0-1 1v1.17a3 3 0 1 1-2 0V14a3 3 0 0 1 3-3h2a1 1 0 0 0 1-1V8.83A3 3 0 0 1 17 3Z"/>
+                            </svg>
+                            <strong>Channels</strong>
+                        </div>
+                        <div
+                            class="sales-platform-filter"
+                            id="adminSalesPlatformFilter"
+                            role="group"
+                            aria-label="Filter selected Sales activity by platform"
+                        >
+                            <?php foreach ([
+                                'all'=>'All',
+                                'facebook'=>'Facebook',
+                                'instagram'=>'Instagram',
+                                'offerup'=>'OfferUp',
+                                'craigslist'=>'Craigslist',
+                            ] as $channelKey=>$channelLabel): ?>
+                                <button
+                                    type="button"
+                                    class="sales-platform-filter-button<?= $channelKey==='all' ? ' active' : '' ?>"
+                                    data-admin-sales-platform="<?= Util::e($channelKey) ?>"
+                                    aria-pressed="<?= $channelKey==='all' ? 'true' : 'false' ?>"
+                                ><?= Util::e($channelLabel) ?></button>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sales-chart-legend">
+                <span><i class="good"></i> Good</span>
+                <span><i class="bad"></i> Issues</span>
+                <span><i class="unreviewed"></i> Unreviewed</span>
+            </div>
+
+            <div class="sales-chart-shell">
+                <div class="sales-chart-y-axis" id="adminSalesChartYAxis">
+                    <div id="adminSalesChartYAxisTicks"></div>
+                </div>
+
+                <div class="sales-chart-scroll" id="adminSalesChartScroll">
+                    <div class="sales-chart-canvas" id="adminSalesChartCanvas">
+                        <div
+                            class="sales-chart-grid-lines"
+                            id="adminSalesChartGridLines"
+                            aria-hidden="true"
+                        ></div>
+                        <div
+                            class="sales-chart-target-line"
+                            id="adminSalesChartTargetLine"
+                        >
+                            <span>Daily target <b id="adminSalesChartTargetLineValue">10</b></span>
+                        </div>
+                        <div
+                            class="sales-chart-bars"
+                            id="adminSalesChartBars"
+                            aria-label="Selected Sales posting activity chart"
+                        ></div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
 <section
     class="sales-period-review hidden"
@@ -1048,50 +1128,8 @@ $periodNames = [
     </div>
 </div>
 
-<?php if ($deletionRequests): ?>
-    <section class="panel">
-        <h2>Deletion Requests</h2>
-
-        <?php foreach ($deletionRequests as $request): ?>
-            <div class="request">
-                <div>
-                    <b>
-                        <?= Util::e($request['display_name']) ?>
-                        — <?= Util::e($request['title']) ?>
-                    </b>
-                    <span><?= Util::e($request['reason']) ?></span>
-                </div>
-
-                <form
-                    method="post"
-                    action="<?= $base ?>/admin/delete-request"
-                >
-                    <input
-                        type="hidden"
-                        name="_csrf"
-                        value="<?= Util::e($csrf) ?>"
-                    >
-                    <input
-                        type="hidden"
-                        name="request_id"
-                        value="<?= (int)$request['id'] ?>"
-                    >
-                    <button
-                        name="action"
-                        value="approve"
-                        class="tiny okbtn"
-                    >
-                        Approve delete
-                    </button>
-                    <button
-                        name="action"
-                        value="reject"
-                        class="tiny badbtn"
-                    >
-                        Reject
-                    </button>
-                </form>
-            </div>
-        <?php endforeach; ?>
-    </section>
-<?php endif; ?>
+<div
+    class="sales-chart-tooltip hidden"
+    id="salesChartTooltip"
+    role="status"
+></div>

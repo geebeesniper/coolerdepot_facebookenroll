@@ -1,91 +1,149 @@
-<?php use App\Core\Csrf; use App\Core\Util; ?>
+<?php use App\Core\Util; ?>
+<?php
+$base=$config['app']['base_path'];
+$today=date('Y-m-d');
+$periodLabels=[
+    'single'=>'1 Day',
+    'day'=>'3 Days',
+    'week'=>'Weekly',
+    'month'=>'Monthly',
+    'custom'=>'Custom',
+];
+$downloadQuery=http_build_query([
+    'period'=>$period,
+    'from'=>$start,
+    'to'=>$end,
+    'sales_id'=>$salesUserId,
+]);
+?>
 
-<div class="page-head">
+<div
+    class="page-head sales-portal-head report-page-head"
+    id="managementReports"
+    data-today="<?= Util::e($today) ?>"
+    data-period="<?= Util::e($period) ?>"
+>
     <div>
         <div class="eyebrow">Management Reports</div>
-        <h1><?= Util::e(ucfirst($period)) ?> Progress</h1>
+        <h1>Sales Report</h1>
         <p><?= Util::e($start) ?> → <?= Util::e($end) ?></p>
     </div>
-</div>
 
-<div class="panel">
-    <form class="filters">
-        <select name="period">
-            <option value="week" <?= $period==='week'?'selected':'' ?>>Week</option>
-            <option value="month" <?= $period==='month'?'selected':'' ?>>Month</option>
-        </select>
-
-        <input type="date" name="start" value="<?= Util::e($start) ?>">
-
-        <select name="sales_id">
-            
-            <?php foreach ($sales as $s): ?>
-                <option value="<?= (int)$s['id'] ?>" <?= $salesUserId===(int)$s['id']?'selected':'' ?>>
-                    <?= Util::e($s['display_name']) ?>
-                </option>
+    <div class="sales-portal-head-actions report-head-actions">
+        <div
+            class="sales-period-switch sales-head-period-switch"
+            id="reportPeriodSwitch"
+            role="group"
+            aria-label="Report date range"
+        >
+            <?php foreach($periodLabels as $key=>$label): ?>
+                <button
+                    type="button"
+                    class="sales-period-button<?= $period===$key?' active':'' ?>"
+                    data-report-period="<?= Util::e($key) ?>"
+                    aria-pressed="<?= $period===$key?'true':'false' ?>"
+                ><?= Util::e($label) ?></button>
             <?php endforeach; ?>
-        </select>
-
-        <button class="btn">Run</button>
-    </form>
-</div>
-
-<div class="panel tablewrap">
-    <table>
-        <tr>
-            <th>Sales</th>
-            <th>Total</th>
-            <th>Facebook</th>
-            <th>OfferUp</th>
-            <th>Craigslist</th>
-            <th>Good</th>
-            <th>Bad</th>
-            <th>Good %</th>
-        </tr>
-
-        <?php foreach ($rows as $r):
-            $reviewed = (int)$r['good_posts'] + (int)$r['bad_posts'];
-            $pct = $reviewed ? round((int)$r['good_posts'] / $reviewed * 100, 1) : 0;
-        ?>
-            <tr>
-                <td><?= Util::e($r['display_name']) ?></td>
-                <td><?= (int)$r['total_posts'] ?></td>
-                <td><?= (int)$r['facebook_posts'] ?></td>
-                <td><?= (int)$r['offerup_posts'] ?></td>
-                <td><?= (int)$r['craigslist_posts'] ?></td>
-                <td><?= (int)$r['good_posts'] ?></td>
-                <td><?= (int)$r['bad_posts'] ?></td>
-                <td><?= $pct ?>%</td>
-            </tr>
-        <?php endforeach; ?>
-    </table>
-</div>
-
-<?php if ($salesUserId > 0): ?>
-<div class="panel unified-review-redirect">
-    <div>
-        <div class="eyebrow">
-            <?= Util::e(ucfirst($period)) ?> Review
         </div>
-        <h2>Sales Management Review</h2>
-        <p>
-            Rating, notes, and review history are managed in the
-            Sales Activity &amp; Attendance dashboard so there is only
-            one review interface.
-        </p>
+
+        <form
+            class="filters dashboard-date-controls admin-range-controls sales-range-filter report-range-filter"
+            id="reportRangeForm"
+            method="get"
+            action="<?= Util::e($base) ?>/admin/reports"
+            novalidate
+        >
+            <input type="hidden" name="period" id="reportPeriodValue" value="<?= Util::e($period) ?>">
+
+            <div class="dashboard-date-control-row sales-date-control-row">
+                <label class="admin-range-field">
+                    <span>From</span>
+                    <input
+                        type="date"
+                        name="from"
+                        id="reportRangeFrom"
+                        value="<?= Util::e($start) ?>"
+                        max="<?= Util::e(min($end,$today)) ?>"
+                    >
+                </label>
+
+                <div class="admin-range-field-stack sales-to-field-stack">
+                    <label class="admin-range-field">
+                        <span>To</span>
+                        <input
+                            type="date"
+                            name="to"
+                            id="reportRangeTo"
+                            value="<?= Util::e($end) ?>"
+                            min="<?= Util::e($start) ?>"
+                            max="<?= Util::e($today) ?>"
+                        >
+                    </label>
+                </div>
+            </div>
+
+            <label class="report-sales-field">
+                <span>Sales</span>
+                <select name="sales_id" id="reportSalesSelect">
+                    <option value="0" <?= $salesUserId===0?'selected':'' ?>>All</option>
+                    <?php foreach($sales as $s): ?>
+                        <option
+                            value="<?= (int)$s['id'] ?>"
+                            <?= $salesUserId===(int)$s['id']?'selected':'' ?>
+                        ><?= Util::e($s['display_name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+
+            <button class="btn report-run-button" type="submit">Run</button>
+        </form>
+    </div>
+</div>
+
+<div class="panel report-result-panel">
+    <div class="report-result-head">
+        <div>
+            <div class="eyebrow"><?= Util::e($periodLabels[$period]??'Custom') ?> Range</div>
+            <h2><?= $salesUserId===0?'All Sales':'Selected Sales' ?></h2>
+            <p><?= Util::e($start) ?> → <?= Util::e($end) ?></p>
+        </div>
+
+        <a
+            class="btn primary report-download-button"
+            href="<?= Util::e($base) ?>/admin/reports/download?<?= Util::e($downloadQuery) ?>"
+        >Download CSV</a>
     </div>
 
-    <a
-        class="btn primary"
-        href="<?= Util::e(
-            $config['app']['base_path']
-            .'/admin?date='.rawurlencode($start)
-            .'&period='.rawurlencode($period)
-            .'&sales_id='.(int)$salesUserId
-            .'&review=1'
-        ) ?>"
-    >
-        Open <?= Util::e(ucfirst($period)) ?> Review
-    </a>
+    <div class="tablewrap report-table-wrap">
+        <table>
+            <tr>
+                <th>Sales</th>
+                <th>Total</th>
+                <th>Facebook</th>
+                <th>OfferUp</th>
+                <th>Craigslist</th>
+                <th>Good</th>
+                <th>Bad</th>
+                <th>Good %</th>
+            </tr>
+
+            <?php foreach($rows as $r):
+                $reviewed=(int)$r['good_posts']+(int)$r['bad_posts'];
+                $pct=$reviewed
+                    ?round((int)$r['good_posts']/$reviewed*100,1)
+                    :0;
+            ?>
+                <tr>
+                    <td><?= Util::e($r['display_name']) ?></td>
+                    <td><?= (int)$r['total_posts'] ?></td>
+                    <td><?= (int)$r['facebook_posts'] ?></td>
+                    <td><?= (int)$r['offerup_posts'] ?></td>
+                    <td><?= (int)$r['craigslist_posts'] ?></td>
+                    <td><?= (int)$r['good_posts'] ?></td>
+                    <td><?= (int)$r['bad_posts'] ?></td>
+                    <td><?= $pct ?>%</td>
+                </tr>
+            <?php endforeach; ?>
+        </table>
+    </div>
 </div>
-<?php endif; ?>

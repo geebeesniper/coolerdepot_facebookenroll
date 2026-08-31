@@ -252,7 +252,7 @@ statuses, which still use pending/approved/rejected.
 
 ## Release versioning
 
-Current release: `v0.1.77`
+Current release: `v0.1.79`
 
 `VERSION` in the project root is the application version source of truth.
 The footer reads this value and displays it on every page.
@@ -1441,3 +1441,13 @@ Upload `sales-posts-v0.1.74-chart-pointer-tooltip.zip` to `/opt/coolerdepot/www/
 - On success the request button changes to `Deletion requested`, the send button changes to `Sent`, and the current dashboard reloads after a short confirmation delay so all visible post cards reflect the pending request.
 - Failed requests restore the send control and keep the existing error message behavior.
 - No database migration is required.
+
+## v0.1.79 — information center, Admin Sales activity, tooltip reliability
+
+- Moves pending Sales deletion requests out of the standalone Admin dashboard panel and into a compact Information Center menu in the Admin header.
+- Deletion-request post titles open the original Marketplace URL directly; approve/reject actions remain available in the same notification item.
+- Adds a Sales-style Posting Activity chart to each Sales person expanded view in Admin, using that Sales user's daily target and the current Admin date range. Channel filters update both the chart and visible post grid.
+- Fixes the 3-second desktop chart tooltip by using stable mouse enter/leave timing instead of pointer transitions through chart child elements. Once visible it follows the mouse; touch/pen remains tap-based.
+- After a Sales deletion request succeeds, the reason form collapses immediately and the post detail action becomes `Deletion requested ✓` without leaving the editor open.
+- No database migration is required.
+

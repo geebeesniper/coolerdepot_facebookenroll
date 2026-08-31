@@ -10,6 +10,7 @@ class AdminController extends Controller{
         [
             'date'=>$date,
             'period'=>$period,
+            'preset'=>$preset,
             'info'=>$periodInfo,
         ]=$this->dashboardRequestContext($_GET);
 
@@ -52,12 +53,18 @@ class AdminController extends Controller{
         }
 
         $s=Database::connection()->query(
-            "SELECT d.*,p.title,u.display_name
+            "SELECT
+                d.*,
+                p.title,
+                p.canonical_url,
+                p.platform,
+                p.external_post_id,
+                u.display_name
              FROM cdsp_deletion_requests d
              JOIN cdsp_sales_posts p ON p.id=d.post_id
              JOIN cdsp_users u ON u.id=p.sales_user_id
              WHERE d.status='pending'
-             ORDER BY d.created_at"
+             ORDER BY d.created_at DESC,d.id DESC"
         );
         $deletionRequests=$s->fetchAll();
 
@@ -67,6 +74,7 @@ class AdminController extends Controller{
                 'admin',
                 'date',
                 'period',
+                'preset',
                 'periodInfo',
                 'posts',
                 'sales',
@@ -85,6 +93,7 @@ class AdminController extends Controller{
         [
             'date'=>$date,
             'period'=>$period,
+            'preset'=>$preset,
             'info'=>$periodInfo,
         ]=$this->dashboardRequestContext($_GET);
 
@@ -112,6 +121,7 @@ class AdminController extends Controller{
             'ok'=>true,
             'date'=>$date,
             'period'=>$period,
+            'preset'=>$preset,
             'period_label'=>$periodInfo['label'],
             'period_short_label'=>$periodInfo['short_label'],
             'from'=>$periodInfo['from'],
@@ -131,6 +141,7 @@ class AdminController extends Controller{
         [
             'date'=>$date,
             'period'=>$period,
+            'preset'=>$preset,
             'info'=>$periodInfo,
         ]=$this->dashboardRequestContext($_GET);
 
@@ -168,6 +179,15 @@ class AdminController extends Controller{
             $salesUserId,
             $periodInfo['from'],
             $periodInfo['to']
+        );
+        $chartRows=Post::salesChartRows(
+            $salesUserId,
+            $periodInfo['from'],
+            $periodInfo['to']
+        );
+        $dailyTarget=max(
+            1,
+            (int)($salesUser['daily_post_target']??10)
         );
 
         $items=[];
@@ -209,12 +229,15 @@ class AdminController extends Controller{
                 'sales_id'=>(string)$salesUser['sales_id'],
             ],
             'period'=>$period,
+            'preset'=>$preset,
             'period_label'=>$periodInfo['label'],
             'from'=>$periodInfo['from'],
             'to'=>$periodInfo['to'],
             'review'=>$salesPeriodReview,
             'posts'=>$items,
             'count'=>count($items),
+            'chart_rows'=>$chartRows,
+            'daily_target'=>$dailyTarget,
         ]);
     }
 
@@ -1171,6 +1194,12 @@ private function dashboardSalesReviewData(
     private function dashboardRequestContext(array $source):array{
         $rawFrom=trim((string)($source['from']??''));
         $rawTo=trim((string)($source['to']??''));
+        $requestedPreset=strtolower(trim((string)($source['preset']??'')));
+        $allowedPresets=['single','day','week','month','custom'];
+
+        if(!in_array($requestedPreset,$allowedPresets,true)){
+            $requestedPreset='';
+        }
 
         $validFrom=preg_match('/^\d{4}-\d{2}-\d{2}$/',$rawFrom)===1;
         $validTo=preg_match('/^\d{4}-\d{2}-\d{2}$/',$rawTo)===1;
@@ -1180,17 +1209,9 @@ private function dashboardSalesReviewData(
             $from=$rawFrom;
             $to=$rawTo;
 
-            if($to>$today){
-                $to=$today;
-            }
-
-            if($from>$today){
-                $from=$today;
-            }
-
-            if($from>$to){
-                $from=$to;
-            }
+            if($to>$today){$to=$today;}
+            if($from>$today){$from=$today;}
+            if($from>$to){$from=$to;}
 
             $days=max(
                 1,
@@ -1204,23 +1225,32 @@ private function dashboardSalesReviewData(
 
             $fromTs=strtotime($from.' 12:00:00');
             $toTs=strtotime($to.' 12:00:00');
-
             $label=$from===$to
-                ? date('F j, Y',$fromTs)
-                : date('M j',$fromTs).' — '.date('M j, Y',$toTs);
+                ?date('F j, Y',$fromTs)
+                :date('M j',$fromTs).' — '.date('M j, Y',$toTs);
+            $preset=$requestedPreset!==''
+                ?$requestedPreset
+                :$this->dashboardDetectPreset($from,$to);
+
+            // A single day keeps the existing daily review semantics.
+            // Rolling 3-day/7-day/month and custom ranges remain range views.
+            $period=($preset==='single'&&$from===$to)
+                ?'day'
+                :'range';
 
             return [
                 'date'=>$to,
-                'period'=>'range',
+                'period'=>$period,
+                'preset'=>$preset,
                 'info'=>[
-                    'period'=>'range',
+                    'period'=>$period,
                     'from'=>$from,
                     'to'=>$to,
                     'days'=>$days,
                     'label'=>$label,
                     'short_label'=>$days===1
-                        ? 'Daily target'
-                        : $days.'-day target',
+                        ?'Daily target'
+                        :$days.'-day target',
                 ],
             ];
         }
@@ -1228,15 +1258,68 @@ private function dashboardSalesReviewData(
         $date=$this->validDashboardDate(
             (string)($source['date']??date('Y-m-d'))
         );
-        $period=$this->validDashboardPeriod(
+        $legacyPeriod=$this->validDashboardPeriod(
             (string)($source['period']??'day')
         );
+        $preset=$requestedPreset!==''
+            ?$requestedPreset
+            :($legacyPeriod==='day'?'single':$legacyPeriod);
 
         return [
             'date'=>$date,
-            'period'=>$period,
-            'info'=>$this->dashboardPeriodInfo($date,$period),
+            'period'=>$legacyPeriod,
+            'preset'=>$preset,
+            'info'=>$this->dashboardPeriodInfo($date,$legacyPeriod),
         ];
+    }
+
+    private function dashboardDetectPreset(string $from,string $to):string{
+        if($from===$to){return 'single';}
+
+        foreach(['day','week','month'] as $preset){
+            [$expectedFrom,$expectedTo]=$this->rollingPresetRange(
+                $preset,
+                $to
+            );
+            if($expectedFrom===$from&&$expectedTo===$to){
+                return $preset;
+            }
+        }
+
+        return 'custom';
+    }
+
+    private function rollingPresetRange(string $preset,string $to):array{
+        $today=date('Y-m-d');
+        $to=$this->validDashboardDate($to);
+        $anchor=new \DateTimeImmutable($to.' 12:00:00');
+
+        if($preset==='single'){
+            $from=$anchor;
+        }elseif($preset==='day'){
+            $from=$anchor->modify('-2 days');
+        }elseif($preset==='week'){
+            $from=$anchor->modify('-6 days');
+        }elseif($preset==='month'){
+            $anchorDay=(int)$anchor->format('j');
+            $previousMonthStart=$anchor->modify('first day of previous month');
+            $previousMonthLast=$anchor->modify('last day of previous month');
+            $previousDay=min($anchorDay,(int)$previousMonthLast->format('j'));
+            $from=$previousMonthStart
+                ->setDate(
+                    (int)$previousMonthStart->format('Y'),
+                    (int)$previousMonthStart->format('m'),
+                    $previousDay
+                )
+                ->modify('+1 day');
+        }else{
+            $from=$anchor;
+        }
+
+        $fromValue=$from->format('Y-m-d');
+        if($fromValue>$today){$fromValue=$today;}
+
+        return [$fromValue,$anchor->format('Y-m-d')];
     }
 
     private function validDashboardDate(string $date):string{
@@ -1609,13 +1692,151 @@ public function saveDailyReview():void{
 }
 
     public function reports():void{
-        $admin=Auth::requireRole('admin');$period=$_GET['period']??'week';$sid=(int)($_GET['sales_id']??0);$sales=User::allSales();
-        if($period==='month'){$start=$_GET['start']??date('Y-m-01');$end=date('Y-m-t',strtotime($start));}else{$period='week';$start=$_GET['start']??date('Y-m-d',strtotime('monday this week'));$end=date('Y-m-d',strtotime($start.' +6 days'));}
-        $params=[$start.' 00:00:00',$end.' 23:59:59'];$filter='';if($sid>0){$filter=' AND p.sales_user_id=?';$params[]=$sid;}
-        $sql="SELECT u.id sales_user_id,u.display_name,COUNT(p.id) total_posts,SUM(p.platform='facebook') facebook_posts,SUM(p.platform='offerup') offerup_posts,SUM(p.platform='craigslist') craigslist_posts,SUM(p.admin_review_status='good') good_posts,SUM(p.admin_review_status='bad') bad_posts
-        FROM cdsp_users u LEFT JOIN cdsp_sales_posts p ON p.sales_user_id=u.id AND p.created_at BETWEEN ? AND ? AND p.deleted_at IS NULL WHERE u.role='sales' AND u.active=1 {$filter} GROUP BY u.id,u.display_name ORDER BY total_posts DESC,u.display_name";
-        $s=Database::connection()->prepare($sql);$s->execute($params);$rows=$s->fetchAll();$salesUserId=$sid;$this->render('admin/reports',compact('admin','period','start','end','salesUserId','sales','rows'));
+        $admin=Auth::requireRole('admin');
+        $sales=User::allSales();
+        $context=$this->managementReportContext($_GET);
+        $rows=$this->managementReportRows(
+            $context['from'],
+            $context['to'],
+            $context['sales_user_id']
+        );
+        $period=$context['preset'];
+        $start=$context['from'];
+        $end=$context['to'];
+        $salesUserId=$context['sales_user_id'];
+
+        $this->render(
+            'admin/reports',
+            compact(
+                'admin','period','start','end',
+                'salesUserId','sales','rows'
+            )
+        );
     }
+
+    public function reportsDownload():void{
+        Auth::requireRole('admin');
+        $context=$this->managementReportContext($_GET);
+        $rows=$this->managementReportRows(
+            $context['from'],
+            $context['to'],
+            $context['sales_user_id']
+        );
+
+        $scope=$context['sales_user_id']>0
+            ?'sales-'.$context['sales_user_id']
+            :'all-sales';
+        $filename='sales-report-'
+            .$scope.'-'
+            .$context['from'].'-to-'.$context['to'].'.csv';
+
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="'.$filename.'"');
+        header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+
+        $out=fopen('php://output','wb');
+        if($out===false){
+            http_response_code(500);
+            exit('Could not create report download.');
+        }
+
+        // Excel-friendly UTF-8 BOM.
+        fwrite($out,"\xEF\xBB\xBF");
+        fputcsv($out,[
+            'Sales','Total','Facebook','OfferUp','Craigslist',
+            'Good','Bad','Good %','From','To'
+        ]);
+
+        foreach($rows as $row){
+            $reviewed=(int)$row['good_posts']+(int)$row['bad_posts'];
+            $pct=$reviewed
+                ?round(((int)$row['good_posts']/$reviewed)*100,1)
+                :0;
+            fputcsv($out,[
+                (string)$row['display_name'],
+                (int)$row['total_posts'],
+                (int)$row['facebook_posts'],
+                (int)$row['offerup_posts'],
+                (int)$row['craigslist_posts'],
+                (int)$row['good_posts'],
+                (int)$row['bad_posts'],
+                $pct.'%',
+                $context['from'],
+                $context['to'],
+            ]);
+        }
+
+        fclose($out);
+        exit;
+    }
+
+    private function managementReportContext(array $source):array{
+        $today=date('Y-m-d');
+        $preset=strtolower(trim((string)($source['period']??'week')));
+        if(!in_array($preset,['single','day','week','month','custom'],true)){
+            $preset='week';
+        }
+
+        $to=(string)($source['to']??$source['start']??$today);
+        $from=(string)($source['from']??'');
+        if(!preg_match('/^\d{4}-\d{2}-\d{2}$/',$to)){$to=$today;}
+        if($to>$today){$to=$today;}
+
+        if($preset==='custom'){
+            if(!preg_match('/^\d{4}-\d{2}-\d{2}$/',$from)){$from=$to;}
+            if($from>$today){$from=$today;}
+            if($from>$to){$from=$to;}
+        }else{
+            [$from,$to]=$this->rollingPresetRange($preset,$to);
+        }
+
+        $sid=(int)($source['sales_id']??0);
+        if($sid<1){$sid=0;}
+
+        return [
+            'preset'=>$preset,
+            'from'=>$from,
+            'to'=>$to,
+            'sales_user_id'=>$sid,
+        ];
+    }
+
+    private function managementReportRows(
+        string $from,
+        string $to,
+        int $salesUserId
+    ):array{
+        $params=[$from.' 00:00:00',$to.' 23:59:59'];
+        $filter='';
+        if($salesUserId>0){
+            $filter=' AND u.id=?';
+            $params[]=$salesUserId;
+        }
+
+        $sql="SELECT
+                u.id sales_user_id,
+                u.display_name,
+                COUNT(p.id) total_posts,
+                COALESCE(SUM(p.platform='facebook'),0) facebook_posts,
+                COALESCE(SUM(p.platform='offerup'),0) offerup_posts,
+                COALESCE(SUM(p.platform='craigslist'),0) craigslist_posts,
+                COALESCE(SUM(p.admin_review_status='good'),0) good_posts,
+                COALESCE(SUM(p.admin_review_status='bad'),0) bad_posts
+              FROM cdsp_users u
+              LEFT JOIN cdsp_sales_posts p
+                ON p.sales_user_id=u.id
+               AND p.created_at BETWEEN ? AND ?
+               AND p.deleted_at IS NULL
+              WHERE u.role='sales'
+                AND u.active=1{$filter}
+              GROUP BY u.id,u.display_name
+              ORDER BY total_posts DESC,u.display_name";
+
+        $stmt=Database::connection()->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll();
+    }
+
 public function savePeriodReview():void{
     Auth::requireRole('admin');
     Csrf::verify($_POST['_csrf']??null);
