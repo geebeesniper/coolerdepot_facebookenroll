@@ -9094,3 +9094,224 @@ body.sales-detail-open{
 .sales-chart-segment.unreviewed{
     border-radius:0 !important;
 }
+
+/* v0.1.63 CANONICAL SALES CHART CONTRACT
+ * ------------------------------------------------------------
+ * This block intentionally owns final chart geometry.
+ * Do not redefine chart heights / target coordinates elsewhere.
+ */
+
+.sales-chart-shell{
+    display:grid !important;
+    grid-template-columns:48px minmax(0,1fr) !important;
+    gap:8px !important;
+    padding:8px 14px 14px 8px !important;
+    align-items:start !important;
+}
+
+.sales-chart-y-axis{
+    position:relative !important;
+    width:48px !important;
+    height:280px !important;
+    overflow:visible !important;
+    color:#475569 !important;
+}
+
+.sales-chart-y-axis-ticks{
+    position:absolute !important;
+    inset:0 !important;
+    overflow:visible !important;
+}
+
+.sales-chart-y-tick{
+    position:absolute !important;
+    top:auto;
+    right:5px !important;
+    min-width:24px !important;
+    transform:translateY(-50%) !important;
+    color:#475569 !important;
+    font-size:9px !important;
+    font-weight:800 !important;
+    line-height:1 !important;
+    text-align:right !important;
+    white-space:nowrap !important;
+    opacity:1 !important;
+}
+
+.sales-chart-y-tick.target{
+    color:#334155 !important;
+    font-weight:900 !important;
+}
+
+.sales-chart-scroll{
+    min-width:0 !important;
+    overflow-x:auto !important;
+    overflow-y:hidden !important;
+}
+
+.sales-chart-canvas{
+    position:relative !important;
+    min-width:100% !important;
+    height:280px !important;
+    border-left:1px solid #cbd5e1 !important;
+    border-bottom:0 !important;
+    background:#fff !important;
+    overflow:visible !important;
+}
+
+.sales-chart-canvas::after{
+    content:"" !important;
+    position:absolute !important;
+    left:0 !important;
+    right:0 !important;
+    bottom:32px !important;
+    z-index:7 !important;
+    border-top:1px solid #94a3b8 !important;
+    pointer-events:none !important;
+}
+
+.sales-chart-grid-lines{
+    position:absolute !important;
+    left:0 !important;
+    right:0 !important;
+    top:0 !important;
+    height:248px !important;
+    z-index:1 !important;
+    pointer-events:none !important;
+}
+
+.sales-chart-grid-line{
+    position:absolute !important;
+    left:0 !important;
+    right:0 !important;
+    height:0 !important;
+    border-top:1px solid rgba(148,163,184,.18) !important;
+}
+
+.sales-chart-grid-line.target{
+    border-top-color:rgba(100,116,139,.32) !important;
+}
+
+.sales-chart-target-line{
+    position:absolute !important;
+    left:0 !important;
+    right:0 !important;
+    bottom:auto !important;
+    z-index:9 !important;
+    height:0 !important;
+    border-top:1px solid #94a3b8 !important;
+    pointer-events:none !important;
+}
+
+.sales-chart-target-line > span{
+    position:absolute !important;
+    right:6px !important;
+    bottom:4px !important;
+    padding:3px 5px !important;
+    border-radius:4px !important;
+    background:#f8fafc !important;
+    color:#64748b !important;
+    font-size:8px !important;
+    font-weight:900 !important;
+}
+
+.sales-chart-bars{
+    position:absolute !important;
+    inset:0 !important;
+    z-index:4 !important;
+    display:grid !important;
+    gap:0 !important;
+    padding:0 4px !important;
+}
+
+.sales-chart-day{
+    position:relative !important;
+    min-width:0 !important;
+    height:280px !important;
+    display:grid !important;
+    grid-template-rows:248px 32px !important;
+    outline:none !important;
+}
+
+.sales-chart-day-plot{
+    position:relative !important;
+    width:100% !important;
+    height:248px !important;
+    min-height:248px !important;
+    overflow:visible !important;
+}
+
+.sales-chart-stack{
+    position:absolute !important;
+    left:50% !important;
+    right:auto !important;
+    top:0 !important;
+    bottom:0 !important;
+    width:var(--sales-chart-bar-width,28px) !important;
+    height:248px !important;
+    display:flex !important;
+    flex-direction:column-reverse !important;
+    justify-content:flex-start !important;
+    transform:translateX(-50%) !important;
+    overflow:hidden !important;
+    border-radius:0 !important;
+    pointer-events:none !important;
+}
+
+.sales-chart-segment{
+    display:block !important;
+    flex:0 0 auto !important;
+    min-height:0 !important;
+    border-radius:0 !important;
+}
+
+.sales-chart-segment.good{
+    background:#22c55e !important;
+}
+
+.sales-chart-segment.bad{
+    background:#ef4444 !important;
+}
+
+.sales-chart-segment.unreviewed{
+    background:#94a3b8 !important;
+}
+
+.sales-chart-x-label{
+    position:relative !important;
+    z-index:8 !important;
+    width:100% !important;
+    height:32px !important;
+    padding-top:7px !important;
+    display:flex !important;
+    align-items:flex-start !important;
+    justify-content:center !important;
+    color:#475569 !important;
+    font-size:8px !important;
+    font-weight:800 !important;
+    line-height:1 !important;
+    text-align:center !important;
+    white-space:nowrap !important;
+}
+
+.sales-chart-short-range .sales-chart-x-label{
+    font-size:9px !important;
+}
+
+@media(pointer:coarse){
+    .sales-chart-shell{
+        grid-template-columns:52px minmax(0,1fr) !important;
+    }
+
+    .sales-chart-y-axis{
+        width:52px !important;
+    }
+
+    .sales-chart-y-tick{
+        font-size:10px !important;
+    }
+
+    .sales-chart-x-label{
+        font-size:9px !important;
+    }
+}

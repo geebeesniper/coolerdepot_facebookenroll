@@ -768,9 +768,14 @@ function setSalesRangePeriod(period){
                     )
             );
 
-    $('#salesChartPeriodTitle').text(
-        salesTr(titleKey)
-    );
+    $('#salesChartPeriodTitle')
+        .attr(
+            'data-sales-i18n',
+            titleKey
+        )
+        .text(
+            salesTr(titleKey)
+        );
 }
 
 function detectSalesRangePeriod(from,to){
@@ -1285,11 +1290,14 @@ function salesChartTickStep(maxValue){
 
 function renderSalesChartYAxis(
     cap,
-    xAxisHeight,
+    target,
     plotHeight
 ){
     const $ticks=$(
         '#salesChartYAxisTicks'
+    );
+    const $grid=$(
+        '#salesChartGridLines'
     );
 
     if(!$ticks.length){
@@ -1308,7 +1316,9 @@ function renderSalesChartYAxis(
         value+=step
     ){
         values.push(
-            Number(value.toFixed(4))
+            Number(
+                value.toFixed(4)
+            )
         );
     }
 
@@ -1322,7 +1332,8 @@ function renderSalesChartYAxis(
     }
 
     const seen=new Set();
-    let html='';
+    let ticksHtml='';
+    let gridHtml='';
 
     values.forEach(function(value){
         const key=String(value);
@@ -1333,9 +1344,14 @@ function renderSalesChartYAxis(
 
         seen.add(key);
 
-        const bottom=
-            xAxisHeight
-            +(plotHeight*(value/cap));
+        /*
+         * Every vertical value is measured from the TOP of the same plot:
+         * cap => 0px
+         * 0   => plotHeight
+         */
+        const top=
+            plotHeight
+            *(1-(value/cap));
 
         const label=
             Number.isInteger(value)
@@ -1346,19 +1362,44 @@ function renderSalesChartYAxis(
                     )
                 );
 
-        html+=(
+        ticksHtml+=(
             '<span'
-                +' class="sales-chart-y-tick"'
-                +' style="bottom:'
-                    +bottom
+                +' class="sales-chart-y-tick'
+                +(Math.abs(value-target)<0.0001
+                    ?' target'
+                    :'')
+                +'"'
+                +' style="top:'
+                    +top
                     +'px"'
             +'>'
                 +escapeHtml(label)
             +'</span>'
         );
+
+        gridHtml+=(
+            '<span'
+                +' class="sales-chart-grid-line'
+                +(Math.abs(value-target)<0.0001
+                    ?' target'
+                    :'')
+                +'"'
+                +' style="top:'
+                    +top
+                    +'px"'
+            +'></span>'
+        );
     });
 
-    $ticks.html(html);
+    $ticks.html(
+        ticksHtml
+    );
+
+    if($grid.length){
+        $grid.html(
+            gridHtml
+        );
+    }
 }
 
 function renderSalesChart(){
@@ -1366,21 +1407,45 @@ function renderSalesChart(){
     const $canvas=$('#salesChartCanvas');
     const $panel=$('#salesActivityChartPanel');
     const $scroll=$('#salesChartScroll');
+    const $yAxis=$('#salesChartYAxis');
 
-    if(!$bars.length||!$panel.length){
+    if(
+        !$bars.length
+        ||!$panel.length
+        ||!$canvas.length
+    ){
         return;
     }
 
+    /*
+     * Canonical chart geometry.
+     * Do not measure a previously styled DOM height and then try to infer
+     * the plot from it. All chart layers use these exact dimensions.
+     */
+    const chartHeight=280;
+    const xAxisHeight=32;
+    const plotHeight=
+        chartHeight-xAxisHeight;
+
     const from=String(
-        $('#salesRangeFrom').val()||''
+        $('#salesRangeFrom').val()
+        ||''
     );
+
     const to=String(
-        $('#salesRangeTo').val()||''
+        $('#salesRangeTo').val()
+        ||''
     );
-    const dates=salesDateRange(from,to);
+
+    const dates=salesDateRange(
+        from,
+        to
+    );
 
     if(!dates.length){
         $bars.empty();
+        $('#salesChartYAxisTicks').empty();
+        $('#salesChartGridLines').empty();
         return;
     }
 
@@ -1388,41 +1453,51 @@ function renderSalesChart(){
         1,
         salesChartDailyTarget
     );
+
+    /*
+     * Keep exactly 20% headroom.
+     * Target 10 => cap 12.
+     */
     const cap=Math.max(
         target,
         target*1.2
     );
-    const targetPercent=
-        (target/cap)*100;
 
     $('#salesChartTargetCopy,#salesChartTargetLineValue')
         .text(target);
 
-    const xAxisHeight=28;
-    const canvasHeight=Math.max(
-        xAxisHeight+1,
-        Math.round(
-            $canvas.innerHeight()||270
-        )
+    $canvas.css({
+        'height':chartHeight+'px',
+        '--sales-chart-height':
+            chartHeight+'px',
+        '--sales-plot-height':
+            plotHeight+'px',
+        '--sales-x-axis-height':
+            xAxisHeight+'px'
+    });
+
+    $yAxis.css(
+        'height',
+        chartHeight+'px'
     );
-    const plotHeight=Math.max(
-        1,
-        canvasHeight-xAxisHeight
-    );
-    const targetBottom=
-        xAxisHeight
-        +(plotHeight*(targetPercent/100));
 
     renderSalesChartYAxis(
         cap,
-        xAxisHeight,
+        target,
         plotHeight
     );
 
+    /*
+     * Target line uses the exact same top-origin coordinate as Y ticks.
+     */
+    const targetTop=
+        plotHeight
+        *(1-(target/cap));
+
     $('#salesChartTargetLine')
         .css(
-            'bottom',
-            targetBottom+'px'
+            'top',
+            targetTop+'px'
         );
 
     const availableWidth=Math.max(
@@ -1437,7 +1512,6 @@ function renderSalesChart(){
     );
 
     const dayCount=dates.length;
-    const singleDay=dayCount===1;
     const coarse=Boolean(
         window.matchMedia
         &&window.matchMedia(
@@ -1445,12 +1519,30 @@ function renderSalesChart(){
         ).matches
     );
 
-    const minimumSlot=coarse?38:30;
+    /*
+     * Make short ranges visually useful, but keep long ranges scrollable.
+     */
+    let minimumSlot;
+
+    if(dayCount<=3){
+        minimumSlot=coarse
+            ?96
+            :82;
+    }else if(dayCount<=7){
+        minimumSlot=coarse
+            ?64
+            :52;
+    }else{
+        minimumSlot=coarse
+            ?40
+            :34;
+    }
+
     const naturalSlot=
         availableWidth/dayCount;
+
     const needsScroll=
-        !singleDay
-        &&naturalSlot<minimumSlot;
+        naturalSlot<minimumSlot;
 
     const canvasWidth=needsScroll
         ?Math.max(
@@ -1464,71 +1556,101 @@ function renderSalesChart(){
 
     let barWidth;
 
-    if(singleDay){
-        barWidth=coarse?82:72;
-    }else{
+    if(dayCount<=3){
         barWidth=Math.min(
-            44,
+            74,
             Math.max(
-                8,
-                slotWidth-8
+                46,
+                slotWidth*.46
             )
         );
-
-        if(slotWidth>=70){
-            barWidth=40;
-        }else if(slotWidth>=50){
-            barWidth=32;
-        }else if(slotWidth>=38){
-            barWidth=25;
-        }else if(slotWidth>=30){
-            barWidth=20;
-        }
+    }else if(dayCount<=7){
+        barWidth=Math.min(
+            48,
+            Math.max(
+                24,
+                slotWidth*.45
+            )
+        );
+    }else{
+        barWidth=Math.min(
+            34,
+            Math.max(
+                12,
+                slotWidth*.58
+            )
+        );
     }
 
     let html='';
 
     dates.forEach(function(date){
-        const raw=aggregateSalesChartDate(
-            date,
-            salesPlatformFilter
-        );
+        const raw=
+            aggregateSalesChartDate(
+                date,
+                salesPlatformFilter
+            );
 
         const actual=Math.max(
             0,
-            parseInt(raw.post_count,10)||0
+            parseInt(
+                raw.post_count,
+                10
+            )||0
         );
 
         const good=Math.min(
             actual,
             Math.max(
                 0,
-                parseInt(raw.good_count,10)||0
+                parseInt(
+                    raw.good_count,
+                    10
+                )||0
             )
         );
 
         const bad=Math.min(
-            Math.max(0,actual-good),
             Math.max(
                 0,
-                parseInt(raw.bad_count,10)||0
+                actual-good
+            ),
+            Math.max(
+                0,
+                parseInt(
+                    raw.bad_count,
+                    10
+                )||0
             )
         );
 
-        const unreviewed=Math.max(
-            0,
-            actual-good-bad
-        );
+        const unreviewed=
+            Math.max(
+                0,
+                actual-good-bad
+            );
+
+        /*
+         * Heights are percentages of the EXACT plotHeight.
+         * Therefore target posts and target line have identical pixels.
+         */
+        const visibleTotal=
+            Math.min(
+                actual,
+                cap
+            );
 
         const scale=
-            actual>cap
-                ?cap/actual
-                :1;
+            actual>0
+                ?visibleTotal/actual
+                :0;
 
         const goodH=
             (good*scale/cap)*100;
+
         const badH=
             (bad*scale/cap)*100;
+
         const unreviewedH=
             (unreviewed*scale/cap)*100;
 
@@ -1541,27 +1663,50 @@ function renderSalesChart(){
             '<div'
                 +' class="sales-chart-day"'
                 +' tabindex="0"'
-                +' data-chart-date="'+escapeHtml(date)+'"'
-                +' data-chart-total="'+actual+'"'
-                +' data-chart-good="'+good+'"'
-                +' data-chart-bad="'+bad+'"'
-                +' data-chart-unreviewed="'+unreviewed+'"'
-                +' data-chart-missing="'+missing+'"'
+                +' data-chart-date="'
+                    +escapeHtml(date)
+                +'"'
+                +' data-chart-total="'
+                    +actual
+                +'"'
+                +' data-chart-good="'
+                    +good
+                +'"'
+                +' data-chart-bad="'
+                    +bad
+                +'"'
+                +' data-chart-unreviewed="'
+                    +unreviewed
+                +'"'
+                +' data-chart-missing="'
+                    +missing
+                +'"'
             +'>'
                 +'<div class="sales-chart-day-plot">'
                     +'<div class="sales-chart-stack">'
-                        +'<span class="sales-chart-segment good"'
-                            +' style="height:'+goodH+'%"'
+                        +'<span'
+                            +' class="sales-chart-segment good"'
+                            +' style="height:'
+                                +goodH
+                                +'%"'
                         +'></span>'
-                        +'<span class="sales-chart-segment bad"'
-                            +' style="height:'+badH+'%"'
+                        +'<span'
+                            +' class="sales-chart-segment bad"'
+                            +' style="height:'
+                                +badH
+                                +'%"'
                         +'></span>'
-                        +'<span class="sales-chart-segment unreviewed"'
-                            +' style="height:'+unreviewedH+'%"'
+                        +'<span'
+                            +' class="sales-chart-segment unreviewed"'
+                            +' style="height:'
+                                +unreviewedH
+                                +'%"'
                         +'></span>'
                     +'</div>'
                     +(actual>cap
-                        ?'<span class="sales-chart-over-cap">120%+</span>'
+                        ?'<span'
+                            +' class="sales-chart-over-cap"'
+                            +'>120%+</span>'
                         :'')
                 +'</div>'
                 +'<span class="sales-chart-x-label">'
@@ -1577,24 +1722,22 @@ function renderSalesChart(){
 
     $canvas.css(
         'width',
-        Math.round(canvasWidth)+'px'
+        Math.round(
+            canvasWidth
+        )+'px'
     );
 
     $bars.css({
         'grid-template-columns':
-            'repeat('+dayCount+',minmax(0,1fr))',
+            'repeat('
+            +dayCount
+            +',minmax(0,1fr))',
         'grid-auto-flow':'row',
         'grid-auto-columns':'unset',
         '--sales-chart-bar-width':
-            Math.round(barWidth)+'px',
-        '--sales-chart-gap':
-            singleDay
-                ?'0px'
-                :(
-                    slotWidth<34
-                        ?'1px'
-                        :'3px'
-                )
+            Math.round(
+                barWidth
+            )+'px'
     });
 
     $panel
@@ -1602,9 +1745,17 @@ function renderSalesChart(){
             'data-range-days',
             dayCount
         )
+        .attr(
+            'data-chart-from',
+            from
+        )
+        .attr(
+            'data-chart-to',
+            to
+        )
         .toggleClass(
-            'sales-chart-single-day',
-            singleDay
+            'sales-chart-short-range',
+            dayCount<=7
         )
         .toggleClass(
             'sales-chart-scrollable',
@@ -2210,11 +2361,6 @@ function renderSalesRangeData(data,range,period,channel,reason){
     $('#dailyLoadStatus').text('');
     $('#salesRangeStatus').text('');
 
-    applySalesLanguage();
-    renderSalesChart();
-    applySalesPlatformFilterToCards();
-    updateSalesBackToday(range);
-
     setSalesRangePeriod(
         period
         ||detectSalesRangePeriod(
@@ -2222,6 +2368,11 @@ function renderSalesRangeData(data,range,period,channel,reason){
             range.to
         )
     );
+
+    applySalesLanguage();
+    renderSalesChart();
+    applySalesPlatformFilterToCards();
+    updateSalesBackToday(range);
 
     const url=new URL(
         window.location.href
@@ -2553,6 +2704,12 @@ $('#salesRangeFrom').on('change',function(){
         'custom'
     );
 
+    /*
+     * X axis responds immediately to the newly selected range.
+     * AJAX then replaces data, not the geometry/state.
+     */
+    renderSalesChart();
+
     loadSalesRange(
         range,
         'custom',
@@ -2570,6 +2727,12 @@ $('#salesRangeTo').on('change',function(){
     setSalesRangePeriod(
         'custom'
     );
+
+    /*
+     * X axis responds immediately to the newly selected range.
+     * AJAX then replaces data, not the geometry/state.
+     */
+    renderSalesChart();
 
     loadSalesRange(
         range,
@@ -2608,6 +2771,8 @@ $('#salesBackToday').on('click',function(){
     syncSalesRangeConstraints('');
     setSalesRangePeriod(period);
     updateSalesBackToday(range);
+
+    renderSalesChart();
 
     loadSalesRange(
         range,
@@ -2669,6 +2834,8 @@ $(document).on(
                 'custom'
             );
 
+            renderSalesChart();
+
             loadSalesRange(
                 customRange,
                 'custom',
@@ -2692,6 +2859,12 @@ $(document).on(
 
         syncSalesRangeConstraints('');
         setSalesRangePeriod(period);
+
+        /*
+         * Immediately switch the X axis to the selected preset.
+         * Example: 3 Days becomes exactly three date slots before AJAX.
+         */
+        renderSalesChart();
 
         loadSalesRange(
             range,

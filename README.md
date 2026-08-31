@@ -1150,3 +1150,18 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - The client updates both date inputs from the server-resolved range before rendering the chart, preventing stale month X-axis labels after selecting 3 Days.
 - No database migration is required.
 - Normal UI radius remains 4px; chart bars remain square.
+
+## v0.1.63 — Canonical Sales chart geometry and exact X/Y axes
+
+- Replaced the accumulated Sales chart geometry overrides with one final canonical chart contract.
+- The chart now uses fixed shared geometry: 280px total, 248px plot, and 32px X-axis row.
+- Y-axis ticks, horizontal grid lines, Target line, and stacked bars all use the same top-origin 248px plot coordinate system.
+- With Daily Target 10 and 20% headroom, the cap is 12 and the Y axis renders 0 / 2 / 4 / 6 / 8 / 10 / 12.
+- A 10-post stacked bar and the Target 10 line are mathematically and visually the exact same pixel height.
+- Good remains `#22c55e`, Issues `#ef4444`, and Unreviewed `#94a3b8`; chart bars remain square.
+- X-axis dates are generated only from the current From/To inputs. Custom Range 08/11 → 08/31 renders 08/11 through 08/31, never 08/01 through 08/31.
+- 3 Days updates the date inputs and immediately redraws exactly three X-axis dates before AJAX completes.
+- Weekly, Monthly, Custom Range, and Back to today also redraw X-axis geometry immediately, so a failed/slow AJAX request cannot leave the prior range's labels on screen.
+- Period titles now update their `data-sales-i18n` key together with the visible text, preventing a later language refresh from changing Custom Range Progress back to Daily Post Progress.
+- Server-resolved period is applied before language/render on AJAX responses.
+- No database migration is required.

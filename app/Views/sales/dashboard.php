@@ -306,6 +306,12 @@ $chartInitialWidth=max(100,count($chartDates)*30);
                 style="width:max(100%,<?= (int)$chartInitialWidth ?>px)"
             >
                 <div
+                    class="sales-chart-grid-lines"
+                    id="salesChartGridLines"
+                    aria-hidden="true"
+                ></div>
+
+                <div
                     class="sales-chart-target-line"
                     id="salesChartTargetLine"
                 >
