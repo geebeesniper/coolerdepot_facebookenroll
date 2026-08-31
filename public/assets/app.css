@@ -5827,3 +5827,375 @@ body.review-modal-open{
         height:180px;
     }
 }
+
+/* v0.1.45 Sales interactive cards + touch-first detail modal */
+
+/* Cards are interactive on mouse, keyboard and touch. */
+.sales-self-post-card{
+    position:relative;
+    cursor:pointer;
+    outline:none;
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+}
+.sales-self-post-card:hover,
+.sales-self-post-card:focus-visible{
+    border-color:#93c5fd;
+    box-shadow:0 10px 26px rgba(15,23,42,.10);
+    transform:translateY(-1px);
+}
+.sales-self-post-card.review-good:hover,
+.sales-self-post-card.review-good:focus-visible{
+    border-color:#4ade80;
+}
+.sales-self-post-card.review-bad:hover,
+.sales-self-post-card.review-bad:focus-visible{
+    border-color:#f87171;
+}
+.sales-self-post-card:active{
+    transform:translateY(0);
+}
+
+.sales-view-details{
+    min-height:28px;
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    padding:3px 5px;
+    border:0;
+    border-radius:4px;
+    background:transparent;
+    color:#2563eb;
+    cursor:pointer;
+    font-size:7px;
+    font-weight:900;
+}
+.sales-view-details svg{
+    width:13px;
+    height:13px;
+    fill:currentColor;
+}
+.sales-view-details:hover,
+.sales-view-details:focus{
+    background:#eff6ff;
+    outline:none;
+}
+
+/* Keep six across a normal desktop, then collapse deliberately. */
+.sales-post-card-grid{
+    grid-template-columns:repeat(6,minmax(0,1fr));
+    gap:8px;
+}
+@media(max-width:1150px){
+    .sales-post-card-grid{
+        grid-template-columns:repeat(4,minmax(0,1fr));
+    }
+}
+@media(max-width:900px){
+    .sales-post-card-grid{
+        grid-template-columns:repeat(3,minmax(0,1fr));
+    }
+}
+@media(max-width:680px){
+    .sales-post-card-grid{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+}
+@media(max-width:480px){
+    .sales-post-card-grid{
+        grid-template-columns:1fr;
+    }
+}
+
+/* Read-only Sales post details. */
+body.sales-detail-open{
+    overflow:hidden;
+}
+.sales-post-detail-backdrop{
+    position:fixed;
+    inset:0;
+    z-index:260;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:18px;
+    background:rgba(15,23,42,.58);
+}
+.sales-post-detail-backdrop.hidden{
+    display:none;
+}
+.sales-post-detail-modal{
+    width:min(760px,calc(100vw - 24px));
+    max-height:min(820px,calc(100vh - 24px));
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    border:1px solid #cbd5e1;
+    border-radius:4px;
+    background:#fff;
+    box-shadow:0 28px 80px rgba(15,23,42,.28);
+}
+.sales-post-detail-head{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:12px;
+    flex:0 0 auto;
+    padding:13px 15px;
+    border-bottom:1px solid #e2e8f0;
+    background:#f8fafc;
+}
+.sales-post-detail-platform{
+    display:block;
+    margin-bottom:3px;
+    color:#2563eb;
+    font-size:8px;
+    font-weight:900;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+}
+.sales-post-detail-head h2{
+    margin:0;
+    color:#0f172a;
+    font-size:17px;
+    line-height:1.25;
+}
+.sales-post-detail-scroll{
+    min-height:0;
+    flex:1 1 auto;
+    overflow:auto;
+    overscroll-behavior:contain;
+    background:#fff;
+}
+.sales-post-detail-image-button{
+    position:relative;
+    width:100%;
+    max-height:360px;
+    display:block;
+    padding:0;
+    overflow:hidden;
+    border:0;
+    border-bottom:1px solid #e2e8f0;
+    border-radius:4px;
+    background:#eef2f7;
+    cursor:zoom-in;
+}
+.sales-post-detail-image-button.hidden{
+    display:none;
+}
+.sales-post-detail-image-button img{
+    width:100%;
+    max-height:360px;
+    display:block;
+    object-fit:contain;
+    background:#f8fafc;
+}
+.sales-post-detail-image-zoom{
+    position:absolute;
+    right:10px;
+    bottom:10px;
+    width:34px;
+    height:34px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:4px;
+    background:rgba(15,23,42,.78);
+    color:#fff;
+}
+.sales-post-detail-image-zoom svg{
+    width:17px;
+    height:17px;
+    fill:currentColor;
+}
+.sales-post-detail-no-image{
+    min-height:170px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-bottom:1px solid #e2e8f0;
+    background:#f8fafc;
+    color:#94a3b8;
+    font-size:10px;
+    font-weight:800;
+}
+.sales-post-detail-no-image.hidden{
+    display:none;
+}
+.sales-post-detail-content{
+    padding:14px 16px 18px;
+}
+.sales-post-detail-status-row{
+    display:flex;
+    justify-content:flex-start;
+    margin-bottom:9px;
+}
+.sales-post-detail-status{
+    display:inline-flex;
+    min-height:26px;
+    align-items:center;
+    padding:4px 7px;
+    border-radius:4px;
+    background:#e2e8f0;
+    color:#475569;
+    font-size:8px;
+    font-weight:900;
+}
+.sales-post-detail-status.good{
+    background:#dcfce7;
+    color:#166534;
+}
+.sales-post-detail-status.bad{
+    background:#fee2e2;
+    color:#991b1b;
+}
+.sales-post-detail-date{
+    display:flex;
+    align-items:center;
+    gap:5px;
+    margin-bottom:7px;
+    color:#64748b;
+    font-size:8px;
+    text-transform:uppercase;
+}
+.sales-post-detail-date strong{
+    color:#475569;
+}
+.sales-post-detail-content h3{
+    margin:0;
+    color:#0f172a;
+    font-size:17px;
+    line-height:1.35;
+}
+.sales-post-detail-content p{
+    margin:8px 0 0;
+    color:#475569;
+    font-size:11px;
+    line-height:1.6;
+    white-space:pre-wrap;
+}
+.sales-post-detail-facts{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;
+    margin:14px 0 0;
+}
+.sales-post-detail-facts > div{
+    min-width:0;
+    padding:9px 10px;
+    border:1px solid #e2e8f0;
+    border-radius:4px;
+    background:#f8fafc;
+}
+.sales-post-detail-facts dt{
+    margin-bottom:3px;
+    color:#94a3b8;
+    font-size:7px;
+    font-weight:900;
+    text-transform:uppercase;
+}
+.sales-post-detail-facts dd{
+    margin:0;
+    overflow-wrap:anywhere;
+    color:#334155;
+    font-size:9px;
+    font-weight:800;
+}
+.sales-post-detail-footer{
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:8px;
+    flex:0 0 auto;
+    padding:10px 14px;
+    border-top:1px solid #e2e8f0;
+    background:#fff;
+}
+.sales-post-detail-original.disabled{
+    pointer-events:none;
+    opacity:.45;
+}
+
+/* Full-screen image viewer. */
+.sales-image-lightbox{
+    position:fixed;
+    inset:0;
+    z-index:280;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:28px;
+    background:rgba(2,6,23,.92);
+}
+.sales-image-lightbox.hidden{
+    display:none;
+}
+.sales-image-lightbox img{
+    max-width:100%;
+    max-height:100%;
+    object-fit:contain;
+}
+.sales-image-lightbox-close{
+    position:fixed;
+    right:18px;
+    top:18px;
+    width:44px;
+    height:44px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border:1px solid rgba(255,255,255,.28);
+    border-radius:4px;
+    background:rgba(15,23,42,.72);
+    color:#fff;
+    cursor:pointer;
+    font-size:22px;
+}
+
+/* Coarse-pointer/touch ergonomics: never depend on hover. */
+@media(pointer:coarse){
+    .sales-view-details,
+    .sales-delete-toggle,
+    .sales-post-detail-footer .btn,
+    .sales-post-detail-close{
+        min-height:44px;
+    }
+    .sales-view-details{
+        min-width:92px;
+        justify-content:center;
+        padding:8px 9px;
+        font-size:9px;
+    }
+    .sales-self-post-card:hover{
+        transform:none;
+        box-shadow:none;
+    }
+}
+@media(max-width:680px){
+    .sales-post-detail-backdrop{
+        padding:7px;
+        align-items:stretch;
+    }
+    .sales-post-detail-modal{
+        width:100%;
+        max-height:calc(100vh - 14px);
+    }
+    .sales-post-detail-head{
+        padding:11px 12px;
+    }
+    .sales-post-detail-content{
+        padding:12px;
+    }
+    .sales-post-detail-facts{
+        grid-template-columns:1fr;
+    }
+    .sales-post-detail-footer{
+        position:sticky;
+        bottom:0;
+        padding:8px;
+    }
+    .sales-post-detail-footer .btn{
+        flex:1 1 0;
+        justify-content:center;
+    }
+}

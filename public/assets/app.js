@@ -549,6 +549,230 @@ function renderSalesRangeData(data,range){
 
 $('#salesRangeApply').on('click',function(){
     const range=syncSalesRangeConstraints('');
+
+
+const $salesPostDetailModal=$('#salesPostDetailModal');
+const $salesPostDetailImageButton=$('#salesPostDetailImageButton');
+const $salesImageLightbox=$('#salesImageLightbox');
+
+function salesPostStatusLabel(status){
+    if(status==='good'){
+        return salesTr('good');
+    }
+
+    if(status==='bad'){
+        return salesTr('issues');
+    }
+
+    return salesTr('unreviewed');
+}
+
+function openSalesPostDetail($card){
+    if(!$card||!$card.length){
+        return;
+    }
+
+    const platform=String(
+        $card.attr('data-sales-post-platform')||''
+    );
+    const title=String(
+        $card.attr('data-sales-post-title')||''
+    );
+    const description=String(
+        $card.attr('data-sales-post-description')||''
+    );
+    const published=String(
+        $card.attr('data-sales-post-published')||''
+    );
+    const originalUrl=String(
+        $card.attr('data-sales-post-url')||''
+    );
+    const image=String(
+        $card.attr('data-sales-post-image')||''
+    );
+    const status=String(
+        $card.attr('data-sales-post-status')||'unreviewed'
+    );
+    const externalId=String(
+        $card.attr('data-sales-post-external-id')||''
+    );
+
+    $('#salesPostDetailPlatform').text(
+        platformLabel(platform)||platform||'Marketplace'
+    );
+    $('#salesPostDetailPlatformValue').text(
+        platformLabel(platform)||platform||'—'
+    );
+    $('#salesPostDetailTitle').text(
+        title||'Post details'
+    );
+    $('#salesPostDetailContentTitle').text(
+        title||'—'
+    );
+    $('#salesPostDetailDescription').text(
+        description||salesTr('noDescription')
+    );
+    $('#salesPostDetailPublished').text(
+        published||'—'
+    );
+    $('#salesPostDetailExternalId').text(
+        externalId||'—'
+    );
+
+    $('#salesPostDetailStatus')
+        .attr('class','sales-post-detail-status '+status)
+        .text(salesPostStatusLabel(status));
+
+    $('#salesPostDetailOriginal')
+        .attr('href',originalUrl||'#')
+        .toggleClass('disabled',!originalUrl);
+
+    if(image){
+        $('#salesPostDetailImage').attr('src',image);
+        $('#salesImageLightboxImage').attr('src',image);
+        $salesPostDetailImageButton.removeClass('hidden');
+        $('#salesPostDetailNoImage').addClass('hidden');
+    }else{
+        $('#salesPostDetailImage').attr('src','');
+        $('#salesImageLightboxImage').attr('src','');
+        $salesPostDetailImageButton.addClass('hidden');
+        $('#salesPostDetailNoImage').removeClass('hidden');
+    }
+
+    $salesPostDetailModal
+        .removeClass('hidden')
+        .attr('aria-hidden','false');
+
+    $('body').addClass('sales-detail-open');
+
+    setTimeout(function(){
+        $('#salesPostDetailClose').trigger('focus');
+    },0);
+}
+
+function closeSalesPostDetail(){
+    $salesPostDetailModal
+        .addClass('hidden')
+        .attr('aria-hidden','true');
+
+    $('body').removeClass('sales-detail-open');
+}
+
+function openSalesImageLightbox(){
+    const src=String(
+        $('#salesPostDetailImage').attr('src')||''
+    );
+
+    if(!src){
+        return;
+    }
+
+    $('#salesImageLightboxImage').attr('src',src);
+
+    $salesImageLightbox
+        .removeClass('hidden')
+        .attr('aria-hidden','false');
+}
+
+function closeSalesImageLightbox(){
+    $salesImageLightbox
+        .addClass('hidden')
+        .attr('aria-hidden','true');
+}
+
+$(document).on(
+    'click',
+    '.sales-self-post-card',
+    function(event){
+        if(
+            $(event.target).closest(
+                'a,button,input,form,label,select,textarea'
+            ).length
+        ){
+            return;
+        }
+
+        openSalesPostDetail($(this));
+    }
+);
+
+$(document).on(
+    'click',
+    '[data-view-sales-post]',
+    function(event){
+        event.preventDefault();
+        event.stopPropagation();
+
+        openSalesPostDetail(
+            $(this).closest('.sales-self-post-card')
+        );
+    }
+);
+
+$(document).on(
+    'keydown',
+    '.sales-self-post-card',
+    function(event){
+        if(
+            event.key!=='Enter'
+            &&event.key!==' '
+        ){
+            return;
+        }
+
+        if(
+            $(event.target).closest(
+                'a,button,input,form,label,select,textarea'
+            ).length
+        ){
+            return;
+        }
+
+        event.preventDefault();
+        openSalesPostDetail($(this));
+    }
+);
+
+$('#salesPostDetailClose,#salesPostDetailFooterClose')
+    .on('click',function(){
+        closeSalesPostDetail();
+    });
+
+$salesPostDetailModal.on('click',function(event){
+    if(event.target===this){
+        closeSalesPostDetail();
+    }
+});
+
+$salesPostDetailImageButton.on('click',function(){
+    openSalesImageLightbox();
+});
+
+$('#salesImageLightboxClose').on('click',function(){
+    closeSalesImageLightbox();
+});
+
+$salesImageLightbox.on('click',function(event){
+    if(event.target===this){
+        closeSalesImageLightbox();
+    }
+});
+
+$(document).on('keydown',function(event){
+    if(event.key!=='Escape'){
+        return;
+    }
+
+    if(!$salesImageLightbox.hasClass('hidden')){
+        closeSalesImageLightbox();
+        return;
+    }
+
+    if(!$salesPostDetailModal.hasClass('hidden')){
+        closeSalesPostDetail();
+    }
+});
+
     if(!range)return;
 
     const $button=$(this);
@@ -4564,86 +4788,7 @@ function syncDecisionVisualState(decision){
         if(!$modal.hasClass('hidden'))closeReviewModal();
     });
 
-$getContent.on('click', function(){
-    const postId = parseInt(
-        $('#dashboardReviewPostId').val(),
-        10
-    ) || 0;
 
-    if(!postId){
-        return;
-    }
-
-    const originalHtml = $getContent.html();
-
-    $modalMessage
-        .removeClass('error')
-        .text('Fetching fresh Marketplace content…');
-
-    $getContent
-        .prop('disabled', true)
-        .addClass('loading');
-
-    $.ajax({
-        url:getContentUrl,
-        method:'POST',
-        dataType:'json',
-        data:{
-            _csrf:csrf,
-            post_id:postId
-        },
-        headers:{
-            'X-Requested-With':'XMLHttpRequest',
-            'Accept':'application/json'
-        }
-    })
-    .done(function(data){
-        if(!data || !data.ok){
-            $modalMessage
-                .addClass('error')
-                .text(
-                    (data && data.message)
-                    || 'Could not fetch content.'
-                );
-            return;
-        }
-
-        renderContentPreview(data.content);
-
-        const hasImage=
-            data.content
-            && Array.isArray(data.content.photos)
-            && data.content.photos.length>0;
-
-        $modalMessage
-            .removeClass('error warning')
-            .addClass(hasImage?'':'warning')
-            .text(
-                data.message
-                ||(
-                    hasImage
-                        ?'Content and image fetched.'
-                        :'Content fetched, but no image was returned.'
-                )
-            );
-    })
-    .fail(function(xhr){
-        const data = xhr.responseJSON || {};
-
-        $modalMessage
-            .addClass('error')
-            .text(
-                data.message
-                || 'Could not fetch content.'
-            );
-    })
-    .always(function(){
-        $getContent
-            .prop('disabled', false)
-            .removeClass('loading')
-            .html(originalHtml);
-    });
-});
 
 function showDecisionError(message){
     const $decisionBlock=$modalForm.find(

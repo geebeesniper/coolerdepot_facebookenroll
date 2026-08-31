@@ -91,6 +91,17 @@ $salesPlatformIcon = static function(string $platform): string
             <article
                 class="sales-self-post-card<?= Util::e($statusClass) ?>"
                 data-sales-post-id="<?= (int)$p['id'] ?>"
+                data-sales-post-platform="<?= Util::e((string)$p['platform']) ?>"
+                data-sales-post-title="<?= Util::e((string)$p['title']) ?>"
+                data-sales-post-description="<?= Util::e((string)($p['description'] ?? '')) ?>"
+                data-sales-post-published="<?= Util::e((string)$p['published_at']) ?>"
+                data-sales-post-url="<?= Util::e((string)$p['canonical_url']) ?>"
+                data-sales-post-image="<?= Util::e((string)($p['fetched_image_url'] ?? '')) ?>"
+                data-sales-post-status="<?= Util::e($status ?: 'unreviewed') ?>"
+                data-sales-post-external-id="<?= Util::e((string)($p['external_post_id'] ?? '')) ?>"
+                role="button"
+                tabindex="0"
+                aria-label="View post details: <?= Util::e((string)$p['title']) ?>"
             >
                 <div class="sales-self-post-media">
                     <?php if (!empty($p['fetched_image_url'])): ?>
@@ -133,14 +144,16 @@ $salesPlatformIcon = static function(string $platform): string
                 </div>
 
                 <div class="sales-self-post-footer">
-                    <a
-                        class="sales-open-original"
-                        target="_blank"
-                        rel="noopener"
-                        href="<?= Util::e((string)$p['canonical_url']) ?>"
+                    <button
+                        type="button"
+                        class="sales-view-details"
+                        data-view-sales-post
                     >
-                        <span data-sales-i18n="openOriginal">Open original</span>
-                    </a>
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M12 5c5.5 0 9.5 5.2 9.5 7s-4 7-9.5 7S2.5 13.8 2.5 12 6.5 5 12 5Zm0 2C8.3 7 5.3 10.2 4.6 12c.7 1.8 3.7 5 7.4 5s6.7-3.2 7.4-5C18.7 10.2 15.7 7 12 7Zm0 2.2a2.8 2.8 0 1 1 0 5.6 2.8 2.8 0 0 1 0-5.6Z"/>
+                        </svg>
+                        <span data-sales-i18n="viewDetails">View details</span>
+                    </button>
 
                     <span
                         class="sales-self-post-status<?= $status ? ' '.$status : '' ?>"

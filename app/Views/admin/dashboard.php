@@ -626,17 +626,6 @@ $periodNames = [
             </div>
 
             <div class="review-modal-head-actions">
-                <button
-                    type="button"
-                    class="review-get-content"
-                    id="dashboardGetContent"
-                >
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M12 4a8 8 0 0 1 7.4 4.9l1.7-1.7V13h-5.8l2.3-2.3A6 6 0 1 0 18 14h2a8 8 0 1 1-8-10Z"/>
-                    </svg>
-                    <span>Get Content</span>
-                </button>
-
                 <a
                     class="review-modal-original hidden"
                     id="dashboardReviewOriginal"

@@ -892,3 +892,18 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - Responsive layout falls back to 4 columns at <=1200px, 3 at <=900px, 2 at <=720px, and 1 at <=560px.
 - No database migration is required.
 - All border radius remains `4px`.
+
+## v0.1.45 — Clickable/touchable Sales cards and cleaner Review header
+
+- Removed the `Get Content` button from the Admin Post Review header. Existing saved/fetched listing content remains visible; Open original remains available.
+- Sales Daily Post cards are now real interactive cards. Mouse click, touch tap, Enter, and Space open a read-only post-details popup.
+- Interactive controls inside a card (Request deletion and other buttons/links) do not trigger the card popup, preventing accidental actions on touch devices.
+- Added a clear `View details` action in each Sales card footer while keeping the whole card clickable.
+- Sales post details show listing image, review status, published timestamp, full title, full description, platform, item ID, and Open original.
+- Clicking the listing image opens a dedicated full-screen image viewer.
+- The post-details modal is AJAX-safe because event handlers are delegated; cards loaded by From/To filtering or Load earlier days work immediately without a reload.
+- Added keyboard focus states and `role=button`/`tabindex=0` to Sales cards.
+- Touch controls use >=44px targets and do not rely on hover.
+- Desktop remains six Sales cards per row; responsive breakpoints are 4 columns <=1150px, 3 <=900px, 2 <=680px, and 1 <=480px.
+- No database migration is required.
+- All border radius remains `4px`.

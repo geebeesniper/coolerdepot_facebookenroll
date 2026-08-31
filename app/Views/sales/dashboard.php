@@ -110,6 +110,140 @@ $unreviewedTotal=(int)($summary['unreviewed_count']??0);
     No posts in this date range.
 </div>
 
+<div
+    class="sales-post-detail-backdrop hidden"
+    id="salesPostDetailModal"
+    aria-hidden="true"
+>
+    <section
+        class="sales-post-detail-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="salesPostDetailTitle"
+    >
+        <div class="sales-post-detail-head">
+            <div>
+                <span
+                    class="sales-post-detail-platform"
+                    id="salesPostDetailPlatform"
+                >
+                    Marketplace
+                </span>
+                <h2 id="salesPostDetailTitle">Post details</h2>
+            </div>
+
+            <button
+                type="button"
+                class="icon-close sales-post-detail-close"
+                id="salesPostDetailClose"
+                aria-label="Close post details"
+                title="Close"
+            >
+                ×
+            </button>
+        </div>
+
+        <div class="sales-post-detail-scroll">
+            <button
+                type="button"
+                class="sales-post-detail-image-button hidden"
+                id="salesPostDetailImageButton"
+                aria-label="View larger image"
+            >
+                <img
+                    id="salesPostDetailImage"
+                    src=""
+                    alt=""
+                >
+                <span class="sales-post-detail-image-zoom">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M10.5 4a6.5 6.5 0 1 1-4.6 11.1l-3.5 3.5 1.4 1.4 3.5-3.5A6.5 6.5 0 0 1 10.5 4Zm0 2a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9Zm-.9 1.6h1.8v2h2v1.8h-2v2H9.6v-2h-2V9.6h2v-2Z"/>
+                    </svg>
+                </span>
+            </button>
+
+            <div
+                class="sales-post-detail-no-image"
+                id="salesPostDetailNoImage"
+            >
+                <span data-sales-i18n="noImage">No listing image</span>
+            </div>
+
+            <div class="sales-post-detail-content">
+                <div class="sales-post-detail-status-row">
+                    <span
+                        class="sales-post-detail-status"
+                        id="salesPostDetailStatus"
+                    >
+                        Unreviewed
+                    </span>
+                </div>
+
+                <div class="sales-post-detail-date">
+                    <span data-sales-i18n="published">Published</span>
+                    <strong id="salesPostDetailPublished">—</strong>
+                </div>
+
+                <h3 id="salesPostDetailContentTitle">—</h3>
+
+                <p id="salesPostDetailDescription">—</p>
+
+                <dl class="sales-post-detail-facts">
+                    <div>
+                        <dt data-sales-i18n="platform">Platform</dt>
+                        <dd id="salesPostDetailPlatformValue">—</dd>
+                    </div>
+
+                    <div>
+                        <dt data-sales-i18n="postId">Post ID</dt>
+                        <dd id="salesPostDetailExternalId">—</dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+
+        <div class="sales-post-detail-footer">
+            <button
+                type="button"
+                class="btn"
+                id="salesPostDetailFooterClose"
+            >
+                <span data-sales-i18n="close">Close</span>
+            </button>
+
+            <a
+                class="btn primary"
+                id="salesPostDetailOriginal"
+                target="_blank"
+                rel="noopener"
+                href="#"
+            >
+                <span data-sales-i18n="openOriginal">Open original</span>
+            </a>
+        </div>
+    </section>
+</div>
+
+<div
+    class="sales-image-lightbox hidden"
+    id="salesImageLightbox"
+    aria-hidden="true"
+>
+    <button
+        type="button"
+        class="sales-image-lightbox-close"
+        id="salesImageLightboxClose"
+        aria-label="Close image"
+    >
+        ×
+    </button>
+    <img
+        id="salesImageLightboxImage"
+        src=""
+        alt=""
+    >
+</div>
+
 <div class="daily-load-more-wrap">
     <button
         type="button"
