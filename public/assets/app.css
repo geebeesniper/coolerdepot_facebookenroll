@@ -7774,3 +7774,242 @@ body.sales-detail-open{
 .sales-chart-segment.unreviewed{
     border-radius:0 !important;
 }
+
+/* v0.1.55 Sales header control alignment */
+
+/*
+ * Desktop header control deck:
+ * Daily/Weekly/Monthly, date inputs, and Submit Post all share the same
+ * 38px control height and the same input-row baseline.
+ */
+.sales-portal-head{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    gap:24px;
+    align-items:start;
+}
+
+.sales-portal-head-actions{
+    display:grid;
+    grid-template-columns:auto auto auto;
+    column-gap:10px;
+    row-gap:0;
+    align-items:start;
+    justify-content:end;
+}
+
+.sales-head-period-switch{
+    box-sizing:border-box;
+    width:auto;
+    height:38px;
+    min-height:38px;
+    margin-top:18px;
+    padding:2px;
+    align-self:start;
+    display:grid;
+    grid-template-columns:repeat(3,max-content);
+    gap:2px;
+}
+
+.sales-head-period-switch .sales-period-button{
+    box-sizing:border-box;
+    height:32px;
+    min-height:32px;
+    padding:0 10px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    line-height:1;
+}
+
+.sales-range-filter{
+    display:block;
+    margin:0;
+    padding:0;
+    align-self:start;
+}
+
+.sales-date-control-row{
+    display:flex;
+    align-items:flex-start;
+    gap:8px;
+}
+
+.sales-range-filter .admin-range-field{
+    display:flex;
+    flex:0 0 144px;
+    width:144px;
+    flex-direction:column;
+    gap:4px;
+    margin:0;
+}
+
+.sales-range-filter .admin-range-field > span{
+    box-sizing:border-box;
+    height:14px;
+    margin:0;
+    display:flex;
+    align-items:center;
+    color:#64748b;
+    font-size:8px;
+    font-weight:800;
+    line-height:14px;
+}
+
+.sales-range-filter .admin-range-field input[type="date"]{
+    box-sizing:border-box;
+    width:144px;
+    height:38px;
+    min-height:38px;
+    margin:0;
+    padding:0 9px;
+    line-height:38px;
+}
+
+.sales-to-field-stack{
+    box-sizing:border-box;
+    width:144px;
+    min-width:144px;
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:3px;
+}
+
+.sales-to-field-stack .admin-range-field{
+    width:144px;
+}
+
+.sales-to-field-stack .sales-back-today{
+    box-sizing:border-box;
+    min-height:18px;
+    height:18px;
+    margin:0;
+    padding:0 2px;
+    display:inline-flex;
+    align-items:center;
+    line-height:18px;
+}
+
+.sales-submit-cta{
+    box-sizing:border-box;
+    height:38px;
+    min-height:38px;
+    margin-top:18px;
+    padding-top:0;
+    padding-bottom:0;
+    align-self:start;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+}
+
+/* Do not let the hidden live region take up header width/height. */
+.sales-range-live-status:empty{
+    display:none;
+}
+
+/* Keep the left title block visually stable beside the controls. */
+.sales-portal-head > :first-child{
+    min-width:0;
+}
+
+/* Tablet: controls stay aligned but can occupy a full second row. */
+@media(max-width:1120px){
+    .sales-portal-head{
+        grid-template-columns:1fr;
+        gap:14px;
+    }
+
+    .sales-portal-head-actions{
+        justify-content:start;
+    }
+}
+
+/* Touch keeps equal 44px primary control heights. */
+@media(pointer:coarse){
+    .sales-head-period-switch{
+        height:44px;
+        min-height:44px;
+    }
+
+    .sales-head-period-switch .sales-period-button{
+        height:38px;
+        min-height:38px;
+    }
+
+    .sales-range-filter .admin-range-field input[type="date"]{
+        height:44px;
+        min-height:44px;
+        line-height:44px;
+    }
+
+    .sales-submit-cta{
+        height:44px;
+        min-height:44px;
+    }
+}
+
+/* Narrow screens: stack without losing consistent component sizing. */
+@media(max-width:760px){
+    .sales-portal-head-actions{
+        width:100%;
+        grid-template-columns:1fr;
+        gap:9px;
+    }
+
+    .sales-head-period-switch{
+        width:100%;
+        height:auto;
+        min-height:38px;
+        margin-top:0;
+        grid-template-columns:repeat(3,minmax(0,1fr));
+    }
+
+    .sales-head-period-switch .sales-period-button{
+        width:100%;
+    }
+
+    .sales-range-filter,
+    .sales-date-control-row{
+        width:100%;
+    }
+
+    .sales-date-control-row{
+        display:grid;
+        grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+
+    .sales-range-filter .admin-range-field,
+    .sales-to-field-stack,
+    .sales-to-field-stack .admin-range-field{
+        width:100%;
+        min-width:0;
+        flex-basis:auto;
+    }
+
+    .sales-range-filter .admin-range-field input[type="date"]{
+        width:100%;
+    }
+
+    .sales-submit-cta{
+        width:100%;
+        margin-top:0;
+    }
+}
+
+@media(max-width:480px){
+    .sales-date-control-row{
+        grid-template-columns:1fr;
+    }
+}
+
+
+/* Explicit chart-only square-corner exception. */
+.sales-chart-stack,
+.sales-chart-segment,
+.sales-chart-segment.good,
+.sales-chart-segment.bad,
+.sales-chart-segment.unreviewed{
+    border-radius:0 !important;
+}

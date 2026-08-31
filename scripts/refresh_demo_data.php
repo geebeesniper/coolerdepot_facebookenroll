@@ -25,4 +25,5 @@ foreach ($statements as $statement) {
     $pdo->exec($statement);
 }
 
-echo "Demo data refreshed to v0.1.1.\n";
+echo "Demo data refreshed to v0.1.55
+";

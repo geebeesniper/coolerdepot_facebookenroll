@@ -1026,3 +1026,19 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - Touch controls remain delegated and AJAX-loaded post sections participate automatically.
 - No database migration is required.
 - All normal UI border radius remains 4px; chart bars remain the explicit square-corner exception.
+
+## v0.1.55 — Aug 28 post-date correction and aligned Sales header controls
+
+- Corrected the three Facebook Marketplace posts previously grouped under 2026-08-26 so their real posting date is 2026-08-28:
+  - `970768882088732`
+  - `1556421559266266`
+  - `1994325934606833`
+- The migration changes both `published_at` date part and `published_date`, while preserving each existing time-of-day.
+- Updated `database/demo.sql` so future demo refresh/install keeps those three posts on August 28, 2026.
+- Sales header controls were rebuilt as an aligned control deck.
+- Daily / Weekly / Monthly, From/To date inputs, and Submit Post now use the same 38px desktop primary-control height and input-row baseline.
+- Back to today remains directly below the To field and no longer pushes the other controls vertically out of alignment.
+- Touch/coarse-pointer mode uses matching 44px primary control heights.
+- Responsive layout keeps equal sizing and stacks cleanly at narrow breakpoints.
+- Database data migration is required for an already-running installation.
+- Normal UI radius remains 4px; chart bars remain the explicit square-corner exception.

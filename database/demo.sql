@@ -1,4 +1,4 @@
--- CoolerDepot Sales Post Tracker demo data v0.1.1
+-- CoolerDepot Sales Post Tracker demo data v0.1.55
 -- Uses the 10 real Facebook Marketplace URLs supplied for testing.
 -- Titles/descriptions below are demo labels only; live verification must fetch real metadata.
 SET NAMES utf8mb4;
@@ -163,8 +163,8 @@ INSERT INTO cdsp_sales_posts
 SELECT id, 'facebook', 'https://www.facebook.com/marketplace/item/970768882088732', 'https://www.facebook.com/marketplace/item/970768882088732', 'https://www.facebook.com/marketplace/item/970768882088732', '57b201621206959fbd7d2305fdeb1e83335bcea74198eded545ea668e416d86f',
        '970768882088732', 'Facebook Marketplace Sample #8', '29229057108ed200b3cdd13e6493912611981674f54ca13492b02d2c563d8b07',
        'Real Facebook Marketplace URL supplied for Sales Post Tracker testing.', 'b94fef7e15d17d443ab70094d9326c4a7cd08afb67431e6fa14a38d0c3584261',
-       DATE_SUB(DATE_SUB(NOW(), INTERVAL 2 DAY), INTERVAL 84 MINUTE),
-       DATE(DATE_SUB(NOW(), INTERVAL 2 DAY)),
+       TIMESTAMP('2026-08-28 18:05:54'),
+       DATE('2026-08-28'),
        DATE_SUB(NOW(), INTERVAL 84 MINUTE),
        'verified', NULL, NOW(), NOW()
 FROM cdsp_users
@@ -183,8 +183,8 @@ INSERT INTO cdsp_sales_posts
 SELECT id, 'facebook', 'https://www.facebook.com/marketplace/item/1556421559266266', 'https://www.facebook.com/marketplace/item/1556421559266266', 'https://www.facebook.com/marketplace/item/1556421559266266', 'd0e58293088baf9855784b4f2cf1de685424836bb7f287f880dd789c4b1ede56',
        '1556421559266266', 'Facebook Marketplace Sample #9', 'd89b798f342575f180f3d2fd127c35d9f2c3bea70e5c76576cf7bd0666687e7a',
        'Real Facebook Marketplace URL supplied for Sales Post Tracker testing.', 'b94fef7e15d17d443ab70094d9326c4a7cd08afb67431e6fa14a38d0c3584261',
-       DATE_SUB(DATE_SUB(NOW(), INTERVAL 2 DAY), INTERVAL 92 MINUTE),
-       DATE(DATE_SUB(NOW(), INTERVAL 2 DAY)),
+       TIMESTAMP('2026-08-28 17:57:54'),
+       DATE('2026-08-28'),
        DATE_SUB(NOW(), INTERVAL 92 MINUTE),
        'verified', NULL, NOW(), NOW()
 FROM cdsp_users
@@ -203,8 +203,8 @@ INSERT INTO cdsp_sales_posts
 SELECT id, 'facebook', 'https://www.facebook.com/marketplace/item/1994325934606833', 'https://www.facebook.com/marketplace/item/1994325934606833', 'https://www.facebook.com/marketplace/item/1994325934606833', '09a351591f0f689085ef0f3fece4867fa373b3a01fdc62b2885bd8b0073ff4c1',
        '1994325934606833', 'Facebook Marketplace Sample #10', '5d7823670a39569b3fcb314c50e43e92845f674ee461017d6841efa5a36a3571',
        'Real Facebook Marketplace URL supplied for Sales Post Tracker testing.', 'b94fef7e15d17d443ab70094d9326c4a7cd08afb67431e6fa14a38d0c3584261',
-       DATE_SUB(DATE_SUB(NOW(), INTERVAL 2 DAY), INTERVAL 100 MINUTE),
-       DATE(DATE_SUB(NOW(), INTERVAL 2 DAY)),
+       TIMESTAMP('2026-08-28 17:49:54'),
+       DATE('2026-08-28'),
        DATE_SUB(NOW(), INTERVAL 100 MINUTE),
        'verified', NULL, NOW(), NOW()
 FROM cdsp_users
