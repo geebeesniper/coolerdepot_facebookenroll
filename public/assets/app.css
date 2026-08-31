@@ -7189,3 +7189,147 @@ body.sales-detail-open{
         min-height:350px;
     }
 }
+
+/* v0.1.51 calmer chart + true below-axis labels + unified date picker */
+
+/* Sales uses the same date-picker UX as Admin. */
+.sales-date-control-row{
+    justify-content:flex-end;
+}
+.sales-range-filter .admin-range-field{
+    margin:0;
+}
+.sales-range-filter .admin-range-field input{
+    width:144px;
+    min-height:38px;
+    height:38px;
+    padding:0 9px;
+    color:#0f172a;
+    font-size:11px;
+    font-weight:800;
+}
+.sales-range-live-status:empty{
+    display:none;
+}
+
+/* AJAX remains SaaS-like without showing a literal Loading... label. */
+.sales-range-loading{
+    cursor:progress;
+}
+.sales-range-loading .sales-chart-scroll,
+.sales-range-loading .sales-day-section{
+    opacity:.72;
+    transition:opacity .12s ease;
+}
+
+/* Calmer, less saturated chart palette. */
+.sales-chart-legend i.good,
+.sales-chart-segment.good{
+    background:#6f9f7f;
+}
+.sales-chart-legend i.bad,
+.sales-chart-segment.bad{
+    background:#bf7d7d;
+}
+.sales-chart-legend i.unreviewed,
+.sales-chart-segment.unreviewed{
+    background:#98a4b3;
+}
+.sales-chart-legend i.missing{
+    border-color:#9aa8b8;
+}
+.sales-chart-missing{
+    border-color:#9aa8b8;
+    background:rgba(248,250,252,.58);
+}
+.sales-chart-target-line{
+    border-top-color:#657da6;
+}
+.sales-chart-target-line > span{
+    background:#f1f5f9;
+    color:#526985;
+}
+
+/*
+ * The horizontal axis is the line above the date row.
+ * Dates therefore sit physically BELOW the X axis, not inside the plot.
+ */
+.sales-chart-canvas{
+    height:270px;
+    border-bottom:0;
+    background:
+        linear-gradient(
+            to bottom,
+            transparent 0,
+            transparent calc(100% - 28px),
+            #fff calc(100% - 28px)
+        ),
+        repeating-linear-gradient(
+            to bottom,
+            rgba(148,163,184,.13) 0,
+            rgba(148,163,184,.13) 1px,
+            transparent 1px,
+            transparent 55px
+        );
+}
+.sales-chart-canvas::after{
+    content:"";
+    position:absolute;
+    left:0;
+    right:0;
+    bottom:28px;
+    z-index:4;
+    border-top:1px solid #cbd5e1;
+    pointer-events:none;
+}
+.sales-chart-day{
+    grid-template-rows:1fr 28px;
+}
+.sales-chart-x-label{
+    position:relative;
+    z-index:5;
+    align-items:flex-start;
+    padding-top:6px;
+    color:#64748b;
+    font-size:7px;
+    font-weight:700;
+}
+.sales-chart-y-axis{
+    height:270px;
+}
+.sales-chart-y-axis .zero{
+    bottom:28px;
+}
+
+/* Empty dates keep their X label but draw no Missing rectangle. */
+.sales-chart-day[data-chart-total="0"] .sales-chart-missing{
+    display:none !important;
+}
+.sales-chart-day[data-chart-total="0"] .sales-chart-day-plot{
+    background:transparent;
+}
+.sales-chart-day[data-chart-total="0"]:hover .sales-chart-day-plot,
+.sales-chart-day[data-chart-total="0"]:focus-visible .sales-chart-day-plot{
+    background:rgba(148,163,184,.035);
+}
+
+@media(pointer:coarse){
+    .sales-range-filter .admin-range-field input{
+        min-height:44px;
+        height:44px;
+        font-size:12px;
+    }
+}
+
+@media(max-width:560px){
+    .sales-date-control-row{
+        width:100%;
+        justify-content:flex-start;
+    }
+    .sales-range-filter .admin-range-field{
+        flex:1 1 130px;
+    }
+    .sales-range-filter .admin-range-field input{
+        width:100%;
+    }
+}

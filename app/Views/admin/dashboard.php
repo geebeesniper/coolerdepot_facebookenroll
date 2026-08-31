@@ -85,16 +85,30 @@ $periodNames = [
             <div class="dashboard-date-control-row">
                 <label class="admin-range-field">
                     <span data-dashboard-i18n="from">From</span>
-                    <input type="date" name="from" id="dashboardFromInput"
+                    <input
+                        type="date"
+                        name="from"
+                        id="dashboardFromInput"
                         value="<?= Util::e((string)$periodInfo['from']) ?>"
-                        max="<?= Util::e((string)$periodInfo['to']) ?>">
+                        max="<?= Util::e(
+                            min(
+                                (string)$periodInfo['to'],
+                                $today
+                            )
+                        ) ?>"
+                    >
                 </label>
 
                 <label class="admin-range-field">
                     <span data-dashboard-i18n="to">To</span>
-                    <input type="date" name="to" id="dashboardToInput"
+                    <input
+                        type="date"
+                        name="to"
+                        id="dashboardToInput"
                         value="<?= Util::e((string)$periodInfo['to']) ?>"
-                        min="<?= Util::e((string)$periodInfo['from']) ?>">
+                        min="<?= Util::e((string)$periodInfo['from']) ?>"
+                        max="<?= Util::e($today) ?>"
+                    >
                 </label>
 
                 <button type="button"

@@ -982,7 +982,7 @@ function renderSalesChart(){
         );
 
         const missingH=
-            missing>0
+            actual>0&&missing>0
                 ?Math.max(
                     0,
                     targetPercent-actualH
@@ -1312,10 +1312,11 @@ function loadSalesRange(range){
 
     $('#salesRangeStatus')
         .removeClass('error')
-        .text(salesTr('loading'));
+        .text('');
 
     $('#salesActivityChartPanel,#dailyPosts')
-        .addClass('sales-range-loading');
+        .addClass('sales-range-loading')
+        .attr('aria-busy','true');
 
     salesRangeRequest=$.ajax({
         url:window.CD_BASE_PATH+'/sales/daily-posts',
@@ -1365,7 +1366,8 @@ function loadSalesRange(range){
     })
     .always(function(){
         $('#salesActivityChartPanel,#dailyPosts')
-            .removeClass('sales-range-loading');
+            .removeClass('sales-range-loading')
+            .attr('aria-busy','false');
     });
 }
 
@@ -3649,8 +3651,22 @@ function platformLogoHtml(platform){
     function syncAdminRangeInputs(){
         const $from=$('#dashboardFromInput');
         const $to=$('#dashboardToInput');
-        $from.val(currentFrom).attr('max',currentTo);
-        $to.val(currentTo).attr('min',currentFrom);
+
+        const maxFrom=(
+            today
+            &&currentTo>today
+        )
+            ?today
+            :currentTo;
+
+        $from
+            .val(currentFrom)
+            .attr('max',maxFrom);
+
+        $to
+            .val(currentTo)
+            .attr('min',currentFrom)
+            .attr('max',today||'');
     }
 
     function adminAjaxRangeData(extra){
@@ -4617,11 +4633,25 @@ $('#appLanguageSwitch').on(
     function applyAdminRangeChange(changed){
         const $from=$('#dashboardFromInput');
         const $to=$('#dashboardToInput');
+
         let from=String($from.val()||'');
         let to=String($to.val()||'');
 
-        if(!/^\d{4}-\d{2}-\d{2}$/.test(from)||!/^\d{4}-\d{2}-\d{2}$/.test(to)){
+        if(
+            !/^\d{4}-\d{2}-\d{2}$/.test(from)
+            ||!/^\d{4}-\d{2}-\d{2}$/.test(to)
+        ){
             return;
+        }
+
+        if(today&&to>today){
+            to=today;
+            $to.val(to);
+        }
+
+        if(today&&from>today){
+            from=today;
+            $from.val(from);
         }
 
         if(changed==='from'&&from>to){
@@ -4630,11 +4660,26 @@ $('#appLanguageSwitch').on(
         }else if(changed==='to'&&to<from){
             from=to;
             $from.val(from);
+        }else if(from>to){
+            from=to;
+            $from.val(from);
         }
 
-        $from.attr('max',to);
-        $to.attr('min',from);
-        loadProgress({from:from,to:to});
+        $from.attr(
+            'max',
+            today&&to>today
+                ?today
+                :to
+        );
+
+        $to
+            .attr('min',from)
+            .attr('max',today||'');
+
+        loadProgress({
+            from:from,
+            to:to
+        });
     }
 
     $('#dashboardDateForm').on('submit',function(event){event.preventDefault();});

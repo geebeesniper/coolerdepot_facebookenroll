@@ -968,3 +968,19 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - Request deletion is removed from Sales cards and its client-side handlers.
 - No database migration is required.
 - All border radius remains 4px.
+
+## v0.1.51 — Calmer Sales chart and unified date picker
+
+- Empty Sales chart dates now keep only their X-axis date label; a completely empty day no longer draws a full dashed Missing target box.
+- A partially completed day still draws the dashed Missing portion from the current post count up to the Admin Daily Post Target.
+- Good / Issues / Unreviewed chart colors were changed to lower-saturation green, red, and slate tones.
+- Daily Post Target line was also softened to a muted blue-gray.
+- X-axis dates now sit physically below the horizontal coordinate axis. The axis line is drawn at the top of the date-label row rather than at the bottom of the whole chart.
+- Sales From/To now uses the same Admin date-picker markup and sizing.
+- Sales AJAX date changes no longer display the literal `Loading...` status text; the chart/list use a subtle busy state and only errors produce status text.
+- Admin From and To date inputs now have a hard max of today.
+- Admin range JavaScript and AdminController also clamp crafted/future dates to today.
+- Admin week/month period calculations are clamped to today, so a current period cannot silently include future dates.
+- Sales continues to disallow future dates in both the UI and SalesController.
+- No database migration is required.
+- All border radius remains `4px`.

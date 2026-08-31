@@ -1181,11 +1181,20 @@ private function dashboardSalesReviewData(
         $validTo=preg_match('/^\d{4}-\d{2}-\d{2}$/',$rawTo)===1;
 
         if($validFrom&&$validTo){
+            $today=date('Y-m-d');
             $from=$rawFrom;
             $to=$rawTo;
 
+            if($to>$today){
+                $to=$today;
+            }
+
+            if($from>$today){
+                $from=$today;
+            }
+
             if($from>$to){
-                $to=$from;
+                $from=$to;
             }
 
             $days=max(
@@ -1236,9 +1245,15 @@ private function dashboardSalesReviewData(
     }
 
     private function validDashboardDate(string $date):string{
-        return preg_match('/^\d{4}-\d{2}-\d{2}$/',$date)
-            ? $date
-            : date('Y-m-d');
+        $today=date('Y-m-d');
+
+        if(!preg_match('/^\d{4}-\d{2}-\d{2}$/',$date)){
+            return $today;
+        }
+
+        return $date>$today
+            ? $today
+            : $date;
     }
 
     private function validDashboardPeriod(string $period):string{
@@ -1281,6 +1296,45 @@ private function dashboardSalesReviewData(
             $days=1;
             $label=date('F j, Y',$anchor);
             $shortLabel='Daily target';
+        }
+
+        $today=date('Y-m-d');
+
+        if($to>$today){
+            $to=$today;
+        }
+
+        if($from>$today){
+            $from=$today;
+        }
+
+        if($from>$to){
+            $from=$to;
+        }
+
+        $days=max(
+            1,
+            (int)floor(
+                (
+                    strtotime($to.' 12:00:00')
+                    -strtotime($from.' 12:00:00')
+                )/86400
+            )+1
+        );
+
+        if($period==='week'){
+            $label=$from===$to
+                ?date('M j, Y',strtotime($from))
+                :date('M j',strtotime($from))
+                    .' — '
+                    .date('M j, Y',strtotime($to));
+            $shortLabel=$days===1
+                ?'Daily target'
+                :$days.'-day target';
+        }elseif($period==='month'){
+            $shortLabel=$days===1
+                ?'Daily target'
+                :$days.'-day target';
         }
 
         return [

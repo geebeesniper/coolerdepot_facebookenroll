@@ -78,38 +78,50 @@ $chartInitialWidth=max(100,count($chartDates)*30);
     </div>
 
     <div class="sales-portal-head-actions">
-        <form class="sales-range-filter" id="salesRangeForm" method="get"
-            action="<?= Util::e($config['app']['base_path']) ?>/sales" novalidate>
-            <label>
-                <span data-sales-i18n="from">From</span>
-                <input type="date" name="from" id="salesRangeFrom"
-                    value="<?= Util::e($from) ?>" max="<?= Util::e($to) ?>">
-            </label>
+        <form
+            class="filters dashboard-date-controls admin-range-controls sales-range-filter"
+            id="salesRangeForm"
+            method="get"
+            action="<?= Util::e($config['app']['base_path']) ?>/sales"
+            novalidate
+        >
+            <div class="dashboard-date-control-row sales-date-control-row">
+                <label class="admin-range-field">
+                    <span data-sales-i18n="from">From</span>
+                    <input
+                        type="date"
+                        name="from"
+                        id="salesRangeFrom"
+                        value="<?= Util::e($from) ?>"
+                        max="<?= Util::e(min($to,$today)) ?>"
+                    >
+                </label>
 
-            <label>
-                <span data-sales-i18n="to">To</span>
-                <input
-                    type="date"
-                    name="to"
-                    id="salesRangeTo"
-                    value="<?= Util::e($to) ?>"
-                    min="<?= Util::e($from) ?>"
-                    max="<?= Util::e($today) ?>"
+                <label class="admin-range-field">
+                    <span data-sales-i18n="to">To</span>
+                    <input
+                        type="date"
+                        name="to"
+                        id="salesRangeTo"
+                        value="<?= Util::e($to) ?>"
+                        min="<?= Util::e($from) ?>"
+                        max="<?= Util::e($today) ?>"
+                    >
+                </label>
+
+                <button
+                    type="button"
+                    class="dashboard-back-today sales-back-today<?= (
+                        $from===$today
+                        &&$to===$today
+                    ) ? ' hidden' : '' ?>"
+                    id="salesBackToday"
                 >
-            </label>
-
-            <button
-                type="button"
-                class="sales-back-today<?= (
-                    $from===$today
-                    &&$to===$today
-                ) ? ' hidden' : '' ?>"
-                id="salesBackToday"
-            >
-                <span data-sales-i18n="backToday">
-                    Back to today
-                </span>
-            </button>
+                    <span data-sales-i18n="backToday">
+                        Back to today
+                    </span>
+                </button>
+            </div>
 
             <span
                 class="sales-range-live-status"
@@ -264,7 +276,10 @@ $chartInitialWidth=max(100,count($chartDates)*30);
                         );
 
                         $missing=max(0,$chartTarget-$actual);
-                        $missingH=$missing>0
+                        $missingH=(
+                            $actual>0
+                            &&$missing>0
+                        )
                             ?max(0,$chartTargetPercent-$actualH)
                             :0;
 
