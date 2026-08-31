@@ -56,6 +56,7 @@ $chartInitialWidth=max(100,count($chartDates)*30);
     data-from="<?= Util::e($from) ?>"
     data-to="<?= Util::e($to) ?>"
     data-today="<?= Util::e($today) ?>"
+    data-range-period="<?= Util::e($rangePeriod ?? 'custom') ?>"
 ></div>
 
 <div class="page-head sales-portal-head">
@@ -78,6 +79,40 @@ $chartInitialWidth=max(100,count($chartDates)*30);
     </div>
 
     <div class="sales-portal-head-actions">
+<div
+    class="sales-period-switch"
+    id="salesPeriodSwitch"
+    role="group"
+    aria-label="Sales activity period"
+>
+    <button
+        type="button"
+        class="sales-period-button<?= ($rangePeriod ?? '') === 'day' ? ' active' : '' ?>"
+        data-sales-period="day"
+        aria-pressed="<?= ($rangePeriod ?? '') === 'day' ? 'true' : 'false' ?>"
+    >
+        <span data-sales-i18n="daily">Daily</span>
+    </button>
+
+    <button
+        type="button"
+        class="sales-period-button<?= ($rangePeriod ?? '') === 'week' ? ' active' : '' ?>"
+        data-sales-period="week"
+        aria-pressed="<?= ($rangePeriod ?? '') === 'week' ? 'true' : 'false' ?>"
+    >
+        <span data-sales-i18n="weekly">Weekly</span>
+    </button>
+
+    <button
+        type="button"
+        class="sales-period-button<?= ($rangePeriod ?? '') === 'month' ? ' active' : '' ?>"
+        data-sales-period="month"
+        aria-pressed="<?= ($rangePeriod ?? '') === 'month' ? 'true' : 'false' ?>"
+    >
+        <span data-sales-i18n="monthly">Monthly</span>
+    </button>
+</div>
+
         <form
             class="filters dashboard-date-controls admin-range-controls sales-range-filter"
             id="salesRangeForm"

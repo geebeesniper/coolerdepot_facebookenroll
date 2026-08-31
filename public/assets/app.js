@@ -172,6 +172,9 @@ const salesI18n={
         viewDetails:'View details',
         noImage:'No listing image',
         close:'Close',
+        daily:'Daily',
+        weekly:'Weekly',
+        monthly:'Monthly',
         from:'From',
         to:'To',
         backToday:'Back to today',
@@ -244,6 +247,9 @@ const salesI18n={
         viewDetails:'查看详情',
         noImage:'没有帖子图片',
         close:'关闭',
+        daily:'每日',
+        weekly:'每周',
+        monthly:'每月',
         from:'开始',
         to:'结束',
         backToday:'返回今天',
@@ -316,6 +322,9 @@ const salesI18n={
         viewDetails:'查看詳情',
         noImage:'沒有貼文圖片',
         close:'關閉',
+        daily:'每日',
+        weekly:'每週',
+        monthly:'每月',
         from:'開始',
         to:'結束',
         backToday:'返回今天',
@@ -387,6 +396,9 @@ const salesI18n={
         viewDetails:'Ver detalles',
         noImage:'Sin imagen',
         close:'Cerrar',
+        daily:'Diario',
+        weekly:'Semanal',
+        monthly:'Mensual',
         from:'Desde',
         to:'Hasta',
         backToday:'Volver a hoy',
@@ -557,6 +569,170 @@ function updateSalesBackToday(range){
     );
 }
 
+function salesIsoDate(date){
+    const year=date.getFullYear();
+    const month=String(
+        date.getMonth()+1
+    ).padStart(2,'0');
+    const day=String(
+        date.getDate()
+    ).padStart(2,'0');
+
+    return year+'-'+month+'-'+day;
+}
+
+function salesParseIsoDate(value){
+    const match=String(value||'').match(
+        /^(\d{4})-(\d{2})-(\d{2})$/
+    );
+
+    if(!match){
+        return null;
+    }
+
+    const date=new Date(
+        parseInt(match[1],10),
+        parseInt(match[2],10)-1,
+        parseInt(match[3],10),
+        12,0,0
+    );
+
+    return Number.isNaN(date.getTime())
+        ?null
+        :date;
+}
+
+function salesPresetRange(period,anchorValue){
+    const todayValue=salesTodayValue();
+    const today=salesParseIsoDate(todayValue);
+    let anchor=salesParseIsoDate(anchorValue);
+
+    if(!anchor){
+        anchor=today;
+    }
+
+    if(!anchor){
+        return null;
+    }
+
+    if(
+        today
+        &&anchor.getTime()>today.getTime()
+    ){
+        anchor=new Date(today);
+    }
+
+    let from=new Date(anchor);
+    let to=new Date(anchor);
+
+    if(period==='week'){
+        const day=anchor.getDay();
+        const mondayOffset=(day+6)%7;
+
+        from.setDate(
+            anchor.getDate()-mondayOffset
+        );
+
+        to=new Date(from);
+        to.setDate(
+            from.getDate()+6
+        );
+    }else if(period==='month'){
+        from=new Date(
+            anchor.getFullYear(),
+            anchor.getMonth(),
+            1,
+            12,0,0
+        );
+
+        to=new Date(
+            anchor.getFullYear(),
+            anchor.getMonth()+1,
+            0,
+            12,0,0
+        );
+    }
+
+    if(
+        today
+        &&to.getTime()>today.getTime()
+    ){
+        to=new Date(today);
+    }
+
+    return {
+        from:salesIsoDate(from),
+        to:salesIsoDate(to)
+    };
+}
+
+function setSalesRangePeriod(period){
+    salesRangePeriod=String(
+        period||'custom'
+    );
+
+    $('#salesPortalDashboard').attr(
+        'data-range-period',
+        salesRangePeriod
+    );
+
+    $('#salesPeriodSwitch')
+        .find('[data-sales-period]')
+        .each(function(){
+            const active=
+                String(
+                    $(this).attr('data-sales-period')
+                )===salesRangePeriod;
+
+            $(this)
+                .toggleClass('active',active)
+                .attr(
+                    'aria-pressed',
+                    active?'true':'false'
+                );
+        });
+}
+
+function detectSalesRangePeriod(from,to){
+    if(from===to){
+        return 'day';
+    }
+
+    const toDate=salesParseIsoDate(to);
+
+    if(!toDate){
+        return 'custom';
+    }
+
+    const week=salesPresetRange(
+        'week',
+        to
+    );
+
+    if(
+        week
+        &&week.from===from
+        &&week.to===to
+    ){
+        return 'week';
+    }
+
+    const month=salesPresetRange(
+        'month',
+        to
+    );
+
+    if(
+        month
+        &&month.from===from
+        &&month.to===to
+    ){
+        return 'month';
+    }
+
+    return 'custom';
+}
+
 function syncSalesRangeConstraints(changed){
     const $from=$('#salesRangeFrom');
     const $to=$('#salesRangeTo');
@@ -617,6 +793,10 @@ let salesRangeRequest=null;
 let salesChartRows=[];
 let salesChartDailyTarget=10;
 let salesPlatformFilter='all';
+let salesRangePeriod=String(
+    $('#salesPortalDashboard').attr('data-range-period')
+    ||'custom'
+);
 let salesTouchChartDay=null;
 
 const $salesPostDetailModal=$('#salesPostDetailModal');
@@ -865,11 +1045,32 @@ function renderSalesChart(){
 
     mergeSalesChartRowsFromDom();
 
-    const from=String($('#salesRangeFrom').val()||'');
-    const to=String($('#salesRangeTo').val()||'');
+    const from=String(
+        $('#salesRangeFrom').val()||''
+    );
+    const to=String(
+        $('#salesRangeTo').val()||''
+    );
     const dates=salesDateRange(from,to);
-    const target=Math.max(1,salesChartDailyTarget);
-    const cap=Math.max(1,target*1.2);
+
+    /*
+     * Never leave stale date nodes on screen when a range becomes one day.
+     * This was the cause of the old month labels stacking vertically after
+     * Back to today.
+     */
+    if(!dates.length){
+        $bars.empty();
+        return;
+    }
+
+    const target=Math.max(
+        1,
+        salesChartDailyTarget
+    );
+    const cap=Math.max(
+        1,
+        target*1.2
+    );
     const targetPercent=Math.min(
         100,
         (target/cap)*100
@@ -891,25 +1092,39 @@ function renderSalesChart(){
         +(plotHeight*(targetPercent/100));
 
     $('#salesChartTargetLine,#salesChartTargetLabel')
-        .css('bottom',targetBottom+'px');
+        .css(
+            'bottom',
+            targetBottom+'px'
+        );
 
     const availableWidth=Math.max(
         320,
         Math.floor(
-            ($scroll.innerWidth()||$panel.innerWidth()||720)-2
+            (
+                $scroll.innerWidth()
+                ||$panel.innerWidth()
+                ||720
+            )-2
         )
     );
 
-    const dayCount=Math.max(1,dates.length);
+    const dayCount=dates.length;
+    const singleDay=dayCount===1;
+
     const coarse=Boolean(
         window.matchMedia
-        &&window.matchMedia('(pointer:coarse)').matches
+        &&window.matchMedia(
+            '(pointer:coarse)'
+        ).matches
     );
 
-    // Show every selected date. Compress first, scroll only if too tight.
     const minimumSlot=coarse?38:30;
-    const naturalSlot=availableWidth/dayCount;
-    const needsScroll=naturalSlot<minimumSlot;
+    const naturalSlot=
+        availableWidth/dayCount;
+
+    const needsScroll=
+        !singleDay
+        &&naturalSlot<minimumSlot;
 
     const canvasWidth=needsScroll
         ?Math.max(
@@ -918,37 +1133,32 @@ function renderSalesChart(){
         )
         :availableWidth;
 
-    const slotWidth=canvasWidth/dayCount;
+    const slotWidth=
+        canvasWidth/dayCount;
 
-    let barWidth=Math.min(
-        44,
-        Math.max(8,slotWidth-8)
-    );
+    let barWidth;
 
-    if(slotWidth>=70){
-        barWidth=40;
-    }else if(slotWidth>=50){
-        barWidth=32;
-    }else if(slotWidth>=38){
-        barWidth=25;
-    }else if(slotWidth>=30){
-        barWidth=20;
+    if(singleDay){
+        barWidth=coarse?82:72;
+    }else{
+        barWidth=Math.min(
+            44,
+            Math.max(
+                8,
+                slotWidth-8
+            )
+        );
+
+        if(slotWidth>=70){
+            barWidth=40;
+        }else if(slotWidth>=50){
+            barWidth=32;
+        }else if(slotWidth>=38){
+            barWidth=25;
+        }else if(slotWidth>=30){
+            barWidth=20;
+        }
     }
-
-    $canvas.css(
-        'width',
-        Math.round(canvasWidth)+'px'
-    );
-
-    $bars.css({
-        'grid-template-columns':
-            'repeat('+dayCount+',minmax(0,1fr))',
-        'grid-auto-columns':'unset',
-        '--sales-chart-bar-width':
-            Math.round(barWidth)+'px',
-        '--sales-chart-gap':
-            slotWidth<34?'1px':'3px'
-    });
 
     let html='';
 
@@ -969,11 +1179,18 @@ function renderSalesChart(){
         const badH=
             (data.bad_count*scale/cap)*100;
         const unreviewedH=
-            (data.unreviewed_count*scale/cap)*100;
+            (
+                data.unreviewed_count
+                *scale
+                /cap
+            )*100;
 
         const actualH=Math.min(
             100,
-            (Math.min(actual,cap)/cap)*100
+            (
+                Math.min(actual,cap)
+                /cap
+            )*100
         );
 
         const missing=Math.max(
@@ -982,7 +1199,8 @@ function renderSalesChart(){
         );
 
         const missingH=
-            actual>0&&missing>0
+            actual>0
+            &&missing>0
                 ?Math.max(
                     0,
                     targetPercent-actualH
@@ -993,45 +1211,110 @@ function renderSalesChart(){
             '<div'
                 +' class="sales-chart-day"'
                 +' tabindex="0"'
-                +' data-chart-date="'+escapeHtml(date)+'"'
-                +' data-chart-total="'+actual+'"'
-                +' data-chart-good="'+data.good_count+'"'
-                +' data-chart-bad="'+data.bad_count+'"'
-                +' data-chart-unreviewed="'+data.unreviewed_count+'"'
-                +' data-chart-missing="'+missing+'"'
+                +' data-chart-date="'
+                    +escapeHtml(date)
+                +'"'
+                +' data-chart-total="'
+                    +actual
+                +'"'
+                +' data-chart-good="'
+                    +data.good_count
+                +'"'
+                +' data-chart-bad="'
+                    +data.bad_count
+                +'"'
+                +' data-chart-unreviewed="'
+                    +data.unreviewed_count
+                +'"'
+                +' data-chart-missing="'
+                    +missing
+                +'"'
             +'>'
                 +'<div class="sales-chart-day-plot">'
                     +(missingH>0
-                        ?'<span class="sales-chart-missing"'
-                            +' style="bottom:'+actualH+'%;height:'+missingH+'%"'
+                        ?'<span'
+                            +' class="sales-chart-missing"'
+                            +' style="bottom:'
+                                +actualH
+                                +'%;height:'
+                                +missingH
+                                +'%"'
                             +'></span>'
                         :'')
                     +'<div class="sales-chart-stack">'
-                        +'<span class="sales-chart-segment good"'
-                            +' style="height:'+goodH+'%"'
+                        +'<span'
+                            +' class="sales-chart-segment good"'
+                            +' style="height:'
+                                +goodH
+                                +'%"'
                         +'></span>'
-                        +'<span class="sales-chart-segment bad"'
-                            +' style="height:'+badH+'%"'
+                        +'<span'
+                            +' class="sales-chart-segment bad"'
+                            +' style="height:'
+                                +badH
+                                +'%"'
                         +'></span>'
-                        +'<span class="sales-chart-segment unreviewed"'
-                            +' style="height:'+unreviewedH+'%"'
+                        +'<span'
+                            +' class="sales-chart-segment unreviewed"'
+                            +' style="height:'
+                                +unreviewedH
+                                +'%"'
                         +'></span>'
                     +'</div>'
                     +(actual>cap
-                        ?'<span class="sales-chart-over-cap">120%+</span>'
+                        ?'<span'
+                            +' class="sales-chart-over-cap"'
+                            +'>120%+</span>'
                         :'')
                 +'</div>'
                 +'<span class="sales-chart-x-label">'
-                    +escapeHtml(salesShortDate(date))
+                    +escapeHtml(
+                        salesShortDate(date)
+                    )
                 +'</span>'
             +'</div>'
         );
     });
 
+    /*
+     * Replace the children first, then apply the new grid geometry.
+     * Old month nodes can never be reflowed into a one-column daily grid.
+     */
     $bars.html(html);
 
+    $canvas.css(
+        'width',
+        Math.round(canvasWidth)+'px'
+    );
+
+    $bars.css({
+        'grid-template-columns':
+            'repeat('
+            +dayCount
+            +',minmax(0,1fr))',
+        'grid-auto-flow':'row',
+        'grid-auto-columns':'unset',
+        '--sales-chart-bar-width':
+            Math.round(barWidth)+'px',
+        '--sales-chart-gap':
+            singleDay
+                ?'0px'
+                :(
+                    slotWidth<34
+                        ?'1px'
+                        :'3px'
+                )
+    });
+
     $panel
-        .attr('data-range-days',dayCount)
+        .attr(
+            'data-range-days',
+            dayCount
+        )
+        .toggleClass(
+            'sales-chart-single-day',
+            singleDay
+        )
         .toggleClass(
             'sales-chart-scrollable',
             needsScroll
@@ -1242,7 +1525,7 @@ function applySalesPlatformFilterToCards(){
     });
 }
 
-function renderSalesRangeData(data,range){
+function renderSalesRangeData(data,range,period){
     const $wrap=$('#dailyPosts');
     const $empty=$('#dailyPostsEmpty');
     const $load=$('#loadMoreDailyPosts');
@@ -1288,9 +1571,26 @@ function renderSalesRangeData(data,range){
     applySalesPlatformFilterToCards();
     updateSalesBackToday(range);
 
+    setSalesRangePeriod(
+        period
+        ||detectSalesRangePeriod(
+            range.from,
+            range.to
+        )
+    );
+
     const url=new URL(window.location.href);
     url.searchParams.set('from',range.from);
     url.searchParams.set('to',range.to);
+
+    if(salesRangePeriod==='custom'){
+        url.searchParams.delete('period');
+    }else{
+        url.searchParams.set(
+            'period',
+            salesRangePeriod
+        );
+    }
     window.history.replaceState(
         {},
         '',
@@ -1298,7 +1598,7 @@ function renderSalesRangeData(data,range){
     );
 }
 
-function loadSalesRange(range){
+function loadSalesRange(range,period){
     if(!range){
         return;
     }
@@ -1346,7 +1646,8 @@ function loadSalesRange(range){
 
         renderSalesRangeData(
             data,
-            range
+            range,
+            period
         );
     })
     .fail(function(xhr,status){
@@ -1509,12 +1810,34 @@ function closeSalesImageLightbox(){
 
 $('#salesRangeFrom').on('change',function(){
     const range=syncSalesRangeConstraints('from');
-    loadSalesRange(range);
+
+    if(!range){
+        return;
+    }
+
+    loadSalesRange(
+        range,
+        detectSalesRangePeriod(
+            range.from,
+            range.to
+        )
+    );
 });
 
 $('#salesRangeTo').on('change',function(){
     const range=syncSalesRangeConstraints('to');
-    loadSalesRange(range);
+
+    if(!range){
+        return;
+    }
+
+    loadSalesRange(
+        range,
+        detectSalesRangePeriod(
+            range.from,
+            range.to
+        )
+    );
 });
 
 $('#salesBackToday').on('click',function(){
@@ -1529,7 +1852,29 @@ $('#salesBackToday').on('click',function(){
 
     const range=syncSalesRangeConstraints('');
 
-    loadSalesRange(range);
+    if(!range){
+        return;
+    }
+
+    setSalesRangePeriod('day');
+
+    /*
+     * Clear the old month/week grid immediately so a resize observer
+     * can never reflow 31 stale date nodes into one narrow column.
+     */
+    $('#salesChartBars')
+        .empty()
+        .css({
+            'grid-template-columns':'1fr',
+            'grid-auto-flow':'row'
+        });
+
+    renderSalesChart();
+
+    loadSalesRange(
+        range,
+        'day'
+    );
 });
 
 $('#salesRangeForm').on(
@@ -1537,8 +1882,19 @@ $('#salesRangeForm').on(
     function(event){
         event.preventDefault();
 
+        const range=
+            syncSalesRangeConstraints('');
+
+        if(!range){
+            return;
+        }
+
         loadSalesRange(
-            syncSalesRangeConstraints('')
+            range,
+            detectSalesRangePeriod(
+                range.from,
+                range.to
+            )
         );
     }
 );
@@ -1765,8 +2121,26 @@ $(document).on('keydown',function(event){
 
 parseSalesChartInitialData();
 mergeSalesChartRowsFromDom();
+
+const initialSalesRange=
+    syncSalesRangeConstraints('');
+
+if(initialSalesRange){
+    const detectedInitialPeriod=
+        salesRangePeriod==='custom'
+            ?detectSalesRangePeriod(
+                initialSalesRange.from,
+                initialSalesRange.to
+            )
+            :salesRangePeriod;
+
+    setSalesRangePeriod(
+        detectedInitialPeriod
+    );
+}
+
 updateSalesBackToday(
-    syncSalesRangeConstraints('')
+    initialSalesRange
 );
 
 let salesChartResizeTimer=null;

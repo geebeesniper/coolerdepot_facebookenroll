@@ -984,3 +984,18 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - Sales continues to disallow future dates in both the UI and SalesController.
 - No database migration is required.
 - All border radius remains `4px`.
+
+## v0.1.52 — Sales Daily / Weekly / Monthly presets and single-day chart correction
+
+- Restored an explicit Daily / Weekly / Monthly switch to the Sales dashboard.
+- Daily uses one selected/anchor day; Weekly uses the anchor date's Monday-through-Sunday range but never extends beyond today; Monthly uses the anchor month and never extends beyond today.
+- Weekly and Monthly still show one X-axis bucket for every individual date because the chart's vertical target is a Daily Post Target.
+- Manual From / To remains supported. Exact day/week/month ranges activate the matching preset; arbitrary ranges are treated as custom.
+- Back to today always switches the Sales dashboard to Daily and sets both From and To to today.
+- Fixed the stale-grid failure where a prior Monthly chart could be reflowed into one column and display 8/1, 8/2, 8/3 ... vertically after Back to today.
+- Chart children are now replaced before new grid geometry is applied, and implicit grid-column flow is disabled.
+- A one-day range renders exactly one centered, deliberately wider column (72px desktop / 82px coarse pointer) rather than a full month's worth of narrow slots.
+- Empty one-day ranges continue to show only the date on the X axis, consistent with the rule that totally empty days do not draw Missing boxes.
+- Period state is reflected in the URL as `period=day|week|month`; custom manual ranges omit the period query parameter.
+- No database migration is required.
+- All border radius remains `4px`.

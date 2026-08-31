@@ -7333,3 +7333,118 @@ body.sales-detail-open{
         width:100%;
     }
 }
+
+/* v0.1.52 Daily / Weekly / Monthly Sales presets + one-day chart fix */
+
+.sales-period-switch{
+    display:grid;
+    grid-template-columns:repeat(3,max-content);
+    gap:2px;
+    align-self:flex-end;
+    padding:2px;
+    border:1px solid #dbe3ee;
+    border-radius:4px;
+    background:#eef2f7;
+}
+.sales-period-button{
+    min-height:34px;
+    padding:5px 9px;
+    border:1px solid transparent;
+    border-radius:4px;
+    background:transparent;
+    color:#64748b;
+    cursor:pointer;
+    font-size:8px;
+    font-weight:900;
+    white-space:nowrap;
+}
+.sales-period-button:hover,
+.sales-period-button:focus-visible{
+    border-color:#cbd5e1;
+    background:#fff;
+    color:#0f172a;
+    outline:none;
+}
+.sales-period-button.active{
+    border-color:#bfdbfe;
+    background:#fff;
+    color:#1d4ed8;
+    box-shadow:0 1px 4px rgba(15,23,42,.07);
+}
+
+/*
+ * Kill the old implicit-column behavior. All chart geometry is explicitly
+ * controlled by the current From / To range.
+ */
+.sales-chart-bars{
+    grid-auto-flow:row !important;
+    grid-auto-columns:unset !important;
+}
+
+/* One selected day = one deliberately thick, centered column. */
+.sales-activity-chart-panel.sales-chart-single-day
+.sales-chart-bars{
+    grid-template-columns:minmax(96px,128px) !important;
+    justify-content:center;
+    padding-left:0;
+    padding-right:0;
+}
+.sales-activity-chart-panel.sales-chart-single-day
+.sales-chart-day{
+    width:100%;
+    max-width:128px;
+    justify-self:center;
+}
+.sales-activity-chart-panel.sales-chart-single-day
+.sales-chart-stack,
+.sales-activity-chart-panel.sales-chart-single-day
+.sales-chart-missing{
+    width:var(--sales-chart-bar-width,72px);
+    max-width:82px;
+}
+.sales-activity-chart-panel.sales-chart-single-day
+.sales-chart-x-label{
+    font-size:8px;
+    font-weight:800;
+}
+
+/* Weekly and monthly continue to show each day on the X axis. */
+.sales-activity-chart-panel:not(.sales-chart-single-day)
+.sales-chart-day{
+    min-width:0;
+}
+
+@media(pointer:coarse){
+    .sales-period-button{
+        min-height:44px;
+        padding:8px 11px;
+        font-size:9px;
+    }
+}
+
+@media(max-width:900px){
+    .sales-portal-head-actions{
+        align-items:flex-start;
+    }
+}
+
+@media(max-width:720px){
+    .sales-period-switch{
+        grid-template-columns:repeat(3,minmax(0,1fr));
+        width:100%;
+        order:1;
+    }
+    .sales-range-filter{
+        order:2;
+    }
+    .sales-submit-cta{
+        order:3;
+    }
+}
+
+@media(max-width:480px){
+    .sales-period-button{
+        padding-left:5px;
+        padding-right:5px;
+    }
+}

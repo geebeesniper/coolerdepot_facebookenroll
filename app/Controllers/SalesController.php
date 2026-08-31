@@ -40,6 +40,24 @@ class SalesController extends Controller
             $from=$to;
         }
 
+        $rangePeriod=(string)($_GET['period']??'');
+
+        if(!in_array($rangePeriod,['day','week','month','custom'],true)){
+            if($from===$to){
+                $rangePeriod='day';
+            }elseif(
+                $from===date('Y-m-01',strtotime($to))
+                &&$to===min(
+                    $today,
+                    date('Y-m-t',strtotime($to))
+                )
+            ){
+                $rangePeriod='month';
+            }else{
+                $rangePeriod='custom';
+            }
+        }
+
         $counts = Post::dailyCounts((int)$u['id'], $from, $to);
         $summary = Post::salesRangeSummary(
             (int)$u['id'],
@@ -79,6 +97,7 @@ class SalesController extends Controller
             'from' => $from,
             'to' => $to,
             'today'=>$today,
+            'rangePeriod'=>$rangePeriod,
             'counts' => $counts,
             'summary' => $summary,
             'chartRows'=>$chartRows,
