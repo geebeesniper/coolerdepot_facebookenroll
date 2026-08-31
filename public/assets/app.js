@@ -572,11 +572,6 @@ function updateSalesBackToday(range){
         return;
     }
 
-    const from=String(
-        range
-            ?range.from
-            :$('#salesRangeFrom').val()||''
-    );
     const to=String(
         range
             ?range.to
@@ -585,7 +580,7 @@ function updateSalesBackToday(range){
 
     $back.toggleClass(
         'hidden',
-        from===today&&to===today
+        to===today
     );
 }
 
@@ -1088,6 +1083,136 @@ function buildSalesChartTooltipHtml(data){
     );
 }
 
+function salesChartTickStep(maxValue){
+    maxValue=Math.max(
+        1,
+        Number(maxValue)||1
+    );
+
+    /*
+     * Aim for about six intervals.
+     * Target 10 -> cap 12 -> step 2, giving:
+     * 0, 2, 4, 6, 8, 10, 12
+     */
+    const rough=maxValue/6;
+
+    if(rough<=1){
+        return 1;
+    }
+
+    if(rough<=2){
+        return 2;
+    }
+
+    if(rough<=3){
+        return 3;
+    }
+
+    if(rough<=5){
+        return 5;
+    }
+
+    const magnitude=Math.pow(
+        10,
+        Math.floor(
+            Math.log10(rough)
+        )
+    );
+
+    const normalized=
+        rough/magnitude;
+
+    let nice=10;
+
+    if(normalized<=1){
+        nice=1;
+    }else if(normalized<=2){
+        nice=2;
+    }else if(normalized<=5){
+        nice=5;
+    }
+
+    return nice*magnitude;
+}
+
+function renderSalesChartYAxis(
+    cap,
+    xAxisHeight,
+    plotHeight
+){
+    const $ticks=$(
+        '#salesChartYAxisTicks'
+    );
+
+    if(!$ticks.length){
+        return;
+    }
+
+    const step=salesChartTickStep(
+        cap
+    );
+
+    const values=[];
+
+    for(
+        let value=0;
+        value<=cap+0.0001;
+        value+=step
+    ){
+        values.push(
+            Number(value.toFixed(4))
+        );
+    }
+
+    if(
+        !values.length
+        ||Math.abs(
+            values[values.length-1]-cap
+        )>0.0001
+    ){
+        values.push(cap);
+    }
+
+    const seen=new Set();
+    let html='';
+
+    values.forEach(function(value){
+        const key=String(value);
+
+        if(seen.has(key)){
+            return;
+        }
+
+        seen.add(key);
+
+        const bottom=
+            xAxisHeight
+            +(plotHeight*(value/cap));
+
+        const label=
+            Number.isInteger(value)
+                ?String(value)
+                :String(
+                    Number(
+                        value.toFixed(1)
+                    )
+                );
+
+        html+=(
+            '<span'
+                +' class="sales-chart-y-tick"'
+                +' style="bottom:'
+                    +bottom
+                    +'px"'
+            +'>'
+                +escapeHtml(label)
+            +'</span>'
+        );
+    });
+
+    $ticks.html(html);
+}
+
 function renderSalesChart(){
     const $bars=$('#salesChartBars');
     const $canvas=$('#salesChartCanvas');
@@ -1122,14 +1247,8 @@ function renderSalesChart(){
     const targetPercent=
         (target/cap)*100;
 
-    $('#salesChartTargetCopy,#salesChartTargetLabel,#salesChartTargetLineValue')
+    $('#salesChartTargetCopy,#salesChartTargetLineValue')
         .text(target);
-
-    $('#salesChartMaxLabel').text(
-        Number.isInteger(cap)
-            ?String(cap)
-            :cap.toFixed(1)
-    );
 
     const xAxisHeight=28;
     const canvasHeight=Math.max(
@@ -1146,7 +1265,13 @@ function renderSalesChart(){
         xAxisHeight
         +(plotHeight*(targetPercent/100));
 
-    $('#salesChartTargetLine,#salesChartTargetLabel')
+    renderSalesChartYAxis(
+        cap,
+        xAxisHeight,
+        plotHeight
+    );
+
+    $('#salesChartTargetLine')
         .css(
             'bottom',
             targetBottom+'px'
@@ -1447,12 +1572,14 @@ function salesPrefersReducedMotion(){
 
 function animateSalesContentIn(){
     const $stage=$('#salesDailyStage');
-    const $chart=$('#salesActivityChartPanel');
+    const $chartBody=$(
+        '#salesActivityChartPanel .sales-chart-shell'
+    );
 
     $stage.removeClass(
         'sales-content-changing sales-channel-changing'
     );
-    $chart.removeClass(
+    $chartBody.removeClass(
         'sales-content-changing sales-channel-changing'
     );
 
@@ -1464,7 +1591,7 @@ function animateSalesContentIn(){
         .removeClass('sales-content-enter')
         .addClass('sales-content-enter');
 
-    $chart
+    $chartBody
         .removeClass('sales-chart-enter')
         .addClass('sales-chart-enter');
 
@@ -1491,7 +1618,7 @@ function animateSalesContentIn(){
             $stage.removeClass(
                 'sales-content-enter'
             );
-            $chart.removeClass(
+            $chartBody.removeClass(
                 'sales-chart-enter'
             );
         },
@@ -1800,7 +1927,7 @@ function applySalesDayFilter($section,filter,animate){
     );
 }
 
-function applySalesPlatformFilterToCards(){
+function applySalesPlatformFilterToCards(animate){
     $('.sales-day-section').each(function(){
         const $section=$(this);
         const active=String(
@@ -1810,7 +1937,7 @@ function applySalesPlatformFilterToCards(){
             ||'all'
         );
 
-        applySalesDayFilter($section,active);
+        applySalesDayFilter($section,active,animate);
     });
 }
 
@@ -1971,8 +2098,8 @@ function loadSalesRange(range,period,channel,reason){
     const $dailyStage=$(
         '#salesDailyStage'
     );
-    const $chart=$(
-        '#salesActivityChartPanel'
+    const $chartBody=$(
+        '#salesActivityChartPanel .sales-chart-shell'
     );
 
     if($dailyStage.length){
@@ -2007,7 +2134,7 @@ function loadSalesRange(range,period,channel,reason){
             reason
         );
 
-    $chart
+    $chartBody
         .removeClass(
             'sales-chart-enter sales-channel-enter'
         )
@@ -2038,6 +2165,7 @@ function loadSalesRange(range,period,channel,reason){
         method:'GET',
         dataType:'json',
         cache:false,
+        timeout:15000,
         data:{
             from:range.from,
             to:range.to,
@@ -2103,9 +2231,25 @@ function loadSalesRange(range,period,channel,reason){
             .removeClass('sales-range-loading')
             .attr('aria-busy','false');
 
-        $('#salesDailyStage,#salesActivityChartPanel')
+        $('#salesDailyStage')
             .removeClass(
                 'sales-content-changing sales-channel-changing'
+            );
+
+        $('#salesActivityChartPanel .sales-chart-shell')
+            .removeClass(
+                'sales-content-changing sales-channel-changing'
+            );
+
+        $('#salesPlatformFilter')
+            .removeClass(
+                'sales-channel-loading'
+            )
+            .find(
+                '[data-sales-platform-filter]'
+            )
+            .removeClass(
+                'sales-channel-button-loading'
             );
     });
 }
@@ -2309,6 +2453,7 @@ $('#salesBackToday').on('click',function(){
 
     syncSalesRangeConstraints('');
     setSalesRangePeriod(period);
+    updateSalesBackToday(range);
 
     loadSalesRange(
         range,
@@ -2387,8 +2532,10 @@ $(document).on(
         event.preventDefault();
         event.stopPropagation();
 
+        const $clicked=$(this);
+
         const nextChannel=String(
-            $(this).attr(
+            $clicked.attr(
                 'data-sales-platform-filter'
             )||'all'
         ).trim().toLowerCase();
@@ -2396,6 +2543,10 @@ $(document).on(
         if(
             nextChannel
             ===salesPlatformFilter
+            &&!$('#salesPlatformFilter')
+                .hasClass(
+                    'sales-channel-loading'
+                )
         ){
             return;
         }
@@ -2404,6 +2555,9 @@ $(document).on(
             nextChannel;
 
         $('#salesPlatformFilter')
+            .addClass(
+                'sales-channel-loading'
+            )
             .find(
                 '[data-sales-platform-filter]'
             )
@@ -2420,6 +2574,10 @@ $(document).on(
                         'active',
                         active
                     )
+                    .toggleClass(
+                        'sales-channel-button-loading',
+                        active
+                    )
                     .attr(
                         'aria-pressed',
                         active
@@ -2428,10 +2586,25 @@ $(document).on(
                     );
             });
 
+        /*
+         * Immediate, guaranteed local feedback:
+         * cards fade/reflow now. If zero match, Empty appears now.
+         * Server AJAX then replaces it with authoritative filtered data.
+         */
+        applySalesPlatformFilterToCards(
+            true
+        );
+        renderSalesChart();
+
         const range=
             syncSalesRangeConstraints('');
 
         if(!range){
+            $('#salesPlatformFilter')
+                .removeClass(
+                    'sales-channel-loading'
+                );
+
             return;
         }
 
@@ -4538,7 +4711,7 @@ function platformLogoHtml(platform){
     function updateBackToday(){
         $('#dashboardBackToday').toggleClass(
             'hidden',
-            !today||(currentFrom===today&&currentTo===today)
+            !today||currentTo===today
         );
     }
 

@@ -8770,3 +8770,170 @@ body.sales-detail-open{
 .sales-chart-segment.unreviewed{
     border-radius:0 !important;
 }
+
+/* v0.1.60 responsive filters + complete Y axis + Back-to-today state */
+
+/* ------------------------------------------------------------
+ * Y axis: 0,2,4,6,8,10,12 for default Target 10.
+ * JS generates these dynamically for other targets.
+ * ---------------------------------------------------------- */
+.sales-chart-y-axis{
+    position:relative;
+    height:270px;
+}
+
+.sales-chart-y-axis-ticks{
+    position:absolute;
+    inset:0;
+}
+
+.sales-chart-y-tick{
+    position:absolute;
+    right:0;
+    transform:translateY(50%);
+    color:#64748b;
+    font-size:8px;
+    font-weight:800;
+    line-height:1;
+    white-space:nowrap;
+}
+
+/* Target is a neutral reference line, not a bright blue data series. */
+.sales-chart-target-line{
+    z-index:10;
+    border-top:1px solid #94a3b8 !important;
+}
+
+.sales-chart-target-line > span{
+    z-index:11;
+    background:#f8fafc !important;
+    color:#64748b !important;
+}
+
+/* ------------------------------------------------------------
+ * Do not disable Channels while Chart data is loading.
+ * Only the plot area receives the faded transition.
+ * ---------------------------------------------------------- */
+#salesActivityChartPanel .sales-chart-shell.sales-content-changing{
+    opacity:.48;
+    transform:translateY(3px);
+    pointer-events:none;
+    transition:
+        opacity .15s ease,
+        transform .15s ease;
+}
+
+#salesActivityChartPanel.sales-content-changing{
+    opacity:1 !important;
+    transform:none !important;
+    pointer-events:auto !important;
+}
+
+#salesActivityChartPanel .sales-chart-shell.sales-chart-enter{
+    animation:salesChartPanelEnter .24s cubic-bezier(.2,.72,.28,1) both;
+}
+
+/* ------------------------------------------------------------
+ * Channel filter loading feedback.
+ * Controls remain clickable, including rapid Channel switching.
+ * ---------------------------------------------------------- */
+.sales-platform-filter-button{
+    position:relative;
+}
+
+.sales-platform-filter.sales-channel-loading
+.sales-platform-filter-button.active{
+    padding-right:24px;
+}
+
+.sales-platform-filter.sales-channel-loading
+.sales-platform-filter-button.active::after{
+    content:"";
+    position:absolute;
+    right:7px;
+    top:50%;
+    width:9px;
+    height:9px;
+    margin-top:-5px;
+    border:1.5px solid currentColor;
+    border-right-color:transparent;
+    border-radius:50%;
+    animation:salesChannelSpinner .65s linear infinite;
+}
+
+@keyframes salesChannelSpinner{
+    to{
+        transform:rotate(360deg);
+    }
+}
+
+/* ------------------------------------------------------------
+ * Empty is always a real card-size state.
+ * Channel = zero results keeps the previous stage height.
+ * ---------------------------------------------------------- */
+.sales-daily-stage.sales-daily-stage-empty{
+    min-height:280px !important;
+}
+
+.sales-daily-stage.sales-daily-stage-empty.sales-daily-stage-preserved{
+    min-height:max(
+        280px,
+        var(--sales-preserved-height,280px)
+    ) !important;
+}
+
+.sales-empty-state:not(.hidden){
+    min-height:280px;
+    display:grid;
+}
+
+.sales-empty-card{
+    min-height:252px !important;
+}
+
+.sales-filter-empty:not(.hidden),
+.sales-filter-empty-card{
+    min-height:252px !important;
+}
+
+/* Back-to-today is never allowed to reserve space when hidden. */
+.sales-back-today.hidden,
+.dashboard-back-today.hidden{
+    display:none !important;
+}
+
+/* Channel controls remain touch-friendly while requests are in flight. */
+.sales-platform-filter-button{
+    touch-action:manipulation;
+}
+
+@media(pointer:coarse){
+    .sales-chart-y-tick{
+        font-size:9px;
+    }
+
+    .sales-platform-filter.sales-channel-loading
+    .sales-platform-filter-button.active::after{
+        width:11px;
+        height:11px;
+        margin-top:-6px;
+    }
+}
+
+@media(prefers-reduced-motion:reduce){
+    .sales-platform-filter.sales-channel-loading
+    .sales-platform-filter-button.active::after{
+        animation:none;
+        border-right-color:currentColor;
+    }
+}
+
+
+/* Explicit chart-only square-corner exception. */
+.sales-chart-stack,
+.sales-chart-segment,
+.sales-chart-segment.good,
+.sales-chart-segment.bad,
+.sales-chart-segment.unreviewed{
+    border-radius:0 !important;
+}

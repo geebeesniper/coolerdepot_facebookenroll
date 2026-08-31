@@ -115,8 +115,7 @@ $periodNames = [
                     <button
                         type="button"
                         class="dashboard-back-today<?= (
-                            (string)$periodInfo['from'] === $today
-                            && (string)$periodInfo['to'] === $today
+                            (string)$periodInfo['to'] === $today
                         ) ? ' hidden' : '' ?>"
                         id="dashboardBackToday"
                     >

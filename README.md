@@ -1107,3 +1107,17 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - Added reduced-motion handling so users who disable animation do not receive transition effects.
 - No database migration is required.
 - Normal UI radius remains 4px; chart bars remain square.
+
+## v0.1.60 — Working Channel filters, complete Y-axis, and correct Back-to-today state
+
+- Fixed Channels appearing unresponsive after one click. The loading transition no longer disables pointer events on the entire Posting Activity panel; only the chart plot fades while Channels controls stay interactive.
+- Channel selection now gives immediate local feedback: existing post cards animate/reflow instantly, and a card-sized Empty state appears immediately when there are no current matches. The authoritative server-filtered AJAX result then replaces the local state.
+- Added a 15-second AJAX timeout so a failed provider/database request cannot leave the Sales dashboard permanently stuck in a loading state.
+- Added a compact spinner to the active Channel button during the AJAX update. Rapid Channel switching remains supported.
+- Empty states are enforced for date ranges, Channels, and Good / Issues / Unreviewed filters. Channel-to-zero-results continues to preserve the previous Posts-area height.
+- Back to today now hides whenever `To` already equals today. A Monthly/Weekly/3 Days range ending today no longer incorrectly shows Back to today just because its From date is earlier.
+- Applied the same Back-to-today visibility rule to Admin.
+- Replaced the sparse `0 / target / max` Y-axis with dynamically generated full ticks. With the default Target 10, the axis is `0, 2, 4, 6, 8, 10, 12`.
+- Changed the Daily Target line from blue to neutral gray while keeping Good / Bad / Unreviewed as the data colors.
+- No database migration is required.
+- Normal UI radius remains 4px; chart columns remain square. The small loading spinner is intentionally circular.

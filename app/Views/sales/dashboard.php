@@ -149,8 +149,7 @@ $chartInitialWidth=max(100,count($chartDates)*30);
                     <button
                         type="button"
                         class="dashboard-back-today sales-back-today<?= (
-                            $from===$today
-                            &&$to===$today
+                            $to===$today
                         ) ? ' hidden' : '' ?>"
                         id="salesBackToday"
                     >
@@ -279,12 +278,15 @@ $chartInitialWidth=max(100,count($chartDates)*30);
     </div>
 
     <div class="sales-chart-shell">
-        <div class="sales-chart-y-axis" aria-hidden="true">
-            <span class="top" id="salesChartMaxLabel">—</span>
-            <span class="target" id="salesChartTargetLabel">
-                <?= (int)$dailyTarget ?>
-            </span>
-            <span class="zero">0</span>
+        <div
+            class="sales-chart-y-axis"
+            id="salesChartYAxis"
+            aria-hidden="true"
+        >
+            <div
+                class="sales-chart-y-axis-ticks"
+                id="salesChartYAxisTicks"
+            ></div>
         </div>
 
         <div class="sales-chart-scroll" id="salesChartScroll">
