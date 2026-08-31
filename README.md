@@ -252,7 +252,7 @@ statuses, which still use pending/approved/rejected.
 
 ## Release versioning
 
-Current release: `v0.1.72`
+Current release: `v0.1.74`
 
 `VERSION` in the project root is the application version source of truth.
 The footer reads this value and displays it on every page.
@@ -1392,3 +1392,27 @@ After deployment, hard-refresh the browser. New/changed website image URLs can b
 ### SSH upgrade for v0.1.72
 
 Upload `sales-posts-v0.1.72-share-id-save-fix.zip` to `/opt/coolerdepot/www/sales-posts/`, extract it into `/opt/coolerdepot/www`, then run `scripts/migrate_v0_1_72.php` inside the PHP container before testing Save again.
+
+## v0.1.73 — Sales chart tooltip overflow fix
+
+- Keeps the Sales activity-chart hover tooltip in the document body instead of inside the clipped chart panel.
+- The tooltip remains fixed to viewport coordinates, so bars near the left/right/top panel edges can show the complete hover card without being cut off by the chart boundary.
+- No chart data, range/filter behavior, database schema, duplicate logic, provider logic, or post workflow was changed.
+
+### SSH upgrade for v0.1.73
+
+Upload `sales-posts-v0.1.73-chart-tooltip-overflow-fix.zip` to `/opt/coolerdepot/www/sales-posts/`, back up the current app, then extract it into `/opt/coolerdepot/www`. This release has no database migration.
+
+
+
+## v0.1.74 — Sales chart pointer-follow tooltip
+
+- Replaces the chart tooltip's fixed day/bar anchor with true pointer-follow positioning.
+- The tooltip continuously tracks the mouse with a small offset while the pointer moves within a chart day.
+- Near the viewport right/bottom edge, the tooltip automatically flips to the opposite side of the pointer and remains inside the viewport.
+- Moving across Good/Issues/Unreviewed segments updates the focused segment line without freezing the tooltip position.
+- Leaving the chart hides the tooltip. No chart data, filters, database schema, post workflow, duplicate logic, or provider behavior changed.
+
+### SSH upgrade for v0.1.74
+
+Upload `sales-posts-v0.1.74-chart-pointer-tooltip.zip` to `/opt/coolerdepot/www/sales-posts/`, back up the current app, then extract it into `/opt/coolerdepot/www`. This release has no database migration.

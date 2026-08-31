@@ -2092,131 +2092,217 @@
         }
 
         if(chartBars&&tooltip){
+            let tooltipDay=null;
+            let tooltipSegment='';
+
+            function renderPointerTooltip(day,target){
+                const total=
+                    parseInt(
+                        day.getAttribute(
+                            'data-chart-total'
+                        )||'0',
+                        10
+                    )||0;
+
+                const good=
+                    parseInt(
+                        day.getAttribute(
+                            'data-chart-good'
+                        )||'0',
+                        10
+                    )||0;
+
+                const bad=
+                    parseInt(
+                        day.getAttribute(
+                            'data-chart-bad'
+                        )||'0',
+                        10
+                    )||0;
+
+                const unreviewed=
+                    parseInt(
+                        day.getAttribute(
+                            'data-chart-unreviewed'
+                        )||'0',
+                        10
+                    )||0;
+
+                const segment=
+                    target&&target.closest
+                        ?target.closest(
+                            '.sales-chart-segment'
+                        )
+                        :null;
+
+                let segmentLine='';
+                let segmentKey='';
+
+                if(segment&&day.contains(segment)){
+                    const type=String(
+                        segment.getAttribute(
+                            'data-chart-segment'
+                        )||''
+                    );
+                    const count=
+                        parseInt(
+                            segment.getAttribute(
+                                'data-chart-segment-count'
+                            )||'0',
+                            10
+                        )||0;
+                    const label=
+                        type==='good'
+                            ?'Good'
+                            :(
+                                type==='bad'
+                                    ?'Issues'
+                                    :'Unreviewed'
+                            );
+
+                    segmentKey=type+':'+count;
+                    segmentLine=
+                        '<span class="sales-chart-tooltip-focus">'
+                        +label
+                        +': <b>'
+                        +count
+                        +'</b></span>';
+                }
+
+                if(
+                    tooltipDay===day
+                    &&tooltipSegment===segmentKey
+                    &&!tooltip.classList.contains('hidden')
+                ){
+                    return;
+                }
+
+                tooltipDay=day;
+                tooltipSegment=segmentKey;
+                tooltip.innerHTML=
+                    '<strong>'
+                    +escapeHtml(
+                        day.getAttribute(
+                            'data-chart-date'
+                        )||''
+                    )
+                    +'</strong>'
+                    +segmentLine
+                    +'<span>Total: <b>'
+                    +total
+                    +'</b></span>'
+                    +'<span>Good: <b>'
+                    +good
+                    +'</b></span>'
+                    +'<span>Issues: <b>'
+                    +bad
+                    +'</b></span>'
+                    +'<span>Unreviewed: <b>'
+                    +unreviewed
+                    +'</b></span>'
+                    +'<span>Missing: <b>'
+                    +Math.max(
+                        0,
+                        state.target-total
+                    )
+                    +'</b></span>';
+
+                tooltip.classList.remove(
+                    'hidden'
+                );
+            }
+
+            function movePointerTooltip(event){
+                if(
+                    !event
+                    ||typeof event.clientX!=='number'
+                    ||typeof event.clientY!=='number'
+                ){
+                    return;
+                }
+
+                const gap=14;
+                const edge=8;
+                const width=
+                    tooltip.offsetWidth||176;
+                const height=
+                    tooltip.offsetHeight||120;
+                const viewportWidth=
+                    document.documentElement.clientWidth
+                    ||window.innerWidth;
+                const viewportHeight=
+                    document.documentElement.clientHeight
+                    ||window.innerHeight;
+
+                let left=event.clientX+gap;
+                let top=event.clientY+gap;
+
+                if(
+                    left+width+edge
+                    >viewportWidth
+                ){
+                    left=event.clientX-width-gap;
+                }
+
+                if(
+                    top+height+edge
+                    >viewportHeight
+                ){
+                    top=event.clientY-height-gap;
+                }
+
+                left=Math.max(
+                    edge,
+                    Math.min(
+                        viewportWidth-width-edge,
+                        left
+                    )
+                );
+                top=Math.max(
+                    edge,
+                    Math.min(
+                        viewportHeight-height-edge,
+                        top
+                    )
+                );
+
+                tooltip.style.left=left+'px';
+                tooltip.style.top=top+'px';
+            }
+
             chartBars.addEventListener(
-                'pointerover',
+                'pointermove',
                 function(event){
                     const day=
                         event.target.closest(
                             '.sales-chart-day'
                         );
 
-                    if(!day){
+                    if(!day||!chartBars.contains(day)){
+                        tooltip.classList.add(
+                            'hidden'
+                        );
+                        tooltipDay=null;
+                        tooltipSegment='';
                         return;
                     }
 
-                    const rect=
-                        day.getBoundingClientRect();
-
-                    const total=
-                        parseInt(
-                            day.getAttribute(
-                                'data-chart-total'
-                            )||'0',
-                            10
-                        )||0;
-
-                    const good=
-                        parseInt(
-                            day.getAttribute(
-                                'data-chart-good'
-                            )||'0',
-                            10
-                        )||0;
-
-                    const bad=
-                        parseInt(
-                            day.getAttribute(
-                                'data-chart-bad'
-                            )||'0',
-                            10
-                        )||0;
-
-                    const unreviewed=
-                        parseInt(
-                            day.getAttribute(
-                                'data-chart-unreviewed'
-                            )||'0',
-                            10
-                        )||0;
-
-                    const segment=event.target.closest('.sales-chart-segment');
-                    let segmentLine='';
-                    if(segment&&day.contains(segment)){
-                        const type=String(segment.getAttribute('data-chart-segment')||'');
-                        const count=parseInt(segment.getAttribute('data-chart-segment-count')||'0',10)||0;
-                        const label=type==='good'?'Good':(type==='bad'?'Issues':'Unreviewed');
-                        segmentLine='<span class="sales-chart-tooltip-focus">'+label+': <b>'+count+'</b></span>';
-                    }
-
-                    tooltip.innerHTML=
-                        '<strong>'
-                        +escapeHtml(
-                            day.getAttribute(
-                                'data-chart-date'
-                            )||''
-                        )
-                        +'</strong>'
-                        +segmentLine
-                        +'<span>Total: <b>'
-                        +total
-                        +'</b></span>'
-                        +'<span>Good: <b>'
-                        +good
-                        +'</b></span>'
-                        +'<span>Issues: <b>'
-                        +bad
-                        +'</b></span>'
-                        +'<span>Unreviewed: <b>'
-                        +unreviewed
-                        +'</b></span>'
-                        +'<span>Missing: <b>'
-                        +Math.max(
-                            0,
-                            state.target-total
-                        )
-                        +'</b></span>';
-
-                    tooltip.classList
-                        .remove(
-                            'hidden'
-                        );
-
-                    tooltip.style.left=
-                        (
-                            rect.left
-                            +rect.width/2
-                            -tooltip
-                                .offsetWidth/2
-                        )
-                        +'px';
-
-                    tooltip.style.top=
-                        (
-                            rect.top
-                            -tooltip
-                                .offsetHeight
-                            -8
-                            +window.scrollY
-                        )
-                        +'px';
+                    renderPointerTooltip(
+                        day,
+                        event.target
+                    );
+                    movePointerTooltip(event);
                 }
             );
 
             chartBars.addEventListener(
-                'pointerout',
-                function(event){
-                    if(
-                        event.relatedTarget
-                        &&chartBars.contains(
-                            event.relatedTarget
-                        )
-                    ){
-                        return;
-                    }
-
+                'pointerleave',
+                function(){
                     tooltip.classList.add(
                         'hidden'
                     );
+                    tooltipDay=null;
+                    tooltipSegment='';
                 }
             );
         }

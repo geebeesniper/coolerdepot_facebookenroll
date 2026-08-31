@@ -1039,6 +1039,16 @@ const $salesPostDetailImageButton=$('#salesPostDetailImageButton');
 const $salesImageLightbox=$('#salesImageLightbox');
 const $salesChartTooltip=$('#salesChartTooltip');
 
+/*
+ * Keep the fixed-position hover card outside the chart panel. The chart card
+ * intentionally clips its scrolling plot with overflow:hidden; leaving the
+ * tooltip inside that card clips it at the panel edge even though the tooltip
+ * is positioned against the viewport.
+ */
+if($salesChartTooltip.length&&!$salesChartTooltip.parent().is('body')){
+    $salesChartTooltip.appendTo(document.body);
+}
+
 function parseSalesChartInitialData(){
     const node=document.getElementById('salesChartInitialData');
 
