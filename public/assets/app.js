@@ -5088,9 +5088,9 @@ const dashboardI18n={
         issues:'Issues',
         issue:'Issue',
         unreviewed:'Unreviewed',
-        dailyReview:'Daily Review',
-        weeklyReview:'Weekly Review',
-        monthlyReview:'Monthly Review',
+        dailyReview:'Person Review',
+        weeklyReview:'Weekly Person Review',
+        monthlyReview:'Monthly Person Review',
         dailyTarget:'Daily Target',
         settings:'Settings',
         salesSettings:'Sales Settings',
@@ -5107,7 +5107,7 @@ const dashboardI18n={
         notRated:'Not rated',
         reviewHistory:'Review History',
         saves:'saves',
-        addManagementReview:'Add a management review for this Sales period.',
+        addManagementReview:'Add a Person / Behavior Review for this Sales period.',
         reviewed:'Reviewed',
         reviewedBy:'Reviewed by {name}',
         viewPosts:'View posts',
@@ -5169,9 +5169,9 @@ const dashboardI18n={
         issues:'有问题',
         issue:'有问题',
         unreviewed:'未审核',
-        dailyReview:'每日评语',
-        weeklyReview:'每周评语',
-        monthlyReview:'每月评语',
+        dailyReview:'人员评估',
+        weeklyReview:'每周人员评估',
+        monthlyReview:'每月人员评估',
         dailyTarget:'每日目标',
         settings:'设置',
         salesSettings:'销售设置',
@@ -5188,7 +5188,7 @@ const dashboardI18n={
         notRated:'未评分',
         reviewHistory:'评语历史',
         saves:'次保存',
-        addManagementReview:'为该销售周期添加管理评语。',
+        addManagementReview:'为该销售人员添加工作表现评估。',
         reviewed:'已评阅',
         reviewedBy:'评阅人：{name}',
         viewPosts:'查看帖子',
@@ -5250,9 +5250,9 @@ const dashboardI18n={
         issues:'有問題',
         issue:'有問題',
         unreviewed:'未審核',
-        dailyReview:'每日評語',
-        weeklyReview:'每週評語',
-        monthlyReview:'每月評語',
+        dailyReview:'人員評估',
+        weeklyReview:'每週人員評估',
+        monthlyReview:'每月人員評估',
         dailyTarget:'每日目標',
         settings:'設定',
         salesSettings:'銷售設定',
@@ -5269,7 +5269,7 @@ const dashboardI18n={
         notRated:'未評分',
         reviewHistory:'評語歷史',
         saves:'次儲存',
-        addManagementReview:'為此銷售週期新增管理評語。',
+        addManagementReview:'為該銷售人員新增工作表現評估。',
         reviewed:'已評閱',
         reviewedBy:'評閱人：{name}',
         viewPosts:'查看貼文',
@@ -5331,9 +5331,9 @@ const dashboardI18n={
         issues:'Problemas',
         issue:'Problema',
         unreviewed:'Sin revisar',
-        dailyReview:'Revisión diaria',
-        weeklyReview:'Revisión semanal',
-        monthlyReview:'Revisión mensual',
+        dailyReview:'Evaluación personal',
+        weeklyReview:'Evaluación personal semanal',
+        monthlyReview:'Evaluación personal mensual',
         dailyTarget:'Meta diaria',
         settings:'Configuración',
         salesSettings:'Configuración de ventas',
@@ -5350,7 +5350,7 @@ const dashboardI18n={
         notRated:'Sin calificar',
         reviewHistory:'Historial de revisión',
         saves:'guardados',
-        addManagementReview:'Añade una revisión de gestión para este período de ventas.',
+        addManagementReview:'Añade una evaluación de desempeño para esta persona de ventas.',
         reviewed:'Revisado',
         reviewedBy:'Revisado por {name}',
         viewPosts:'Ver publicaciones',
@@ -5672,6 +5672,9 @@ function applyDashboardLanguage(){
     const $periodReviewRatingError = $('#salesPeriodReviewRatingError');
     const $periodReviewHistory = $('#salesPeriodReviewHistory');
     const $periodReviewHistoryCount = $('#salesPeriodReviewHistoryCount');
+    const $periodReviewImages = $('#salesPeriodReviewImages');
+    const $periodReviewFileSelection = $('#salesPeriodReviewFileSelection');
+    const $periodReviewAttachments = $('#salesPeriodReviewAttachments');
 
     let currentSalesPeriodReview = null;
     let openReviewAfterExpand = false;
@@ -6462,6 +6465,47 @@ function setSalesPeriodRating(rating){
     $('#salesPeriodReviewRatingField').removeClass('has-error');
 }
 
+function renderPersonReviewAttachments(items,readOnly){
+    items=Array.isArray(items)?items:[];
+    if(!items.length){
+        return '';
+    }
+    return '<div class="review-comment-attachments">'
+        +items.map(function(item){
+            const deleted=Boolean(item.deleted);
+            const image=String(item.mime||'').startsWith('image/');
+            const meta=[
+                item.uploaded_by_name?'Uploaded by '+item.uploaded_by_name:'Uploaded',
+                item.uploaded_at?commentDateLabel(item.uploaded_at):''
+            ].filter(Boolean).join(' · ');
+            return '<div class="review-comment-attachment'+(deleted?' is-deleted':'')+'" data-person-attachment-id="'+escapeHtml(item.id)+'">'
+                +'<div class="review-comment-attachment-media">'
+                    +(image
+                        ?'<button type="button" class="review-comment-image" data-comment-image="'+escapeHtml(item.url)+'" aria-label="Open image"><img loading="lazy" src="'+escapeHtml(item.url)+'" alt="'+escapeHtml(item.name||'Attachment')+'"></button>'
+                        :'<a target="_blank" rel="noopener" href="'+escapeHtml(item.url)+'">'+escapeHtml(item.name||'Attachment')+'</a>')
+                    +(deleted?'<span class="attachment-deleted-overlay">Removed</span>':'')
+                +'</div>'
+                +'<div class="review-comment-attachment-audit"><span>'+escapeHtml(item.name||'Attachment')+'</span><small>'+escapeHtml(meta)+'</small>'
+                    +(deleted?'<div class="attachment-deleted-audit"><strong>Removed from current Person Review</strong></div>':'')
+                +'</div>'
+                +((!readOnly&&!deleted)?'<button type="button" class="attachment-remove" data-person-attachment-delete="'+escapeHtml(item.id)+'" aria-label="Remove attachment" title="Remove attachment">×</button>':'')
+            +'</div>';
+        }).join('')
+    +'</div>';
+}
+
+function renderCurrentPersonReviewAttachments(items){
+    $periodReviewAttachments.html(renderPersonReviewAttachments(items,false));
+}
+
+function updatePersonReviewFileSelection(){
+    const input=$periodReviewImages.get(0);
+    const files=input?Array.from(input.files||[]):[];
+    $periodReviewFileSelection.html(
+        files.map(function(file){return '<span>'+escapeHtml(file.name)+'</span>';}).join('')
+    );
+}
+
 function renderSalesReviewHistory(items){
     items=Array.isArray(items)?items:[];
     $periodReviewHistoryCount.text(items.length+' '+tr('saves'));
@@ -6476,6 +6520,7 @@ function renderSalesReviewHistory(items){
             +'<div class="sales-review-history-meta"><strong>'+escapeHtml(item.admin_name||'Administrator')+'</strong><span>'+escapeHtml(commentDateLabel(item.created_at))+'</span></div>'
             +'<div class="sales-review-history-rating">'+(rating?escapeHtml(salesRatingStars(rating)+' '+rating+'/5'):escapeHtml(tr('notRated')))+'</div>'
             +(note?'<div class="sales-review-history-note">'+note+'</div>':'')
+            +renderPersonReviewAttachments(item.attachments||[],true)
             +'</article>';
     }).join(''));
 }
@@ -6584,6 +6629,9 @@ function openSalesPeriodReviewEditor(){
 
     setSalesPeriodRating(review.rating||0);
     renderSalesReviewHistory(review.history||[]);
+    $periodReviewImages.val('');
+    updatePersonReviewFileSelection();
+    renderCurrentPersonReviewAttachments(review.attachments||[]);
 
     setHtmlNoteValue(
         $periodReviewModal.find('[data-html-note]').first(),
@@ -7264,6 +7312,54 @@ $periodReviewStars.on('mouseenter','[data-rating-star]',function(){
     $(this).find('[data-rating-star]').removeClass('hover');
 });
 
+$periodReviewImages.on('change',function(){
+    updatePersonReviewFileSelection();
+});
+
+$(document).on('click','[data-person-attachment-delete]',function(){
+    if(!attachmentDeleteUrl||!currentSalesPeriodReview){
+        return;
+    }
+    const attachmentId=parseInt($(this).attr('data-person-attachment-delete'),10)||0;
+    if(!attachmentId){
+        return;
+    }
+    const $button=$(this);
+    $button.prop('disabled',true);
+    $.ajax({
+        url:attachmentDeleteUrl,
+        method:'POST',
+        dataType:'json',
+        data:{_csrf:csrf,attachment_id:attachmentId},
+        headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'}
+    }).done(function(data){
+        if(!data||!data.ok){
+            $periodReviewMessage.addClass('error').text((data&&data.message)||'Attachment could not be removed.');
+            $button.prop('disabled',false);
+            return;
+        }
+        const updated=data.attachment||null;
+        currentSalesPeriodReview.attachments=(currentSalesPeriodReview.attachments||[]).map(function(item){
+            return parseInt(item.id,10)===attachmentId
+                ?(updated||Object.assign({},item,{deleted:true}))
+                :item;
+        });
+        (currentSalesPeriodReview.history||[]).forEach(function(history){
+            history.attachments=(history.attachments||[]).map(function(item){
+                return parseInt(item.id,10)===attachmentId
+                    ?(updated||Object.assign({},item,{deleted:true}))
+                    :item;
+            });
+        });
+        renderCurrentPersonReviewAttachments(currentSalesPeriodReview.attachments||[]);
+        renderSalesReviewHistory(currentSalesPeriodReview.history||[]);
+        $periodReviewMessage.removeClass('error').text(data.message||'Attachment removed.');
+    }).fail(function(xhr){
+        $periodReviewMessage.addClass('error').text((xhr.responseJSON&&xhr.responseJSON.message)||'Attachment could not be removed.');
+        $button.prop('disabled',false);
+    });
+});
+
 $expandedReviewEdit.on('click',function(){
     openSalesPeriodReviewEditor();
 });
@@ -7312,11 +7408,15 @@ $periodReviewForm.on('submit',function(event){
         .removeClass('error')
         .text('');
 
+    const personReviewFormData=new FormData($periodReviewForm.get(0));
+
     $.ajax({
         url:salesReviewSaveUrl,
         method:'POST',
         dataType:'json',
-        data:$periodReviewForm.serialize(),
+        data:personReviewFormData,
+        processData:false,
+        contentType:false,
         headers:{
             'X-Requested-With':'XMLHttpRequest',
             'Accept':'application/json'
@@ -7334,12 +7434,16 @@ $periodReviewForm.on('submit',function(event){
         }
 
         renderSalesPeriodReview(data.review);
+        renderSalesReviewHistory((data.review&&data.review.history)||[]);
+        renderCurrentPersonReviewAttachments((data.review&&data.review.attachments)||[]);
+        $periodReviewImages.val('');
+        updatePersonReviewFileSelection();
 
         $periodReviewSave
             .addClass('saved')
             .text('Saved ✓');
 
-        $periodReviewMessage.text('Review saved.');
+        $periodReviewMessage.text(data.message||'Person Review saved.');
 
         setTimeout(function(){
             closeSalesPeriodReviewEditor();

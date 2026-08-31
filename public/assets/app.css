@@ -11216,3 +11216,45 @@ body.admin-delete-request-modal-open{overflow:hidden;}
         gap:6px;
     }
 }
+
+
+/* v0.1.86 — separate Post Review / Person Review + Person Review attachments */
+.management-report-table .report-group-head th{
+    background:#eef3f9;
+    color:#334155;
+    font-size:8px;
+    font-weight:900;
+    letter-spacing:.04em;
+    text-transform:uppercase;
+    vertical-align:middle;
+}
+.management-report-table .report-sub-head th{
+    background:#f8fafc;
+    color:#475569;
+    font-size:8px;
+    font-weight:800;
+}
+.management-report-table .report-post-review-group{
+    border-left:2px solid #cbd5e1;
+    border-right:1px solid #dbe3ec;
+}
+.management-report-table .report-person-review-group{
+    border-left:2px solid #93c5fd;
+    background:#eff6ff!important;
+    color:#1d4ed8!important;
+}
+.person-review-attachment-composer{
+    margin-top:14px;
+}
+.person-review-current-attachments{
+    margin-top:8px;
+}
+.person-review-current-attachments:empty{
+    display:none;
+}
+.sales-review-history-item .review-comment-attachments{
+    margin-top:8px;
+}
+.sales-review-history-item .review-comment-attachment{
+    max-width:180px;
+}

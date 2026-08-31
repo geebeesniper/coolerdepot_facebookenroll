@@ -9,7 +9,8 @@ class UploadService
         string $type,
         int $entityId,
         int $uid,
-        string $field = 'images'
+        string $field = 'images',
+        ?int $historyId = null
     ): array {
         global $config;
 
@@ -68,8 +69,13 @@ class UploadService
                 throw new \RuntimeException('Image could not be written to upload storage.');
             }
 
-            $s = Database::connection()->prepare("INSERT INTO cdsp_review_attachments(entity_type,entity_id,uploaded_by,original_name,stored_path,mime_type,size_bytes,created_at) VALUES(?,?,?,?,?,?,?,NOW())");
-            $s->execute([$type,$entityId,$uid,basename((string)$name),$relativePath,$mime,$size]);
+            if ($historyId !== null && $historyId > 0) {
+                $s = Database::connection()->prepare("INSERT INTO cdsp_review_attachments(entity_type,entity_id,history_id,uploaded_by,original_name,stored_path,mime_type,size_bytes,created_at) VALUES(?,?,?,?,?,?,?,?,NOW())");
+                $s->execute([$type,$entityId,$historyId,$uid,basename((string)$name),$relativePath,$mime,$size]);
+            } else {
+                $s = Database::connection()->prepare("INSERT INTO cdsp_review_attachments(entity_type,entity_id,uploaded_by,original_name,stored_path,mime_type,size_bytes,created_at) VALUES(?,?,?,?,?,?,?,NOW())");
+                $s->execute([$type,$entityId,$uid,basename((string)$name),$relativePath,$mime,$size]);
+            }
             $saved[]=[
                 'id'=>(int)Database::connection()->lastInsertId(),
                 'name'=>basename((string)$name),

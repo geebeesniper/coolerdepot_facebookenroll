@@ -243,6 +243,14 @@ class AdminController extends Controller{
 
     public function dashboardSaveSalesReview():void{
         $admin=Auth::requireRole('admin');
+
+        if($this->requestExceedsPostMaxSize()){
+            $this->json([
+                'ok'=>false,
+                'message'=>'Upload request exceeds PHP post_max_size ('.ini_get('post_max_size').').',
+            ],413);
+        }
+
         $this->verifyAjaxCsrf();
 
         $salesUserId=(int)($_POST['sales_user_id']??0);
@@ -254,7 +262,7 @@ class AdminController extends Controller{
         if($rawPeriod==='range'){
             $this->json([
                 'ok'=>false,
-                'message'=>'Custom date ranges do not have a single period review.',
+                'message'=>'Custom date ranges do not have a single Person Review.',
             ],422);
         }
 
@@ -292,6 +300,9 @@ class AdminController extends Controller{
 
         $pdo=Database::connection();
         $pdo->beginTransaction();
+        $reviewId=0;
+        $historyId=0;
+        $attachmentType=$period==='day'?'daily_review':'period_review';
 
         try{
             if($period==='day'){
@@ -307,6 +318,10 @@ class AdminController extends Controller{
                         updated_at=NOW()"
                 );
                 $q->execute([$salesUserId,$periodInfo['from'],(int)$admin['id'],$rating,$note]);
+                $idQuery=$pdo->prepare(
+                    "SELECT id FROM cdsp_daily_sales_reviews WHERE sales_user_id=? AND work_date=? LIMIT 1"
+                );
+                $idQuery->execute([$salesUserId,$periodInfo['from']]);
             }else{
                 $q=$pdo->prepare(
                     "INSERT INTO cdsp_period_sales_reviews(
@@ -321,6 +336,15 @@ class AdminController extends Controller{
                         updated_at=NOW()"
                 );
                 $q->execute([$salesUserId,$period,$periodInfo['from'],$periodInfo['to'],(int)$admin['id'],$rating,$note]);
+                $idQuery=$pdo->prepare(
+                    "SELECT id FROM cdsp_period_sales_reviews WHERE sales_user_id=? AND period_type=? AND period_start=? LIMIT 1"
+                );
+                $idQuery->execute([$salesUserId,$period,$periodInfo['from']]);
+            }
+
+            $reviewId=(int)$idQuery->fetchColumn();
+            if($reviewId<1){
+                throw new \RuntimeException('Person Review row could not be resolved after saving.');
             }
 
             $history=$pdo->prepare(
@@ -329,13 +353,29 @@ class AdminController extends Controller{
                  ) VALUES(?,?,?,?,?,?,?,NOW())"
             );
             $history->execute([$salesUserId,$period,$periodInfo['from'],$periodInfo['to'],(int)$admin['id'],$rating,$note]);
+            $historyId=(int)$pdo->lastInsertId();
             $pdo->commit();
         }catch(\Throwable $e){
             if($pdo->inTransaction())$pdo->rollBack();
             $this->json([
                 'ok'=>false,
-                'message'=>'Sales review save failed: '.$e->getMessage(),
+                'message'=>'Person Review save failed: '.$e->getMessage(),
             ],422);
+        }
+
+        $uploadWarning=null;
+        if($this->hasUploadedFiles('images')){
+            try{
+                (new UploadService())->save(
+                    $attachmentType,
+                    $reviewId,
+                    (int)$admin['id'],
+                    'images',
+                    $historyId
+                );
+            }catch(\Throwable $e){
+                $uploadWarning=$e->getMessage();
+            }
         }
 
         $review=$this->dashboardSalesReviewData(
@@ -347,7 +387,10 @@ class AdminController extends Controller{
         $this->json([
             'ok'=>true,
             'review'=>$review,
-            'message'=>$review['label'].' saved.',
+            'upload_warning'=>$uploadWarning,
+            'message'=>$uploadWarning
+                ?$review['label'].' saved, but an attachment could not be uploaded.'
+                :$review['label'].' saved.',
         ]);
     }
 
@@ -775,7 +818,7 @@ public function dashboardDeleteAttachment():void{
         "SELECT *
          FROM cdsp_review_attachments
          WHERE id=?
-           AND entity_type IN ('post_comment','post_review')
+           AND entity_type IN ('post_comment','post_review','daily_review','period_review')
          LIMIT 1"
     );
     $s->execute([$attachmentId]);
@@ -786,6 +829,24 @@ public function dashboardDeleteAttachment():void{
             'ok'=>false,
             'message'=>'Image was not found.',
         ],404);
+    }
+
+    if(in_array((string)$attachment['entity_type'],['daily_review','period_review'],true)){
+        $d=Database::connection()->prepare(
+            "UPDATE cdsp_review_attachments
+             SET deleted_at=NOW(),deleted_by=?
+             WHERE id=? AND deleted_at IS NULL"
+        );
+        $d->execute([(int)$admin['id'],$attachmentId]);
+        $updated=$this->attachmentById($attachmentId);
+        $this->json([
+            'ok'=>true,
+            'attachment_id'=>$attachmentId,
+            'entity_type'=>(string)$attachment['entity_type'],
+            'entity_id'=>(int)$attachment['entity_id'],
+            'attachment'=>$updated?$this->formatAttachment($updated):null,
+            'message'=>'Attachment removed from the current Person Review; Review History is preserved.',
+        ]);
     }
 
     $base=dirname(__DIR__,2).'/storage/uploads';
@@ -1133,9 +1194,9 @@ private function dashboardSalesReviewData(
     $row=$s->fetch()?:null;
 
     $label=match($period){
-        'week'=>'Weekly Review',
-        'month'=>'Monthly Review',
-        default=>'Daily Review',
+        'week'=>'Weekly Person Review',
+        'month'=>'Monthly Person Review',
+        default=>'Person Review',
     };
 
     return [
@@ -1155,6 +1216,15 @@ private function dashboardSalesReviewData(
         'admin_name'=>$row
             ? (string)$row['admin_name']
             : null,
+        'attachments'=>$row
+            ? $this->formatAttachments(
+                $this->attachments(
+                    $period==='day'?'daily_review':'period_review',
+                    (int)$row['id'],
+                    true
+                )
+            )
+            : [],
         'history'=>$this->dashboardSalesReviewHistory(
             $salesUserId,
             $period,
@@ -1186,9 +1256,26 @@ private function dashboardSalesReviewData(
                 'note'=>(string)($row['note']??''),
                 'admin_name'=>(string)$row['admin_name'],
                 'created_at'=>(string)$row['created_at'],
+                'attachments'=>$this->salesReviewHistoryAttachments((int)$row['id']),
             ];
         }
         return $rows;
+    }
+
+    private function salesReviewHistoryAttachments(int $historyId):array{
+        $q=Database::connection()->prepare(
+            "SELECT
+                a.*,
+                up.display_name AS uploaded_by_name,
+                du.display_name AS deleted_by_name
+             FROM cdsp_review_attachments a
+             LEFT JOIN cdsp_users up ON up.id=a.uploaded_by
+             LEFT JOIN cdsp_users du ON du.id=a.deleted_by
+             WHERE a.history_id=?
+             ORDER BY a.created_at,a.id"
+        );
+        $q->execute([$historyId]);
+        return $this->formatAttachments($q->fetchAll());
     }
 
     private function dashboardRequestContext(array $source):array{
@@ -1743,7 +1830,7 @@ public function saveDailyReview():void{
         fwrite($out,"\xEF\xBB\xBF");
         fputcsv($out,[
             'Date','Sales','Total','Facebook','OfferUp','Craigslist',
-            'Good','Bad','Good %','Daily Rating'
+            'Post Review - Good','Post Review - Bad','Post Review - Good %','Person Review - Rating'
         ]);
 
         foreach($rows as $row){

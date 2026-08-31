@@ -232,6 +232,7 @@ CREATE TABLE IF NOT EXISTS cdsp_review_attachments (
  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
  entity_type ENUM('post_review','daily_review','period_review','post_note','post_comment') NOT NULL,
  entity_id BIGINT UNSIGNED NOT NULL,
+ history_id BIGINT UNSIGNED NULL,
  uploaded_by INT UNSIGNED NOT NULL,
  original_name VARCHAR(255) NOT NULL,
  stored_path VARCHAR(500) NOT NULL,
@@ -242,6 +243,7 @@ CREATE TABLE IF NOT EXISTS cdsp_review_attachments (
  deleted_by INT UNSIGNED NULL,
  PRIMARY KEY(id),
  KEY idx_attachment_entity(entity_type,entity_id),
+ KEY idx_attachment_history(history_id),
  KEY idx_attachment_deleted(deleted_at),
  CONSTRAINT fk_attachment_user FOREIGN KEY(uploaded_by) REFERENCES cdsp_users(id),
  CONSTRAINT fk_attachment_deleted_by FOREIGN KEY(deleted_by) REFERENCES cdsp_users(id)

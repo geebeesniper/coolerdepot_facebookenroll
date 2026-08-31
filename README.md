@@ -1487,3 +1487,8 @@ Upload `sales-posts-v0.1.74-chart-pointer-tooltip.zip` to `/opt/coolerdepot/www/
 - Moved the Sales/Post summary onto the Posting Progress heading row and removed the oversized vertical gap.
 - Tightened the Admin top navigation spacing and control sizing to match the compact Sales navigation.
 - No database migration. VERSION/footer source is 0.1.85.
+
+
+### v0.1.86
+- Separates Post Review metrics from Person Review in Management Reports.
+- Adds image attachments to Dashboard Person Reviews with history association.

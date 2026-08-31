@@ -324,7 +324,7 @@ $adminPresetNames = [
                             data-daily-review
                         >
                             <span data-card-daily-review-label>
-                                Daily Review
+                                Person Review
                             </span>
                         </button>
 
@@ -566,7 +566,7 @@ $adminPresetNames = [
                 class="sales-period-review-label"
                 id="salesExpandedReviewLabel"
             >
-                Daily Review
+                Person Review
             </span>
 
             <strong
@@ -639,14 +639,14 @@ $adminPresetNames = [
                     class="eyebrow"
                     id="salesPeriodReviewModalEyebrow"
                 >
-                    Daily Review
+                    Person Review
                 </div>
                 <h2 id="salesPeriodReviewModalTitle">
-                    Sales Review
+                    Person Review
                 </h2>
                 <p id="salesPeriodReviewModalSubtitle"></p>
                 <p class="sales-review-purpose">
-                    This is the Sales performance rating for the selected period. Post Good/Bad decisions are tracked separately; Daily Review ratings are summarized in Management Reports.
+                    This Person Review rates the Sales employee for the selected period. Post Review remains separate and is measured by each post's Good/Bad decision.
                 </p>
             </div>
 
@@ -663,6 +663,7 @@ $adminPresetNames = [
         <form
             class="sales-period-review-form"
             id="salesPeriodReviewForm"
+            enctype="multipart/form-data"
             novalidate
         >
             <input
@@ -695,7 +696,7 @@ $adminPresetNames = [
                     id="salesPeriodReviewRatingField"
                 >
                     <div class="sales-review-rating-label">
-                        <strong>Rating</strong>
+                        <strong>Person Rating</strong>
                         <span>Required</span>
                     </div>
                     <input type="hidden" name="rating" id="salesPeriodReviewRating" value="">
@@ -725,12 +726,33 @@ $adminPresetNames = [
 
                 <?php
                 $fieldName = 'note';
-                $fieldLabel = 'Management Review';
+                $fieldLabel = 'Person / Behavior Review';
                 $fieldId = 'sales-period-review-note';
                 $noteValue = '';
                 $enableImageUpload = false;
                 require __DIR__ . '/_html_note_editor.php';
                 ?>
+
+                <section class="review-comment-media person-review-attachment-composer">
+                    <label for="salesPeriodReviewImages">
+                        Attachments <span>saved with this Person Review</span>
+                    </label>
+                    <input
+                        id="salesPeriodReviewImages"
+                        name="images[]"
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        multiple
+                    >
+                    <div
+                        class="review-comment-file-selection"
+                        id="salesPeriodReviewFileSelection"
+                    ></div>
+                    <div
+                        class="person-review-current-attachments"
+                        id="salesPeriodReviewAttachments"
+                    ></div>
+                </section>
 
                 <section class="sales-review-save-history">
                     <div class="sales-review-save-history-head">

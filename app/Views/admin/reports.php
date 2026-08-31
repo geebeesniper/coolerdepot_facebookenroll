@@ -117,25 +117,31 @@ $downloadQuery=http_build_query([
         <div>
             <h2 id="reportSelectedSalesTitle"><?= Util::e($selectedSalesLabel) ?></h2>
             <p class="report-review-explainer">
-                One row per Sales person per day. Daily Rating is the Admin Daily Review for that Sales + date.
+                One row per Sales person per day. Post Review and Person Review are separate: Good/Bad measures posts; Person Review rates the employee for that date.
             </p>
         </div>
     </div>
 
     <div class="tablewrap report-table-wrap" id="reportTableArea">
-        <table>
-            <tr>
-                <th>Date</th>
-                <th>Sales</th>
-                <th>Total</th>
-                <th>Facebook</th>
-                <th>OfferUp</th>
-                <th>Craigslist</th>
-                <th>Good</th>
-                <th>Bad</th>
-                <th>Good %</th>
-                <th>Daily Rating</th>
-            </tr>
+        <table class="management-report-table">
+            <thead>
+                <tr class="report-group-head">
+                    <th rowspan="2">Date</th>
+                    <th rowspan="2">Sales</th>
+                    <th rowspan="2">Total</th>
+                    <th rowspan="2">Facebook</th>
+                    <th rowspan="2">OfferUp</th>
+                    <th rowspan="2">Craigslist</th>
+                    <th colspan="3" class="report-post-review-group">Post Review</th>
+                    <th colspan="1" class="report-person-review-group">Person Review</th>
+                </tr>
+                <tr class="report-sub-head">
+                    <th>Good</th>
+                    <th>Bad</th>
+                    <th>Good %</th>
+                    <th>Rating</th>
+                </tr>
+            </thead>
 
             <?php foreach($rows as $r):
                 $reviewed=(int)$r['good_posts']+(int)$r['bad_posts'];
