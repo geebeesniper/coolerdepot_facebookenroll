@@ -11258,3 +11258,81 @@ body.admin-delete-request-modal-open{overflow:hidden;}
 .sales-review-history-item .review-comment-attachment{
     max-width:180px;
 }
+
+/* v0.1.87 — Person Review history delete filter + permanent attachment delete */
+.sales-review-history-head-actions{
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:9px;
+    min-width:0;
+}
+.sales-review-save-history-head .history-deleted-switch{
+    min-height:26px;
+    padding:3px 6px;
+    gap:6px;
+}
+.sales-review-save-history-head .history-deleted-switch-label{
+    font-size:8px;
+    text-transform:none;
+}
+.sales-review-history-item{
+    position:relative;
+    transition:opacity .16s ease,border-color .16s ease,background .16s ease;
+}
+.sales-review-history-item.is-deleted{
+    border-style:dashed;
+    background:#f8fafc;
+    opacity:.72;
+}
+.sales-review-history-meta-actions{
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:7px;
+    min-width:0;
+}
+.sales-review-history-delete{
+    width:24px;
+    height:24px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    flex:0 0 auto;
+    padding:0;
+    border:1px solid #fecaca;
+    border-radius:4px;
+    background:#fff;
+    color:#dc2626;
+    font-size:15px;
+    line-height:1;
+    cursor:pointer;
+}
+.sales-review-history-delete:hover,
+.sales-review-history-delete:focus{
+    border-color:#f87171;
+    background:#fff1f2;
+    outline:none;
+}
+.sales-review-history-delete.confirm-delete{
+    border-color:#dc2626;
+    background:#dc2626;
+    color:#fff;
+}
+.sales-review-history-deleted-audit{
+    margin-top:8px;
+    padding-top:7px;
+    border-top:1px dashed #cbd5e1;
+    color:#64748b;
+    font-size:8px;
+}
+.sales-review-history-deleted-audit strong{
+    color:#b91c1c;
+}
+@media(pointer:coarse){
+    .sales-review-history-delete{
+        width:36px;
+        height:36px;
+    }
+}
+.sales-review-history-delete svg{width:13px;height:13px;fill:currentColor;display:block;}

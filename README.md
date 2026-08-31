@@ -1492,3 +1492,10 @@ Upload `sales-posts-v0.1.74-chart-pointer-tooltip.zip` to `/opt/coolerdepot/www/
 ### v0.1.86
 - Separates Post Review metrics from Person Review in Management Reports.
 - Adds image attachments to Dashboard Person Reviews with history association.
+
+### v0.1.87
+
+- Person Review save history now supports audit-style **Mark as deleted** plus a **Deleted** filter, matching the Post Review history pattern without physically removing audit rows.
+- Person Review attachments now use permanent deletion, the same behavior as Post Review attachments. Legacy v0.1.86 Person Review attachment tombstones are cleaned by the v0.1.87 migration when their files can be safely removed.
+- Admin navigation continues to use the universal `Views/layout/header.php` and `Views/layout/footer.php`; the Dashboard-specific JavaScript override that renamed `Dashboard` back to `Admin` was removed.
+- No live-sync behavior was changed in this release: Admin still checks for newly added Sales posts every 5 seconds and shows a refresh notice; Sales post-review status still refreshes when the Sales view reloads or its AJAX range is reloaded.

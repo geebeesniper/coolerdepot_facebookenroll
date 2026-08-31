@@ -394,6 +394,80 @@ class AdminController extends Controller{
         ]);
     }
 
+    public function dashboardDeleteSalesReviewHistory():void{
+        $admin=Auth::requireRole('admin');
+        $this->verifyAjaxCsrf();
+
+        $historyId=(int)($_POST['history_id']??0);
+
+        if($historyId<1){
+            $this->json([
+                'ok'=>false,
+                'message'=>'Person Review history entry was not found.',
+            ],404);
+        }
+
+        $pdo=Database::connection();
+        $q=$pdo->prepare(
+            "SELECT h.id,h.sales_user_id,h.period_type,h.period_start,h.deleted_at
+             FROM cdsp_sales_review_history h
+             WHERE h.id=?
+             LIMIT 1"
+        );
+        $q->execute([$historyId]);
+        $history=$q->fetch();
+
+        if(!$history){
+            $this->json([
+                'ok'=>false,
+                'message'=>'Person Review history entry was not found.',
+            ],404);
+        }
+
+        if(!empty($history['deleted_at'])){
+            $this->json([
+                'ok'=>false,
+                'message'=>'This Person Review history entry is already marked as deleted.',
+            ],409);
+        }
+
+        $d=$pdo->prepare(
+            "UPDATE cdsp_sales_review_history
+             SET deleted_at=NOW(),deleted_by=?
+             WHERE id=? AND deleted_at IS NULL"
+        );
+        $d->execute([(int)$admin['id'],$historyId]);
+
+        if($d->rowCount()<1){
+            $this->json([
+                'ok'=>false,
+                'message'=>'Person Review history entry could not be marked as deleted.',
+            ],409);
+        }
+
+        $fresh=$pdo->prepare(
+            "SELECT
+                h.id,h.rating,h.note,h.created_at,h.deleted_at,h.deleted_by,
+                u.display_name AS admin_name,
+                du.display_name AS deleted_by_name
+             FROM cdsp_sales_review_history h
+             JOIN cdsp_users u ON u.id=h.admin_user_id
+             LEFT JOIN cdsp_users du ON du.id=h.deleted_by
+             WHERE h.id=?
+             LIMIT 1"
+        );
+        $fresh->execute([$historyId]);
+        $row=$fresh->fetch()?:[];
+
+        $this->json([
+            'ok'=>true,
+            'history_id'=>$historyId,
+            'deleted_at'=>(string)($row['deleted_at']??''),
+            'deleted_by_name'=>(string)($row['deleted_by_name']??$admin['display_name']??'Administrator'),
+            'message'=>'Person Review history entry marked as deleted.',
+        ]);
+    }
+
     public function dashboardPostReview():void{
         Auth::requireRole('admin');
 
@@ -831,24 +905,6 @@ public function dashboardDeleteAttachment():void{
         ],404);
     }
 
-    if(in_array((string)$attachment['entity_type'],['daily_review','period_review'],true)){
-        $d=Database::connection()->prepare(
-            "UPDATE cdsp_review_attachments
-             SET deleted_at=NOW(),deleted_by=?
-             WHERE id=? AND deleted_at IS NULL"
-        );
-        $d->execute([(int)$admin['id'],$attachmentId]);
-        $updated=$this->attachmentById($attachmentId);
-        $this->json([
-            'ok'=>true,
-            'attachment_id'=>$attachmentId,
-            'entity_type'=>(string)$attachment['entity_type'],
-            'entity_id'=>(int)$attachment['entity_id'],
-            'attachment'=>$updated?$this->formatAttachment($updated):null,
-            'message'=>'Attachment removed from the current Person Review; Review History is preserved.',
-        ]);
-    }
-
     $base=dirname(__DIR__,2).'/storage/uploads';
     $baseReal=realpath($base);
     $storedPath=ltrim(
@@ -1220,8 +1276,7 @@ private function dashboardSalesReviewData(
             ? $this->formatAttachments(
                 $this->attachments(
                     $period==='day'?'daily_review':'period_review',
-                    (int)$row['id'],
-                    true
+                    (int)$row['id']
                 )
             )
             : [],
@@ -1241,9 +1296,13 @@ private function dashboardSalesReviewData(
         string $periodStart
     ):array{
         $q=Database::connection()->prepare(
-            "SELECT h.id,h.rating,h.note,h.created_at,u.display_name AS admin_name
+            "SELECT
+                h.id,h.rating,h.note,h.created_at,h.deleted_at,h.deleted_by,
+                u.display_name AS admin_name,
+                du.display_name AS deleted_by_name
              FROM cdsp_sales_review_history h
              JOIN cdsp_users u ON u.id=h.admin_user_id
+             LEFT JOIN cdsp_users du ON du.id=h.deleted_by
              WHERE h.sales_user_id=? AND h.period_type=? AND h.period_start=?
              ORDER BY h.created_at DESC,h.id DESC"
         );
@@ -1256,6 +1315,9 @@ private function dashboardSalesReviewData(
                 'note'=>(string)($row['note']??''),
                 'admin_name'=>(string)$row['admin_name'],
                 'created_at'=>(string)$row['created_at'],
+                'deleted'=>!empty($row['deleted_at']),
+                'deleted_at'=>!empty($row['deleted_at']) ? (string)$row['deleted_at'] : null,
+                'deleted_by_name'=>(string)($row['deleted_by_name']??''),
                 'attachments'=>$this->salesReviewHistoryAttachments((int)$row['id']),
             ];
         }
@@ -1272,6 +1334,7 @@ private function dashboardSalesReviewData(
              LEFT JOIN cdsp_users up ON up.id=a.uploaded_by
              LEFT JOIN cdsp_users du ON du.id=a.deleted_by
              WHERE a.history_id=?
+               AND a.deleted_at IS NULL
              ORDER BY a.created_at,a.id"
         );
         $q->execute([$historyId]);

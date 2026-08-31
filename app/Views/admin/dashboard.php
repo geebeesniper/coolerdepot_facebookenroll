@@ -29,6 +29,7 @@ $adminPresetNames = [
     data-sales-posts-url="<?= Util::e($base) ?>/admin/dashboard/sales-posts"
     data-post-review-url="<?= Util::e($base) ?>/admin/dashboard/post-review"
     data-sales-review-save-url="<?= Util::e($base) ?>/admin/dashboard/sales-review/save"
+    data-sales-review-history-delete-url="<?= Util::e($base) ?>/admin/dashboard/sales-review/history/delete"
     data-review-save-url="<?= Util::e($base) ?>/admin/post/review"
     data-get-content-url="<?= Util::e($base) ?>/admin/dashboard/get-content"
     data-editor-image-url="<?= Util::e($base) ?>/admin/dashboard/editor-image"
@@ -757,7 +758,22 @@ $adminPresetNames = [
                 <section class="sales-review-save-history">
                     <div class="sales-review-save-history-head">
                         <span>Review History</span>
-                        <strong id="salesPeriodReviewHistoryCount">0 saves</strong>
+                        <div class="sales-review-history-head-actions">
+                            <button
+                                type="button"
+                                class="history-deleted-switch hidden"
+                                id="salesPeriodReviewDeletedSwitch"
+                                role="switch"
+                                aria-checked="false"
+                            >
+                                <span class="history-deleted-switch-track"><span></span></span>
+                                <span
+                                    class="history-deleted-switch-label"
+                                    id="salesPeriodReviewDeletedLabel"
+                                >Deleted</span>
+                            </button>
+                            <strong id="salesPeriodReviewHistoryCount">0 saves</strong>
+                        </div>
                     </div>
                     <div
                         class="sales-review-save-history-list"

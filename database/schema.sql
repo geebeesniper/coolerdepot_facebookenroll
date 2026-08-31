@@ -222,10 +222,14 @@ CREATE TABLE IF NOT EXISTS cdsp_sales_review_history (
  rating TINYINT UNSIGNED NULL DEFAULT NULL,
  note TEXT NULL,
  created_at DATETIME NOT NULL,
+ deleted_at DATETIME NULL,
+ deleted_by INT UNSIGNED NULL,
  PRIMARY KEY(id),
  KEY idx_sales_review_history_period(sales_user_id,period_type,period_start,created_at,id),
+ KEY idx_sales_review_history_deleted(deleted_at),
  CONSTRAINT fk_sales_review_history_sales FOREIGN KEY(sales_user_id) REFERENCES cdsp_users(id),
- CONSTRAINT fk_sales_review_history_admin FOREIGN KEY(admin_user_id) REFERENCES cdsp_users(id)
+ CONSTRAINT fk_sales_review_history_admin FOREIGN KEY(admin_user_id) REFERENCES cdsp_users(id),
+ CONSTRAINT fk_sales_review_history_deleted_by FOREIGN KEY(deleted_by) REFERENCES cdsp_users(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS cdsp_review_attachments (

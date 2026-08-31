@@ -5050,6 +5050,7 @@ $('[data-html-note]').each(function(){
     const salesPostsUrl = $live.data('sales-posts-url');
     const postReviewUrl = $live.data('post-review-url');
     const salesReviewSaveUrl = $live.data('sales-review-save-url');
+    const salesReviewHistoryDeleteUrl = $live.data('sales-review-history-delete-url');
     const reviewSaveUrl = $live.data('review-save-url');
     const getContentUrl = $live.data('get-content-url');
     const editorImageUrl = $live.data('editor-image-url');
@@ -5444,45 +5445,9 @@ function translateSalesCard($card){
 }
 
 function translateTopNav(){
-    const $header=$('header');
-
-    $header.find('a').each(function(){
-        const href=String($(this).attr('href')||'');
-
-        if(/\/admin$/.test(href)){
-            $(this).text(dashboardLanguage==='es'?'Admin':'Admin');
-        }else if(/\/admin\/reports$/.test(href)){
-            $(this).text(
-                dashboardLanguage==='zh-CN'
-                    ?'报表'
-                    :dashboardLanguage==='zh-TW'
-                        ?'報表'
-                        :dashboardLanguage==='es'
-                            ?'Informes'
-                            :'Reports'
-            );
-        }else if(/\/admin\/settings$/.test(href)){
-            $(this).text(
-                dashboardLanguage==='zh-CN'
-                    ?'设置'
-                    :dashboardLanguage==='zh-TW'
-                        ?'設定'
-                        :dashboardLanguage==='es'
-                            ?'Configuración'
-                            :'Settings'
-            );
-        }
-    });
-
-    $header.find('form[action$="/logout"] button').text(
-        dashboardLanguage==='zh-CN'
-            ?'退出'
-            :dashboardLanguage==='zh-TW'
-                ?'登出'
-                :dashboardLanguage==='es'
-                    ?'Salir'
-                    :'Sign out'
-    );
+    // Header/footer are universal layout partials. Keep one menu translator
+    // authoritative so Dashboard cannot rename the shared Dashboard link.
+    applyGlobalMenuLanguage();
 }
 
 function applyDashboardLanguage(){
@@ -5672,11 +5637,16 @@ function applyDashboardLanguage(){
     const $periodReviewRatingError = $('#salesPeriodReviewRatingError');
     const $periodReviewHistory = $('#salesPeriodReviewHistory');
     const $periodReviewHistoryCount = $('#salesPeriodReviewHistoryCount');
+    const $periodReviewDeletedSwitch = $('#salesPeriodReviewDeletedSwitch');
+    const $periodReviewDeletedLabel = $('#salesPeriodReviewDeletedLabel');
     const $periodReviewImages = $('#salesPeriodReviewImages');
     const $periodReviewFileSelection = $('#salesPeriodReviewFileSelection');
     const $periodReviewAttachments = $('#salesPeriodReviewAttachments');
 
     let currentSalesPeriodReview = null;
+    let showDeletedSalesReviewHistory = false;
+    let armedSalesReviewHistoryDeleteId = 0;
+    let armedSalesReviewHistoryDeleteTimer = null;
     let openReviewAfterExpand = false;
     const initialSalesId=parseInt($live.attr('data-initial-sales-id')||'0',10)||0;
     const initialOpenReview=String($live.attr('data-initial-open-review')||'0')==='1';
@@ -6466,29 +6436,30 @@ function setSalesPeriodRating(rating){
 }
 
 function renderPersonReviewAttachments(items,readOnly){
-    items=Array.isArray(items)?items:[];
+    items=(Array.isArray(items)?items:[]).filter(function(item){
+        // v0.1.86 briefly used attachment tombstones for Person Reviews.
+        // Person Review attachments now match Post Review attachments:
+        // deletion is permanent, so tombstones are never rendered.
+        return !item.deleted;
+    });
     if(!items.length){
         return '';
     }
     return '<div class="review-comment-attachments">'
         +items.map(function(item){
-            const deleted=Boolean(item.deleted);
             const image=String(item.mime||'').startsWith('image/');
             const meta=[
                 item.uploaded_by_name?'Uploaded by '+item.uploaded_by_name:'Uploaded',
                 item.uploaded_at?commentDateLabel(item.uploaded_at):''
             ].filter(Boolean).join(' · ');
-            return '<div class="review-comment-attachment'+(deleted?' is-deleted':'')+'" data-person-attachment-id="'+escapeHtml(item.id)+'">'
+            return '<div class="review-comment-attachment" data-person-attachment-id="'+escapeHtml(item.id)+'">'
                 +'<div class="review-comment-attachment-media">'
                     +(image
                         ?'<button type="button" class="review-comment-image" data-comment-image="'+escapeHtml(item.url)+'" aria-label="Open image"><img loading="lazy" src="'+escapeHtml(item.url)+'" alt="'+escapeHtml(item.name||'Attachment')+'"></button>'
                         :'<a target="_blank" rel="noopener" href="'+escapeHtml(item.url)+'">'+escapeHtml(item.name||'Attachment')+'</a>')
-                    +(deleted?'<span class="attachment-deleted-overlay">Removed</span>':'')
                 +'</div>'
-                +'<div class="review-comment-attachment-audit"><span>'+escapeHtml(item.name||'Attachment')+'</span><small>'+escapeHtml(meta)+'</small>'
-                    +(deleted?'<div class="attachment-deleted-audit"><strong>Removed from current Person Review</strong></div>':'')
-                +'</div>'
-                +((!readOnly&&!deleted)?'<button type="button" class="attachment-remove" data-person-attachment-delete="'+escapeHtml(item.id)+'" aria-label="Remove attachment" title="Remove attachment">×</button>':'')
+                +'<div class="review-comment-attachment-audit"><span>'+escapeHtml(item.name||'Attachment')+'</span><small>'+escapeHtml(meta)+'</small></div>'
+                +(!readOnly?'<button type="button" class="attachment-remove" data-person-attachment-delete="'+escapeHtml(item.id)+'" aria-label="Delete attachment permanently" title="Delete attachment permanently">×</button>':'')
             +'</div>';
         }).join('')
     +'</div>';
@@ -6506,24 +6477,125 @@ function updatePersonReviewFileSelection(){
     );
 }
 
+function resetSalesReviewHistoryDeleteArm(){
+    armedSalesReviewHistoryDeleteId=0;
+    if(armedSalesReviewHistoryDeleteTimer){
+        window.clearTimeout(armedSalesReviewHistoryDeleteTimer);
+        armedSalesReviewHistoryDeleteTimer=null;
+    }
+    $periodReviewHistory.find('[data-person-review-history-delete]')
+        .removeClass('confirm-delete')
+        .attr('title','Mark review as deleted')
+        .attr('aria-label','Mark review as deleted');
+}
+
 function renderSalesReviewHistory(items){
     items=Array.isArray(items)?items:[];
-    $periodReviewHistoryCount.text(items.length+' '+tr('saves'));
-    if(!items.length){
+    const deletedCount=items.filter(function(item){return Boolean(item.deleted);}).length;
+    const activeCount=items.length-deletedCount;
+
+    $periodReviewHistoryCount.text(activeCount+' '+tr('saves'));
+    $periodReviewDeletedSwitch
+        .toggleClass('hidden',deletedCount<1)
+        .toggleClass('active',showDeletedSalesReviewHistory)
+        .attr('aria-checked',showDeletedSalesReviewHistory?'true':'false');
+    $periodReviewDeletedLabel.text(
+        showDeletedSalesReviewHistory
+            ?'Hide deleted'
+            :'Deleted '+deletedCount
+    );
+
+    const visible=items.filter(function(item){
+        return showDeletedSalesReviewHistory||!item.deleted;
+    });
+
+    if(!visible.length){
         $periodReviewHistory.html('<div class="sales-review-history-empty">'+escapeHtml(tr('notRated'))+'</div>');
         return;
     }
-    $periodReviewHistory.html(items.map(function(item){
+
+    $periodReviewHistory.html(visible.map(function(item){
         const rating=parseInt(item.rating,10)||0;
         const note=String(item.note||'').trim();
-        return '<article class="sales-review-history-item">'
-            +'<div class="sales-review-history-meta"><strong>'+escapeHtml(item.admin_name||'Administrator')+'</strong><span>'+escapeHtml(commentDateLabel(item.created_at))+'</span></div>'
+        const deleted=Boolean(item.deleted);
+        const deletedAudit=deleted
+            ?'<div class="sales-review-history-deleted-audit"><strong>Marked as deleted</strong>'
+                +(item.deleted_by_name?' by '+escapeHtml(item.deleted_by_name):'')
+                +(item.deleted_at?' · '+escapeHtml(commentDateLabel(item.deleted_at)):'')
+            +'</div>'
+            :'';
+        return '<article class="sales-review-history-item'+(deleted?' is-deleted':'')+'" data-person-review-history-id="'+escapeHtml(item.id)+'">'
+            +'<div class="sales-review-history-meta"><strong>'+escapeHtml(item.admin_name||'Administrator')+'</strong><div class="sales-review-history-meta-actions"><span>'+escapeHtml(commentDateLabel(item.created_at))+'</span>'
+                +(!deleted?'<button type="button" class="sales-review-history-delete" data-person-review-history-delete="'+escapeHtml(item.id)+'" title="Mark review as deleted" aria-label="Mark review as deleted"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8l1 2h4v2H3V6h4l1-2Zm1 6h2v7H9v-7Zm4 0h2v7h-2v-7ZM6 9h12l-1 11H7L6 9Z"/></svg></button>':'')
+            +'</div></div>'
             +'<div class="sales-review-history-rating">'+(rating?escapeHtml(salesRatingStars(rating)+' '+rating+'/5'):escapeHtml(tr('notRated')))+'</div>'
             +(note?'<div class="sales-review-history-note">'+note+'</div>':'')
-            +renderPersonReviewAttachments(item.attachments||[],true)
+            +renderPersonReviewAttachments(item.attachments||[],deleted)
+            +deletedAudit
             +'</article>';
     }).join(''));
 }
+
+$periodReviewDeletedSwitch.on('click',function(){
+    showDeletedSalesReviewHistory=!showDeletedSalesReviewHistory;
+    resetSalesReviewHistoryDeleteArm();
+    renderSalesReviewHistory(
+        currentSalesPeriodReview&&Array.isArray(currentSalesPeriodReview.history)
+            ?currentSalesPeriodReview.history
+            :[]
+    );
+});
+
+$periodReviewHistory.on('click','[data-person-review-history-delete]',function(){
+    const historyId=parseInt($(this).attr('data-person-review-history-delete'),10)||0;
+    if(!historyId||!salesReviewHistoryDeleteUrl||!currentSalesPeriodReview){
+        return;
+    }
+
+    const $button=$(this);
+    if(armedSalesReviewHistoryDeleteId!==historyId){
+        resetSalesReviewHistoryDeleteArm();
+        armedSalesReviewHistoryDeleteId=historyId;
+        $button.addClass('confirm-delete')
+            .attr('title','Click again to confirm')
+            .attr('aria-label','Click again to confirm mark as deleted');
+        armedSalesReviewHistoryDeleteTimer=window.setTimeout(function(){
+            resetSalesReviewHistoryDeleteArm();
+        },3500);
+        return;
+    }
+
+    $button.prop('disabled',true);
+    $.ajax({
+        url:salesReviewHistoryDeleteUrl,
+        method:'POST',
+        dataType:'json',
+        data:{_csrf:csrf,history_id:historyId},
+        headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'}
+    }).done(function(data){
+        if(!data||!data.ok){
+            $periodReviewMessage.addClass('error').text((data&&data.message)||'Review history could not be marked as deleted.');
+            $button.prop('disabled',false);
+            return;
+        }
+        currentSalesPeriodReview.history=(currentSalesPeriodReview.history||[]).map(function(item){
+            if(parseInt(item.id,10)!==historyId){
+                return item;
+            }
+            return Object.assign({},item,{
+                deleted:true,
+                deleted_at:data.deleted_at||'',
+                deleted_by_name:data.deleted_by_name||'Administrator'
+            });
+        });
+        resetSalesReviewHistoryDeleteArm();
+        renderSalesReviewHistory(currentSalesPeriodReview.history||[]);
+        $periodReviewMessage.removeClass('error').text(data.message||'Person Review history entry marked as deleted.');
+    }).fail(function(xhr){
+        $button.prop('disabled',false);
+        $periodReviewMessage.addClass('error').text((xhr.responseJSON&&xhr.responseJSON.message)||'Review history could not be marked as deleted.');
+    });
+});
 
 function renderSalesPeriodReview(review){
     currentSalesPeriodReview=review||null;
@@ -6627,6 +6699,8 @@ function openSalesPeriodReviewEditor(){
         review.period_label||''
     );
 
+    showDeletedSalesReviewHistory=false;
+    resetSalesReviewHistoryDeleteArm();
     setSalesPeriodRating(review.rating||0);
     renderSalesReviewHistory(review.history||[]);
     $periodReviewImages.val('');
@@ -7338,22 +7412,17 @@ $(document).on('click','[data-person-attachment-delete]',function(){
             $button.prop('disabled',false);
             return;
         }
-        const updated=data.attachment||null;
-        currentSalesPeriodReview.attachments=(currentSalesPeriodReview.attachments||[]).map(function(item){
-            return parseInt(item.id,10)===attachmentId
-                ?(updated||Object.assign({},item,{deleted:true}))
-                :item;
+        currentSalesPeriodReview.attachments=(currentSalesPeriodReview.attachments||[]).filter(function(item){
+            return parseInt(item.id,10)!==attachmentId;
         });
         (currentSalesPeriodReview.history||[]).forEach(function(history){
-            history.attachments=(history.attachments||[]).map(function(item){
-                return parseInt(item.id,10)===attachmentId
-                    ?(updated||Object.assign({},item,{deleted:true}))
-                    :item;
+            history.attachments=(history.attachments||[]).filter(function(item){
+                return parseInt(item.id,10)!==attachmentId;
             });
         });
         renderCurrentPersonReviewAttachments(currentSalesPeriodReview.attachments||[]);
         renderSalesReviewHistory(currentSalesPeriodReview.history||[]);
-        $periodReviewMessage.removeClass('error').text(data.message||'Attachment removed.');
+        $periodReviewMessage.removeClass('error').text(data.message||'Attachment permanently deleted.');
     }).fail(function(xhr){
         $periodReviewMessage.addClass('error').text((xhr.responseJSON&&xhr.responseJSON.message)||'Attachment could not be removed.');
         $button.prop('disabled',false);
