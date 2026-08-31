@@ -251,7 +251,7 @@ statuses, which still use pending/approved/rejected.
 
 ## Release versioning
 
-Current release: `v0.1.68`
+Current release: `v0.1.69`
 
 `VERSION` in the project root is the application version source of truth.
 The footer reads this value and displays it on every page.
@@ -1246,14 +1246,23 @@ Overlay the included `sales-posts/` files onto the existing installation that al
 
 Validation: all previous DOM simulation checks and PHP/JS syntax checks pass. Added the reported 10-post case (9 Good, 1 Issue, 0 Unreviewed), clicks on both labels and counts, All restoration, zero-result feedback, unchanged chart/date/channel, translated tooltips, and repeated AJAX replacements. These are local simulations; rendered browser layout and live deployment were not verified.
 
+## v0.1.69 — Plain Arial typography
+
+- The shared UI font is now Arial, with Helvetica/sans-serif fallback. Form controls inherit the UI font; code editors keep their monospace font.
+- Posts card dates, descriptions, View details, status and sequence labels use regular weight 400. Post titles use standard bold 700 instead of heavy 900.
+- The Posts range/date labels and status filter labels use normal weights, with standard bold counts.
+- Font sizes, card layout, colors, fixed menu widths, independent filters and bar animation are unchanged. No database migration. VERSION/footer source is 0.1.69.
+- Checked the typography CSS and re-ran the existing local DOM regression checks. No live server deployment or rendered browser verification was performed.
+
 ### SSH and deployment
+
 
 The server address and project path come from this project's existing setup. The commands below assume a root SSH login; use your configured account and port if different. No passwords are included.
 
 From Windows PowerShell after downloading the patch to Downloads:
 
 ```powershell
-scp "$env:USERPROFILE\Downloads\sales-posts-v0.1.68-posts-filter-ux-patch.zip" root@144.126.218.94:/tmp/
+scp "$env:USERPROFILE\Downloads\sales-posts-v0.1.69-arial-font-patch.zip" root@144.126.218.94:/opt/coolerdepot/www/sales-posts/
 ssh root@144.126.218.94
 ```
 
@@ -1263,8 +1272,8 @@ Then run in the server's Bash shell. This backs up only the eight patch files, n
 set -e
 cd /opt/coolerdepot/www/sales-posts
 patch_files=(VERSION README.md app/Controllers/SalesController.php app/Views/sales/dashboard.php app/Views/sales/_post_range_section.php public/assets/app.js public/assets/app.css public/assets/sales-dashboard.js)
-archive=/tmp/sales-posts-v0.1.68-posts-filter-ux-patch.zip
-backup="/tmp/sales-posts-before-v0.1.68-$(date +%Y%m%d-%H%M%S).tgz"
+archive=/opt/coolerdepot/www/sales-posts/sales-posts-v0.1.69-arial-font-patch.zip
+backup="/tmp/sales-posts-before-v0.1.69-$(date +%Y%m%d-%H%M%S).tgz"
 test -f "$archive"
 git rev-parse --is-inside-work-tree
 unzip -t "$archive"
@@ -1272,9 +1281,9 @@ tar -czf "$backup" -- "${patch_files[@]}"
 unzip -o "$archive" -d /opt/coolerdepot/www
 git diff --check -- "${patch_files[@]}"
 git add -- "${patch_files[@]}"
-git commit --only -m "v0.1.68: restore Posts filter UX" -- "${patch_files[@]}"
+git commit --only -m "v0.1.69: use Arial typography" -- "${patch_files[@]}"
 git push
 cat VERSION
 ```
 
-If commit/push fails, do not reset/discard local changes; inspect that error. The ZIP overlay has already updated the files on this server. Open the Sales page and use Ctrl+F5 if the browser cached the old assets; verify the footer shows 0.1.68.
+If commit/push fails, do not reset/discard local changes; inspect that error. The ZIP overlay has already updated the files on this server. Open the Sales page and use Ctrl+F5 if the browser cached the old assets; verify the footer shows 0.1.69.
