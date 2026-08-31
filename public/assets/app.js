@@ -95,6 +95,83 @@ $('#appLanguageSwitch').on(
         event.stopPropagation();
     });
 
+    $('#adminInfoPanel').on('click','.admin-info-summary',function(event){
+        event.preventDefault();
+        const $summary=$(this);
+        const $item=$summary.closest('.admin-info-item');
+        const $detail=$item.find('.admin-info-detail').first();
+        const opening=!$summary.hasClass('is-open');
+
+        $('#adminInfoPanel .admin-info-summary.is-open').not($summary).each(function(){
+            const $other=$(this);
+            const $otherDetail=$other.closest('.admin-info-item').find('.admin-info-detail').first();
+            $other.removeClass('is-open').attr('aria-expanded','false');
+            $otherDetail.stop(true,true).slideUp(140,function(){
+                $(this).addClass('hidden').removeAttr('style');
+            });
+        });
+
+        $summary.toggleClass('is-open',opening).attr('aria-expanded',opening?'true':'false');
+        if(opening){
+            $detail.removeClass('hidden').hide().stop(true,true).slideDown(160);
+        }else{
+            $detail.stop(true,true).slideUp(140,function(){
+                $(this).addClass('hidden').removeAttr('style');
+            });
+        }
+    });
+
+    $('#adminInfoPanel').on('submit','[data-admin-delete-request-form]',function(event){
+        event.preventDefault();
+        const $form=$(this);
+        const $item=$form.closest('.admin-info-item');
+        const $status=$item.find('.admin-info-action-status');
+        const $buttons=$form.find('button');
+        const submitter=event.originalEvent&&event.originalEvent.submitter
+            ?event.originalEvent.submitter
+            :document.activeElement;
+        const action=String($(submitter).val()||'');
+        let payload=$form.serializeArray();
+
+        if(action){
+            payload=payload.filter(function(field){return field.name!=='action';});
+            payload.push({name:'action',value:action});
+        }
+
+        $buttons.prop('disabled',true);
+        $status.removeClass('error ok').text(action==='approve'?'Deleting post…':'Updating request…');
+
+        $.ajax({
+            url:$form.attr('action'),
+            method:'POST',
+            dataType:'json',
+            data:$.param(payload),
+            headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'}
+        }).done(function(data){
+            if(!data||!data.ok){
+                $status.addClass('error').text((data&&data.message)||'Request could not be updated.');
+                $buttons.prop('disabled',false);
+                return;
+            }
+
+            $status.addClass('ok').text(data.message||'Updated.');
+            $item.stop(true,true).slideUp(180,function(){
+                $(this).remove();
+                const count=$('#adminInfoList .admin-info-item').length;
+                $('.admin-info-head > span').text(count+' pending');
+                if(count>0){
+                    $('.admin-info-badge').text(count).removeClass('hidden');
+                }else{
+                    $('.admin-info-badge').addClass('hidden');
+                    $('#adminInfoList').html('<div class="admin-info-empty">No new notifications.</div>');
+                }
+            });
+        }).fail(function(xhr){
+            $status.addClass('error').text((xhr.responseJSON&&xhr.responseJSON.message)||'Request could not be updated.');
+            $buttons.prop('disabled',false);
+        });
+    });
+
     $(document).on('click',function(){
         $('#adminInfoPanel').addClass('hidden');
         $('#adminInfoToggle').attr('aria-expanded','false');
@@ -2726,21 +2803,47 @@ function loadSalesRange(range,period,channel,reason){
     });
 }
 
+function showSalesOverlay($overlay,onShown){
+    if(!$overlay||!$overlay.length){return;}
+    $overlay.stop(true,true).removeClass('hidden').attr('aria-hidden','false');
+    if(salesPrefersReducedMotion()){
+        $overlay.show();
+        if(typeof onShown==='function')onShown();
+        return;
+    }
+    $overlay.hide().fadeIn(150,function(){
+        if(typeof onShown==='function')onShown();
+    });
+}
+
+function hideSalesOverlay($overlay,onHidden){
+    if(!$overlay||!$overlay.length){return;}
+    const finish=function(){
+        $overlay.addClass('hidden').attr('aria-hidden','true').removeAttr('style');
+        if(typeof onHidden==='function')onHidden();
+    };
+    if(salesPrefersReducedMotion()){
+        finish();
+        return;
+    }
+    $overlay.stop(true,true).fadeOut(120,finish);
+}
+
 function openSalesSubmitModal(){
     if(!$salesSubmitModal.length){return false;}
-    $salesSubmitModal.removeClass('hidden').attr('aria-hidden','false');
     $('body').addClass('sales-submit-modal-open');
-    setTimeout(function(){
+    showSalesOverlay($salesSubmitModal,function(){
         $('#postUrl').trigger('focus');
         updateDetectedPlatform();
-    },0);
+    });
     return true;
 }
 
 function closeSalesSubmitModal(){
     if(!$salesSubmitModal.length){return;}
-    $salesSubmitModal.addClass('hidden').attr('aria-hidden','true');
-    $('body').removeClass('sales-submit-modal-open');
+    hideSalesOverlay($salesSubmitModal,function(){
+        $('body').removeClass('sales-submit-modal-open');
+    });
 }
 
 function openSalesPostDetail($card){
@@ -2850,25 +2953,17 @@ function openSalesPostDetail($card){
             .removeClass('hidden');
     }
 
-    $salesPostDetailModal
-        .removeClass('hidden')
-        .attr('aria-hidden','false');
-
     $('body').addClass('sales-detail-open');
-
-    setTimeout(function(){
-        $('#salesPostDetailClose')
-            .trigger('focus');
-    },0);
+    showSalesOverlay($salesPostDetailModal,function(){
+        $('#salesPostDetailClose').trigger('focus');
+    });
 }
 
 function closeSalesPostDetail(){
-    $salesPostDetailModal
-        .addClass('hidden')
-        .attr('aria-hidden','true');
-
-    $('body').removeClass('sales-detail-open');
-    $('#salesPostDeleteRequestForm').addClass('hidden');
+    hideSalesOverlay($salesPostDetailModal,function(){
+        $('body').removeClass('sales-detail-open');
+        $('#salesPostDeleteRequestForm').addClass('hidden').removeAttr('style');
+    });
 }
 
 function openSalesImageLightbox(){
@@ -2883,15 +2978,11 @@ function openSalesImageLightbox(){
     $('#salesImageLightboxImage')
         .attr('src',src);
 
-    $salesImageLightbox
-        .removeClass('hidden')
-        .attr('aria-hidden','false');
+    showSalesOverlay($salesImageLightbox);
 }
 
 function closeSalesImageLightbox(){
-    $salesImageLightbox
-        .addClass('hidden')
-        .attr('aria-hidden','true');
+    hideSalesOverlay($salesImageLightbox);
 }
 
 $('#salesRangeFrom').on('change',function(){
@@ -3270,14 +3361,34 @@ $salesSubmitModal.on('click',function(event){
 
 $('#salesPostDeleteRequestOpen').on('click',function(){
     if($(this).prop('disabled'))return;
-    $('#salesPostDeleteRequestForm').removeClass('hidden');
+    const $form=$('#salesPostDeleteRequestForm');
     $('#salesPostDeleteRequestMessage').text('');
-    setTimeout(function(){$('#salesPostDeleteRequestReason').trigger('focus');},0);
+    if(salesPrefersReducedMotion()){
+        $form.removeClass('hidden').show();
+        $('#salesPostDeleteRequestReason').trigger('focus');
+        return;
+    }
+    $form
+        .stop(true,true)
+        .removeClass('hidden')
+        .hide()
+        .addClass('sales-request-opening')
+        .slideDown(160,function(){
+            $(this).removeClass('sales-request-opening');
+            $('#salesPostDeleteRequestReason').trigger('focus');
+        });
 });
 
 $('#salesPostDeleteRequestCancel').on('click',function(){
-    $('#salesPostDeleteRequestForm').addClass('hidden');
+    const $form=$('#salesPostDeleteRequestForm');
     $('#salesPostDeleteRequestMessage').text('');
+    if(salesPrefersReducedMotion()){
+        $form.addClass('hidden').removeAttr('style');
+        return;
+    }
+    $form.stop(true,true).slideUp(130,function(){
+        $(this).addClass('hidden').removeAttr('style');
+    });
 });
 
 $('#salesPostDeleteRequestForm').on('submit',function(event){
@@ -3307,7 +3418,13 @@ $('#salesPostDeleteRequestForm').on('submit',function(event){
 
         // The request is already persisted. Collapse the reason editor
         // immediately so the remaining state is unambiguous to Sales.
-        $form.addClass('hidden');
+        if(salesPrefersReducedMotion()){
+            $form.addClass('hidden').removeAttr('style');
+        }else{
+            $form.stop(true,true).slideUp(150,function(){
+                $(this).addClass('hidden').removeAttr('style');
+            });
+        }
         $('#salesPostDeleteRequestMessage')
             .removeClass('error ok')
             .text('');
@@ -9217,15 +9334,21 @@ $(document).on('click','.website-reference-delete',function(){
 });
 
 
-// v0.1.79 Management Reports use the same rolling date controls as Sales.
+// v0.1.80 Management Reports: shared date controls + live result refresh.
 (function(){
     const $reports=$('#managementReports');
     if(!$reports.length)return;
 
     const today=String($reports.attr('data-today')||'');
+    const $form=$('#reportRangeForm');
     const $from=$('#reportRangeFrom');
     const $to=$('#reportRangeTo');
     const $period=$('#reportPeriodValue');
+    const $sales=$('#reportSalesSelect');
+    const $run=$('#reportRunButton');
+    let refreshTimer=null;
+    let activeRequest=null;
+    let refreshSeq=0;
 
     function parseIso(value){
         const m=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -9269,16 +9392,71 @@ $(document).on('click','.website-reference-delete',function(){
         if(today&&from>today){from=today;$from.val(from);}
         if(changed==='from'&&from>to){to=from;$to.val(to);}
         else if(changed==='to'&&to<from){from=to;$from.val(from);}
+        else if(from>to){from=to;$from.val(from);}
         $from.attr('max',to);
         $to.attr('min',from).attr('max',today);
+        $('#reportHeadRange').text(from+' → '+to);
         return true;
+    }
+    function queryString(){
+        return $form.serialize();
+    }
+    function setLoading(loading){
+        $('#reportResultPanel').toggleClass('report-loading',loading).attr('aria-busy',loading?'true':'false');
+        $run.toggleClass('report-loading',loading).prop('disabled',loading).text(loading?'Running…':'Run');
+    }
+    function refreshReport(pushUrl){
+        if(!sync(''))return;
+        if(refreshTimer){window.clearTimeout(refreshTimer);refreshTimer=null;}
+        if(activeRequest){activeRequest.abort();activeRequest=null;}
+        const seq=++refreshSeq;
+        const qs=queryString();
+        setLoading(true);
+        activeRequest=$.ajax({
+            url:$form.attr('action'),
+            method:'GET',
+            data:qs,
+            dataType:'html',
+            headers:{'X-Requested-With':'XMLHttpRequest'}
+        }).done(function(html){
+            if(seq!==refreshSeq)return;
+            const $doc=$('<div>').append($.parseHTML(html,document,false));
+            const $next=$doc.find('#reportResultPanel').first();
+            if(!$next.length)return;
+            const $current=$('#reportResultPanel');
+            $next.hide();
+            $current.replaceWith($next);
+            if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+                $next.show();
+            }else{
+                $next.fadeIn(150);
+            }
+            if(pushUrl&&window.history&&window.history.replaceState){
+                window.history.replaceState(null,'',$form.attr('action')+'?'+qs);
+            }
+        }).fail(function(xhr,status){
+            if(status==='abort'||seq!==refreshSeq)return;
+            const $panel=$('#reportResultPanel');
+            $panel.removeClass('report-loading');
+            if(!$panel.find('.report-live-error').length){
+                $panel.prepend('<div class="notice bad report-live-error">Report could not be refreshed. Use Run to retry.</div>');
+            }
+        }).always(function(){
+            if(seq!==refreshSeq)return;
+            activeRequest=null;
+            setLoading(false);
+        });
+    }
+    function scheduleRefresh(delay){
+        if(refreshTimer)window.clearTimeout(refreshTimer);
+        refreshTimer=window.setTimeout(function(){refreshReport(true);},typeof delay==='number'?delay:180);
     }
 
     $('#reportPeriodSwitch').on('click','[data-report-period]',function(){
         const preset=String($(this).attr('data-report-period')||'single');
         if(preset==='custom'){
             selectPreset('custom');
-            sync('');
+            if(sync(''))scheduleRefresh(120);
             return;
         }
         const range=rangeFor(preset,String($to.val()||today));
@@ -9287,9 +9465,29 @@ $(document).on('click','.website-reference-delete',function(){
         $to.val(range.to);
         sync('');
         selectPreset(preset);
+        scheduleRefresh(80);
     });
-    $from.on('change',function(){if(sync('from'))selectPreset('custom');});
-    $to.on('change',function(){if(sync('to'))selectPreset('custom');});
+
+    $from.on('change',function(){
+        if(sync('from')){
+            selectPreset('custom');
+            scheduleRefresh(120);
+        }
+    });
+    $to.on('change',function(){
+        if(sync('to')){
+            selectPreset('custom');
+            scheduleRefresh(120);
+        }
+    });
+    $sales.on('change',function(){scheduleRefresh(80);});
+
+    $form.on('submit',function(event){
+        event.preventDefault();
+        refreshReport(true);
+    });
+
+    sync('');
 })();
 
 });

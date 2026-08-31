@@ -1867,9 +1867,23 @@ public function savePeriodReview():void{
 
     public function handleDeleteRequest():void{
         $admin=Auth::requireRole('admin');
-        Csrf::verify($_POST['_csrf']??null);
+        $isAjax=$this->isAjaxRequest();
+        if($isAjax){
+            $this->verifyAjaxCsrf();
+        }else{
+            Csrf::verify($_POST['_csrf']??null);
+        }
+
         $id=(int)($_POST['request_id']??0);
         $action=(string)($_POST['action']??'');
+        if(!in_array($action,['approve','reject'],true)){
+            if($isAjax){
+                $this->json(['ok'=>false,'message'=>'Choose Approve delete or Reject.'],422);
+            }
+            $_SESSION['flash_error']='Choose Approve delete or Reject.';
+            $this->redirect('/admin');
+        }
+
         $pdo=Database::connection();
         $pdo->beginTransaction();
         try{
@@ -1892,12 +1906,27 @@ public function savePeriodReview():void{
             $pdo->commit();
         }catch(\Throwable $e){
             if($pdo->inTransaction())$pdo->rollBack();
+            if($isAjax){
+                $this->json(['ok'=>false,'message'=>$e->getMessage()],422);
+            }
             $_SESSION['flash_error']=$e->getMessage();
             $this->redirect('/admin');
         }
-        $_SESSION['flash_success']=$status==='approved'
+
+        $message=$status==='approved'
             ?'Post permanently deleted.'
             :'Deletion request rejected.';
+
+        if($isAjax){
+            $this->json([
+                'ok'=>true,
+                'request_id'=>$id,
+                'status'=>$status,
+                'message'=>$message,
+            ]);
+        }
+
+        $_SESSION['flash_success']=$message;
         $this->redirect('/admin');
     }
 

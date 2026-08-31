@@ -9,6 +9,15 @@ $periodLabels=[
     'month'=>'Monthly',
     'custom'=>'Custom',
 ];
+$selectedSalesLabel='All Sales';
+if($salesUserId>0){
+    foreach($sales as $salesUser){
+        if((int)$salesUser['id']===$salesUserId){
+            $selectedSalesLabel=(string)$salesUser['display_name'];
+            break;
+        }
+    }
+}
 $downloadQuery=http_build_query([
     'period'=>$period,
     'from'=>$start,
@@ -23,88 +32,88 @@ $downloadQuery=http_build_query([
     data-today="<?= Util::e($today) ?>"
     data-period="<?= Util::e($period) ?>"
 >
-    <div>
+    <div class="report-page-copy">
         <div class="eyebrow">Management Reports</div>
         <h1>Sales Report</h1>
-        <p><?= Util::e($start) ?> → <?= Util::e($end) ?></p>
+        <p id="reportHeadRange"><?= Util::e($start) ?> → <?= Util::e($end) ?></p>
     </div>
 
-    <div class="sales-portal-head-actions report-head-actions">
-        <div
-            class="sales-period-switch sales-head-period-switch"
-            id="reportPeriodSwitch"
-            role="group"
-            aria-label="Report date range"
-        >
-            <?php foreach($periodLabels as $key=>$label): ?>
-                <button
-                    type="button"
-                    class="sales-period-button<?= $period===$key?' active':'' ?>"
-                    data-report-period="<?= Util::e($key) ?>"
-                    aria-pressed="<?= $period===$key?'true':'false' ?>"
-                ><?= Util::e($label) ?></button>
-            <?php endforeach; ?>
+    <form
+        class="report-toolbar"
+        id="reportRangeForm"
+        method="get"
+        action="<?= Util::e($base) ?>/admin/reports"
+        novalidate
+    >
+        <input type="hidden" name="period" id="reportPeriodValue" value="<?= Util::e($period) ?>">
+
+        <div class="report-control report-range-control">
+            <span class="report-control-label">Range</span>
+            <div
+                class="sales-period-switch sales-head-period-switch"
+                id="reportPeriodSwitch"
+                role="group"
+                aria-label="Report date range"
+            >
+                <?php foreach($periodLabels as $key=>$label): ?>
+                    <button
+                        type="button"
+                        class="sales-period-button<?= $period===$key?' active':'' ?>"
+                        data-report-period="<?= Util::e($key) ?>"
+                        aria-pressed="<?= $period===$key?'true':'false' ?>"
+                    ><?= Util::e($label) ?></button>
+                <?php endforeach; ?>
+            </div>
         </div>
 
-        <form
-            class="filters dashboard-date-controls admin-range-controls sales-range-filter report-range-filter"
-            id="reportRangeForm"
-            method="get"
-            action="<?= Util::e($base) ?>/admin/reports"
-            novalidate
-        >
-            <input type="hidden" name="period" id="reportPeriodValue" value="<?= Util::e($period) ?>">
+        <label class="report-control report-date-field">
+            <span class="report-control-label">From</span>
+            <input
+                type="date"
+                name="from"
+                id="reportRangeFrom"
+                value="<?= Util::e($start) ?>"
+                max="<?= Util::e(min($end,$today)) ?>"
+            >
+        </label>
 
-            <div class="dashboard-date-control-row sales-date-control-row">
-                <label class="admin-range-field">
-                    <span>From</span>
-                    <input
-                        type="date"
-                        name="from"
-                        id="reportRangeFrom"
-                        value="<?= Util::e($start) ?>"
-                        max="<?= Util::e(min($end,$today)) ?>"
-                    >
-                </label>
+        <label class="report-control report-date-field">
+            <span class="report-control-label">To</span>
+            <input
+                type="date"
+                name="to"
+                id="reportRangeTo"
+                value="<?= Util::e($end) ?>"
+                min="<?= Util::e($start) ?>"
+                max="<?= Util::e($today) ?>"
+            >
+        </label>
 
-                <div class="admin-range-field-stack sales-to-field-stack">
-                    <label class="admin-range-field">
-                        <span>To</span>
-                        <input
-                            type="date"
-                            name="to"
-                            id="reportRangeTo"
-                            value="<?= Util::e($end) ?>"
-                            min="<?= Util::e($start) ?>"
-                            max="<?= Util::e($today) ?>"
-                        >
-                    </label>
-                </div>
-            </div>
+        <label class="report-control report-sales-field">
+            <span class="report-control-label">Sales</span>
+            <select name="sales_id" id="reportSalesSelect">
+                <option value="0" <?= $salesUserId===0?'selected':'' ?>>All</option>
+                <?php foreach($sales as $s): ?>
+                    <option
+                        value="<?= (int)$s['id'] ?>"
+                        <?= $salesUserId===(int)$s['id']?'selected':'' ?>
+                    ><?= Util::e($s['display_name']) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </label>
 
-            <label class="report-sales-field">
-                <span>Sales</span>
-                <select name="sales_id" id="reportSalesSelect">
-                    <option value="0" <?= $salesUserId===0?'selected':'' ?>>All</option>
-                    <?php foreach($sales as $s): ?>
-                        <option
-                            value="<?= (int)$s['id'] ?>"
-                            <?= $salesUserId===(int)$s['id']?'selected':'' ?>
-                        ><?= Util::e($s['display_name']) ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </label>
-
-            <button class="btn report-run-button" type="submit">Run</button>
-        </form>
-    </div>
+        <div class="report-control report-run-control">
+            <span class="report-control-label" aria-hidden="true">&nbsp;</span>
+            <button class="btn report-run-button" id="reportRunButton" type="submit">Run</button>
+        </div>
+    </form>
 </div>
 
-<div class="panel report-result-panel">
+<div class="panel report-result-panel" id="reportResultPanel" aria-live="polite">
     <div class="report-result-head">
         <div>
             <div class="eyebrow"><?= Util::e($periodLabels[$period]??'Custom') ?> Range</div>
-            <h2><?= $salesUserId===0?'All Sales':'Selected Sales' ?></h2>
+            <h2><?= Util::e($selectedSalesLabel) ?></h2>
             <p><?= Util::e($start) ?> → <?= Util::e($end) ?></p>
         </div>
 

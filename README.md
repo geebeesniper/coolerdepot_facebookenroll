@@ -252,7 +252,7 @@ statuses, which still use pending/approved/rejected.
 
 ## Release versioning
 
-Current release: `v0.1.79`
+Current release: `v0.1.80`
 
 `VERSION` in the project root is the application version source of truth.
 The footer reads this value and displays it on every page.
@@ -1451,3 +1451,13 @@ Upload `sales-posts-v0.1.74-chart-pointer-tooltip.zip` to `/opt/coolerdepot/www/
 - After a Sales deletion request succeeds, the reason form collapses immediately and the post detail action becomes `Deletion requested ✓` without leaving the editor open.
 - No database migration is required.
 
+
+
+## v0.1.80 — clearer notifications, live reports, Sales motion polish
+
+- Information Center deletion requests are now a readable accordion list. Multiple requests stay separated; clicking one opens its detail card, where Admin can open the original post, approve the permanent delete, or reject the request.
+- Approve/reject can complete by AJAX and the handled notification animates out while the pending count updates.
+- Report controls are aligned on one baseline and use the same 1 Day / 3 Days / Weekly / Monthly / Custom range model. Changing range, From/To, or Sales automatically refreshes the result panel; Run still forces an immediate refresh.
+- Download CSV always follows the currently refreshed report scope, including All Sales.
+- Sales post detail, Submit Post, image lightbox, and delete-request editor use small jQuery fade/slide transitions while respecting reduced-motion preferences.
+- No database migration is required.
