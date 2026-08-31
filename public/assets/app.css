@@ -11089,3 +11089,130 @@ body.admin-delete-request-modal-open{overflow:hidden;}
     line-height:1;
     font-weight:800;
 }
+
+/* v0.1.85 — compact Admin navigation + sticky dashboard range controls */
+.topbar[data-user-role="admin"]{
+    min-height:52px;
+    height:52px;
+    gap:12px;
+    padding:0 18px;
+}
+.topbar[data-user-role="admin"] .brand{
+    font-size:16px;
+}
+.topbar[data-user-role="admin"] .nav{
+    gap:4px;
+    flex-wrap:nowrap;
+    font-size:12px;
+}
+.topbar[data-user-role="admin"] .nav > a,
+.topbar[data-user-role="admin"] .nav > [data-nav-i18n],
+.topbar[data-user-role="admin"] .nav > form{
+    flex:0 0 auto;
+    width:auto;
+    min-width:0;
+    max-width:none;
+}
+.topbar[data-user-role="admin"] .nav > a,
+.topbar[data-user-role="admin"] .nav > [data-nav-i18n],
+.topbar[data-user-role="admin"] .nav > form button{
+    min-height:30px;
+    padding-left:8px;
+    padding-right:8px;
+}
+.topbar[data-user-role="admin"] .app-language-switch{
+    padding:1px;
+}
+.topbar[data-user-role="admin"] .app-language-button{
+    min-height:28px;
+    padding:3px 6px;
+}
+.topbar[data-user-role="admin"] .admin-info-toggle{
+    width:32px;
+    height:32px;
+    min-height:32px;
+    padding:0;
+}
+
+.admin-dashboard-title-head{
+    margin-bottom:6px;
+}
+.admin-dashboard-title-head h1{
+    margin-bottom:0;
+}
+.admin-sales-progress-section{
+    margin-top:0;
+}
+.admin-dashboard-range-bar{
+    position:sticky;
+    top:0;
+    z-index:180;
+    margin:0 0 8px;
+    padding:7px 0 8px;
+    border-bottom:1px solid rgba(207,215,227,.9);
+    background:rgba(246,248,251,.96);
+    backdrop-filter:blur(8px);
+}
+.admin-dashboard-range-bar .admin-portal-head-actions{
+    display:flex;
+    align-items:flex-start;
+    justify-content:flex-end;
+    gap:8px;
+    width:100%;
+}
+.admin-dashboard-range-bar .sales-head-period-switch{
+    margin-top:18px;
+}
+.admin-section-head-with-summary{
+    align-items:flex-end;
+    margin-bottom:10px;
+}
+.admin-section-head-with-summary .admin-section-summary{
+    display:flex;
+    align-items:center;
+    gap:4px;
+    padding-bottom:1px;
+    white-space:nowrap;
+}
+
+@media(max-width:1050px){
+    .topbar[data-user-role="admin"]{
+        height:auto;
+        min-height:52px;
+        padding-top:8px;
+        padding-bottom:8px;
+    }
+    .topbar[data-user-role="admin"] .nav{
+        flex-wrap:wrap;
+    }
+}
+@media(max-width:980px){
+    .admin-dashboard-range-bar .admin-portal-head-actions{
+        justify-content:flex-start;
+        flex-wrap:wrap;
+    }
+    .admin-dashboard-range-bar .sales-head-period-switch{
+        margin-top:0;
+    }
+}
+@media(max-width:720px){
+    .admin-dashboard-range-bar{
+        margin-left:-14px;
+        margin-right:-14px;
+        padding:8px 14px;
+    }
+    .admin-dashboard-range-bar .admin-portal-head-actions{
+        display:grid;
+        grid-template-columns:1fr;
+        width:100%;
+    }
+    .admin-dashboard-range-bar .sales-head-period-switch{
+        width:100%;
+        grid-template-columns:repeat(5,minmax(0,1fr));
+    }
+    .admin-section-head-with-summary{
+        align-items:flex-start;
+        flex-direction:column;
+        gap:6px;
+    }
+}

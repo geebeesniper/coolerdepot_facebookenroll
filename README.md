@@ -1478,3 +1478,12 @@ Upload `sales-posts-v0.1.74-chart-pointer-tooltip.zip` to `/opt/coolerdepot/www/
 - Management Reports use an exact Sales + work_date Daily Review mapping and defensively select only the latest row for that exact pair on legacy databases. Ratings are never carried from one date to another.
 - Download CSV button typography is reduced to match the report toolbar.
 - No database migration. VERSION/footer source is 0.1.84.
+
+
+## v0.1.85
+
+- Renamed the Admin navigation entry to Dashboard while preserving the existing admin dashboard route.
+- Moved the Admin Dashboard date-range controls directly above Posting Progress and made the range bar sticky for long-page review workflows.
+- Moved the Sales/Post summary onto the Posting Progress heading row and removed the oversized vertical gap.
+- Tightened the Admin top navigation spacing and control sizing to match the compact Sales navigation.
+- No database migration. VERSION/footer source is 0.1.85.

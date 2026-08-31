@@ -68,7 +68,7 @@ $adminPresetNames = [
     </button>
 </div>
 
-<div class="page-head admin-page-head sales-portal-head">
+<div class="page-head admin-page-head admin-dashboard-title-head">
     <div class="admin-dashboard-heading">
         <div
             class="eyebrow"
@@ -80,76 +80,87 @@ $adminPresetNames = [
 
         <h1 id="dashboardPageTitle">My Sales Activity</h1>
     </div>
-
-    <div class="sales-portal-head-actions admin-portal-head-actions">
-        <div
-            class="sales-period-switch sales-head-period-switch"
-            id="dashboardPeriodSwitch"
-            role="group"
-            aria-label="Admin sales activity period"
-        >
-            <?php foreach([
-                'single'=>'1 Day',
-                'day'=>'3 Days',
-                'week'=>'Weekly',
-                'month'=>'Monthly',
-                'custom'=>'Custom',
-            ] as $presetKey=>$presetLabel): ?>
-                <button
-                    type="button"
-                    class="sales-period-button<?= $adminPreset===$presetKey?' active':'' ?>"
-                    data-admin-preset="<?= Util::e($presetKey) ?>"
-                    aria-pressed="<?= $adminPreset===$presetKey?'true':'false' ?>"
-                ><?= Util::e($presetLabel) ?></button>
-            <?php endforeach; ?>
-        </div>
-
-        <form
-            class="filters dashboard-date-controls admin-range-controls sales-range-filter"
-            method="get"
-            id="dashboardDateForm"
-            novalidate
-        >
-            <div class="dashboard-date-control-row sales-date-control-row">
-                <label class="admin-range-field">
-                    <span data-dashboard-i18n="from">From</span>
-                    <input
-                        type="date"
-                        name="from"
-                        id="dashboardFromInput"
-                        value="<?= Util::e((string)$periodInfo['from']) ?>"
-                        max="<?= Util::e(min((string)$periodInfo['to'],$today)) ?>"
-                    >
-                </label>
-
-                <div class="admin-range-field-stack sales-to-field-stack">
-                    <label class="admin-range-field">
-                        <span data-dashboard-i18n="to">To</span>
-                        <input
-                            type="date"
-                            name="to"
-                            id="dashboardToInput"
-                            value="<?= Util::e((string)$periodInfo['to']) ?>"
-                            min="<?= Util::e((string)$periodInfo['from']) ?>"
-                            max="<?= Util::e($today) ?>"
-                        >
-                    </label>
-
-                    <button
-                        type="button"
-                        class="dashboard-back-today sales-back-today<?= ((string)$periodInfo['to']===$today)?' hidden':'' ?>"
-                        id="dashboardBackToday"
-                    >
-                        <span data-dashboard-i18n="backToday">Back to today</span>
-                    </button>
-                </div>
-            </div>
-        </form>
-    </div>
 </div>
 
 <section class="admin-sales-progress-section">
-    <div class="admin-progress-toolbar">
+    <div class="admin-dashboard-range-bar">
+        <div class="sales-portal-head-actions admin-portal-head-actions">
+            <div
+                class="sales-period-switch sales-head-period-switch"
+                id="dashboardPeriodSwitch"
+                role="group"
+                aria-label="Admin sales activity period"
+            >
+                <?php foreach([
+                    'single'=>'1 Day',
+                    'day'=>'3 Days',
+                    'week'=>'Weekly',
+                    'month'=>'Monthly',
+                    'custom'=>'Custom',
+                ] as $presetKey=>$presetLabel): ?>
+                    <button
+                        type="button"
+                        class="sales-period-button<?= $adminPreset===$presetKey?' active':'' ?>"
+                        data-admin-preset="<?= Util::e($presetKey) ?>"
+                        aria-pressed="<?= $adminPreset===$presetKey?'true':'false' ?>"
+                    ><?= Util::e($presetLabel) ?></button>
+                <?php endforeach; ?>
+            </div>
+
+            <form
+                class="filters dashboard-date-controls admin-range-controls sales-range-filter"
+                method="get"
+                id="dashboardDateForm"
+                novalidate
+            >
+                <div class="dashboard-date-control-row sales-date-control-row">
+                    <label class="admin-range-field">
+                        <span data-dashboard-i18n="from">From</span>
+                        <input
+                            type="date"
+                            name="from"
+                            id="dashboardFromInput"
+                            value="<?= Util::e((string)$periodInfo['from']) ?>"
+                            max="<?= Util::e(min((string)$periodInfo['to'],$today)) ?>"
+                        >
+                    </label>
+
+                    <div class="admin-range-field-stack sales-to-field-stack">
+                        <label class="admin-range-field">
+                            <span data-dashboard-i18n="to">To</span>
+                            <input
+                                type="date"
+                                name="to"
+                                id="dashboardToInput"
+                                value="<?= Util::e((string)$periodInfo['to']) ?>"
+                                min="<?= Util::e((string)$periodInfo['from']) ?>"
+                                max="<?= Util::e($today) ?>"
+                            >
+                        </label>
+
+                        <button
+                            type="button"
+                            class="dashboard-back-today sales-back-today<?= ((string)$periodInfo['to']===$today)?' hidden':'' ?>"
+                            id="dashboardBackToday"
+                        >
+                            <span data-dashboard-i18n="backToday">Back to today</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="admin-section-head compact admin-section-head-with-summary">
+        <div>
+            <h2 id="dashboardProgressTitle">
+                <?= Util::e($adminPresetNames[$adminPreset] ?? $periodNames[$period]) ?> Posting Progress
+            </h2>
+            <p id="dashboardProgressSubtitle">
+                Daily target × <?= (int)$periodInfo['days'] ?>
+                = <?= Util::e($periodInfo['short_label']) ?>.
+            </p>
+        </div>
         <div class="admin-section-summary">
             <strong id="dashboardSalesCount">
                 <?= count($salesProgress) ?>
@@ -160,18 +171,6 @@ $adminPresetNames = [
                 <?= (int)$dashboardState['post_count'] ?>
             </strong>
             <span data-dashboard-i18n="posts">Posts</span>
-        </div>
-    </div>
-
-    <div class="admin-section-head compact">
-        <div>
-            <h2 id="dashboardProgressTitle">
-                <?= Util::e($adminPresetNames[$adminPreset] ?? $periodNames[$period]) ?> Posting Progress
-            </h2>
-            <p id="dashboardProgressSubtitle">
-                Daily target × <?= (int)$periodInfo['days'] ?>
-                = <?= Util::e($periodInfo['short_label']) ?>.
-            </p>
         </div>
     </div>
 

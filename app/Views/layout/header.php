@@ -176,9 +176,9 @@ if ($u && ($u['role'] ?? '') === 'admin') {
             <?php else: ?>
                 <a
                     href="<?= Util::e($base) ?>/admin"
-                    data-nav-i18n="admin"
+                    data-nav-i18n="dashboard"
                 >
-                    Admin
+                    Dashboard
                 </a>
                 <a
                     href="<?= Util::e($base) ?>/admin/reports"
