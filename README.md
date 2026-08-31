@@ -1121,3 +1121,16 @@ docker compose exec php php /var/www/html/sales-posts/scripts/migrate_provider_r
 - Changed the Daily Target line from blue to neutral gray while keeping Good / Bad / Unreviewed as the data colors.
 - No database migration is required.
 - Normal UI radius remains 4px; chart columns remain square. The small loading spinner is intentionally circular.
+
+## v0.1.61 — Non-blocking Sales loading and right-aligned Back to today
+
+- Fixed the remaining source of the apparent forever-loading Channels state: legacy `.sales-activity-chart-panel.sales-range-loading` CSS could still set `pointer-events:none` on the entire Posting Activity panel.
+- AJAX no longer applies the loading class to the whole chart panel.
+- Only the chart body and Daily Posts body receive a short replacement animation; Channels, date pickers, and period controls remain interactive.
+- Added centralized `startSalesRangeVisualState()` / `clearSalesRangeVisualState()` lifecycle helpers so every success, failure, abort, invalid range, and replacement request clears the same loading state.
+- Loading/spinner visuals automatically clear after 900ms even if a slow network request is still running, so the interface cannot remain dimmed/spinning indefinitely.
+- The server request may continue in the background and still replaces the view when it returns; request sequencing still prevents stale responses from winning.
+- Back to today now right-aligns to the right edge of the To date picker on Sales and Admin.
+- Back-to-today visibility also treats the To picker's own `max` value as the latest day, preventing timezone/cache drift from showing the link when the picker is already at its newest date.
+- No database migration is required.
+- Normal UI radius remains 4px; chart bars remain square; the tiny loading spinner remains circular.

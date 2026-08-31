@@ -565,22 +565,40 @@ function salesTodayValue(){
 }
 
 function updateSalesBackToday(range){
-    const today=salesTodayValue();
     const $back=$('#salesBackToday');
+    const $to=$('#salesRangeTo');
 
-    if(!$back.length||!today){
+    if(!$back.length||!$to.length){
         return;
     }
+
+    const today=String(
+        salesTodayValue()||''
+    );
+
+    const pickerMax=String(
+        $to.attr('max')||''
+    );
 
     const to=String(
         range
             ?range.to
-            :$('#salesRangeTo').val()||''
+            :$to.val()||''
+    );
+
+    /*
+     * Treat the picker's own maximum as the authoritative "latest day"
+     * as well. This avoids timezone/cache drift where the UI can already
+     * be at its newest selectable date but Back to today still appears.
+     */
+    const atLatest=Boolean(
+        (today&&to===today)
+        ||(pickerMax&&to===pickerMax)
     );
 
     $back.toggleClass(
         'hidden',
-        to===today
+        atLatest
     );
 }
 
@@ -848,6 +866,111 @@ let salesRangePeriod=String(
     ||'custom'
 );
 let salesTouchChartDay=null;
+let salesRangeVisualTimer=null;
+
+function clearSalesRangeVisualState(){
+    if(salesRangeVisualTimer){
+        window.clearTimeout(
+            salesRangeVisualTimer
+        );
+        salesRangeVisualTimer=null;
+    }
+
+    $('#salesActivityChartPanel')
+        .removeClass(
+            'sales-range-loading'
+        )
+        .attr(
+            'aria-busy',
+            'false'
+        );
+
+    $('#salesActivityChartPanel .sales-chart-shell')
+        .removeClass(
+            'sales-range-loading sales-content-changing sales-channel-changing'
+        );
+
+    $('#dailyPosts')
+        .removeClass(
+            'sales-range-loading'
+        )
+        .attr(
+            'aria-busy',
+            'false'
+        );
+
+    $('#salesDailyStage')
+        .removeClass(
+            'sales-content-changing sales-channel-changing'
+        );
+
+    $('#salesPlatformFilter')
+        .removeClass(
+            'sales-channel-loading'
+        )
+        .find(
+            '[data-sales-platform-filter]'
+        )
+        .removeClass(
+            'sales-channel-button-loading'
+        );
+}
+
+function startSalesRangeVisualState(reason){
+    clearSalesRangeVisualState();
+
+    const $chartBody=$(
+        '#salesActivityChartPanel .sales-chart-shell'
+    );
+
+    const $dailyStage=$(
+        '#salesDailyStage'
+    );
+
+    $chartBody
+        .addClass(
+            'sales-range-loading sales-content-changing'
+        )
+        .attr(
+            'aria-busy',
+            'true'
+        );
+
+    $dailyStage
+        .addClass(
+            'sales-content-changing'
+        );
+
+    $('#dailyPosts')
+        .addClass(
+            'sales-range-loading'
+        )
+        .attr(
+            'aria-busy',
+            'true'
+        );
+
+    if(String(reason||'range')==='channel'){
+        $('#salesPlatformFilter')
+            .addClass(
+                'sales-channel-loading'
+            );
+    }
+
+    /*
+     * Visual loading is deliberately short-lived.
+     * Network work may continue in the background, but controls never
+     * remain dimmed or spinning indefinitely.
+     */
+    salesRangeVisualTimer=
+        window.setTimeout(
+            function(){
+                clearSalesRangeVisualState();
+            },
+            900
+        );
+}
+
 
 const $salesPostDetailModal=$('#salesPostDetailModal');
 const $salesPostDetailImageButton=$('#salesPostDetailImageButton');
@@ -2126,9 +2249,6 @@ function loadSalesRange(range,period,channel,reason){
         .removeClass(
             'sales-content-enter sales-channel-enter'
         )
-        .addClass(
-            'sales-content-changing'
-        )
         .attr(
             'data-transition-reason',
             reason
@@ -2137,10 +2257,11 @@ function loadSalesRange(range,period,channel,reason){
     $chartBody
         .removeClass(
             'sales-chart-enter sales-channel-enter'
-        )
-        .addClass(
-            'sales-content-changing'
         );
+
+    startSalesRangeVisualState(
+        reason
+    );
 
     const requestSeq=
         ++salesRangeRequestSeq;
@@ -2156,8 +2277,7 @@ function loadSalesRange(range,period,channel,reason){
         .removeClass('error')
         .text('');
 
-    $('#salesActivityChartPanel,#dailyPosts')
-        .addClass('sales-range-loading')
+    $('#salesActivityChartPanel')
         .attr('aria-busy','true');
 
     salesRangeRequest=$.ajax({
@@ -2227,30 +2347,7 @@ function loadSalesRange(range,period,channel,reason){
             return;
         }
 
-        $('#salesActivityChartPanel,#dailyPosts')
-            .removeClass('sales-range-loading')
-            .attr('aria-busy','false');
-
-        $('#salesDailyStage')
-            .removeClass(
-                'sales-content-changing sales-channel-changing'
-            );
-
-        $('#salesActivityChartPanel .sales-chart-shell')
-            .removeClass(
-                'sales-content-changing sales-channel-changing'
-            );
-
-        $('#salesPlatformFilter')
-            .removeClass(
-                'sales-channel-loading'
-            )
-            .find(
-                '[data-sales-platform-filter]'
-            )
-            .removeClass(
-                'sales-channel-button-loading'
-            );
+        clearSalesRangeVisualState();
     });
 }
 
@@ -2555,9 +2652,6 @@ $(document).on(
             nextChannel;
 
         $('#salesPlatformFilter')
-            .addClass(
-                'sales-channel-loading'
-            )
             .find(
                 '[data-sales-platform-filter]'
             )
@@ -2600,11 +2694,7 @@ $(document).on(
             syncSalesRangeConstraints('');
 
         if(!range){
-            $('#salesPlatformFilter')
-                .removeClass(
-                    'sales-channel-loading'
-                );
-
+            clearSalesRangeVisualState();
             return;
         }
 
@@ -4709,9 +4799,22 @@ function platformLogoHtml(platform){
     }
 
     function updateBackToday(){
+        const pickerMax=String(
+            $('#dashboardToInput').attr('max')
+            ||''
+        );
+
+        const atLatest=Boolean(
+            (today&&currentTo===today)
+            ||(
+                pickerMax
+                &&currentTo===pickerMax
+            )
+        );
+
         $('#dashboardBackToday').toggleClass(
             'hidden',
-            !today||currentTo===today
+            atLatest
         );
     }
 

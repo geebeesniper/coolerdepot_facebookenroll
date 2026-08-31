@@ -8937,3 +8937,71 @@ body.sales-detail-open{
 .sales-chart-segment.unreviewed{
     border-radius:0 !important;
 }
+
+/* v0.1.61 non-blocking loading + right-aligned Back to today */
+
+/* Back to today right edge lines up with the To date picker right edge. */
+.sales-to-field-stack .sales-back-today,
+.admin-range-field-stack .dashboard-back-today{
+    left:auto !important;
+    right:0 !important;
+    justify-content:flex-end;
+    text-align:right;
+}
+
+/*
+ * Legacy builds applied sales-range-loading to the whole chart panel,
+ * making Channels unclickable. Explicitly neutralize that behavior.
+ */
+.sales-activity-chart-panel.sales-range-loading,
+#salesActivityChartPanel.sales-range-loading{
+    opacity:1 !important;
+    pointer-events:auto !important;
+}
+
+/* Loading treatment belongs only to the replaceable chart body. */
+#salesActivityChartPanel .sales-chart-shell.sales-range-loading{
+    opacity:.68;
+    transform:translateY(2px);
+    pointer-events:none;
+    transition:
+        opacity .14s ease,
+        transform .14s ease;
+}
+
+/* Posts can softly fade, but Channels/date controls remain fully interactive. */
+#dailyPosts.sales-range-loading{
+    opacity:.72;
+    transition:opacity .14s ease;
+}
+
+/* Keep active Channel visual feedback compact and non-blocking. */
+.sales-platform-filter.sales-channel-loading
+.sales-platform-filter-button.active{
+    pointer-events:auto;
+}
+
+/*
+ * On narrow screens Back to today stays in normal flow but still aligns
+ * to the right edge of the To control.
+ */
+@media(max-width:760px){
+    .sales-to-field-stack .sales-back-today,
+    .admin-range-field-stack .dashboard-back-today{
+        left:auto !important;
+        right:auto !important;
+        align-self:flex-end;
+        margin-left:auto;
+        text-align:right;
+    }
+}
+
+
+/* Explicit chart-only square-corner exception. */
+.sales-chart-stack,
+.sales-chart-segment,
+.sales-chart-segment.good,
+.sales-chart-segment.bad,
+.sales-chart-segment.unreviewed{
+    border-radius:0 !important;
+}
