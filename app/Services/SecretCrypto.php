@@ -1,18 +1,26 @@
 <?php
 /**
  * File / 文件：app/Services/SecretCrypto.php
- * EN: Application service for reusable business or integration logic.
- * 中文：该文件负责可复用的业务逻辑或外部集成服务。
- * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
- * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ * EN: Defines the SecretCrypto service used by application business, security, or provider integration flows.
+ * 中文：定义 SecretCrypto 服务，用于应用业务、安全或 Provider 集成流程。
+ * Maintenance / 维护：Keep behavior, security checks, error logging, and public contracts unchanged unless the related feature is intentionally modified.
+ * 维护要求：除非明确修改相关功能，否则应保持行为、安全检查、错误日志及公开接口契约不变。
  */
 namespace App\Services;
 
+/**
+ * EN: Application service that encapsulates secret crypto business, security, or integration behavior.
+ * 中文：封装 secret crypto 业务、安全或外部集成行为的应用服务。
+ */
 class SecretCrypto
 {
     /**
-     * EN: Implements the application operation `key` (key).
-     * 中文：实现应用操作 `key`（key）。
+     * EN: Perform the key operation.
+     * 中文：执行“key”操作。
+     *
+     * @return string String result produced by this operation. / 本操作生成的字符串结果。
+     *
+     * @throws \RuntimeException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     private static function key(): string
     {
@@ -30,8 +38,14 @@ class SecretCrypto
     }
 
     /**
-     * EN: Implements the application operation `encrypt` (encrypt).
-     * 中文：实现应用操作 `encrypt`（encrypt）。
+     * EN: Encrypt a sensitive value for authenticated storage using the application secret.
+     * 中文：使用应用密钥对敏感值进行认证加密后保存。
+     *
+     * @param string $plaintext Plaintext value used by this operation. / 本操作使用的“plaintext”参数值。
+     *
+     * @return string String result produced by this operation. / 本操作生成的字符串结果。
+     *
+     * @throws \RuntimeException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     public static function encrypt(string $plaintext): string
     {
@@ -60,8 +74,14 @@ class SecretCrypto
     }
 
     /**
-     * EN: Implements the application operation `decrypt` (decrypt).
-     * 中文：实现应用操作 `decrypt`（decrypt）。
+     * EN: Decrypt and authenticate a previously encrypted application secret value.
+     * 中文：解密并验证此前加密保存的应用敏感值。
+     *
+     * @param string $encoded Encoded value used by this operation. / 本操作使用的“encoded”参数值。
+     *
+     * @return string String result produced by this operation. / 本操作生成的字符串结果。
+     *
+     * @throws \RuntimeException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     public static function decrypt(string $encoded): string
     {

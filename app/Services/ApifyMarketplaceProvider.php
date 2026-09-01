@@ -1,24 +1,30 @@
 <?php
 /**
  * File / 文件：app/Services/ApifyMarketplaceProvider.php
- * EN: Application service for reusable business or integration logic.
- * 中文：该文件负责可复用的业务逻辑或外部集成服务。
- * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
- * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ * EN: Defines the ApifyMarketplaceProvider service used by application business, security, or provider integration flows.
+ * 中文：定义 ApifyMarketplaceProvider 服务，用于应用业务、安全或 Provider 集成流程。
+ * Maintenance / 维护：Keep behavior, security checks, error logging, and public contracts unchanged unless the related feature is intentionally modified.
+ * 维护要求：除非明确修改相关功能，否则应保持行为、安全检查、错误日志及公开接口契约不变。
  */
 namespace App\Services;
 
 use App\Models\FetchJob;
 use App\Models\Setting;
 
+/**
+ * EN: Application service that encapsulates apify marketplace provider business, security, or integration behavior.
+ * 中文：封装 apify marketplace provider 业务、安全或外部集成行为的应用服务。
+ */
 class ApifyMarketplaceProvider
 {
     private const ENDPOINT =
         'https://api.apify.com/v2/actors/apify~facebook-marketplace-scraper/run-sync-get-dataset-items';
 
     /**
-     * EN: Implements the application operation `configured` (configured).
-     * 中文：实现应用操作 `configured`（configured）。
+     * EN: Check or validate the configured operation for apify marketplace provider.
+     * 中文：检查或验证 apify marketplace provider 的“configured”操作。
+     *
+     * @return bool True when the requested condition is satisfied; otherwise false. / 请求条件满足时返回 true，否则返回 false。
      */
     public function configured(): bool
     {
@@ -37,8 +43,16 @@ class ApifyMarketplaceProvider
     }
 
     /**
-     * EN: Retrieves or loads data for `fetch` (fetch).
-     * 中文：读取或加载 `fetch`（fetch）所需的数据。
+     * EN: Retrieve the fetch operation for apify marketplace provider through the configured external provider.
+     * 中文：读取 apify marketplace provider 的“fetch”操作，并通过已配置的外部 Provider 完成。
+     *
+     * @param string $url URL to validate, resolve, fetch, or process. / 需要验证、解析、抓取或处理的 URL。
+     * @param int $requestedByUserId Application or external user identifier. / 应用或外部用户 ID。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
+     *
+     * @throws \RuntimeException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
+     * @throws \Throwable When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     public function fetch(string $url, int $requestedByUserId): array
     {
@@ -173,8 +187,16 @@ class ApifyMarketplaceProvider
     }
 
     /**
-     * EN: Implements the application operation `request` (request).
-     * 中文：实现应用操作 `request`（request）。
+     * EN: Send or process the request operation for apify marketplace provider through the configured external provider.
+     * 中文：发送或处理 apify marketplace provider 的“request”操作，并通过已配置的外部 Provider 完成。
+     *
+     * @param array $payload Input payload supplied to this operation. / 传入本操作的输入载荷。
+     * @param string $token Authentication, inspection, or operation token being processed. / 正在处理的认证、检查或操作 Token。
+     * @param int $timeout Timeout value used by this operation. / 本操作使用的“timeout”参数值。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
+     *
+     * @throws \RuntimeException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     private function request(array $payload, string $token, int $timeout): array
     {
@@ -226,8 +248,13 @@ class ApifyMarketplaceProvider
     }
 
     /**
-     * EN: Retrieves or loads data for `findListing` (find Listing).
-     * 中文：读取或加载 `findListing`（find Listing）所需的数据。
+     * EN: Retrieve the find listing operation for apify marketplace provider.
+     * 中文：读取 apify marketplace provider 的“find listing”操作。
+     *
+     * @param mixed $data Structured input data processed by this operation. / 本操作处理的结构化输入数据。
+     * @param ?string $expectedId Identifier of the expected record or entity. / expected 记录或实体的标识 ID。
+     *
+     * @return ?array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     private function findListing($data, ?string $expectedId): ?array
     {
@@ -266,8 +293,14 @@ class ApifyMarketplaceProvider
     }
 
     /**
-     * EN: Builds, formats, or transforms data for `normalize` (normalize).
-     * 中文：为 `normalize`（normalize）构建、格式化或转换数据。
+     * EN: Normalize or format the normalize operation for apify marketplace provider.
+     * 中文：规范化或格式化 apify marketplace provider 的“normalize”操作。
+     *
+     * @param array $record Record value used by this operation. / 本操作使用的“record”参数值。
+     * @param string $submittedUrl Submitted url value used by this operation. / 本操作使用的“submitted url”参数值。
+     * @param ?string $expectedId Identifier of the expected record or entity. / expected 记录或实体的标识 ID。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     private function normalize(
         array $record,
@@ -328,8 +361,13 @@ class ApifyMarketplaceProvider
     }
 
     /**
-     * EN: Implements the application operation `message` (message).
-     * 中文：实现应用操作 `message`（message）。
+     * EN: Perform the message operation for apify marketplace provider.
+     * 中文：执行 apify marketplace provider 的“message”操作。
+     *
+     * @param mixed $json Json value used by this operation. / 本操作使用的“json”参数值。
+     * @param string $raw Raw value used by this operation. / 本操作使用的“raw”参数值。
+     *
+     * @return string String result produced by this operation. / 本操作生成的字符串结果。
      */
     private function message($json, string $raw): string
     {

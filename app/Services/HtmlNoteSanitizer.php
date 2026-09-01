@@ -1,10 +1,10 @@
 <?php
 /**
  * File / 文件：app/Services/HtmlNoteSanitizer.php
- * EN: Application service for reusable business or integration logic.
- * 中文：该文件负责可复用的业务逻辑或外部集成服务。
- * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
- * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ * EN: Defines the HtmlNoteSanitizer service used by application business, security, or provider integration flows.
+ * 中文：定义 HtmlNoteSanitizer 服务，用于应用业务、安全或 Provider 集成流程。
+ * Maintenance / 维护：Keep behavior, security checks, error logging, and public contracts unchanged unless the related feature is intentionally modified.
+ * 维护要求：除非明确修改相关功能，否则应保持行为、安全检查、错误日志及公开接口契约不变。
  */
 namespace App\Services;
 
@@ -12,6 +12,10 @@ use DOMDocument;
 use DOMElement;
 use DOMNode;
 
+/**
+ * EN: Application service that encapsulates html note sanitizer business, security, or integration behavior.
+ * 中文：封装 html note sanitizer 业务、安全或外部集成行为的应用服务。
+ */
 class HtmlNoteSanitizer
 {
     private const ALLOWED_TAGS = ['p','br','strong','b','em','i','u','s','ul','ol','li','blockquote','a','h3','h4','img'];
@@ -22,8 +26,12 @@ class HtmlNoteSanitizer
     private const DROP_WITH_CONTENT = ['script','style','iframe','object','embed','form','input','button','textarea','select'];
 
     /**
-     * EN: Removes or cleans data/state for `clean` (clean).
-     * 中文：删除或清理 `clean`（clean）相关的数据或状态。
+     * EN: Perform the clean operation implemented by html note sanitizer.
+     * 中文：执行 html note sanitizer 实现的“clean”操作。
+     *
+     * @param ?string $html HTML content processed by the operation. / 本操作处理的 HTML 内容。
+     *
+     * @return string String result produced by this operation. / 本操作生成的字符串结果。
      */
     public static function clean(?string $html): string
     {
@@ -43,8 +51,12 @@ class HtmlNoteSanitizer
     }
 
     /**
-     * EN: Implements the application operation `sanitizeChildren` (sanitize Children).
-     * 中文：实现应用操作 `sanitizeChildren`（sanitize Children）。
+     * EN: Normalize or format the sanitize children operation implemented by html note sanitizer.
+     * 中文：规范化或格式化 html note sanitizer 实现的“sanitize children”操作。
+     *
+     * @param DOMNode $parent Parent value used by this operation. / 本操作使用的“parent”参数值。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     private static function sanitizeChildren(DOMNode $parent): void
     {

@@ -1,10 +1,10 @@
 <?php
 /**
  * File / 文件：app/Services/PostInspector.php
- * EN: Application service for reusable business or integration logic.
- * 中文：该文件负责可复用的业务逻辑或外部集成服务。
- * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
- * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ * EN: Defines the PostInspector service used by application business, security, or provider integration flows.
+ * 中文：定义 PostInspector 服务，用于应用业务、安全或 Provider 集成流程。
+ * Maintenance / 维护：Keep behavior, security checks, error logging, and public contracts unchanged unless the related feature is intentionally modified.
+ * 维护要求：除非明确修改相关功能，否则应保持行为、安全检查、错误日志及公开接口契约不变。
  */
 namespace App\Services;
 
@@ -14,6 +14,10 @@ use DateTime;
 use DateTimeZone;
 use App\Models\Post;
 
+/**
+ * EN: Application service that encapsulates post inspector business, security, or integration behavior.
+ * 中文：封装 post inspector 业务、安全或外部集成行为的应用服务。
+ */
 class PostInspector
 {
     /**
@@ -22,8 +26,16 @@ class PostInspector
      * the explicit Admin Refresh Content action.
      */
     /**
-     * EN: Updates application state for `refreshExistingContent` (refresh Existing Content).
-     * 中文：更新 `refreshExistingContent`（refresh Existing Content）对应的应用状态。
+     * EN: Perform the refresh existing content operation implemented by post inspector.
+     * 中文：执行 post inspector 实现的“refresh existing content”操作。
+     *
+     * @param int $actorUserId Application or external user identifier. / 应用或外部用户 ID。
+     * @param string $platform Platform value used by this operation. / 本操作使用的“platform”参数值。
+     * @param string $url URL to validate, resolve, fetch, or process. / 需要验证、解析、抓取或处理的 URL。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
+     *
+     * @throws \DomainException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     public function refreshExistingContent(
         int $actorUserId,
@@ -102,8 +114,14 @@ class PostInspector
     }
 
     /**
-     * EN: Implements the application operation `inspect` (inspect).
-     * 中文：实现应用操作 `inspect`（inspect）。
+     * EN: Execute the inspect operation implemented by post inspector.
+     * 中文：执行 post inspector 实现的“inspect”操作。
+     *
+     * @param int $uid External user identifier supplied by the parent authentication system. / 父级认证系统提供的外部用户 ID。
+     * @param string $platform Platform value used by this operation. / 本操作使用的“platform”参数值。
+     * @param string $submitted Submitted value used by this operation. / 本操作使用的“submitted”参数值。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     public function inspect(int $uid, string $platform, string $submitted): array
     {
@@ -179,8 +197,13 @@ class PostInspector
     }
 
     /**
-     * EN: Implements the application operation `inspectFacebook` (inspect Facebook).
-     * 中文：实现应用操作 `inspectFacebook`（inspect Facebook）。
+     * EN: Execute the inspect facebook operation implemented by post inspector.
+     * 中文：执行 post inspector 实现的“inspect facebook”操作。
+     *
+     * @param int $uid External user identifier supplied by the parent authentication system. / 父级认证系统提供的外部用户 ID。
+     * @param string $submitted Submitted value used by this operation. / 本操作使用的“submitted”参数值。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     private function inspectFacebook(int $uid, string $submitted): array
     {
@@ -297,8 +320,21 @@ class PostInspector
     }
 
     /**
-     * EN: Checks or validates the condition represented by `validateAndFinish` (validate And Finish).
-     * 中文：检查或校验 `validateAndFinish`（validate And Finish）所表示的条件。
+     * EN: Check or validate the validate and finish operation implemented by post inspector.
+     * 中文：检查或验证 post inspector 实现的“validate and finish”操作。
+     *
+     * @param int $uid External user identifier supplied by the parent authentication system. / 父级认证系统提供的外部用户 ID。
+     * @param string $platform Platform value used by this operation. / 本操作使用的“platform”参数值。
+     * @param string $submitted Submitted value used by this operation. / 本操作使用的“submitted”参数值。
+     * @param string $resolved Resolved value used by this operation. / 本操作使用的“resolved”参数值。
+     * @param string $canonical Canonical value used by this operation. / 本操作使用的“canonical”参数值。
+     * @param ?string $eid Identifier of the e record or entity. / e 记录或实体的标识 ID。
+     * @param string $title Title value used by this operation. / 本操作使用的“title”参数值。
+     * @param string $desc Desc value used by this operation. / 本操作使用的“desc”参数值。
+     * @param string $publishedRaw Published raw value used by this operation. / 本操作使用的“published raw”参数值。
+     * @param array $meta Meta value used by this operation. / 本操作使用的“meta”参数值。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     private function validateAndFinish(
         int $uid,
@@ -430,8 +466,12 @@ class PostInspector
     }
 
     /**
-     * EN: Implements the application operation `meta` (meta).
-     * 中文：实现应用操作 `meta`（meta）。
+     * EN: Perform the meta operation implemented by post inspector.
+     * 中文：执行 post inspector 实现的“meta”操作。
+     *
+     * @param string $html HTML content processed by the operation. / 本操作处理的 HTML 内容。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     private function meta(string $html): array
     {
@@ -535,8 +575,12 @@ class PostInspector
     }
 
     /**
-     * EN: Implements the application operation `craigslist` (craigslist).
-     * 中文：实现应用操作 `craigslist`（craigslist）。
+     * EN: Perform the craigslist operation implemented by post inspector.
+     * 中文：执行 post inspector 实现的“craigslist”操作。
+     *
+     * @param string $html HTML content processed by the operation. / 本操作处理的 HTML 内容。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     private function craigslist(string $html): array
     {
@@ -583,8 +627,13 @@ class PostInspector
     }
 
     /**
-     * EN: Implements the application operation `embeddedDate` (embedded Date).
-     * 中文：实现应用操作 `embeddedDate`（embedded Date）。
+     * EN: Perform the embedded date operation implemented by post inspector.
+     * 中文：执行 post inspector 实现的“embedded date”操作。
+     *
+     * @param string $p Route path to register or normalize. / 需要注册或规范化的路由路径。
+     * @param string $html HTML content processed by the operation. / 本操作处理的 HTML 内容。
+     *
+     * @return ?string String result produced by this operation, or null when no value is available. / 本操作生成的字符串结果；无可用值时返回 null。
      */
     private function embeddedDate(string $p, string $html): ?string
     {
@@ -622,8 +671,12 @@ class PostInspector
     }
 
     /**
-     * EN: Implements the application operation `relativeDate` (relative Date).
-     * 中文：实现应用操作 `relativeDate`（relative Date）。
+     * EN: Perform the relative date operation implemented by post inspector.
+     * 中文：执行 post inspector 实现的“relative date”操作。
+     *
+     * @param string $html HTML content processed by the operation. / 本操作处理的 HTML 内容。
+     *
+     * @return ?string String result produced by this operation, or null when no value is available. / 本操作生成的字符串结果；无可用值时返回 null。
      */
     private function relativeDate(string $html): ?string
     {
@@ -650,8 +703,13 @@ class PostInspector
     }
 
     /**
-     * EN: Implements the application operation `date` (date).
-     * 中文：实现应用操作 `date`（date）。
+     * EN: Perform the date operation implemented by post inspector.
+     * 中文：执行 post inspector 实现的“date”操作。
+     *
+     * @param string $raw Raw value used by this operation. / 本操作使用的“raw”参数值。
+     * @param string $tz Tz value used by this operation. / 本操作使用的“tz”参数值。
+     *
+     * @return ?DateTime ?DateTime result produced by this operation. / 本操作生成的 ?DateTime 类型结果。
      */
     private function date(string $raw, string $tz): ?DateTime
     {
@@ -676,8 +734,20 @@ class PostInspector
     }
 
     /**
-     * EN: Implements the application operation `fail` (fail).
-     * 中文：实现应用操作 `fail`（fail）。
+     * EN: Perform the fail operation implemented by post inspector.
+     * 中文：执行 post inspector 实现的“fail”操作。
+     *
+     * @param int $uid External user identifier supplied by the parent authentication system. / 父级认证系统提供的外部用户 ID。
+     * @param string $p Route path to register or normalize. / 需要注册或规范化的路由路径。
+     * @param string $s S value used by this operation. / 本操作使用的“s”参数值。
+     * @param string $code Code value used by this operation. / 本操作使用的“code”参数值。
+     * @param string $msg Msg value used by this operation. / 本操作使用的“msg”参数值。
+     * @param ?string $resolved Resolved value used by this operation. / 本操作使用的“resolved”参数值。
+     * @param ?string $canonical Canonical value used by this operation. / 本操作使用的“canonical”参数值。
+     * @param ?string $eid Identifier of the e record or entity. / e 记录或实体的标识 ID。
+     * @param array $meta Meta value used by this operation. / 本操作使用的“meta”参数值。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     private function fail(
         int $uid,

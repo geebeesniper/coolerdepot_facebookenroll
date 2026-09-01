@@ -1,10 +1,10 @@
 <?php
 /**
  * File / 文件：scripts/audit_bilingual_comments.php
- * EN: Source-maintenance audit that verifies bilingual file headers and named-function comments.
- * 中文：源码维护审计脚本，用于验证双语文件头以及命名函数/方法的双语注释。
- * Maintenance / 维护：Run before packaging whenever project-owned PHP/JS/CSS/SQL/Shell/config sources change.
- * 维护要求：项目自有 PHP/JS/CSS/SQL/Shell/配置源码变更后，打包前应执行本脚本。
+ * EN: CLI maintenance/deployment script for audit bilingual comments.
+ * 中文：用于 audit bilingual comments 的命令行维护/部署脚本。
+ * Maintenance / 维护：Keep behavior, security checks, error logging, and public contracts unchanged unless the related feature is intentionally modified.
+ * 维护要求：除非明确修改相关功能，否则应保持行为、安全检查、错误日志及公开接口契约不变。
  */
 
 declare(strict_types=1);
@@ -12,8 +12,12 @@ declare(strict_types=1);
 $root = dirname(__DIR__);
 
 /**
- * EN: `commentAuditFiles` returns the project-owned source/configuration files covered by the comment contract.
- * 中文：`commentAuditFiles` 返回纳入双语注释契约检查的项目自有源码与配置文件。
+ * EN: Perform the comment audit files helper used by this validation script.
+ * 中文：执行 当前验证脚本使用的“comment audit files”辅助操作。
+ *
+ * @param string $root Root directory used to resolve project-relative paths. / 用于解析项目相对路径的根目录。
+ *
+ * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
  */
 function commentAuditFiles(string $root): array
 {
@@ -69,8 +73,13 @@ function commentAuditFiles(string $root): array
 }
 
 /**
- * EN: `relativeAuditPath` converts an absolute source path into the stable project-relative path used by headers/reports.
- * 中文：`relativeAuditPath` 将源码绝对路径转换为文件头与审计报告使用的稳定项目相对路径。
+ * EN: Perform the relative audit path helper used by this validation script.
+ * 中文：执行 当前验证脚本使用的“relative audit path”辅助操作。
+ *
+ * @param string $root Root directory used to resolve project-relative paths. / 用于解析项目相对路径的根目录。
+ * @param string $path Filesystem, route, or data path used by the operation. / 本操作使用的文件、路由或数据路径。
+ *
+ * @return string String result produced by this operation. / 本操作生成的字符串结果。
  */
 function relativeAuditPath(string $root, string $path): string
 {
@@ -83,8 +92,13 @@ function relativeAuditPath(string $root, string $path): string
 }
 
 /**
- * EN: `hasBilingualFileHeader` verifies that the file identifies itself and contains both English and Chinese documentation labels.
- * 中文：`hasBilingualFileHeader` 验证文件是否自我标识，并同时包含英文与中文说明标签。
+ * EN: Check or validate the has bilingual file header helper used by this validation script.
+ * 中文：检查或验证 当前验证脚本使用的“has bilingual file header”辅助操作。
+ *
+ * @param string $relativePath Relative path value used by this operation. / 本操作使用的“relative path”参数值。
+ * @param string $content Content to inspect, transform, or store. / 需要检查、转换或保存的内容。
+ *
+ * @return bool True when the requested condition is satisfied; otherwise false. / 请求条件满足时返回 true，否则返回 false。
  */
 function hasBilingualFileHeader(string $relativePath, string $content): bool
 {
@@ -94,8 +108,13 @@ function hasBilingualFileHeader(string $relativePath, string $content): bool
 }
 
 /**
- * EN: `namedFunctionsForAudit` extracts named PHP methods/functions and named JavaScript functions with their source offsets.
- * 中文：`namedFunctionsForAudit` 提取 PHP 命名方法/函数与 JavaScript 命名函数及其源码位置。
+ * EN: Perform the named functions for audit helper used by this validation script.
+ * 中文：执行 当前验证脚本使用的“named functions for audit”辅助操作。
+ *
+ * @param string $relativePath Relative path value used by this operation. / 本操作使用的“relative path”参数值。
+ * @param string $content Content to inspect, transform, or store. / 需要检查、转换或保存的内容。
+ *
+ * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
  */
 function namedFunctionsForAudit(string $relativePath, string $content): array
 {
@@ -130,30 +149,46 @@ function namedFunctionsForAudit(string $relativePath, string $content): array
 }
 
 /**
- * EN: `hasBilingualFunctionComment` checks the nearest preceding documentation window for English and Chinese purpose text.
- * 中文：`hasBilingualFunctionComment` 检查函数前最近的文档窗口是否同时具备英文与中文功能说明。
+ * EN: Check or validate the has bilingual function comment helper used by this validation script.
+ * 中文：检查或验证 当前验证脚本使用的“has bilingual function comment”辅助操作。
+ *
+ * @param string $content Content to inspect, transform, or store. / 需要检查、转换或保存的内容。
+ * @param string $name Display or logical name associated with the operation. / 与本操作关联的显示名称或逻辑名称。
+ * @param int $offset Offset used when reading or paginating data. / 读取或分页数据时使用的偏移量。
+ *
+ * @return bool True when the requested condition is satisfied; otherwise false. / 请求条件满足时返回 true，否则返回 false。
  */
 function hasBilingualFunctionComment(string $content, string $name, int $offset): bool
 {
-    $start = max(0, $offset - 700);
-    $window = substr($content, $start, $offset - $start);
+    $linePrefix = substr($content, 0, $offset);
+    $lineStart = strrpos($linePrefix, "\n");
+    $declarationOffset = $lineStart === false ? 0 : $lineStart + 1;
+    $prefix = substr($content, 0, $declarationOffset);
+    $trimmed = rtrim($prefix);
 
-    if (!str_contains($window, 'EN:') || !str_contains($window, '中文：')) {
+    if (!str_ends_with($trimmed, '*/')) {
         return false;
     }
 
-    // Constructors are documented by purpose, while ordinary functions also
-    // mention their stable function name to make maintenance searches precise.
-    if ($name === '__construct') {
-        return str_contains($window, '__construct');
+    $docStart = strrpos($trimmed, '/**');
+    if ($docStart === false) {
+        return false;
     }
 
-    return str_contains($window, '`' . $name . '`');
+    $doc = substr($trimmed, $docStart);
+
+    return str_contains($doc, 'EN:')
+        && str_contains($doc, '中文：')
+        && (str_contains($doc, '@return ') || str_contains($doc, '@returns '));
 }
 
 /**
- * EN: `runBilingualCommentAudit` executes the complete file/function documentation contract and returns structured failures.
- * 中文：`runBilingualCommentAudit` 执行完整的文件/函数双语文档契约检查，并返回结构化失败项。
+ * EN: Execute the run bilingual comment audit helper used by this validation script.
+ * 中文：执行 当前验证脚本使用的“run bilingual comment audit”辅助操作。
+ *
+ * @param string $root Root directory used to resolve project-relative paths. / 用于解析项目相对路径的根目录。
+ *
+ * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
  */
 function runBilingualCommentAudit(string $root): array
 {

@@ -1,21 +1,27 @@
 <?php
 /**
  * File / 文件：app/Services/DuplicateIndex.php
- * EN: Application service for reusable business or integration logic.
- * 中文：该文件负责可复用的业务逻辑或外部集成服务。
- * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
- * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ * EN: Defines the DuplicateIndex service used by application business, security, or provider integration flows.
+ * 中文：定义 DuplicateIndex 服务，用于应用业务、安全或 Provider 集成流程。
+ * Maintenance / 维护：Keep behavior, security checks, error logging, and public contracts unchanged unless the related feature is intentionally modified.
+ * 维护要求：除非明确修改相关功能，否则应保持行为、安全检查、错误日志及公开接口契约不变。
  */
 namespace App\Services;
 
 use App\Core\Database;
 use App\Core\Util;
 
+/**
+ * EN: Application service that encapsulates duplicate index business, security, or integration behavior.
+ * 中文：封装 duplicate index 业务、安全或外部集成行为的应用服务。
+ */
 class DuplicateIndex
 {
     /**
-     * EN: Retrieves or loads data for `ready` (ready).
-     * 中文：读取或加载 `ready`（ready）所需的数据。
+     * EN: Retrieve the ready operation implemented by duplicate index.
+     * 中文：读取 duplicate index 实现的“ready”操作。
+     *
+     * @return bool True when the requested condition is satisfied; otherwise false. / 请求条件满足时返回 true，否则返回 false。
      */
     public static function ready(): bool
     {
@@ -36,8 +42,16 @@ class DuplicateIndex
     }
 
     /**
-     * EN: Implements the application operation `inspect` (inspect).
-     * 中文：实现应用操作 `inspect`（inspect）。
+     * EN: Execute the inspect operation implemented by duplicate index.
+     * 中文：执行 duplicate index 实现的“inspect”操作。
+     *
+     * @param string $platform Platform value used by this operation. / 本操作使用的“platform”参数值。
+     * @param string $title Title value used by this operation. / 本操作使用的“title”参数值。
+     * @param array $meta Meta value used by this operation. / 本操作使用的“meta”参数值。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
+     *
+     * @throws \RuntimeException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     public static function inspect(string $platform,string $title,array $meta): array
     {
@@ -60,8 +74,14 @@ class DuplicateIndex
     }
 
     /**
-     * EN: Implements the application operation `compare` (compare).
-     * 中文：实现应用操作 `compare`（compare）。
+     * EN: Calculate or compare the compare operation implemented by duplicate index.
+     * 中文：计算或比较 duplicate index 实现的“compare”操作。
+     *
+     * @param string $platform Platform value used by this operation. / 本操作使用的“platform”参数值。
+     * @param string $title Title value used by this operation. / 本操作使用的“title”参数值。
+     * @param array $assets Assets value used by this operation. / 本操作使用的“assets”参数值。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     public static function compare(string $platform,string $title,array $assets): array
     {
@@ -126,8 +146,13 @@ class DuplicateIndex
     }
 
     /**
-     * EN: Creates or persists the `storePost` operation (store Post).
-     * 中文：创建或持久化 `storePost`（store Post）操作。
+     * EN: Create or store the store post operation implemented by duplicate index.
+     * 中文：创建或保存 duplicate index 实现的“store post”操作。
+     *
+     * @param int $postId Sales post identifier. / 销售 Post ID。
+     * @param array $assets Assets value used by this operation. / 本操作使用的“assets”参数值。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public static function storePost(int $postId,array $assets): void
     {
@@ -137,8 +162,10 @@ class DuplicateIndex
     }
 
     /**
-     * EN: Implements the application operation `websiteStats` (website Stats).
-     * 中文：实现应用操作 `websiteStats`（website Stats）。
+     * EN: Perform the website stats operation implemented by duplicate index.
+     * 中文：执行 duplicate index 实现的“website stats”操作。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     public static function websiteStats(): array
     {

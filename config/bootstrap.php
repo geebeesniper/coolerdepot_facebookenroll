@@ -1,10 +1,10 @@
 <?php
 /**
  * File / 文件：config/bootstrap.php
- * EN: Application configuration source.
- * 中文：该文件提供应用配置。
- * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
- * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ * EN: Application configuration/bootstrap file for bootstrap.
+ * 中文：用于 bootstrap 的应用配置/启动文件。
+ * Maintenance / 维护：Keep behavior, security checks, error logging, and public contracts unchanged unless the related feature is intentionally modified.
+ * 维护要求：除非明确修改相关功能，否则应保持行为、安全检查、错误日志及公开接口契约不变。
  */
 $config = require __DIR__ . '/config.php';
 
@@ -64,7 +64,9 @@ if ($config['app']['enforce_host'] && $config['app']['host']) {
     }
 }
 
-if (session_status() !== PHP_SESSION_ACTIVE) {
+$isStatelessApiRequest = PHP_SAPI !== 'cli' && \App\Core\ErrorPage::isApiRequest();
+
+if (!$isStatelessApiRequest && session_status() !== PHP_SESSION_ACTIVE) {
     session_name($config['security']['session_name']);
     $cookie = [
         'httponly' => true,

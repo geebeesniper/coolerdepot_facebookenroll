@@ -1,0 +1,51 @@
+"Sales Post Tracker external integration schema - v0.2.07"
+schema {
+  query: Query
+  mutation: Mutation
+}
+
+type Query {
+  apiVersion: String!
+  appVersion: String!
+  me: User!
+  adminUsers: [User!]!
+  salesProfile: User!
+}
+
+type Mutation {
+  authExchange(input: AuthHandoffInput!): AuthPayload!
+  logout: Boolean!
+}
+
+input AuthHandoffInput {
+  uid: String!
+  salesId: Int
+  name: String!
+  role: Role!
+  ts: Int!
+  nonce: String!
+  sig: String!
+}
+
+enum Role {
+  admin
+  sales
+}
+
+type AuthPayload {
+  accessToken: String!
+  tokenType: String!
+  expiresIn: Int!
+  expiresAt: String!
+  user: User!
+}
+
+type User {
+  id: Int!
+  externalUserId: String
+  salesId: Int
+  displayName: String!
+  role: Role!
+  dailyPostTarget: Int
+  authSource: String!
+}

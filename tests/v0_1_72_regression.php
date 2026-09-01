@@ -1,10 +1,10 @@
 <?php
 /**
  * File / 文件：tests/v0_1_72_regression.php
- * EN: Regression or validation test owned by this project.
- * 中文：该文件是本项目自有的回归或验证测试。
- * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
- * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ * EN: Automated regression/contract test for v0 1 72 regression.
+ * 中文：用于 v0 1 72 regression 的自动回归/契约测试。
+ * Maintenance / 维护：Keep behavior, security checks, error logging, and public contracts unchanged unless the related feature is intentionally modified.
+ * 维护要求：除非明确修改相关功能，否则应保持行为、安全检查、错误日志及公开接口契约不变。
  */
 $root = dirname(__DIR__);
 $inspector = file_get_contents($root.'/app/Services/PostInspector.php');

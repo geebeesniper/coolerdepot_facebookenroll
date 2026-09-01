@@ -1,16 +1,20 @@
 <?php
 /**
  * File / 文件：app/Core/Database.php
- * EN: Core runtime/infrastructure component used across the application.
- * 中文：该文件是应用全局复用的核心运行时或基础设施组件。
- * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
- * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ * EN: Defines the shared Database core infrastructure component.
+ * 中文：定义全应用共享的 Database 核心基础设施组件。
+ * Maintenance / 维护：Keep behavior, security checks, error logging, and public contracts unchanged unless the related feature is intentionally modified.
+ * 维护要求：除非明确修改相关功能，否则应保持行为、安全检查、错误日志及公开接口契约不变。
  */
 namespace App\Core;
 
 use PDO;
 use Throwable;
 
+/**
+ * EN: Core infrastructure component that provides database behavior shared across the application.
+ * 中文：提供全应用共享 database 能力的核心基础设施组件。
+ */
 class Database
 {
     private static ?PDO $pdo = null;
@@ -22,8 +26,12 @@ class Database
      * does not depend on MySQL, so database outages remain diagnosable.
      */
     /**
-     * EN: Implements the application operation `connection` (connection).
-     * 中文：实现应用操作 `connection`（connection）。
+     * EN: Return the shared PDO connection configured for the application database.
+     * 中文：返回根据应用数据库配置建立的共享 PDO 连接。
+     *
+     * @return PDO PDO database connection used by the application. / 应用使用的 PDO 数据库连接。
+     *
+     * @throws \Throwable When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     public static function connection(): PDO
     {

@@ -1,10 +1,10 @@
 <?php
 /**
  * File / 文件：tests/duplicate_comparison.php
- * EN: Regression or validation test owned by this project.
- * 中文：该文件是本项目自有的回归或验证测试。
- * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
- * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ * EN: Automated regression/contract test for duplicate comparison.
+ * 中文：用于 duplicate comparison 的自动回归/契约测试。
+ * Maintenance / 维护：Keep behavior, security checks, error logging, and public contracts unchanged unless the related feature is intentionally modified.
+ * 维护要求：除非明确修改相关功能，否则应保持行为、安全检查、错误日志及公开接口契约不变。
  */
 // Run with PHP CLI + PDO SQLite + mbstring; GD adds perceptual-image tests.
 // Uses an isolated in-memory database; never reads production DB credentials.
@@ -30,13 +30,27 @@ $pdo->exec('CREATE TABLE cdsp_website_references(id INTEGER PRIMARY KEY,page_url
 $pdo->exec('CREATE TABLE cdsp_post_reviews(post_id INTEGER,decision TEXT)');
 $count=0;
 /**
- * EN: Checks or validates the condition represented by `check` (check).
- * 中文：检查或校验 `check`（check）所表示的条件。
+ * EN: Check or validate the check helper used by this automated regression test.
+ * 中文：检查或验证 当前自动回归测试使用的“check”辅助操作。
+ *
+ * @param mixed $condition Condition value used by this operation. / 本操作使用的“condition”参数值。
+ * @param string $label Label value used by this operation. / 本操作使用的“label”参数值。
+ *
+ * @return void No value is returned. / 无返回值。
+ *
+ * @throws \RuntimeException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
  */
 function check($condition,string $label):void{global $count;if(!$condition){throw new RuntimeException('FAIL: '.$label);}echo 'PASS '.$label."\n";$count++;}
 /**
- * EN: Implements the application operation `blocked` (blocked).
- * 中文：实现应用操作 `blocked`（blocked）。
+ * EN: Perform the blocked helper used by this automated regression test.
+ * 中文：执行 当前自动回归测试使用的“blocked”辅助操作。
+ *
+ * @param callable $fn Fn value used by this operation. / 本操作使用的“fn”参数值。
+ * @param string $message Human-readable message associated with the result or log entry. / 与结果或日志记录关联的可读消息。
+ *
+ * @return void No value is returned. / 无返回值。
+ *
+ * @throws \RuntimeException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
  */
 function blocked(callable $fn,string $message):void{try{$fn();}catch(DomainException $e){check(str_contains($e->getMessage(),$message),'save-time '.$message);return;}throw new RuntimeException('Expected block: '.$message);}
 $insert=$pdo->prepare('INSERT INTO cdsp_sales_posts(sales_user_id,platform,canonical_url,canonical_url_hash,external_post_id,title,normalized_title_hash,description_hash,published_at,published_date,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)');

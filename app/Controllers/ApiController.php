@@ -1,10 +1,10 @@
 <?php
 /**
  * File / 文件：app/Controllers/ApiController.php
- * EN: HTTP controller for request validation, orchestration, and responses.
- * 中文：该文件负责 HTTP 请求校验、业务编排与响应。
- * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
- * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ * EN: Defines the ApiController HTTP controller and request/response actions.
+ * 中文：定义 ApiController HTTP Controller 及其请求/响应操作。
+ * Maintenance / 维护：Keep behavior, security checks, error logging, and public contracts unchanged unless the related feature is intentionally modified.
+ * 维护要求：除非明确修改相关功能，否则应保持行为、安全检查、错误日志及公开接口契约不变。
  */
 namespace App\Controllers;
 
@@ -17,11 +17,17 @@ use App\Models\Post;
 use App\Services\PostInspector;
 use App\Services\PlatformUrl;
 
+/**
+ * EN: HTTP controller for api requests, responses, and server-side authorization.
+ * 中文：负责 api 请求、响应及服务器端权限控制的 HTTP Controller。
+ */
 class ApiController extends Controller
 {
     /**
-     * EN: Implements the application operation `inspectPreflight` (inspect Preflight).
-     * 中文：实现应用操作 `inspectPreflight`（inspect Preflight）。
+     * EN: Handle the inspect preflight HTTP action for api controller and return the appropriate response.
+     * 中文：处理 api controller 的“inspect preflight”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public function inspectPreflight(): void
     {
@@ -63,8 +69,10 @@ class ApiController extends Controller
     }
 
     /**
-     * EN: Implements the application operation `inspect` (inspect).
-     * 中文：实现应用操作 `inspect`（inspect）。
+     * EN: Handle the inspect HTTP action for api controller and return the appropriate response.
+     * 中文：处理 api controller 的“inspect”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public function inspect(): void
     {
@@ -133,8 +141,10 @@ class ApiController extends Controller
      * so a browser error cannot be turned into an unbounded log flood.
      */
     /**
-     * EN: Implements the application operation `clientLog` (client Log).
-     * 中文：实现应用操作 `clientLog`（client Log）。
+     * EN: Handle the client log HTTP action for api controller and return the appropriate response.
+     * 中文：处理 api controller 的“client log”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public function clientLog(): void
     {
@@ -206,8 +216,12 @@ class ApiController extends Controller
      * boundary because /api/client-log is still a normal HTTP endpoint.
      */
     /**
-     * EN: Implements the application operation `diagnosticUrl` (diagnostic Url).
-     * 中文：实现应用操作 `diagnosticUrl`（diagnostic Url）。
+     * EN: Perform the diagnostic url operation.
+     * 中文：执行“diagnostic url”操作。
+     *
+     * @param string $value Value processed or stored by this operation. / 本操作处理或保存的值。
+     *
+     * @return string String result produced by this operation. / 本操作生成的字符串结果。
      */
     private function diagnosticUrl(string $value): string
     {

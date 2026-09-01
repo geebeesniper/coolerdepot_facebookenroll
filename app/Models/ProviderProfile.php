@@ -1,21 +1,27 @@
 <?php
 /**
  * File / 文件：app/Models/ProviderProfile.php
- * EN: Database model and query layer for this domain.
- * 中文：该文件负责此业务域的数据模型与数据库查询。
- * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
- * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ * EN: Defines the ProviderProfile database model and its persistence/query helpers.
+ * 中文：定义 ProviderProfile 数据库模型及其持久化与查询辅助逻辑。
+ * Maintenance / 维护：Keep behavior, security checks, error logging, and public contracts unchanged unless the related feature is intentionally modified.
+ * 维护要求：除非明确修改相关功能，否则应保持行为、安全检查、错误日志及公开接口契约不变。
  */
 namespace App\Models;
 
 use App\Core\Database;
 use App\Services\SecretCrypto;
 
+/**
+ * EN: Database model for provider profile records, queries, and persistence operations.
+ * 中文：负责 provider profile 记录、查询及持久化操作的数据库 Model。
+ */
 class ProviderProfile
 {
     /**
-     * EN: Implements the application operation `registryEnabled` (registry Enabled).
-     * 中文：实现应用操作 `registryEnabled`（registry Enabled）。
+     * EN: Retrieve the registry enabled data for provider profile.
+     * 中文：读取 provider profile 的“registry enabled”数据。
+     *
+     * @return bool True when the requested condition is satisfied; otherwise false. / 请求条件满足时返回 true，否则返回 false。
      */
     public static function registryEnabled(): bool
     {
@@ -34,8 +40,10 @@ class ProviderProfile
     }
 
     /**
-     * EN: Implements the application operation `tableExists` (table Exists).
-     * 中文：实现应用操作 `tableExists`（table Exists）。
+     * EN: Perform the table exists data for provider profile.
+     * 中文：执行 provider profile 的“table exists”数据。
+     *
+     * @return bool True when the requested condition is satisfied; otherwise false. / 请求条件满足时返回 true，否则返回 false。
      */
     public static function tableExists(): bool
     {
@@ -56,8 +64,10 @@ class ProviderProfile
     }
 
     /**
-     * EN: Implements the application operation `allAdmin` (all Admin).
-     * 中文：实现应用操作 `allAdmin`（all Admin）。
+     * EN: Retrieve the all admin data for provider profile in the application database.
+     * 中文：读取 provider profile 的“all admin”数据，并访问应用数据库。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     public static function allAdmin(): array
     {
@@ -85,8 +95,10 @@ class ProviderProfile
     }
 
     /**
-     * EN: Implements the application operation `activeVerifiedWithSecrets` (active Verified With Secrets).
-     * 中文：实现应用操作 `activeVerifiedWithSecrets`（active Verified With Secrets）。
+     * EN: Retrieve the active verified with secrets data for provider profile in the application database.
+     * 中文：读取 provider profile 的“active verified with secrets”数据，并访问应用数据库。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     public static function activeVerifiedWithSecrets(): array
     {
@@ -114,8 +126,12 @@ class ProviderProfile
     }
 
     /**
-     * EN: Retrieves or loads data for `findWithSecret` (find With Secret).
-     * 中文：读取或加载 `findWithSecret`（find With Secret）所需的数据。
+     * EN: Retrieve the find with secret data for provider profile in the application database.
+     * 中文：读取 provider profile 的“find with secret”数据，并访问应用数据库。
+     *
+     * @param int $id Identifier of the record record or entity. / record 记录或实体的标识 ID。
+     *
+     * @return ?array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     public static function findWithSecret(int $id): ?array
     {
@@ -137,8 +153,14 @@ class ProviderProfile
     }
 
     /**
-     * EN: Creates or persists the `createVerified` operation (create Verified).
-     * 中文：创建或持久化 `createVerified`（create Verified）操作。
+     * EN: Create or store the create verified data for provider profile in the application database.
+     * 中文：创建或保存 provider profile 的“create verified”数据，并访问应用数据库。
+     *
+     * @param array $profile Profile value used by this operation. / 本操作使用的“profile”参数值。
+     * @param int $userId Application user identifier. / 应用用户 ID。
+     * @param string $testMessage Test message value used by this operation. / 本操作使用的“test message”参数值。
+     *
+     * @return int Numeric result produced by this operation. / 本操作生成的数字结果。
      */
     public static function createVerified(
         array $profile,
@@ -181,8 +203,15 @@ class ProviderProfile
     }
 
     /**
-     * EN: Implements the application operation `importLegacy` (import Legacy).
-     * 中文：实现应用操作 `importLegacy`（import Legacy）。
+     * EN: Create or store the import legacy data for provider profile in the application database.
+     * 中文：创建或保存 provider profile 的“import legacy”数据，并访问应用数据库。
+     *
+     * @param string $sourceKey Source key value used by this operation. / 本操作使用的“source key”参数值。
+     * @param array $profile Profile value used by this operation. / 本操作使用的“profile”参数值。
+     * @param int $userId Application user identifier. / 应用用户 ID。
+     * @param bool $enabled Boolean flag controlling the requested behavior. / 控制所请求行为的布尔标志。
+     *
+     * @return int Numeric result produced by this operation. / 本操作生成的数字结果。
      */
     public static function importLegacy(
         string $sourceKey,
@@ -233,8 +262,16 @@ class ProviderProfile
     }
 
     /**
-     * EN: Updates application state for `setEnabled` (set Enabled).
-     * 中文：更新 `setEnabled`（set Enabled）对应的应用状态。
+     * EN: Update the set enabled data for provider profile in the application database.
+     * 中文：更新 provider profile 的“set enabled”数据，并访问应用数据库。
+     *
+     * @param int $id Identifier of the record record or entity. / record 记录或实体的标识 ID。
+     * @param bool $enabled Boolean flag controlling the requested behavior. / 控制所请求行为的布尔标志。
+     * @param int $userId Application user identifier. / 应用用户 ID。
+     *
+     * @return void No value is returned. / 无返回值。
+     *
+     * @throws \RuntimeException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     public static function setEnabled(int $id, bool $enabled, int $userId): void
     {
@@ -260,8 +297,12 @@ class ProviderProfile
     }
 
     /**
-     * EN: Removes or cleans data/state for `deleteById` (delete By Id).
-     * 中文：删除或清理 `deleteById`（delete By Id）相关的数据或状态。
+     * EN: Delete or clean the delete by id data for provider profile in the application database.
+     * 中文：删除或清理 provider profile 的“delete by id”数据，并访问应用数据库。
+     *
+     * @param int $id Identifier of the record record or entity. / record 记录或实体的标识 ID。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public static function deleteById(int $id): void
     {
@@ -272,8 +313,16 @@ class ProviderProfile
     }
 
     /**
-     * EN: Implements the application operation `reorder` (reorder).
-     * 中文：实现应用操作 `reorder`（reorder）。
+     * EN: Update the reorder data for provider profile in the application database.
+     * 中文：更新 provider profile 的“reorder”数据，并访问应用数据库。
+     *
+     * @param array $ids Ids value used by this operation. / 本操作使用的“ids”参数值。
+     * @param int $userId Application user identifier. / 应用用户 ID。
+     *
+     * @return void No value is returned. / 无返回值。
+     *
+     * @throws \RuntimeException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
+     * @throws \Throwable When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     public static function reorder(array $ids, int $userId): void
     {
@@ -313,8 +362,10 @@ class ProviderProfile
     }
 
     /**
-     * EN: Implements the application operation `count` (count).
-     * 中文：实现应用操作 `count`（count）。
+     * EN: Perform the count data for provider profile in the application database.
+     * 中文：执行 provider profile 的“count”数据，并访问应用数据库。
+     *
+     * @return int Numeric result produced by this operation. / 本操作生成的数字结果。
      */
     public static function count(): int
     {
@@ -328,8 +379,10 @@ class ProviderProfile
     }
 
     /**
-     * EN: Implements the application operation `nextSortOrder` (next Sort Order).
-     * 中文：实现应用操作 `nextSortOrder`（next Sort Order）。
+     * EN: Perform the next sort order data for provider profile in the application database.
+     * 中文：执行 provider profile 的“next sort order”数据，并访问应用数据库。
+     *
+     * @return int Numeric result produced by this operation. / 本操作生成的数字结果。
      */
     private static function nextSortOrder(): int
     {
@@ -348,8 +401,12 @@ class ProviderProfile
     }
 
     /**
-     * EN: Implements the application operation `decodeConfig` (decode Config).
-     * 中文：实现应用操作 `decodeConfig`（decode Config）。
+     * EN: Parse or extract the decode config data for provider profile.
+     * 中文：解析或提取 provider profile 的“decode config”数据。
+     *
+     * @param string $json Json value used by this operation. / 本操作使用的“json”参数值。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     private static function decodeConfig(string $json): array
     {
@@ -358,8 +415,12 @@ class ProviderProfile
     }
 
     /**
-     * EN: Implements the application operation `encryptToken` (encrypt Token).
-     * 中文：实现应用操作 `encryptToken`（encrypt Token）。
+     * EN: Perform the encrypt token data for provider profile.
+     * 中文：执行 provider profile 的“encrypt token”数据。
+     *
+     * @param string $token Authentication, inspection, or operation token being processed. / 正在处理的认证、检查或操作 Token。
+     *
+     * @return ?string String result produced by this operation, or null when no value is available. / 本操作生成的字符串结果；无可用值时返回 null。
      */
     private static function encryptToken(string $token): ?string
     {
@@ -367,8 +428,12 @@ class ProviderProfile
     }
 
     /**
-     * EN: Implements the application operation `decryptToken` (decrypt Token).
-     * 中文：实现应用操作 `decryptToken`（decrypt Token）。
+     * EN: Perform the decrypt token data for provider profile.
+     * 中文：执行 provider profile 的“decrypt token”数据。
+     *
+     * @param ?string $encrypted Encrypted value used by this operation. / 本操作使用的“encrypted”参数值。
+     *
+     * @return string String result produced by this operation. / 本操作生成的字符串结果。
      */
     private static function decryptToken(?string $encrypted): string
     {

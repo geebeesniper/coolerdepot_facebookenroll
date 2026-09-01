@@ -1,10 +1,10 @@
 <?php
 /**
  * File / 文件：config/config.php
- * EN: Application configuration source.
- * 中文：该文件提供应用配置。
- * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
- * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ * EN: Application configuration/bootstrap file for config.
+ * 中文：用于 config 的应用配置/启动文件。
+ * Maintenance / 维护：Keep behavior, security checks, error logging, and public contracts unchanged unless the related feature is intentionally modified.
+ * 维护要求：除非明确修改相关功能，否则应保持行为、安全检查、错误日志及公开接口契约不变。
  */
 $appVersionFile = dirname(__DIR__) . '/VERSION';
 $appVersion = is_file($appVersionFile) ? trim((string)file_get_contents($appVersionFile)) : 'dev';
@@ -32,6 +32,15 @@ return [
   'handoff_max_age_seconds'=>(int)(getenv('AUTH_HANDOFF_MAX_AGE') ?: 120),
   'session_hours'=>(int)(getenv('AUTH_SESSION_HOURS') ?: 12),
   'allow_local_login'=>getenv('ALLOW_LOCAL_LOGIN') === '1',
+ ],
+ 'api'=>[
+  'token_hours'=>max(1,min(24,(int)(getenv('API_TOKEN_HOURS') ?: 1))),
+  'max_body_bytes'=>max(1024,(int)(getenv('API_MAX_BODY_BYTES') ?: 1048576)),
+  'allowed_origins'=>array_values(array_filter(array_map('trim',explode(',',getenv('API_ALLOWED_ORIGINS') ?: '')))),
+  'graphql_max_depth'=>max(2,min(20,(int)(getenv('GRAPHQL_MAX_DEPTH') ?: 8))),
+  'graphql_max_fields'=>max(5,min(200,(int)(getenv('GRAPHQL_MAX_FIELDS') ?: 50))),
+  'graphql_max_tokens'=>max(100,min(10000,(int)(getenv('GRAPHQL_MAX_TOKENS') ?: 2000))),
+  'graphql_max_operations'=>max(1,min(20,(int)(getenv('GRAPHQL_MAX_OPERATIONS') ?: 5))),
  ],
  'security'=>[
   'session_name'=>'coolerdepot_sales_posts','cookie_domain'=>getenv('SESSION_COOKIE_DOMAIN') ?: '',

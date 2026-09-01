@@ -1,13 +1,17 @@
 <?php
 /**
  * File / 文件：app/Core/ErrorPage.php
- * EN: Core runtime/infrastructure component used across the application.
- * 中文：该文件是应用全局复用的核心运行时或基础设施组件。
- * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
- * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ * EN: Defines the shared ErrorPage core infrastructure component.
+ * 中文：定义全应用共享的 ErrorPage 核心基础设施组件。
+ * Maintenance / 维护：Keep behavior, security checks, error logging, and public contracts unchanged unless the related feature is intentionally modified.
+ * 维护要求：除非明确修改相关功能，否则应保持行为、安全检查、错误日志及公开接口契约不变。
  */
 namespace App\Core;
 
+/**
+ * EN: Core infrastructure component that provides error page behavior shared across the application.
+ * 中文：提供全应用共享 error page 能力的核心基础设施组件。
+ */
 class ErrorPage
 {
     private const STATUS = [
@@ -28,8 +32,16 @@ class ErrorPage
     ];
 
     /**
-     * EN: Builds, formats, or transforms data for `render` (render).
-     * 中文：为 `render`（render）构建、格式化或转换数据。
+     * EN: Render the render core operation provided by error page.
+     * 中文：渲染 error page 提供的“render”核心操作。
+     *
+     * @param int $status Status value applied or evaluated by the operation. / 本操作设置或判断的状态值。
+     * @param ?string $message Human-readable message associated with the result or log entry. / 与结果或日志记录关联的可读消息。
+     * @param ?string $primaryPath Primary path value used by this operation. / 本操作使用的“primary path”参数值。
+     * @param ?string $primaryLabel Primary label value used by this operation. / 本操作使用的“primary label”参数值。
+     * @param ?string $location Location value used by this operation. / 本操作使用的“location”参数值。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public static function render(
         int $status,
@@ -105,8 +117,13 @@ class ErrorPage
     }
 
     /**
-     * EN: Builds, formats, or transforms data for `renderJson` (render Json).
-     * 中文：为 `renderJson`（render Json）构建、格式化或转换数据。
+     * EN: Render the render json core operation provided by error page.
+     * 中文：渲染 error page 提供的“render json”核心操作。
+     *
+     * @param int $status Status value applied or evaluated by the operation. / 本操作设置或判断的状态值。
+     * @param ?string $message Human-readable message associated with the result or log entry. / 与结果或日志记录关联的可读消息。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public static function renderJson(int $status, ?string $message = null): void
     {
@@ -119,7 +136,7 @@ class ErrorPage
         }
         http_response_code($status);
         header('Content-Type: application/json; charset=utf-8');
-        header('Cache-Control: no-store');
+        ApiRequest::securityHeaders();
         echo json_encode([
             'ok' => false,
             'status' => $status,
@@ -131,8 +148,10 @@ class ErrorPage
     }
 
     /**
-     * EN: Checks or validates the condition represented by `isApiRequest` (is Api Request).
-     * 中文：检查或校验 `isApiRequest`（is Api Request）所表示的条件。
+     * EN: Check or validate the is api request core operation provided by error page.
+     * 中文：检查或验证 error page 提供的“is api request”核心操作。
+     *
+     * @return bool True when the requested condition is satisfied; otherwise false. / 请求条件满足时返回 true，否则返回 false。
      */
     public static function isApiRequest(): bool
     {
@@ -144,12 +163,17 @@ class ErrorPage
             $path = substr($path, strlen($base)) ?: '/';
         }
 
-        return strncmp($path, '/api/', 5) === 0;
+        return strncmp($path, '/api/', 5) === 0 || $path === '/graphql';
     }
 
     /**
-     * EN: Implements the application operation `url` (url).
-     * 中文：实现应用操作 `url`（url）。
+     * EN: Perform the url core operation provided by error page.
+     * 中文：执行 error page 提供的“url”核心操作。
+     *
+     * @param string $base Base URL path removed before route matching. / 路由匹配前需要移除的基础 URL 路径。
+     * @param string $path Filesystem, route, or data path used by the operation. / 本操作使用的文件、路由或数据路径。
+     *
+     * @return string String result produced by this operation. / 本操作生成的字符串结果。
      */
     private static function url(string $base, string $path): string
     {
@@ -165,8 +189,12 @@ class ErrorPage
     }
 
     /**
-     * EN: Implements the application operation `e` (e).
-     * 中文：实现应用操作 `e`（e）。
+     * EN: Perform the e core operation provided by error page.
+     * 中文：执行 error page 提供的“e”核心操作。
+     *
+     * @param string $value Value processed or stored by this operation. / 本操作处理或保存的值。
+     *
+     * @return string String result produced by this operation. / 本操作生成的字符串结果。
      */
     private static function e(string $value): string
     {

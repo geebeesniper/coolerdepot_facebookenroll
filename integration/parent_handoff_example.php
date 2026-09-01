@@ -1,14 +1,20 @@
 <?php
 /**
  * File / 文件：integration/parent_handoff_example.php
- * EN: Parent-portal integration example for generating authenticated Sales Post Tracker handoff URLs.
- * 中文：父级 Portal 集成示例，用于生成进入 Sales Post Tracker 的认证 handoff URL。
- * Maintenance / 维护：Keep the signature field order synchronized with the tracker verifier.
- * 维护要求：签名字段顺序必须与 Tracker 端验证逻辑保持一致。
+ * EN: Parent-system integration example for parent handoff example.
+ * 中文：用于 parent handoff example 的父系统集成示例。
+ * Maintenance / 维护：Keep behavior, security checks, error logging, and public contracts unchanged unless the related feature is intentionally modified.
+ * 维护要求：除非明确修改相关功能，否则应保持行为、安全检查、错误日志及公开接口契约不变。
  */
 /**
- * EN: `salesPostTrackerUrl` builds a signed, short-lived handoff URL for an Admin or Sales user.
- * 中文：`salesPostTrackerUrl` 为 Admin 或 Sales 用户生成带签名且短时有效的 handoff URL。
+ * EN: Perform the sales post tracker url integration helper used by the parent-system example.
+ * 中文：执行 父系统集成示例使用的“sales post tracker url”辅助操作。
+ *
+ * @param array $user User value used by this operation. / 本操作使用的“user”参数值。
+ * @param string $trackerBaseUrl Tracker base url value used by this operation. / 本操作使用的“tracker base url”参数值。
+ * @param string $secret Whether the value must be handled as encrypted secret data. / 是否将该值作为加密敏感数据处理。
+ *
+ * @return string String result produced by this operation. / 本操作生成的字符串结果。
  */
 function salesPostTrackerUrl(array$user,string$trackerBaseUrl,string$secret):string{
  $role=$user['role'];

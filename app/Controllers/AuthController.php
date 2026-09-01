@@ -1,10 +1,10 @@
 <?php
 /**
  * File / 文件：app/Controllers/AuthController.php
- * EN: HTTP controller for request validation, orchestration, and responses.
- * 中文：该文件负责 HTTP 请求校验、业务编排与响应。
- * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
- * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ * EN: Defines the AuthController HTTP controller and request/response actions.
+ * 中文：定义 AuthController HTTP Controller 及其请求/响应操作。
+ * Maintenance / 维护：Keep behavior, security checks, error logging, and public contracts unchanged unless the related feature is intentionally modified.
+ * 维护要求：除非明确修改相关功能，否则应保持行为、安全检查、错误日志及公开接口契约不变。
  */
 namespace App\Controllers;
 
@@ -15,17 +15,16 @@ use App\Core\Logger;
 use App\Models\User;
 
 /**
- * Local authentication controller.
- *
- * Production normally authenticates through the signed CoolerDepot handoff.
- * Local login remains an explicit opt-in maintenance path and security-related
- * rejections are logged without ever recording submitted passwords.
+ * EN: HTTP controller for auth requests, responses, and server-side authorization.
+ * 中文：负责 auth 请求、响应及服务器端权限控制的 HTTP Controller。
  */
 class AuthController
 {
     /**
-     * EN: Implements the application operation `home` (home).
-     * 中文：实现应用操作 `home`（home）。
+     * EN: Handle the home HTTP action for auth controller and return the appropriate response.
+     * 中文：处理 auth controller 的“home”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public function home(): void
     {
@@ -46,8 +45,10 @@ class AuthController
     }
 
     /**
-     * EN: Implements the application operation `login` (login).
-     * 中文：实现应用操作 `login`（login）。
+     * EN: Handle the login HTTP action for auth controller and return the appropriate response.
+     * 中文：处理 auth controller 的“login”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public function login(): void
     {
@@ -67,8 +68,10 @@ class AuthController
     }
 
     /**
-     * EN: Implements the application operation `authenticate` (authenticate).
-     * 中文：实现应用操作 `authenticate`（authenticate）。
+     * EN: Handle the authenticate HTTP action for auth controller and return the appropriate response.
+     * 中文：处理 auth controller 的“authenticate”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public function authenticate(): void
     {
@@ -127,8 +130,10 @@ class AuthController
     }
 
     /**
-     * EN: Implements the application operation `logout` (logout).
-     * 中文：实现应用操作 `logout`（logout）。
+     * EN: Handle the logout HTTP action for auth controller and return the appropriate response.
+     * 中文：处理 auth controller 的“logout”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public function logout(): void
     {
@@ -141,8 +146,13 @@ class AuthController
     }
 
     /**
-     * EN: Builds, formats, or transforms data for `renderView` (render View).
-     * 中文：为 `renderView`（render View）构建、格式化或转换数据。
+     * EN: Render the render view operation.
+     * 中文：渲染“render view”操作。
+     *
+     * @param string $view View value used by this operation. / 本操作使用的“view”参数值。
+     * @param array $data Structured input data processed by this operation. / 本操作处理的结构化输入数据。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     private function renderView(string $view, array $data = []): void
     {

@@ -1,16 +1,27 @@
 <?php
 /**
  * File / 文件：app/Services/SafeFetcher.php
- * EN: Application service for reusable business or integration logic.
- * 中文：该文件负责可复用的业务逻辑或外部集成服务。
- * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
- * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ * EN: Defines the SafeFetcher service used by application business, security, or provider integration flows.
+ * 中文：定义 SafeFetcher 服务，用于应用业务、安全或 Provider 集成流程。
+ * Maintenance / 维护：Keep behavior, security checks, error logging, and public contracts unchanged unless the related feature is intentionally modified.
+ * 维护要求：除非明确修改相关功能，否则应保持行为、安全检查、错误日志及公开接口契约不变。
  */
 namespace App\Services;
+/**
+ * EN: Application service that encapsulates safe fetcher business, security, or integration behavior.
+ * 中文：封装 safe fetcher 业务、安全或外部集成行为的应用服务。
+ */
 class SafeFetcher {
     /**
-     * EN: Retrieves or loads data for `fetch` (fetch).
-     * 中文：读取或加载 `fetch`（fetch）所需的数据。
+     * EN: Retrieve the fetch operation implemented by safe fetcher.
+     * 中文：读取 safe fetcher 实现的“fetch”操作。
+     *
+     * @param string $url URL to validate, resolve, fetch, or process. / 需要验证、解析、抓取或处理的 URL。
+     * @param string $platform Platform value used by this operation. / 本操作使用的“platform”参数值。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
+     *
+     * @throws \RuntimeException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     public function fetch(string $url,string $platform):array{
         $current=$url;
@@ -38,8 +49,14 @@ class SafeFetcher {
         throw new \RuntimeException('Too many redirects.');
     }
     /**
-     * EN: Checks or validates the condition represented by `assertPublicHost` (assert Public Host).
-     * 中文：检查或校验 `assertPublicHost`（assert Public Host）所表示的条件。
+     * EN: Check or validate the assert public host operation implemented by safe fetcher.
+     * 中文：检查或验证 safe fetcher 实现的“assert public host”操作。
+     *
+     * @param string $url URL to validate, resolve, fetch, or process. / 需要验证、解析、抓取或处理的 URL。
+     *
+     * @return void No value is returned. / 无返回值。
+     *
+     * @throws \RuntimeException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     private function assertPublicHost(string $url):void{
         $host=(string)parse_url($url,PHP_URL_HOST);if(!$host)throw new \RuntimeException('Invalid host.');
@@ -48,8 +65,13 @@ class SafeFetcher {
         }
     }
     /**
-     * EN: Implements the application operation `absolute` (absolute).
-     * 中文：实现应用操作 `absolute`（absolute）。
+     * EN: Build the absolute operation implemented by safe fetcher.
+     * 中文：构建 safe fetcher 实现的“absolute”操作。
+     *
+     * @param string $base Base URL path removed before route matching. / 路由匹配前需要移除的基础 URL 路径。
+     * @param string $loc Loc value used by this operation. / 本操作使用的“loc”参数值。
+     *
+     * @return string String result produced by this operation. / 本操作生成的字符串结果。
      */
     private function absolute(string $base,string $loc):string{
         if(preg_match('~^https?://~i',$loc))return$loc;

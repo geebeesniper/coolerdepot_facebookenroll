@@ -1,22 +1,30 @@
 <?php
 /**
  * File / 文件：app/Services/RegistryApifyMarketplaceProvider.php
- * EN: Application service for reusable business or integration logic.
- * 中文：该文件负责可复用的业务逻辑或外部集成服务。
- * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
- * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ * EN: Defines the RegistryApifyMarketplaceProvider service used by application business, security, or provider integration flows.
+ * 中文：定义 RegistryApifyMarketplaceProvider 服务，用于应用业务、安全或 Provider 集成流程。
+ * Maintenance / 维护：Keep behavior, security checks, error logging, and public contracts unchanged unless the related feature is intentionally modified.
+ * 维护要求：除非明确修改相关功能，否则应保持行为、安全检查、错误日志及公开接口契约不变。
  */
 namespace App\Services;
 
 use App\Models\FetchJob;
 
+/**
+ * EN: Application service that encapsulates registry apify marketplace provider business, security, or integration behavior.
+ * 中文：封装 registry apify marketplace provider 业务、安全或外部集成行为的应用服务。
+ */
 class RegistryApifyMarketplaceProvider
 {
     private array $profile;
 
     /**
-     * EN: `__construct` initializes this object and its required dependencies/state.
-     * 中文：`__construct` 用于初始化当前对象及其所需依赖与状态。
+     * EN: Initialize RegistryApifyMarketplaceProvider with the dependencies and configuration required by later operations.
+     * 中文：初始化 RegistryApifyMarketplaceProvider，保存后续操作所需的依赖与配置。
+     *
+     * @param array $profile Profile value used by this operation. / 本操作使用的“profile”参数值。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public function __construct(array $profile)
     {
@@ -24,8 +32,17 @@ class RegistryApifyMarketplaceProvider
     }
 
     /**
-     * EN: Retrieves or loads data for `fetch` (fetch).
-     * 中文：读取或加载 `fetch`（fetch）所需的数据。
+     * EN: Retrieve the fetch operation for registry apify marketplace provider through the configured external provider.
+     * 中文：读取 registry apify marketplace provider 的“fetch”操作，并通过已配置的外部 Provider 完成。
+     *
+     * @param string $url URL to validate, resolve, fetch, or process. / 需要验证、解析、抓取或处理的 URL。
+     * @param int $userId Application user identifier. / 应用用户 ID。
+     * @param bool $bypassCache Bypass cache value used by this operation. / 本操作使用的“bypass cache”参数值。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
+     *
+     * @throws \RuntimeException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
+     * @throws \Throwable When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     public function fetch(string $url, int $userId, bool $bypassCache = false): array
     {
@@ -132,8 +149,10 @@ class RegistryApifyMarketplaceProvider
     }
 
     /**
-     * EN: Implements the application operation `providerKey` (provider Key).
-     * 中文：实现应用操作 `providerKey`（provider Key）。
+     * EN: Perform the provider key operation for registry apify marketplace provider.
+     * 中文：执行 registry apify marketplace provider 的“provider key”操作。
+     *
+     * @return string String result produced by this operation. / 本操作生成的字符串结果。
      */
     private function providerKey(): string
     {
@@ -142,8 +161,12 @@ class RegistryApifyMarketplaceProvider
     }
 
     /**
-     * EN: Implements the application operation `complete` (complete).
-     * 中文：实现应用操作 `complete`（complete）。
+     * EN: Check or validate the complete operation for registry apify marketplace provider.
+     * 中文：检查或验证 registry apify marketplace provider 的“complete”操作。
+     *
+     * @param array $item Current item being processed. / 当前正在处理的数据项。
+     *
+     * @return bool True when the requested condition is satisfied; otherwise false. / 请求条件满足时返回 true，否则返回 false。
      */
     private function complete(array $item): bool
     {
@@ -154,8 +177,13 @@ class RegistryApifyMarketplaceProvider
     }
 
     /**
-     * EN: Retrieves or loads data for `findRecord` (find Record).
-     * 中文：读取或加载 `findRecord`（find Record）所需的数据。
+     * EN: Retrieve the find record operation for registry apify marketplace provider.
+     * 中文：读取 registry apify marketplace provider 的“find record”操作。
+     *
+     * @param mixed $data Structured input data processed by this operation. / 本操作处理的结构化输入数据。
+     * @param ?string $expectedId Identifier of the expected record or entity. / expected 记录或实体的标识 ID。
+     *
+     * @return ?array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     private function findRecord($data, ?string $expectedId): ?array
     {
@@ -187,8 +215,14 @@ class RegistryApifyMarketplaceProvider
     }
 
     /**
-     * EN: Builds, formats, or transforms data for `normalize` (normalize).
-     * 中文：为 `normalize`（normalize）构建、格式化或转换数据。
+     * EN: Normalize or format the normalize operation for registry apify marketplace provider.
+     * 中文：规范化或格式化 registry apify marketplace provider 的“normalize”操作。
+     *
+     * @param array $record Record value used by this operation. / 本操作使用的“record”参数值。
+     * @param string $submittedUrl Submitted url value used by this operation. / 本操作使用的“submitted url”参数值。
+     * @param ?string $expectedId Identifier of the expected record or entity. / expected 记录或实体的标识 ID。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     private function normalize(array $record, string $submittedUrl, ?string $expectedId): array
     {
@@ -248,8 +282,12 @@ class RegistryApifyMarketplaceProvider
     }
 
     /**
-     * EN: Implements the application operation `textValue` (text Value).
-     * 中文：实现应用操作 `textValue`（text Value）。
+     * EN: Perform the text value operation for registry apify marketplace provider.
+     * 中文：执行 registry apify marketplace provider 的“text value”操作。
+     *
+     * @param mixed $value Value processed or stored by this operation. / 本操作处理或保存的值。
+     *
+     * @return string String result produced by this operation. / 本操作生成的字符串结果。
      */
     private function textValue($value): string
     {
@@ -273,8 +311,13 @@ class RegistryApifyMarketplaceProvider
     }
 
     /**
-     * EN: Implements the application operation `message` (message).
-     * 中文：实现应用操作 `message`（message）。
+     * EN: Perform the message operation for registry apify marketplace provider.
+     * 中文：执行 registry apify marketplace provider 的“message”操作。
+     *
+     * @param mixed $json Json value used by this operation. / 本操作使用的“json”参数值。
+     * @param string $raw Raw value used by this operation. / 本操作使用的“raw”参数值。
+     *
+     * @return string String result produced by this operation. / 本操作生成的字符串结果。
      */
     private function message($json, string $raw): string
     {

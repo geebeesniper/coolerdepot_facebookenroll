@@ -1,10 +1,10 @@
 <?php
 /**
  * File / 文件：scripts/migrate_v0_1_35.php
- * EN: Operations/deployment/diagnostics script owned by this project.
- * 中文：该文件是本项目自有的运维、部署或诊断脚本。
- * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
- * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ * EN: CLI maintenance/deployment script for migrate v0 1 35.
+ * 中文：用于 migrate v0 1 35 的命令行维护/部署脚本。
+ * Maintenance / 维护：Keep behavior, security checks, error logging, and public contracts unchanged unless the related feature is intentionally modified.
+ * 维护要求：除非明确修改相关功能，否则应保持行为、安全检查、错误日志及公开接口契约不变。
  */
 $config = require dirname(__DIR__) . '/config/bootstrap.php';
 
@@ -49,8 +49,14 @@ $backfilled = $pdo->exec(
 );
 
 /**
- * EN: Implements the application operation `columnExists` (column Exists).
- * 中文：实现应用操作 `columnExists`（column Exists）。
+ * EN: Perform the column exists helper used by this database migration.
+ * 中文：执行 当前数据库迁移使用的“column exists”辅助操作。
+ *
+ * @param PDO $pdo PDO database connection used by the operation. / 本操作使用的 PDO 数据库连接。
+ * @param string $table Table value used by this operation. / 本操作使用的“table”参数值。
+ * @param string $column Column value used by this operation. / 本操作使用的“column”参数值。
+ *
+ * @return bool True when the requested condition is satisfied; otherwise false. / 请求条件满足时返回 true，否则返回 false。
  */
 function columnExists(PDO $pdo, string $table, string $column): bool
 {
@@ -67,8 +73,14 @@ function columnExists(PDO $pdo, string $table, string $column): bool
 }
 
 /**
- * EN: Implements the application operation `indexExists` (index Exists).
- * 中文：实现应用操作 `indexExists`（index Exists）。
+ * EN: Perform the index exists helper used by this database migration.
+ * 中文：执行 当前数据库迁移使用的“index exists”辅助操作。
+ *
+ * @param PDO $pdo PDO database connection used by the operation. / 本操作使用的 PDO 数据库连接。
+ * @param string $table Table value used by this operation. / 本操作使用的“table”参数值。
+ * @param string $index Index value used by this operation. / 本操作使用的“index”参数值。
+ *
+ * @return bool True when the requested condition is satisfied; otherwise false. / 请求条件满足时返回 true，否则返回 false。
  */
 function indexExists(PDO $pdo, string $table, string $index): bool
 {
@@ -85,8 +97,14 @@ function indexExists(PDO $pdo, string $table, string $index): bool
 }
 
 /**
- * EN: Implements the application operation `fkExists` (fk Exists).
- * 中文：实现应用操作 `fkExists`（fk Exists）。
+ * EN: Perform the fk exists helper used by this database migration.
+ * 中文：执行 当前数据库迁移使用的“fk exists”辅助操作。
+ *
+ * @param PDO $pdo PDO database connection used by the operation. / 本操作使用的 PDO 数据库连接。
+ * @param string $table Table value used by this operation. / 本操作使用的“table”参数值。
+ * @param string $constraint Constraint value used by this operation. / 本操作使用的“constraint”参数值。
+ *
+ * @return bool True when the requested condition is satisfied; otherwise false. / 请求条件满足时返回 true，否则返回 false。
  */
 function fkExists(PDO $pdo, string $table, string $constraint): bool
 {

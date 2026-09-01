@@ -21,8 +21,12 @@
     }
 
     /**
-     * EN: Removes or cleans data/state for `cleanUrl` (clean Url).
-     * 中文：删除或清理 `cleanUrl`（clean Url）相关的数据或状态。
+     * EN: Remove sensitive or unstable URL details before diagnostics are reported.
+     * 中文：在上报诊断信息前移除 URL 中的敏感或不稳定细节。
+     *
+     * @param {string|*} value Value read, transformed, or applied by this function. / 本函数读取、转换或应用的值。
+     *
+     * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
      */
     function cleanUrl(value){
         try{
@@ -34,8 +38,13 @@
     }
 
     /**
-     * EN: Implements the application operation `text` (text).
-     * 中文：实现应用操作 `text`（text）。
+     * EN: Perform the text behavior used by the client diagnostics.
+     * 中文：执行client diagnostics 使用的“text”行为。
+     *
+     * @param {string|*} value Value read, transformed, or applied by this function. / 本函数读取、转换或应用的值。
+     * @param {*} max Max value used by this function. / 本函数使用的“max”参数值。
+     *
+     * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
      */
     function text(value,max){
         const out=String(value==null?'':value);
@@ -43,16 +52,24 @@
     }
 
     /**
-     * EN: Implements the application operation `fingerprint` (fingerprint).
-     * 中文：实现应用操作 `fingerprint`（fingerprint）。
+     * EN: Build a stable client-side fingerprint used to deduplicate diagnostics.
+     * 中文：构建用于诊断信息去重的稳定客户端指纹。
+     *
+     * @param {Object|*} payload Payload value used by this function. / 本函数使用的“payload”参数值。
+     *
+     * @returns {Array} Array result produced by this UI helper. / 本 UI 辅助函数生成的数组结果。
      */
     function fingerprint(payload){
         return [payload.type,payload.message,payload.source,payload.line,payload.http_status].join('|');
     }
 
     /**
-     * EN: Checks or validates the condition represented by `shouldSend` (should Send).
-     * 中文：检查或校验 `shouldSend`（should Send）所表示的条件。
+     * EN: Check the should send behavior used by the client diagnostics.
+     * 中文：检查client diagnostics 使用的“should send”行为。
+     *
+     * @param {Object|*} payload Payload value used by this function. / 本函数使用的“payload”参数值。
+     *
+     * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
      */
     function shouldSend(payload){
         const key=fingerprint(payload);
@@ -76,8 +93,12 @@
     }
 
     /**
-     * EN: Implements the application operation `report` (report).
-     * 中文：实现应用操作 `report`（report）。
+     * EN: Submit or persist the report behavior used by the client diagnostics.
+     * 中文：提交或保存client diagnostics 使用的“report”行为。
+     *
+     * @param {Object|*} payload Payload value used by this function. / 本函数使用的“payload”参数值。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function report(payload){
         const body={
@@ -162,8 +183,10 @@
 
     let ajaxDiagnosticsBound=false;
     /**
-     * EN: Implements the application operation `bindAjaxDiagnostics` (bind Ajax Diagnostics).
-     * 中文：实现应用操作 `bindAjaxDiagnostics`（bind Ajax Diagnostics）。
+     * EN: Bind the bind ajax diagnostics behavior used by the client diagnostics.
+     * 中文：绑定client diagnostics 使用的“bind ajax diagnostics”行为。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function bindAjaxDiagnostics(){
         if(ajaxDiagnosticsBound||!window.jQuery){

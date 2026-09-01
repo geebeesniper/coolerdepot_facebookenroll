@@ -1,16 +1,20 @@
 <?php
 /**
  * File / 文件：app/Services/WebsiteCatalog.php
- * EN: Application service for reusable business or integration logic.
- * 中文：该文件负责可复用的业务逻辑或外部集成服务。
- * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
- * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ * EN: Defines the WebsiteCatalog service used by application business, security, or provider integration flows.
+ * 中文：定义 WebsiteCatalog 服务，用于应用业务、安全或 Provider 集成流程。
+ * Maintenance / 维护：Keep behavior, security checks, error logging, and public contracts unchanged unless the related feature is intentionally modified.
+ * 维护要求：除非明确修改相关功能，否则应保持行为、安全检查、错误日志及公开接口契约不变。
  */
 namespace App\Services;
 
 use App\Core\Database;
 use App\Core\Util;
 
+/**
+ * EN: Application service that encapsulates website catalog business, security, or integration behavior.
+ * 中文：封装 website catalog 业务、安全或外部集成行为的应用服务。
+ */
 class WebsiteCatalog
 {
     private const MAX_FETCH_BYTES = 2500000;
@@ -24,8 +28,15 @@ class WebsiteCatalog
      * Missing title/description/image fields are fetched from the page.
      */
     /**
-     * EN: Implements the application operation `importCsv` (import Csv).
-     * 中文：实现应用操作 `importCsv`（import Csv）。
+     * EN: Create or store the import csv operation implemented by website catalog.
+     * 中文：创建或保存 website catalog 实现的“import csv”操作。
+     *
+     * @param string $path Filesystem, route, or data path used by the operation. / 本操作使用的文件、路由或数据路径。
+     * @param string $website Website value used by this operation. / 本操作使用的“website”参数值。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
+     *
+     * @throws \DomainException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     public static function importCsv(string $path, string $website): array
     {
@@ -102,8 +113,18 @@ class WebsiteCatalog
     }
 
     /**
-     * EN: Creates or persists the `addManual` operation (add Manual).
-     * 中文：创建或持久化 `addManual`（add Manual）操作。
+     * EN: Create or store the add manual operation implemented by website catalog.
+     * 中文：创建或保存 website catalog 实现的“add manual”操作。
+     *
+     * @param string $website Website value used by this operation. / 本操作使用的“website”参数值。
+     * @param string $pageUrl Page url value used by this operation. / 本操作使用的“page url”参数值。
+     * @param string $title Title value used by this operation. / 本操作使用的“title”参数值。
+     * @param string $description Description value used by this operation. / 本操作使用的“description”参数值。
+     * @param string $imageUrl Image url value used by this operation. / 本操作使用的“image url”参数值。
+     *
+     * @return int Numeric result produced by this operation. / 本操作生成的数字结果。
+     *
+     * @throws \DomainException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     public static function addManual(
         string $website,
@@ -123,8 +144,15 @@ class WebsiteCatalog
     }
 
     /**
-     * EN: Implements the application operation `scan` (scan).
-     * 中文：实现应用操作 `scan`（scan）。
+     * EN: Execute the scan operation implemented by website catalog.
+     * 中文：执行 website catalog 实现的“scan”操作。
+     *
+     * @param string $website Website value used by this operation. / 本操作使用的“website”参数值。
+     * @param string $sourceUrl Source url value used by this operation. / 本操作使用的“source url”参数值。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
+     *
+     * @throws \DomainException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     public static function scan(string $website,string $sourceUrl=''): array
     {
@@ -173,8 +201,13 @@ class WebsiteCatalog
     }
 
     /**
-     * EN: Retrieves or loads data for `search` (search).
-     * 中文：读取或加载 `search`（search）所需的数据。
+     * EN: Perform the search operation implemented by website catalog.
+     * 中文：执行 website catalog 实现的“search”操作。
+     *
+     * @param string $query Query value used by this operation. / 本操作使用的“query”参数值。
+     * @param int $limit Maximum number of records or items to process. / 允许处理的最大记录或数据项数量。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     public static function search(string $query='',int $limit=100): array
     {
@@ -203,8 +236,12 @@ class WebsiteCatalog
     }
 
     /**
-     * EN: Removes or cleans data/state for `deleteReference` (delete Reference).
-     * 中文：删除或清理 `deleteReference`（delete Reference）相关的数据或状态。
+     * EN: Delete or clean the delete reference operation implemented by website catalog.
+     * 中文：删除或清理 website catalog 实现的“delete reference”操作。
+     *
+     * @param int $id Identifier of the record record or entity. / record 记录或实体的标识 ID。
+     *
+     * @return bool True when the requested condition is satisfied; otherwise false. / 请求条件满足时返回 true，否则返回 false。
      */
     public static function deleteReference(int $id): bool
     {
@@ -216,8 +253,14 @@ class WebsiteCatalog
     }
 
     /**
-     * EN: Builds, formats, or transforms data for `normalizeUrl` (normalize Url).
-     * 中文：为 `normalizeUrl`（normalize Url）构建、格式化或转换数据。
+     * EN: Normalize or format the normalize url operation implemented by website catalog.
+     * 中文：规范化或格式化 website catalog 实现的“normalize url”操作。
+     *
+     * @param string $url URL to validate, resolve, fetch, or process. / 需要验证、解析、抓取或处理的 URL。
+     *
+     * @return string String result produced by this operation. / 本操作生成的字符串结果。
+     *
+     * @throws \DomainException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     public static function normalizeUrl(string $url): string
     {
@@ -238,8 +281,12 @@ class WebsiteCatalog
     }
 
     /**
-     * EN: Checks or validates the condition represented by `assertReady` (assert Ready).
-     * 中文：检查或校验 `assertReady`（assert Ready）所表示的条件。
+     * EN: Check or validate the assert ready operation implemented by website catalog.
+     * 中文：检查或验证 website catalog 实现的“assert ready”操作。
+     *
+     * @return void No value is returned. / 无返回值。
+     *
+     * @throws \DomainException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     private static function assertReady(): void
     {
@@ -262,8 +309,18 @@ class WebsiteCatalog
     }
 
     /**
-     * EN: Implements the application operation `upsertReference` (upsert Reference).
-     * 中文：实现应用操作 `upsertReference`（upsert Reference）。
+     * EN: Perform the upsert reference operation implemented by website catalog.
+     * 中文：执行 website catalog 实现的“upsert reference”操作。
+     *
+     * @param string $host Host name used by the operation. / 本操作使用的主机名。
+     * @param string $pageUrl Page url value used by this operation. / 本操作使用的“page url”参数值。
+     * @param string $title Title value used by this operation. / 本操作使用的“title”参数值。
+     * @param string $description Description value used by this operation. / 本操作使用的“description”参数值。
+     * @param string $imageUrl Image url value used by this operation. / 本操作使用的“image url”参数值。
+     *
+     * @return int Numeric result produced by this operation. / 本操作生成的数字结果。
+     *
+     * @throws \DomainException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     private static function upsertReference(
         string $host,
@@ -307,8 +364,13 @@ class WebsiteCatalog
     }
 
     /**
-     * EN: Implements the application operation `discoverUrls` (discover Urls).
-     * 中文：实现应用操作 `discoverUrls`（discover Urls）。
+     * EN: Perform the discover urls operation implemented by website catalog.
+     * 中文：执行 website catalog 实现的“discover urls”操作。
+     *
+     * @param string $sourceUrl Source url value used by this operation. / 本操作使用的“source url”参数值。
+     * @param string $host Host name used by the operation. / 本操作使用的主机名。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     private static function discoverUrls(string $sourceUrl,string $host): array
     {
@@ -343,8 +405,16 @@ class WebsiteCatalog
     }
 
     /**
-     * EN: Implements the application operation `sitemapUrls` (sitemap Urls).
-     * 中文：实现应用操作 `sitemapUrls`（sitemap Urls）。
+     * EN: Perform the sitemap urls operation implemented by website catalog.
+     * 中文：执行 website catalog 实现的“sitemap urls”操作。
+     *
+     * @param string $sourceUrl Source url value used by this operation. / 本操作使用的“source url”参数值。
+     * @param string $xml Xml value used by this operation. / 本操作使用的“xml”参数值。
+     * @param string $host Host name used by the operation. / 本操作使用的主机名。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
+     *
+     * @throws \DomainException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     private static function sitemapUrls(string $sourceUrl,string $xml,string $host): array
     {
@@ -403,8 +473,15 @@ class WebsiteCatalog
     }
 
     /**
-     * EN: Retrieves or loads data for `fetchPageMeta` (fetch Page Meta).
-     * 中文：读取或加载 `fetchPageMeta`（fetch Page Meta）所需的数据。
+     * EN: Retrieve the fetch page meta operation implemented by website catalog.
+     * 中文：读取 website catalog 实现的“fetch page meta”操作。
+     *
+     * @param string $url URL to validate, resolve, fetch, or process. / 需要验证、解析、抓取或处理的 URL。
+     * @param string $host Host name used by the operation. / 本操作使用的主机名。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
+     *
+     * @throws \DomainException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     private static function fetchPageMeta(string $url,string $host): array
     {
@@ -462,8 +539,15 @@ class WebsiteCatalog
     }
 
     /**
-     * EN: Retrieves or loads data for `fetchRaw` (fetch Raw).
-     * 中文：读取或加载 `fetchRaw`（fetch Raw）所需的数据。
+     * EN: Retrieve the fetch raw operation implemented by website catalog.
+     * 中文：读取 website catalog 实现的“fetch raw”操作。
+     *
+     * @param string $url URL to validate, resolve, fetch, or process. / 需要验证、解析、抓取或处理的 URL。
+     * @param string $host Host name used by the operation. / 本操作使用的主机名。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
+     *
+     * @throws \DomainException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     private static function fetchRaw(string $url,string $host): array
     {
@@ -506,8 +590,13 @@ class WebsiteCatalog
     }
 
     /**
-     * EN: Implements the application operation `absoluteUrl` (absolute Url).
-     * 中文：实现应用操作 `absoluteUrl`（absolute Url）。
+     * EN: Build the absolute url operation implemented by website catalog.
+     * 中文：构建 website catalog 实现的“absolute url”操作。
+     *
+     * @param string $base Base URL path removed before route matching. / 路由匹配前需要移除的基础 URL 路径。
+     * @param string $relative Relative value used by this operation. / 本操作使用的“relative”参数值。
+     *
+     * @return ?string String result produced by this operation, or null when no value is available. / 本操作生成的字符串结果；无可用值时返回 null。
      */
     private static function absoluteUrl(string $base,string $relative): ?string
     {
@@ -532,8 +621,12 @@ class WebsiteCatalog
     }
 
     /**
-     * EN: Implements the application operation `host` (host).
-     * 中文：实现应用操作 `host`（host）。
+     * EN: Perform the host operation implemented by website catalog.
+     * 中文：执行 website catalog 实现的“host”操作。
+     *
+     * @param string $url URL to validate, resolve, fetch, or process. / 需要验证、解析、抓取或处理的 URL。
+     *
+     * @return string String result produced by this operation. / 本操作生成的字符串结果。
      */
     private static function host(string $url): string
     {
@@ -542,8 +635,14 @@ class WebsiteCatalog
     }
 
     /**
-     * EN: Checks or validates the condition represented by `assertPublicHost` (assert Public Host).
-     * 中文：检查或校验 `assertPublicHost`（assert Public Host）所表示的条件。
+     * EN: Check or validate the assert public host operation implemented by website catalog.
+     * 中文：检查或验证 website catalog 实现的“assert public host”操作。
+     *
+     * @param string $host Host name used by the operation. / 本操作使用的主机名。
+     *
+     * @return void No value is returned. / 无返回值。
+     *
+     * @throws \DomainException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     private static function assertPublicHost(string $host): void
     {

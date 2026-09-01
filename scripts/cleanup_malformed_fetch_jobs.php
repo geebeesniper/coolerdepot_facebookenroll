@@ -1,10 +1,10 @@
 <?php
 /**
  * File / 文件：scripts/cleanup_malformed_fetch_jobs.php
- * EN: Operations/deployment/diagnostics script owned by this project.
- * 中文：该文件是本项目自有的运维、部署或诊断脚本。
- * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
- * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ * EN: CLI maintenance/deployment script for cleanup malformed fetch jobs.
+ * 中文：用于 cleanup malformed fetch jobs 的命令行维护/部署脚本。
+ * Maintenance / 维护：Keep behavior, security checks, error logging, and public contracts unchanged unless the related feature is intentionally modified.
+ * 维护要求：除非明确修改相关功能，否则应保持行为、安全检查、错误日志及公开接口契约不变。
  */
 $config = require dirname(__DIR__) . '/config/bootstrap.php';
 

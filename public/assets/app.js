@@ -43,8 +43,10 @@ const appLanguageDictionary={
 };
 
 /**
- * EN: Implements the application operation `currentAppLanguage` (current App Language).
- * 中文：实现应用操作 `currentAppLanguage`（current App Language）。
+ * EN: Perform the current app language behavior used by the application UI.
+ * 中文：执行application UI 使用的“current app language”行为。
+ *
+ * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function currentAppLanguage(){
     const lang=localStorage.getItem('cdsp-admin-language')||'en';
@@ -52,8 +54,10 @@ function currentAppLanguage(){
 }
 
 /**
- * EN: Updates application state for `applyGlobalMenuLanguage` (apply Global Menu Language).
- * 中文：更新 `applyGlobalMenuLanguage`（apply Global Menu Language）对应的应用状态。
+ * EN: Update the apply global menu language behavior used by the application UI.
+ * 中文：更新application UI 使用的“apply global menu language”行为。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function applyGlobalMenuLanguage(){
     const lang=currentAppLanguage();
@@ -103,8 +107,12 @@ $('#appLanguageSwitch').on(
  * 中文：手机导航控制器。紧凑顶栏保持单行，只有用户点击汉堡按钮时才展开路由菜单。
  */
 /**
- * EN: Updates application state for `setMobileNavigationOpen` (set Mobile Navigation Open).
- * 中文：更新 `setMobileNavigationOpen`（set Mobile Navigation Open）对应的应用状态。
+ * EN: Update the set mobile navigation open behavior used by the application UI.
+ * 中文：更新application UI 使用的“set mobile navigation open”行为。
+ *
+ * @param {*} open Open value used by this function. / 本函数使用的“open”参数值。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function setMobileNavigationOpen(open){
     const $nav=$('.topbar .nav');
@@ -179,16 +187,22 @@ $(window).on('resize.cdspMobileNav',function(){
     let deleteRequestPostXhr=null;
 
     /**
-     * EN: Implements the application operation `infoEscapeHtml` (info Escape Html).
-     * 中文：实现应用操作 `infoEscapeHtml`（info Escape Html）。
+     * EN: Perform the info escape html behavior used by the application UI.
+     * 中文：执行application UI 使用的“info escape html”行为。
+     *
+     * @param {string|*} value Value read, transformed, or applied by this function. / 本函数读取、转换或应用的值。
+     *
+     * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
      */
     function infoEscapeHtml(value){
         return $('<div>').text(value==null?'':String(value)).html();
     }
 
     /**
-     * EN: Updates application state for `updateAdminInfoCount` (update Admin Info Count).
-     * 中文：更新 `updateAdminInfoCount`（update Admin Info Count）对应的应用状态。
+     * EN: Update the update admin info count behavior used by the application UI.
+     * 中文：更新application UI 使用的“update admin info count”行为。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function updateAdminInfoCount(){
         const count=$('#adminInfoList .admin-info-item').length;
@@ -201,8 +215,10 @@ $(window).on('resize.cdspMobileNav',function(){
     }
 
     /**
-     * EN: Implements the application operation `closeDeleteRequestPostModal` (close Delete Request Post Modal).
-     * 中文：实现应用操作 `closeDeleteRequestPostModal`（close Delete Request Post Modal）。
+     * EN: Close or clear the close delete request post modal behavior used by the application UI.
+     * 中文：关闭或清理application UI 使用的“close delete request post modal”行为。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function closeDeleteRequestPostModal(){
         if(deleteRequestPostXhr&&deleteRequestPostXhr.readyState!==4){
@@ -223,8 +239,12 @@ $(window).on('resize.cdspMobileNav',function(){
     }
 
     /**
-     * EN: Removes or cleans data/state for `deleteRequestPhotoHtml` (delete Request Photo Html).
-     * 中文：删除或清理 `deleteRequestPhotoHtml`（delete Request Photo Html）相关的数据或状态。
+     * EN: Delete or remove the delete request photo html behavior used by the application UI.
+     * 中文：删除或移除application UI 使用的“delete request photo html”行为。
+     *
+     * @param {string|*} url URL read, generated, or requested by this function. / 本函数读取、生成或请求的 URL。
+     *
+     * @returns {string} String result produced by this UI helper. / 本 UI 辅助函数生成的字符串结果。
      */
     function deleteRequestPhotoHtml(url){
         const safe=String(url||'');
@@ -235,8 +255,12 @@ $(window).on('resize.cdspMobileNav',function(){
     }
 
     /**
-     * EN: Implements the application operation `openDeleteRequestPostModal` (open Delete Request Post Modal).
-     * 中文：实现应用操作 `openDeleteRequestPostModal`（open Delete Request Post Modal）。
+     * EN: Open or show the open delete request post modal behavior used by the application UI.
+     * 中文：打开或显示application UI 使用的“open delete request post modal”行为。
+     *
+     * @param {*} $row $row value used by this function. / 本函数使用的“$row”参数值。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function openDeleteRequestPostModal($row){
         const requestId=parseInt($row.attr('data-info-request-id')||'0',10)||0;
@@ -306,8 +330,12 @@ $(window).on('resize.cdspMobileNav',function(){
     });
 
     /**
-     * EN: Creates or persists the `submitDeleteRequestAction` operation (submit Delete Request Action).
-     * 中文：创建或持久化 `submitDeleteRequestAction`（submit Delete Request Action）操作。
+     * EN: Submit or persist the submit delete request action behavior used by the application UI.
+     * 中文：提交或保存application UI 使用的“submit delete request action”行为。
+     *
+     * @param {*} action Action value used by this function. / 本函数使用的“action”参数值。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function submitDeleteRequestAction(action){
         if(!activeDeleteRequestId)return;
@@ -366,8 +394,12 @@ $(window).on('resize.cdspMobileNav',function(){
     });
 
     /**
-     * EN: Implements the application operation `detectPlatform` (detect Platform).
-     * 中文：实现应用操作 `detectPlatform`（detect Platform）。
+     * EN: Perform the detect platform behavior used by the application UI.
+     * 中文：执行application UI 使用的“detect platform”行为。
+     *
+     * @param {string|*} url URL read, generated, or requested by this function. / 本函数读取、生成或请求的 URL。
+     *
+     * @returns {string} String result produced by this UI helper. / 本 UI 辅助函数生成的字符串结果。
      */
     function detectPlatform(url){
         try{
@@ -382,8 +414,13 @@ $(window).on('resize.cdspMobileNav',function(){
     }
 
     /**
-     * EN: Builds, formats, or transforms data for `normalizePostUrl` (normalize Post Url).
-     * 中文：为 `normalizePostUrl`（normalize Post Url）构建、格式化或转换数据。
+     * EN: Format or normalize the normalize post url behavior used by the application UI.
+     * 中文：格式化或规范化application UI 使用的“normalize post url”行为。
+     *
+     * @param {string|*} url URL read, generated, or requested by this function. / 本函数读取、生成或请求的 URL。
+     * @param {*} platform Platform value used by this function. / 本函数使用的“platform”参数值。
+     *
+     * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
      */
     function normalizePostUrl(url, platform){
         const raw = (url || '').trim();
@@ -413,8 +450,12 @@ $(window).on('resize.cdspMobileNav',function(){
     }
 
     /**
-     * EN: Implements the application operation `platformLabel` (platform Label).
-     * 中文：实现应用操作 `platformLabel`（platform Label）。
+     * EN: Perform the platform label behavior used by the application UI.
+     * 中文：执行application UI 使用的“platform label”行为。
+     *
+     * @param {*} platform Platform value used by this function. / 本函数使用的“platform”参数值。
+     *
+     * @returns {string} String result produced by this UI helper. / 本 UI 辅助函数生成的字符串结果。
      */
     function platformLabel(platform){
         if(platform === 'facebook') return 'Facebook';
@@ -425,8 +466,10 @@ $(window).on('resize.cdspMobileNav',function(){
     }
 
     /**
-     * EN: Updates application state for `updateDetectedPlatform` (update Detected Platform).
-     * 中文：更新 `updateDetectedPlatform`（update Detected Platform）对应的应用状态。
+     * EN: Update the update detected platform behavior used by the application UI.
+     * 中文：更新application UI 使用的“update detected platform”行为。
+     *
+     * @returns {boolean} Boolean result produced by this UI helper. / 本 UI 辅助函数生成的布尔结果。
      */
     function updateDetectedPlatform(){
         const originalUrl = $('#postUrl').val() || '';
@@ -813,8 +856,10 @@ const salesI18n={
 };
 
 /**
- * EN: Implements the application operation `salesLanguage` (sales Language).
- * 中文：实现应用操作 `salesLanguage`（sales Language）。
+ * EN: Perform the sales language behavior used by the application UI.
+ * 中文：执行application UI 使用的“sales language”行为。
+ *
+ * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function salesLanguage(){
     const lang=currentAppLanguage();
@@ -822,8 +867,13 @@ function salesLanguage(){
 }
 
 /**
- * EN: Implements the application operation `salesTr` (sales Tr).
- * 中文：实现应用操作 `salesTr`（sales Tr）。
+ * EN: Perform the sales tr behavior used by the application UI.
+ * 中文：执行application UI 使用的“sales tr”行为。
+ *
+ * @param {string|*} key Key used to identify the requested value. / 用于标识目标值的键。
+ * @param {*} vars Vars value used by this function. / 本函数使用的“vars”参数值。
+ *
+ * @returns {boolean} Boolean result produced by this UI helper. / 本 UI 辅助函数生成的布尔结果。
  */
 function salesTr(key,vars){
     const lang=salesLanguage();
@@ -841,8 +891,10 @@ function salesTr(key,vars){
 }
 
 /**
- * EN: Updates application state for `applySalesLanguage` (apply Sales Language).
- * 中文：更新 `applySalesLanguage`（apply Sales Language）对应的应用状态。
+ * EN: Update the apply sales language behavior used by the application UI.
+ * 中文：更新application UI 使用的“apply sales language”行为。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function applySalesLanguage(){
     $('[data-sales-i18n]').each(function(){
@@ -905,8 +957,10 @@ $(document).on('cdsp:language-changed',function(){
 applySalesLanguage();
 
 /**
- * EN: Implements the application operation `salesTodayValue` (sales Today Value).
- * 中文：实现应用操作 `salesTodayValue`（sales Today Value）。
+ * EN: Perform the sales today value behavior used by the application UI.
+ * 中文：执行application UI 使用的“sales today value”行为。
+ *
+ * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function salesTodayValue(){
     return String(
@@ -916,8 +970,12 @@ function salesTodayValue(){
 }
 
 /**
- * EN: Updates application state for `updateSalesBackToday` (update Sales Back Today).
- * 中文：更新 `updateSalesBackToday`（update Sales Back Today）对应的应用状态。
+ * EN: Update the update sales back today behavior used by the application UI.
+ * 中文：更新application UI 使用的“update sales back today”行为。
+ *
+ * @param {*} range Range value used by this function. / 本函数使用的“range”参数值。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function updateSalesBackToday(range){
     const $back=$('#salesBackToday');
@@ -958,8 +1016,12 @@ function updateSalesBackToday(range){
 }
 
 /**
- * EN: Implements the application operation `salesIsoDate` (sales Iso Date).
- * 中文：实现应用操作 `salesIsoDate`（sales Iso Date）。
+ * EN: Perform the sales iso date behavior used by the application UI.
+ * 中文：执行application UI 使用的“sales iso date”行为。
+ *
+ * @param {string|*} date Date value used by the calculation or filter. / 计算或筛选使用的日期值。
+ *
+ * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function salesIsoDate(date){
     const year=date.getFullYear();
@@ -974,8 +1036,12 @@ function salesIsoDate(date){
 }
 
 /**
- * EN: Implements the application operation `salesParseIsoDate` (sales Parse Iso Date).
- * 中文：实现应用操作 `salesParseIsoDate`（sales Parse Iso Date）。
+ * EN: Perform the sales parse iso date behavior used by the application UI.
+ * 中文：执行application UI 使用的“sales parse iso date”行为。
+ *
+ * @param {string|*} value Value read, transformed, or applied by this function. / 本函数读取、转换或应用的值。
+ *
+ * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function salesParseIsoDate(value){
     const match=String(value||'').match(
@@ -999,8 +1065,13 @@ function salesParseIsoDate(value){
 }
 
 /**
- * EN: Implements the application operation `salesPresetRange` (sales Preset Range).
- * 中文：实现应用操作 `salesPresetRange`（sales Preset Range）。
+ * EN: Perform the sales preset range behavior used by the application UI.
+ * 中文：执行application UI 使用的“sales preset range”行为。
+ *
+ * @param {*} period Period value used by this function. / 本函数使用的“period”参数值。
+ * @param {*} anchorValue Anchor value value used by this function. / 本函数使用的“anchor value”参数值。
+ *
+ * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function salesPresetRange(period,anchorValue){
     const todayValue=salesTodayValue();
@@ -1088,8 +1159,12 @@ function salesPresetRange(period,anchorValue){
     };
 }
 /**
- * EN: Updates application state for `setSalesRangePeriod` (set Sales Range Period).
- * 中文：更新 `setSalesRangePeriod`（set Sales Range Period）对应的应用状态。
+ * EN: Update the set sales range period behavior used by the application UI.
+ * 中文：更新application UI 使用的“set sales range period”行为。
+ *
+ * @param {*} period Period value used by this function. / 本函数使用的“period”参数值。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function setSalesRangePeriod(period){
     salesRangePeriod=String(
@@ -1143,8 +1218,13 @@ function setSalesRangePeriod(period){
 }
 
 /**
- * EN: Implements the application operation `detectSalesRangePeriod` (detect Sales Range Period).
- * 中文：实现应用操作 `detectSalesRangePeriod`（detect Sales Range Period）。
+ * EN: Perform the detect sales range period behavior used by the application UI.
+ * 中文：执行application UI 使用的“detect sales range period”行为。
+ *
+ * @param {*} from From value used by this function. / 本函数使用的“from”参数值。
+ * @param {*} to To value used by this function. / 本函数使用的“to”参数值。
+ *
+ * @returns {string} String result produced by this UI helper. / 本 UI 辅助函数生成的字符串结果。
  */
 function detectSalesRangePeriod(from,to){
     const toDate=salesParseIsoDate(to);
@@ -1198,8 +1278,12 @@ function detectSalesRangePeriod(from,to){
 }
 
 /**
- * EN: Updates application state for `syncSalesRangeConstraints` (sync Sales Range Constraints).
- * 中文：更新 `syncSalesRangeConstraints`（sync Sales Range Constraints）对应的应用状态。
+ * EN: Update the sync sales range constraints behavior used by the application UI.
+ * 中文：更新application UI 使用的“sync sales range constraints”行为。
+ *
+ * @param {*} changed Changed value used by this function. / 本函数使用的“changed”参数值。
+ *
+ * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function syncSalesRangeConstraints(changed){
     const $from=$('#salesRangeFrom');
@@ -1276,8 +1360,10 @@ let salesChartHoverPoint=null;
 let salesRangeVisualTimer=null;
 
 /**
- * EN: Removes or cleans data/state for `clearSalesRangeVisualState` (clear Sales Range Visual State).
- * 中文：删除或清理 `clearSalesRangeVisualState`（clear Sales Range Visual State）相关的数据或状态。
+ * EN: Close or clear the clear sales range visual state behavior used by the application UI.
+ * 中文：关闭或清理application UI 使用的“clear sales range visual state”行为。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function clearSalesRangeVisualState(){
     if(salesRangeVisualTimer){
@@ -1328,8 +1414,12 @@ function clearSalesRangeVisualState(){
 }
 
 /**
- * EN: Implements the application operation `startSalesRangeVisualState` (start Sales Range Visual State).
- * 中文：实现应用操作 `startSalesRangeVisualState`（start Sales Range Visual State）。
+ * EN: Schedule or start the start sales range visual state behavior used by the application UI.
+ * 中文：调度或启动application UI 使用的“start sales range visual state”行为。
+ *
+ * @param {*} reason Reason value used by this function. / 本函数使用的“reason”参数值。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function startSalesRangeVisualState(reason){
     clearSalesRangeVisualState();
@@ -1412,8 +1502,10 @@ if($salesChartTooltip.length&&!$salesChartTooltip.parent().is('body')){
  */
 
 /**
- * EN: Builds, formats, or transforms data for `parseSalesChartInitialData` (parse Sales Chart Initial Data).
- * 中文：为 `parseSalesChartInitialData`（parse Sales Chart Initial Data）构建、格式化或转换数据。
+ * EN: Parse or extract the parse sales chart initial data behavior used by the application UI.
+ * 中文：解析或提取application UI 使用的“parse sales chart initial data”行为。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function parseSalesChartInitialData(){
     const node=document.getElementById('salesChartInitialData');
@@ -1439,8 +1531,12 @@ function parseSalesChartInitialData(){
 }
 
 /**
- * EN: Implements the application operation `salesPostStatusLabel` (sales Post Status Label).
- * 中文：实现应用操作 `salesPostStatusLabel`（sales Post Status Label）。
+ * EN: Perform the sales post status label behavior used by the application UI.
+ * 中文：执行application UI 使用的“sales post status label”行为。
+ *
+ * @param {*} status Status value used by this function. / 本函数使用的“status”参数值。
+ *
+ * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function salesPostStatusLabel(status){
     if(status==='good'){
@@ -1455,8 +1551,13 @@ function salesPostStatusLabel(status){
 }
 
 /**
- * EN: Implements the application operation `salesDateRange` (sales Date Range).
- * 中文：实现应用操作 `salesDateRange`（sales Date Range）。
+ * EN: Perform the sales date range behavior used by the application UI.
+ * 中文：执行application UI 使用的“sales date range”行为。
+ *
+ * @param {*} from From value used by this function. / 本函数使用的“from”参数值。
+ * @param {*} to To value used by this function. / 本函数使用的“to”参数值。
+ *
+ * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function salesDateRange(from,to){
     const dates=[];
@@ -1489,8 +1590,12 @@ function salesDateRange(from,to){
 }
 
 /**
- * EN: Implements the application operation `salesShortDate` (sales Short Date).
- * 中文：实现应用操作 `salesShortDate`（sales Short Date）。
+ * EN: Perform the sales short date behavior used by the application UI.
+ * 中文：执行application UI 使用的“sales short date”行为。
+ *
+ * @param {string|*} value Value read, transformed, or applied by this function. / 本函数读取、转换或应用的值。
+ *
+ * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function salesShortDate(value){
     const d=new Date(value+'T12:00:00');
@@ -1515,8 +1620,10 @@ function salesShortDate(value){
 }
 
 /**
- * EN: Implements the application operation `mergeSalesChartRowsFromDom` (merge Sales Chart Rows From Dom).
- * 中文：实现应用操作 `mergeSalesChartRowsFromDom`（merge Sales Chart Rows From Dom）。
+ * EN: Perform the merge sales chart rows from dom behavior used by the application UI.
+ * 中文：执行application UI 使用的“merge sales chart rows from dom”行为。
+ *
+ * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function mergeSalesChartRowsFromDom(){
     const replacements={};
@@ -1591,8 +1698,13 @@ function mergeSalesChartRowsFromDom(){
 }
 
 /**
- * EN: Implements the application operation `aggregateSalesChartDate` (aggregate Sales Chart Date).
- * 中文：实现应用操作 `aggregateSalesChartDate`（aggregate Sales Chart Date）。
+ * EN: Build the aggregate sales chart date behavior used by the application UI.
+ * 中文：构建application UI 使用的“aggregate sales chart date”行为。
+ *
+ * @param {string|*} date Date value used by the calculation or filter. / 计算或筛选使用的日期值。
+ * @param {*} platform Platform value used by this function. / 本函数使用的“platform”参数值。
+ *
+ * @returns {boolean} Boolean result produced by this UI helper. / 本 UI 辅助函数生成的布尔结果。
  */
 function aggregateSalesChartDate(date,platform){
     const result={
@@ -1630,8 +1742,12 @@ function aggregateSalesChartDate(date,platform){
 }
 
 /**
- * EN: Builds, formats, or transforms data for `buildSalesChartTooltipHtml` (build Sales Chart Tooltip Html).
- * 中文：为 `buildSalesChartTooltipHtml`（build Sales Chart Tooltip Html）构建、格式化或转换数据。
+ * EN: Build the build sales chart tooltip html behavior used by the application UI.
+ * 中文：构建application UI 使用的“build sales chart tooltip html”行为。
+ *
+ * @param {Object|*} data Structured data consumed by this function. / 本函数使用的结构化数据。
+ *
+ * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function buildSalesChartTooltipHtml(data){
     const missing=Math.max(
@@ -1669,8 +1785,12 @@ function buildSalesChartTooltipHtml(data){
 }
 
 /**
- * EN: Implements the application operation `salesChartTickStep` (sales Chart Tick Step).
- * 中文：实现应用操作 `salesChartTickStep`（sales Chart Tick Step）。
+ * EN: Perform the sales chart tick step behavior used by the application UI.
+ * 中文：执行application UI 使用的“sales chart tick step”行为。
+ *
+ * @param {*} maxValue Max value value used by this function. / 本函数使用的“max value”参数值。
+ *
+ * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function salesChartTickStep(maxValue){
     maxValue=Math.max(
@@ -1725,8 +1845,14 @@ function salesChartTickStep(maxValue){
 }
 
 /**
- * EN: Builds, formats, or transforms data for `renderSalesChartYAxis` (render Sales Chart YAxis).
- * 中文：为 `renderSalesChartYAxis`（render Sales Chart YAxis）构建、格式化或转换数据。
+ * EN: Render the render sales chart yaxis behavior used by the application UI.
+ * 中文：渲染application UI 使用的“render sales chart yaxis”行为。
+ *
+ * @param {*} cap Cap value used by this function. / 本函数使用的“cap”参数值。
+ * @param {Element|*} target Target DOM node or application object. / 目标 DOM 节点或应用对象。
+ * @param {*} plotHeight Plot height value used by this function. / 本函数使用的“plot height”参数值。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function renderSalesChartYAxis(
     cap,
@@ -1843,8 +1969,12 @@ function renderSalesChartYAxis(
 }
 
 /**
- * EN: Builds, formats, or transforms data for `renderSalesChart` (render Sales Chart).
- * 中文：为 `renderSalesChart`（render Sales Chart）构建、格式化或转换数据。
+ * EN: Render the render sales chart behavior used by the application UI.
+ * 中文：渲染application UI 使用的“render sales chart”行为。
+ *
+ * @param {Object|*} options Optional settings that control this function. / 控制本函数行为的可选设置。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function renderSalesChart(options){
     // The isolated controller owns current rows, range and animation.
@@ -2218,8 +2348,12 @@ function renderSalesChart(options){
 }
 
 /**
- * EN: Implements the application operation `salesChartEventPoint` (sales Chart Event Point).
- * 中文：实现应用操作 `salesChartEventPoint`（sales Chart Event Point）。
+ * EN: Perform the sales chart event point behavior used by the application UI.
+ * 中文：执行application UI 使用的“sales chart event point”行为。
+ *
+ * @param {Event|*} event DOM event that triggered the operation. / 触发本操作的 DOM Event。
+ *
+ * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function salesChartEventPoint(event){
     const raw=event&&event.originalEvent
@@ -2242,8 +2376,14 @@ function salesChartEventPoint(event){
 }
 
 /**
- * EN: Implements the application operation `positionSalesChartTooltip` (position Sales Chart Tooltip).
- * 中文：实现应用操作 `positionSalesChartTooltip`（position Sales Chart Tooltip）。
+ * EN: Position the position sales chart tooltip behavior used by the application UI.
+ * 中文：定位application UI 使用的“position sales chart tooltip”行为。
+ *
+ * @param {*} $day $day value used by this function. / 本函数使用的“$day”参数值。
+ * @param {Event|*} event DOM event that triggered the operation. / 触发本操作的 DOM Event。
+ * @param {*} mode Mode value used by this function. / 本函数使用的“mode”参数值。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function positionSalesChartTooltip($day,event,mode){
     if(!$day||!$day.length||!$salesChartTooltip.length){
@@ -2307,8 +2447,14 @@ function positionSalesChartTooltip($day,event,mode){
 }
 
 /**
- * EN: Implements the application operation `showSalesChartTooltip` (show Sales Chart Tooltip).
- * 中文：实现应用操作 `showSalesChartTooltip`（show Sales Chart Tooltip）。
+ * EN: Open or show the show sales chart tooltip behavior used by the application UI.
+ * 中文：打开或显示application UI 使用的“show sales chart tooltip”行为。
+ *
+ * @param {*} $day $day value used by this function. / 本函数使用的“$day”参数值。
+ * @param {Event|*} event DOM event that triggered the operation. / 触发本操作的 DOM Event。
+ * @param {*} mode Mode value used by this function. / 本函数使用的“mode”参数值。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function showSalesChartTooltip($day,event,mode){
     if(!$day||!$day.length||!$salesChartTooltip.length){
@@ -2338,8 +2484,13 @@ function showSalesChartTooltip($day,event,mode){
 }
 
 /**
- * EN: Implements the application operation `moveSalesChartTooltipWithPointer` (move Sales Chart Tooltip With Pointer).
- * 中文：实现应用操作 `moveSalesChartTooltipWithPointer`（move Sales Chart Tooltip With Pointer）。
+ * EN: Position the move sales chart tooltip with pointer behavior used by the application UI.
+ * 中文：定位application UI 使用的“move sales chart tooltip with pointer”行为。
+ *
+ * @param {*} $day $day value used by this function. / 本函数使用的“$day”参数值。
+ * @param {Event|*} event DOM event that triggered the operation. / 触发本操作的 DOM Event。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function moveSalesChartTooltipWithPointer($day,event){
     if(
@@ -2359,8 +2510,10 @@ function moveSalesChartTooltipWithPointer($day,event){
 }
 
 /**
- * EN: Checks or validates the condition represented by `cancelSalesChartHoverTimer` (cancel Sales Chart Hover Timer).
- * 中文：检查或校验 `cancelSalesChartHoverTimer`（cancel Sales Chart Hover Timer）所表示的条件。
+ * EN: Check the cancel sales chart hover timer behavior used by the application UI.
+ * 中文：检查application UI 使用的“cancel sales chart hover timer”行为。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function cancelSalesChartHoverTimer(){
     if(salesChartHoverTimer){
@@ -2373,8 +2526,10 @@ function cancelSalesChartHoverTimer(){
 }
 
 /**
- * EN: Implements the application operation `hideSalesChartTooltip` (hide Sales Chart Tooltip).
- * 中文：实现应用操作 `hideSalesChartTooltip`（hide Sales Chart Tooltip）。
+ * EN: Close or clear the hide sales chart tooltip behavior used by the application UI.
+ * 中文：关闭或清理application UI 使用的“hide sales chart tooltip”行为。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function hideSalesChartTooltip(){
     cancelSalesChartHoverTimer();
@@ -2383,8 +2538,12 @@ function hideSalesChartTooltip(){
 }
 
 /**
- * EN: Updates application state for `updateSalesDayStatusCounts` (update Sales Day Status Counts).
- * 中文：更新 `updateSalesDayStatusCounts`（update Sales Day Status Counts）对应的应用状态。
+ * EN: Update the update sales day status counts behavior used by the application UI.
+ * 中文：更新application UI 使用的“update sales day status counts”行为。
+ *
+ * @param {*} $section $section value used by this function. / 本函数使用的“$section”参数值。
+ *
+ * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function updateSalesDayStatusCounts($section){
     const $all=$section.find('.sales-self-post-card');
@@ -2430,8 +2589,10 @@ function updateSalesDayStatusCounts($section){
 }
 
 /**
- * EN: Implements the application operation `salesPrefersReducedMotion` (sales Prefers Reduced Motion).
- * 中文：实现应用操作 `salesPrefersReducedMotion`（sales Prefers Reduced Motion）。
+ * EN: Perform the sales prefers reduced motion behavior used by the application UI.
+ * 中文：执行application UI 使用的“sales prefers reduced motion”行为。
+ *
+ * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function salesPrefersReducedMotion(){
     return Boolean(
@@ -2443,8 +2604,10 @@ function salesPrefersReducedMotion(){
 }
 
 /**
- * EN: Implements the application operation `animateSalesContentIn` (animate Sales Content In).
- * 中文：实现应用操作 `animateSalesContentIn`（animate Sales Content In）。
+ * EN: Perform the animate sales content in behavior used by the application UI.
+ * 中文：执行application UI 使用的“animate sales content in”行为。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function animateSalesContentIn(){
     const $stage=$('#salesDailyStage');
@@ -2503,8 +2666,14 @@ function animateSalesContentIn(){
 }
 
 /**
- * EN: Updates application state for `applySalesDayFilter` (apply Sales Day Filter).
- * 中文：更新 `applySalesDayFilter`（apply Sales Day Filter）对应的应用状态。
+ * EN: Update the apply sales day filter behavior used by the application UI.
+ * 中文：更新application UI 使用的“apply sales day filter”行为。
+ *
+ * @param {*} $section $section value used by this function. / 本函数使用的“$section”参数值。
+ * @param {*} filter Filter value used by this function. / 本函数使用的“filter”参数值。
+ * @param {*} animate Animate value used by this function. / 本函数使用的“animate”参数值。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function applySalesDayFilter($section,filter,animate){
     const $cards=$section.find(
@@ -2808,8 +2977,12 @@ function applySalesDayFilter($section,filter,animate){
 }
 
 /**
- * EN: Updates application state for `applySalesPlatformFilterToCards` (apply Sales Platform Filter To Cards).
- * 中文：更新 `applySalesPlatformFilterToCards`（apply Sales Platform Filter To Cards）对应的应用状态。
+ * EN: Update the apply sales platform filter to cards behavior used by the application UI.
+ * 中文：更新application UI 使用的“apply sales platform filter to cards”行为。
+ *
+ * @param {*} animate Animate value used by this function. / 本函数使用的“animate”参数值。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function applySalesPlatformFilterToCards(animate){
     $('.sales-day-section').each(function(){
@@ -2826,8 +2999,16 @@ function applySalesPlatformFilterToCards(animate){
 }
 
 /**
- * EN: Builds, formats, or transforms data for `renderSalesRangeData` (render Sales Range Data).
- * 中文：为 `renderSalesRangeData`（render Sales Range Data）构建、格式化或转换数据。
+ * EN: Render the render sales range data behavior used by the application UI.
+ * 中文：渲染application UI 使用的“render sales range data”行为。
+ *
+ * @param {Object|*} data Structured data consumed by this function. / 本函数使用的结构化数据。
+ * @param {*} range Range value used by this function. / 本函数使用的“range”参数值。
+ * @param {*} period Period value used by this function. / 本函数使用的“period”参数值。
+ * @param {*} channel Channel value used by this function. / 本函数使用的“channel”参数值。
+ * @param {*} reason Reason value used by this function. / 本函数使用的“reason”参数值。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function renderSalesRangeData(data,range,period,channel,reason){
     const $wrap=$('#dailyPosts');
@@ -3000,8 +3181,15 @@ function renderSalesRangeData(data,range,period,channel,reason){
 }
 
 /**
- * EN: Retrieves or loads data for `loadSalesRange` (load Sales Range).
- * 中文：读取或加载 `loadSalesRange`（load Sales Range）所需的数据。
+ * EN: Read or load the load sales range behavior used by the application UI.
+ * 中文：读取或加载application UI 使用的“load sales range”行为。
+ *
+ * @param {*} range Range value used by this function. / 本函数使用的“range”参数值。
+ * @param {*} period Period value used by this function. / 本函数使用的“period”参数值。
+ * @param {*} channel Channel value used by this function. / 本函数使用的“channel”参数值。
+ * @param {*} reason Reason value used by this function. / 本函数使用的“reason”参数值。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function loadSalesRange(range,period,channel,reason){
     if(!range){
@@ -3151,8 +3339,13 @@ function loadSalesRange(range,period,channel,reason){
 }
 
 /**
- * EN: Implements the application operation `showSalesOverlay` (show Sales Overlay).
- * 中文：实现应用操作 `showSalesOverlay`（show Sales Overlay）。
+ * EN: Open or show the show sales overlay behavior used by the application UI.
+ * 中文：打开或显示application UI 使用的“show sales overlay”行为。
+ *
+ * @param {*} $overlay $overlay value used by this function. / 本函数使用的“$overlay”参数值。
+ * @param {*} onShown On shown value used by this function. / 本函数使用的“on shown”参数值。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function showSalesOverlay($overlay,onShown){
     if(!$overlay||!$overlay.length){return;}
@@ -3168,8 +3361,13 @@ function showSalesOverlay($overlay,onShown){
 }
 
 /**
- * EN: Implements the application operation `hideSalesOverlay` (hide Sales Overlay).
- * 中文：实现应用操作 `hideSalesOverlay`（hide Sales Overlay）。
+ * EN: Close or clear the hide sales overlay behavior used by the application UI.
+ * 中文：关闭或清理application UI 使用的“hide sales overlay”行为。
+ *
+ * @param {*} $overlay $overlay value used by this function. / 本函数使用的“$overlay”参数值。
+ * @param {*} onHidden On hidden value used by this function. / 本函数使用的“on hidden”参数值。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function hideSalesOverlay($overlay,onHidden){
     if(!$overlay||!$overlay.length){return;}
@@ -3185,8 +3383,10 @@ function hideSalesOverlay($overlay,onHidden){
 }
 
 /**
- * EN: Implements the application operation `openSalesSubmitModal` (open Sales Submit Modal).
- * 中文：实现应用操作 `openSalesSubmitModal`（open Sales Submit Modal）。
+ * EN: Open or show the open sales submit modal behavior used by the application UI.
+ * 中文：打开或显示application UI 使用的“open sales submit modal”行为。
+ *
+ * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function openSalesSubmitModal(){
     if(!$salesSubmitModal.length){return false;}
@@ -3199,8 +3399,10 @@ function openSalesSubmitModal(){
 }
 
 /**
- * EN: Implements the application operation `closeSalesSubmitModal` (close Sales Submit Modal).
- * 中文：实现应用操作 `closeSalesSubmitModal`（close Sales Submit Modal）。
+ * EN: Close or clear the close sales submit modal behavior used by the application UI.
+ * 中文：关闭或清理application UI 使用的“close sales submit modal”行为。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function closeSalesSubmitModal(){
     if(!$salesSubmitModal.length){return;}
@@ -3210,8 +3412,12 @@ function closeSalesSubmitModal(){
 }
 
 /**
- * EN: Implements the application operation `openSalesPostDetail` (open Sales Post Detail).
- * 中文：实现应用操作 `openSalesPostDetail`（open Sales Post Detail）。
+ * EN: Open or show the open sales post detail behavior used by the application UI.
+ * 中文：打开或显示application UI 使用的“open sales post detail”行为。
+ *
+ * @param {*} $card $card value used by this function. / 本函数使用的“$card”参数值。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function openSalesPostDetail($card){
     if(!$card||!$card.length){
@@ -3327,8 +3533,10 @@ function openSalesPostDetail($card){
 }
 
 /**
- * EN: Implements the application operation `closeSalesPostDetail` (close Sales Post Detail).
- * 中文：实现应用操作 `closeSalesPostDetail`（close Sales Post Detail）。
+ * EN: Close or clear the close sales post detail behavior used by the application UI.
+ * 中文：关闭或清理application UI 使用的“close sales post detail”行为。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function closeSalesPostDetail(){
     hideSalesOverlay($salesPostDetailModal,function(){
@@ -3338,8 +3546,10 @@ function closeSalesPostDetail(){
 }
 
 /**
- * EN: Implements the application operation `openSalesImageLightbox` (open Sales Image Lightbox).
- * 中文：实现应用操作 `openSalesImageLightbox`（open Sales Image Lightbox）。
+ * EN: Open or show the open sales image lightbox behavior used by the application UI.
+ * 中文：打开或显示application UI 使用的“open sales image lightbox”行为。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function openSalesImageLightbox(){
     const src=String(
@@ -3357,8 +3567,10 @@ function openSalesImageLightbox(){
 }
 
 /**
- * EN: Implements the application operation `closeSalesImageLightbox` (close Sales Image Lightbox).
- * 中文：实现应用操作 `closeSalesImageLightbox`（close Sales Image Lightbox）。
+ * EN: Close or clear the close sales image lightbox behavior used by the application UI.
+ * 中文：关闭或清理application UI 使用的“close sales image lightbox”行为。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function closeSalesImageLightbox(){
     hideSalesOverlay($salesImageLightbox);
@@ -3864,8 +4076,12 @@ $salesImageLightbox.on(
  * tooltip permanently hidden after chart re-renders.
  */
 /**
- * EN: Implements the application operation `salesChartDayFromPointerTarget` (sales Chart Day From Pointer Target).
- * 中文：实现应用操作 `salesChartDayFromPointerTarget`（sales Chart Day From Pointer Target）。
+ * EN: Perform the sales chart day from pointer target behavior used by the application UI.
+ * 中文：执行application UI 使用的“sales chart day from pointer target”行为。
+ *
+ * @param {Element|*} target Target DOM node or application object. / 目标 DOM 节点或应用对象。
+ *
+ * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function salesChartDayFromPointerTarget(target){
     if(!target||!target.closest){
@@ -3876,8 +4092,12 @@ function salesChartDayFromPointerTarget(target){
 }
 
 /**
- * EN: Implements the application operation `salesChartDayOwnedByPortal` (sales Chart Day Owned By Portal).
- * 中文：实现应用操作 `salesChartDayOwnedByPortal`（sales Chart Day Owned By Portal）。
+ * EN: Perform the sales chart day owned by portal behavior used by the application UI.
+ * 中文：执行application UI 使用的“sales chart day owned by portal”行为。
+ *
+ * @param {*} day Day value used by this function. / 本函数使用的“day”参数值。
+ *
+ * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function salesChartDayOwnedByPortal(day){
     return !!(
@@ -3888,8 +4108,13 @@ function salesChartDayOwnedByPortal(day){
 }
 
 /**
- * EN: Implements the application operation `startSalesChartMouseHover` (start Sales Chart Mouse Hover).
- * 中文：实现应用操作 `startSalesChartMouseHover`（start Sales Chart Mouse Hover）。
+ * EN: Schedule or start the start sales chart mouse hover behavior used by the application UI.
+ * 中文：调度或启动application UI 使用的“start sales chart mouse hover”行为。
+ *
+ * @param {*} day Day value used by this function. / 本函数使用的“day”参数值。
+ * @param {Event|*} event DOM event that triggered the operation. / 触发本操作的 DOM Event。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function startSalesChartMouseHover(day,event){
     cancelSalesChartHoverTimer();
@@ -4210,8 +4435,13 @@ applySalesPlatformFilterToCards();
     });
 
 /**
- * EN: Updates application state for `setSalesSubmitMessage` (set Sales Submit Message).
- * 中文：更新 `setSalesSubmitMessage`（set Sales Submit Message）对应的应用状态。
+ * EN: Update the set sales submit message behavior used by the application UI.
+ * 中文：更新application UI 使用的“set sales submit message”行为。
+ *
+ * @param {string|*} message Human-readable message shown or recorded by the UI. / UI 显示或记录的可读消息。
+ * @param {*} type Type value used by this function. / 本函数使用的“type”参数值。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function setSalesSubmitMessage(message,type){
     const $message=$('#salesSubmitMessage');
@@ -4236,8 +4466,14 @@ function setSalesSubmitMessage(message,type){
 
 
 /**
- * EN: Updates application state for `setInspectionStep` (set Inspection Step).
- * 中文：更新 `setInspectionStep`（set Inspection Step）对应的应用状态。
+ * EN: Update the set inspection step behavior used by the application UI.
+ * 中文：更新application UI 使用的“set inspection step”行为。
+ *
+ * @param {*} step Step value used by this function. / 本函数使用的“step”参数值。
+ * @param {Object|*} state State value used by this function. / 本函数使用的“state”参数值。
+ * @param {*} label Label value used by this function. / 本函数使用的“label”参数值。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function setInspectionStep(step,state,label){
     const $step=$('#inspectionProgress [data-inspection-step="'+step+'"]');
@@ -4538,8 +4774,12 @@ $('#salesVerifiedSaveForm').on('submit',function(event){
     const savedView=localStorage.getItem('cdsp-sales-post-view')||'grid';
 
     /**
-     * EN: Updates application state for `setPostView` (set Post View).
-     * 中文：更新 `setPostView`（set Post View）对应的应用状态。
+     * EN: Update the set post view behavior used by the application UI.
+     * 中文：更新application UI 使用的“set post view”行为。
+     *
+     * @param {*} v V value used by this function. / 本函数使用的“v”参数值。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function setPostView(v){
         $('[data-view]').removeClass('active');
@@ -4561,8 +4801,10 @@ $('#salesVerifiedSaveForm').on('submit',function(event){
 
 
     /**
-     * EN: Retrieves or loads data for `loadMoreDailyPosts` (load More Daily Posts).
-     * 中文：读取或加载 `loadMoreDailyPosts`（load More Daily Posts）所需的数据。
+     * EN: Read or load the load more daily posts behavior used by the application UI.
+     * 中文：读取或加载application UI 使用的“load more daily posts”行为。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function loadMoreDailyPosts(){
         const $wrap = $('#dailyPosts');
@@ -4634,8 +4876,12 @@ $('#salesVerifiedSaveForm').on('submit',function(event){
 
 
 /**
- * EN: Updates application state for `syncHtmlNote` (sync Html Note).
- * 中文：更新 `syncHtmlNote`（sync Html Note）对应的应用状态。
+ * EN: Update the sync html note behavior used by the application UI.
+ * 中文：更新application UI 使用的“sync html note”行为。
+ *
+ * @param {*} $root $root value used by this function. / 本函数使用的“$root”参数值。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function syncHtmlNote($root){
     const $editor=$root.find('[data-html-editor]');
@@ -4644,8 +4890,12 @@ function syncHtmlNote($root){
 }
 
 /**
- * EN: Builds, formats, or transforms data for `normalizeEditorBlock` (normalize Editor Block).
- * 中文：为 `normalizeEditorBlock`（normalize Editor Block）构建、格式化或转换数据。
+ * EN: Format or normalize the normalize editor block behavior used by the application UI.
+ * 中文：格式化或规范化application UI 使用的“normalize editor block”行为。
+ *
+ * @param {string|*} value Value read, transformed, or applied by this function. / 本函数读取、转换或应用的值。
+ *
+ * @returns {Array} Array result produced by this UI helper. / 本 UI 辅助函数生成的数组结果。
  */
 function normalizeEditorBlock(value){
     value=String(value||'p').toLowerCase();
@@ -4653,16 +4903,24 @@ function normalizeEditorBlock(value){
 }
 
 /**
- * EN: Implements the application operation `escapeCodeHtml` (escape Code Html).
- * 中文：实现应用操作 `escapeCodeHtml`（escape Code Html）。
+ * EN: Format or normalize the escape code html behavior used by the application UI.
+ * 中文：格式化或规范化application UI 使用的“escape code html”行为。
+ *
+ * @param {string|*} value Value read, transformed, or applied by this function. / 本函数读取、转换或应用的值。
+ *
+ * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function escapeCodeHtml(value){
     return String(value||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
 /**
- * EN: Implements the application operation `highlightHtmlSource` (highlight Html Source).
- * 中文：实现应用操作 `highlightHtmlSource`（highlight Html Source）。
+ * EN: Perform the highlight html source behavior used by the application UI.
+ * 中文：执行application UI 使用的“highlight html source”行为。
+ *
+ * @param {*} source Source value used by this function. / 本函数使用的“source”参数值。
+ *
+ * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function highlightHtmlSource(source){
     return escapeCodeHtml(source)
@@ -4673,8 +4931,12 @@ function highlightHtmlSource(source){
 }
 
 /**
- * EN: Implements the application operation `lineNumberText` (line Number Text).
- * 中文：实现应用操作 `lineNumberText`（line Number Text）。
+ * EN: Perform the line number text behavior used by the application UI.
+ * 中文：执行application UI 使用的“line number text”行为。
+ *
+ * @param {*} source Source value used by this function. / 本函数使用的“source”参数值。
+ *
+ * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function lineNumberText(source){
     const count=Math.max(1,String(source||'').split('\n').length);
@@ -4686,8 +4948,10 @@ $('[data-html-note]').each(function(){
     let mode='visual',savedRange=null;
 
     /**
-     * EN: Builds, formats, or transforms data for `renderSource` (render Source).
-     * 中文：为 `renderSource`（render Source）构建、格式化或转换数据。
+     * EN: Render the render source behavior used by the application UI.
+     * 中文：渲染application UI 使用的“render source”行为。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function renderSource(){
         const value=String($source.val()||'');
@@ -4698,8 +4962,10 @@ $('[data-html-note]').each(function(){
     }
 
     /**
-     * EN: Implements the application operation `cursorStatus` (cursor Status).
-     * 中文：实现应用操作 `cursorStatus`（cursor Status）。
+     * EN: Perform the cursor status behavior used by the application UI.
+     * 中文：执行application UI 使用的“cursor status”行为。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function cursorStatus(){
         const el=$source.get(0);if(!el||mode!=='html')return;
@@ -4708,8 +4974,10 @@ $('[data-html-note]').each(function(){
     }
 
     /**
-     * EN: Implements the application operation `rememberSelection` (remember Selection).
-     * 中文：实现应用操作 `rememberSelection`（remember Selection）。
+     * EN: Perform the remember selection behavior used by the application UI.
+     * 中文：执行application UI 使用的“remember selection”行为。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function rememberSelection(){
         const selection=window.getSelection();if(!selection||!selection.rangeCount)return;
@@ -4718,8 +4986,10 @@ $('[data-html-note]').each(function(){
     }
 
     /**
-     * EN: Implements the application operation `restoreSelection` (restore Selection).
-     * 中文：实现应用操作 `restoreSelection`（restore Selection）。
+     * EN: Perform the restore selection behavior used by the application UI.
+     * 中文：执行application UI 使用的“restore selection”行为。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function restoreSelection(){
         if(!savedRange){$editor.trigger('focus');return;}
@@ -4727,8 +4997,12 @@ $('[data-html-note]').each(function(){
     }
 
     /**
-     * EN: Updates application state for `setMode` (set Mode).
-     * 中文：更新 `setMode`（set Mode）对应的应用状态。
+     * EN: Update the set mode behavior used by the application UI.
+     * 中文：更新application UI 使用的“set mode”行为。
+     *
+     * @param {*} next Next value used by this function. / 本函数使用的“next”参数值。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function setMode(next){
         mode=next==='html'?'html':'visual';
@@ -4742,14 +5016,23 @@ $('[data-html-note]').each(function(){
     }
 
     /**
-     * EN: Implements the application operation `command` (command).
-     * 中文：实现应用操作 `command`（command）。
+     * EN: Perform the command behavior used by the application UI.
+     * 中文：执行application UI 使用的“command”行为。
+     *
+     * @param {*} name Name value used by this function. / 本函数使用的“name”参数值。
+     * @param {string|*} value Value read, transformed, or applied by this function. / 本函数读取、转换或应用的值。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function command(name,value){restoreSelection();$editor.trigger('focus');document.execCommand(name,false,value||null);rememberSelection();$source.val($editor.html());}
 
     /**
-     * EN: Creates or persists the `insertHtmlAtCursor` operation (insert Html At Cursor).
-     * 中文：创建或持久化 `insertHtmlAtCursor`（insert Html At Cursor）操作。
+     * EN: Perform the insert html at cursor behavior used by the application UI.
+     * 中文：执行application UI 使用的“insert html at cursor”行为。
+     *
+     * @param {string|*} html HTML content rendered or sanitized by this function. / 本函数渲染或清理的 HTML 内容。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function insertHtmlAtCursor(html){
         if(mode==='html'){
@@ -4760,14 +5043,20 @@ $('[data-html-note]').each(function(){
     }
 
     /**
-     * EN: Implements the application operation `safeImageHtml` (safe Image Html).
-     * 中文：实现应用操作 `safeImageHtml`（safe Image Html）。
+     * EN: Perform the safe image html behavior used by the application UI.
+     * 中文：执行application UI 使用的“safe image html”行为。
+     *
+     * @param {string|*} url URL read, generated, or requested by this function. / 本函数读取、生成或请求的 URL。
+     *
+     * @returns {string} String result produced by this UI helper. / 本 UI 辅助函数生成的字符串结果。
      */
     function safeImageHtml(url){return '<p><img src="'+String(url).replace(/"/g,'&quot;')+'" alt=""></p>';}
 
     /**
-     * EN: Implements the application operation `openImagePanel` (open Image Panel).
-     * 中文：实现应用操作 `openImagePanel`（open Image Panel）。
+     * EN: Open or show the open image panel behavior used by the application UI.
+     * 中文：打开或显示application UI 使用的“open image panel”行为。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function openImagePanel(){
         rememberSelection();$linkbar.addClass('hidden');$imagePanel.removeClass('hidden');$imageMessage.removeClass('error').text('');
@@ -4834,8 +5123,12 @@ $('[data-html-note]').each(function(){
         let lastSignature = '';
 
         /**
-         * EN: Implements the application operation `esc` (esc).
-         * 中文：实现应用操作 `esc`（esc）。
+         * EN: Perform the esc behavior used by the application UI.
+         * 中文：执行application UI 使用的“esc”行为。
+         *
+         * @param {string|*} value Value read, transformed, or applied by this function. / 本函数读取、转换或应用的值。
+         *
+         * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
          */
         function esc(value){
             return $('<div>').text(
@@ -4844,8 +5137,12 @@ $('[data-html-note]').each(function(){
         }
 
         /**
-         * EN: Implements the application operation `safeStatus` (safe Status).
-         * 中文：实现应用操作 `safeStatus`（safe Status）。
+         * EN: Perform the safe status behavior used by the application UI.
+         * 中文：执行application UI 使用的“safe status”行为。
+         *
+         * @param {string|*} value Value read, transformed, or applied by this function. / 本函数读取、转换或应用的值。
+         *
+         * @returns {Array} Array result produced by this UI helper. / 本 UI 辅助函数生成的数组结果。
          */
         function safeStatus(value){
             const status = String(value || '').toLowerCase();
@@ -4855,8 +5152,12 @@ $('[data-html-note]').each(function(){
         }
 
         /**
-         * EN: Implements the application operation `statusLabel` (status Label).
-         * 中文：实现应用操作 `statusLabel`（status Label）。
+         * EN: Perform the status label behavior used by the application UI.
+         * 中文：执行application UI 使用的“status label”行为。
+         *
+         * @param {*} status Status value used by this function. / 本函数使用的“status”参数值。
+         *
+         * @returns {string} String result produced by this UI helper. / 本 UI 辅助函数生成的字符串结果。
          */
         function statusLabel(status){
             if(status === 'ready') return 'Ready';
@@ -4866,8 +5167,12 @@ $('[data-html-note]').each(function(){
         }
 
         /**
-         * EN: Builds, formats, or transforms data for `renderJobs` (render Jobs).
-         * 中文：为 `renderJobs`（render Jobs）构建、格式化或转换数据。
+         * EN: Render the render jobs behavior used by the application UI.
+         * 中文：渲染application UI 使用的“render jobs”行为。
+         *
+         * @param {*} jobs Jobs value used by this function. / 本函数使用的“jobs”参数值。
+         *
+         * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
          */
         function renderJobs(jobs){
             jobs = Array.isArray(jobs) ? jobs : [];
@@ -4917,8 +5222,12 @@ $('[data-html-note]').each(function(){
         }
 
         /**
-         * EN: Updates application state for `setLiveState` (set Live State).
-         * 中文：更新 `setLiveState`（set Live State）对应的应用状态。
+         * EN: Update the set live state behavior used by the application UI.
+         * 中文：更新application UI 使用的“set live state”行为。
+         *
+         * @param {Object|*} state State value used by this function. / 本函数使用的“state”参数值。
+         *
+         * @returns {void} No value is returned. / 无返回值。
          */
         function setLiveState(state){
             $live
@@ -4935,8 +5244,10 @@ $('[data-html-note]').each(function(){
         }
 
         /**
-         * EN: Updates application state for `refreshProviderJobs` (refresh Provider Jobs).
-         * 中文：更新 `refreshProviderJobs`（refresh Provider Jobs）对应的应用状态。
+         * EN: Perform the refresh provider jobs behavior used by the application UI.
+         * 中文：执行application UI 使用的“refresh provider jobs”行为。
+         *
+         * @returns {void} No value is returned. / 无返回值。
          */
         function refreshProviderJobs(){
             if(document.hidden){
@@ -4968,8 +5279,10 @@ $('[data-html-note]').each(function(){
         }
 
         /**
-         * EN: Implements the application operation `startProviderJobsPolling` (start Provider Jobs Polling).
-         * 中文：实现应用操作 `startProviderJobsPolling`（start Provider Jobs Polling）。
+         * EN: Schedule or start the start provider jobs polling behavior used by the application UI.
+         * 中文：调度或启动application UI 使用的“start provider jobs polling”行为。
+         *
+         * @returns {void} No value is returned. / 无返回值。
          */
         function startProviderJobsPolling(){
             if(timer){
@@ -5027,8 +5340,12 @@ $('[data-html-note]').each(function(){
         };
 
         /**
-         * EN: Removes or cleans data/state for `clearProviderFieldError` (clear Provider Field Error).
-         * 中文：删除或清理 `clearProviderFieldError`（clear Provider Field Error）相关的数据或状态。
+         * EN: Close or clear the clear provider field error behavior used by the application UI.
+         * 中文：关闭或清理application UI 使用的“clear provider field error”行为。
+         *
+         * @param {Element|*} target Target DOM node or application object. / 目标 DOM 节点或应用对象。
+         *
+         * @returns {void} No value is returned. / 无返回值。
          */
         function clearProviderFieldError(target){
             const $field = typeof target === 'string'
@@ -5046,8 +5363,10 @@ $('[data-html-note]').each(function(){
         }
 
         /**
-         * EN: Removes or cleans data/state for `clearAllProviderFieldErrors` (clear All Provider Field Errors).
-         * 中文：删除或清理 `clearAllProviderFieldErrors`（clear All Provider Field Errors）相关的数据或状态。
+         * EN: Close or clear the clear all provider field errors behavior used by the application UI.
+         * 中文：关闭或清理application UI 使用的“clear all provider field errors”行为。
+         *
+         * @returns {void} No value is returned. / 无返回值。
          */
         function clearAllProviderFieldErrors(){
             $form
@@ -5060,8 +5379,13 @@ $('[data-html-note]').each(function(){
         }
 
         /**
-         * EN: Implements the application operation `showProviderFieldError` (show Provider Field Error).
-         * 中文：实现应用操作 `showProviderFieldError`（show Provider Field Error）。
+         * EN: Open or show the show provider field error behavior used by the application UI.
+         * 中文：打开或显示application UI 使用的“show provider field error”行为。
+         *
+         * @param {*} field Field value used by this function. / 本函数使用的“field”参数值。
+         * @param {string|*} message Human-readable message shown or recorded by the UI. / UI 显示或记录的可读消息。
+         *
+         * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
          */
         function showProviderFieldError(field, message){
             const $field = $form.find('[name="'+field+'"]:enabled').first();
@@ -5100,8 +5424,10 @@ $('[data-html-note]').each(function(){
         }
 
         /**
-         * EN: Checks or validates the condition represented by `validateProviderTestUrl` (validate Provider Test Url).
-         * 中文：检查或校验 `validateProviderTestUrl`（validate Provider Test Url）所表示的条件。
+         * EN: Perform the validate provider test url behavior used by the application UI.
+         * 中文：执行application UI 使用的“validate provider test url”行为。
+         *
+         * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
          */
         function validateProviderTestUrl(){
             const value = String($('#providerTestUrl').val() || '').trim();
@@ -5122,8 +5448,13 @@ $('[data-html-note]').each(function(){
         }
 
         /**
-         * EN: Implements the application operation `pageNotice` (page Notice).
-         * 中文：实现应用操作 `pageNotice`（page Notice）。
+         * EN: Perform the page notice behavior used by the application UI.
+         * 中文：执行application UI 使用的“page notice”行为。
+         *
+         * @param {string|*} message Human-readable message shown or recorded by the UI. / UI 显示或记录的可读消息。
+         * @param {*} ok Ok value used by this function. / 本函数使用的“ok”参数值。
+         *
+         * @returns {void} No value is returned. / 无返回值。
          */
         function pageNotice(message, ok){
             const $n = $('#providerPageNotice');
@@ -5134,8 +5465,10 @@ $('[data-html-note]').each(function(){
         }
 
         /**
-         * EN: Implements the application operation `invalidateProviderTest` (invalidate Provider Test).
-         * 中文：实现应用操作 `invalidateProviderTest`（invalidate Provider Test）。
+         * EN: Perform the invalidate provider test behavior used by the application UI.
+         * 中文：执行application UI 使用的“invalidate provider test”行为。
+         *
+         * @returns {void} No value is returned. / 无返回值。
          */
         function invalidateProviderTest(){
             $('#providerTestTicket').val('');
@@ -5147,8 +5480,10 @@ $('[data-html-note]').each(function(){
         }
 
         /**
-         * EN: Updates application state for `syncProviderType` (sync Provider Type).
-         * 中文：更新 `syncProviderType`（sync Provider Type）对应的应用状态。
+         * EN: Update the sync provider type behavior used by the application UI.
+         * 中文：更新application UI 使用的“sync provider type”行为。
+         *
+         * @returns {void} No value is returned. / 无返回值。
          */
         function syncProviderType(){
             const type = $('#providerType').val();
@@ -5429,8 +5764,10 @@ $('[data-html-note]').each(function(){
         });
 
         /**
-         * EN: Updates application state for `refreshPriorityNumbers` (refresh Priority Numbers).
-         * 中文：更新 `refreshPriorityNumbers`（refresh Priority Numbers）对应的应用状态。
+         * EN: Perform the refresh priority numbers behavior used by the application UI.
+         * 中文：执行application UI 使用的“refresh priority numbers”行为。
+         *
+         * @returns {void} No value is returned. / 无返回值。
          */
         function refreshPriorityNumbers(){
             $('#providerSortable .provider-card').each(function(index){
@@ -5439,8 +5776,10 @@ $('[data-html-note]').each(function(){
         }
 
         /**
-         * EN: Creates or persists the `saveProviderOrder` operation (save Provider Order).
-         * 中文：创建或持久化 `saveProviderOrder`（save Provider Order）操作。
+         * EN: Submit or persist the save provider order behavior used by the application UI.
+         * 中文：提交或保存application UI 使用的“save provider order”行为。
+         *
+         * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
          */
         function saveProviderOrder(){
             const ids = $('#providerSortable .provider-card').map(function(){
@@ -5897,8 +6236,10 @@ if(!dashboardI18n[dashboardLanguage]){
 }
 
 /**
- * EN: Implements the application operation `dashboardLocale` (dashboard Locale).
- * 中文：实现应用操作 `dashboardLocale`（dashboard Locale）。
+ * EN: Perform the dashboard locale behavior used by the application UI.
+ * 中文：执行application UI 使用的“dashboard locale”行为。
+ *
+ * @returns {string} String result produced by this UI helper. / 本 UI 辅助函数生成的字符串结果。
  */
 function dashboardLocale(){
     if(dashboardLanguage==='zh-CN')return 'zh-CN';
@@ -5908,8 +6249,13 @@ function dashboardLocale(){
 }
 
 /**
- * EN: Implements the application operation `tr` (tr).
- * 中文：实现应用操作 `tr`（tr）。
+ * EN: Perform the tr behavior used by the application UI.
+ * 中文：执行application UI 使用的“tr”行为。
+ *
+ * @param {string|*} key Key used to identify the requested value. / 用于标识目标值的键。
+ * @param {*} vars Vars value used by this function. / 本函数使用的“vars”参数值。
+ *
+ * @returns {boolean} Boolean result produced by this UI helper. / 本 UI 辅助函数生成的布尔结果。
  */
 function tr(key,vars){
     const dict=dashboardI18n[dashboardLanguage]||dashboardI18n.en;
@@ -5926,8 +6272,12 @@ function tr(key,vars){
 }
 
 /**
- * EN: Implements the application operation `translatedPeriodName` (translated Period Name).
- * 中文：实现应用操作 `translatedPeriodName`（translated Period Name）。
+ * EN: Perform the translated period name behavior used by the application UI.
+ * 中文：执行application UI 使用的“translated period name”行为。
+ *
+ * @param {*} period Period value used by this function. / 本函数使用的“period”参数值。
+ *
+ * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function translatedPeriodName(period){
     if(period==='week')return tr('weekly');
@@ -5937,8 +6287,12 @@ function translatedPeriodName(period){
 }
 
 /**
- * EN: Implements the application operation `translateSalesCard` (translate Sales Card).
- * 中文：实现应用操作 `translateSalesCard`（translate Sales Card）。
+ * EN: Perform the translate sales card behavior used by the application UI.
+ * 中文：执行application UI 使用的“translate sales card”行为。
+ *
+ * @param {*} $card $card value used by this function. / 本函数使用的“$card”参数值。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function translateSalesCard($card){
     const days=parseInt(
@@ -5963,8 +6317,10 @@ function translateSalesCard($card){
 }
 
 /**
- * EN: Implements the application operation `translateTopNav` (translate Top Nav).
- * 中文：实现应用操作 `translateTopNav`（translate Top Nav）。
+ * EN: Perform the translate top nav behavior used by the application UI.
+ * 中文：执行application UI 使用的“translate top nav”行为。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function translateTopNav(){
     // Header/footer are universal layout partials. Keep one menu translator
@@ -5973,8 +6329,10 @@ function translateTopNav(){
 }
 
 /**
- * EN: Updates application state for `applyDashboardLanguage` (apply Dashboard Language).
- * 中文：更新 `applyDashboardLanguage`（apply Dashboard Language）对应的应用状态。
+ * EN: Update the apply dashboard language behavior used by the application UI.
+ * 中文：更新application UI 使用的“apply dashboard language”行为。
+ *
+ * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function applyDashboardLanguage(){
     const adminName=String(
@@ -6172,8 +6530,10 @@ function applyDashboardLanguage(){
     let adminRangeStickyFrame = 0;
 
     /**
-     * EN: Updates application state for `syncAdminStickyRangeControls` (sync Admin Sticky Range Controls).
-     * 中文：更新 `syncAdminStickyRangeControls`（sync Admin Sticky Range Controls）对应的应用状态。
+     * EN: Update the sync admin sticky range controls behavior used by the application UI.
+     * 中文：更新application UI 使用的“sync admin sticky range controls”行为。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function syncAdminStickyRangeControls(){
         if(!$adminStickyRange.length){
@@ -6206,8 +6566,10 @@ function applyDashboardLanguage(){
     }
 
     /**
-     * EN: Updates application state for `syncAdminRangeStickyState` (sync Admin Range Sticky State).
-     * 中文：更新 `syncAdminRangeStickyState`（sync Admin Range Sticky State）对应的应用状态。
+     * EN: Update the sync admin range sticky state behavior used by the application UI.
+     * 中文：更新application UI 使用的“sync admin range sticky state”行为。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function syncAdminRangeStickyState(){
         if(!$adminRangeBar.length||!$adminRangeAnchor.length||!$adminStickyRange.length){
@@ -6232,8 +6594,10 @@ function applyDashboardLanguage(){
     }
 
     /**
-     * EN: Implements the application operation `requestAdminRangeStickySync` (request Admin Range Sticky Sync).
-     * 中文：实现应用操作 `requestAdminRangeStickySync`（request Admin Range Sticky Sync）。
+     * EN: Perform the request admin range sticky sync behavior used by the application UI.
+     * 中文：执行application UI 使用的“request admin range sticky sync”行为。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function requestAdminRangeStickySync(){
         if(adminRangeStickyFrame){
@@ -6315,8 +6679,12 @@ function applyDashboardLanguage(){
     const $getContent = $('#dashboardGetContent');
 
     /**
-     * EN: Implements the application operation `escapeHtml` (escape Html).
-     * 中文：实现应用操作 `escapeHtml`（escape Html）。
+     * EN: Escape text before inserting it into HTML output.
+     * 中文：在将文本插入 HTML 输出前进行转义。
+     *
+     * @param {string|*} value Value read, transformed, or applied by this function. / 本函数读取、转换或应用的值。
+     *
+     * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
      */
     function escapeHtml(value){
         return $('<div>').text(
@@ -6325,8 +6693,12 @@ function applyDashboardLanguage(){
     }
 
 /**
- * EN: Implements the application operation `platformLogoHtml` (platform Logo Html).
- * 中文：实现应用操作 `platformLogoHtml`（platform Logo Html）。
+ * EN: Perform the platform logo html behavior used by the application UI.
+ * 中文：执行application UI 使用的“platform logo html”行为。
+ *
+ * @param {*} platform Platform value used by this function. / 本函数使用的“platform”参数值。
+ *
+ * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function platformLogoHtml(platform){
     const key = String(platform || '').toLowerCase();
@@ -6374,8 +6746,14 @@ function platformLogoHtml(platform){
 }
 
     /**
-     * EN: Implements the application operation `adminSalesActivityAggregate` (admin Sales Activity Aggregate).
-     * 中文：实现应用操作 `adminSalesActivityAggregate`（admin Sales Activity Aggregate）。
+     * EN: Perform the admin sales activity aggregate behavior used by the application UI.
+     * 中文：执行application UI 使用的“admin sales activity aggregate”行为。
+     *
+     * @param {Object|*} data Structured data consumed by this function. / 本函数使用的结构化数据。
+     * @param {string|*} date Date value used by the calculation or filter. / 计算或筛选使用的日期值。
+     * @param {*} channel Channel value used by this function. / 本函数使用的“channel”参数值。
+     *
+     * @returns {boolean} Boolean result produced by this UI helper. / 本 UI 辅助函数生成的布尔结果。
      */
     function adminSalesActivityAggregate(data,date,channel){
         const result={
@@ -6409,8 +6787,14 @@ function platformLogoHtml(platform){
     }
 
     /**
-     * EN: Builds, formats, or transforms data for `renderAdminSalesChartAxis` (render Admin Sales Chart Axis).
-     * 中文：为 `renderAdminSalesChartAxis`（render Admin Sales Chart Axis）构建、格式化或转换数据。
+     * EN: Render the render admin sales chart axis behavior used by the application UI.
+     * 中文：渲染application UI 使用的“render admin sales chart axis”行为。
+     *
+     * @param {*} cap Cap value used by this function. / 本函数使用的“cap”参数值。
+     * @param {Element|*} target Target DOM node or application object. / 目标 DOM 节点或应用对象。
+     * @param {*} plotHeight Plot height value used by this function. / 本函数使用的“plot height”参数值。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function renderAdminSalesChartAxis(cap,target,plotHeight){
         const step=salesChartTickStep(cap);
@@ -6442,8 +6826,12 @@ function platformLogoHtml(platform){
     }
 
     /**
-     * EN: Builds, formats, or transforms data for `renderAdminSalesActivity` (render Admin Sales Activity).
-     * 中文：为 `renderAdminSalesActivity`（render Admin Sales Activity）构建、格式化或转换数据。
+     * EN: Render the render admin sales activity behavior used by the application UI.
+     * 中文：渲染application UI 使用的“render admin sales activity”行为。
+     *
+     * @param {Object|*} data Structured data consumed by this function. / 本函数使用的结构化数据。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function renderAdminSalesActivity(data){
         if(!$adminSalesActivity.length||!data){
@@ -6573,16 +6961,26 @@ function platformLogoHtml(platform){
     }
 
     /**
-     * EN: Implements the application operation `periodName` (period Name).
-     * 中文：实现应用操作 `periodName`（period Name）。
+     * EN: Perform the period name behavior used by the application UI.
+     * 中文：执行application UI 使用的“period name”行为。
+     *
+     * @param {*} period Period value used by this function. / 本函数使用的“period”参数值。
+     *
+     * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
      */
     function periodName(period){
         return translatedPeriodName(period);
     }
 
     /**
-     * EN: Updates application state for `setTargetMessage` (set Target Message).
-     * 中文：更新 `setTargetMessage`（set Target Message）对应的应用状态。
+     * EN: Update the set target message behavior used by the application UI.
+     * 中文：更新application UI 使用的“set target message”行为。
+     *
+     * @param {*} $card $card value used by this function. / 本函数使用的“$card”参数值。
+     * @param {string|*} message Human-readable message shown or recorded by the UI. / UI 显示或记录的可读消息。
+     * @param {*} error Error value used by this function. / 本函数使用的“error”参数值。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function setTargetMessage($card, message, error){
         $card
@@ -6592,8 +6990,14 @@ function platformLogoHtml(platform){
     }
 
     /**
-     * EN: Implements the application operation `animateNumber` (animate Number).
-     * 中文：实现应用操作 `animateNumber`（animate Number）。
+     * EN: Perform the animate number behavior used by the application UI.
+     * 中文：执行application UI 使用的“animate number”行为。
+     *
+     * @param {*} $element $element value used by this function. / 本函数使用的“$element”参数值。
+     * @param {*} from From value used by this function. / 本函数使用的“from”参数值。
+     * @param {*} to To value used by this function. / 本函数使用的“to”参数值。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function animateNumber($element, from, to){
         from = parseInt(from, 10) || 0;
@@ -6608,8 +7012,12 @@ function platformLogoHtml(platform){
         const duration = 300;
 
         /**
-         * EN: Implements the application operation `frame` (frame).
-         * 中文：实现应用操作 `frame`（frame）。
+         * EN: Perform the frame behavior used by the application UI.
+         * 中文：执行application UI 使用的“frame”行为。
+         *
+         * @param {*} now Now value used by this function. / 本函数使用的“now”参数值。
+         *
+         * @returns {void} No value is returned. / 无返回值。
          */
         function frame(now){
             const raw = Math.min(1, (now - start) / duration);
@@ -6627,8 +7035,10 @@ function platformLogoHtml(platform){
     }
 
     /**
-     * EN: Updates application state for `updateHistory` (update History).
-     * 中文：更新 `updateHistory`（update History）对应的应用状态。
+     * EN: Update the update history behavior used by the application UI.
+     * 中文：更新application UI 使用的“update history”行为。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function updateHistory(){
         if(!window.history || !window.history.replaceState){
@@ -6655,8 +7065,10 @@ function platformLogoHtml(platform){
     }
 
     /**
-     * EN: Updates application state for `updateBackToday` (update Back Today).
-     * 中文：更新 `updateBackToday`（update Back Today）对应的应用状态。
+     * EN: Update the update back today behavior used by the application UI.
+     * 中文：更新application UI 使用的“update back today”行为。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function updateBackToday(){
         const pickerMax=String(
@@ -6682,8 +7094,10 @@ function platformLogoHtml(platform){
     }
 
     /**
-     * EN: Updates application state for `syncAdminRangeInputs` (sync Admin Range Inputs).
-     * 中文：更新 `syncAdminRangeInputs`（sync Admin Range Inputs）对应的应用状态。
+     * EN: Update the sync admin range inputs behavior used by the application UI.
+     * 中文：更新application UI 使用的“sync admin range inputs”行为。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function syncAdminRangeInputs(){
         const $from=$('#dashboardFromInput');
@@ -6710,8 +7124,12 @@ function platformLogoHtml(platform){
     }
 
     /**
-     * EN: Implements the application operation `adminAjaxRangeData` (admin Ajax Range Data).
-     * 中文：实现应用操作 `adminAjaxRangeData`（admin Ajax Range Data）。
+     * EN: Perform the admin ajax range data behavior used by the application UI.
+     * 中文：执行application UI 使用的“admin ajax range data”行为。
+     *
+     * @param {*} extra Extra value used by this function. / 本函数使用的“extra”参数值。
+     *
+     * @returns {boolean} Boolean result produced by this UI helper. / 本 UI 辅助函数生成的布尔结果。
      */
     function adminAjaxRangeData(extra){
         const data=Object.assign({},extra||{});
@@ -6728,8 +7146,12 @@ function platformLogoHtml(platform){
     }
 
     /**
-     * EN: Updates application state for `updatePeriodButtons` (update Period Buttons).
-     * 中文：更新 `updatePeriodButtons`（update Period Buttons）对应的应用状态。
+     * EN: Update the update period buttons behavior used by the application UI.
+     * 中文：更新application UI 使用的“update period buttons”行为。
+     *
+     * @param {*} preset Preset value used by this function. / 本函数使用的“preset”参数值。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function updatePeriodButtons(preset){
         currentPreset=String(preset||'custom');
@@ -6746,8 +7168,13 @@ function platformLogoHtml(platform){
     }
 
     /**
-     * EN: Implements the application operation `adminPresetRange` (admin Preset Range).
-     * 中文：实现应用操作 `adminPresetRange`（admin Preset Range）。
+     * EN: Perform the admin preset range behavior used by the application UI.
+     * 中文：执行application UI 使用的“admin preset range”行为。
+     *
+     * @param {*} preset Preset value used by this function. / 本函数使用的“preset”参数值。
+     * @param {*} anchorValue Anchor value value used by this function. / 本函数使用的“anchor value”参数值。
+     *
+     * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
      */
     function adminPresetRange(preset,anchorValue){
         const parse=function(value){
@@ -6782,8 +7209,17 @@ function platformLogoHtml(platform){
     }
 
 /**
- * EN: Updates application state for `updateReviewProgressSegments` (update Review Progress Segments).
- * 中文：更新 `updateReviewProgressSegments`（update Review Progress Segments）对应的应用状态。
+ * EN: Update the update review progress segments behavior used by the application UI.
+ * 中文：更新application UI 使用的“update review progress segments”行为。
+ *
+ * @param {*} $card $card value used by this function. / 本函数使用的“$card”参数值。
+ * @param {*} postCount Post count value used by this function. / 本函数使用的“post count”参数值。
+ * @param {*} periodTarget Period target value used by this function. / 本函数使用的“period target”参数值。
+ * @param {*} goodCount Good count value used by this function. / 本函数使用的“good count”参数值。
+ * @param {*} badCount Bad count value used by this function. / 本函数使用的“bad count”参数值。
+ * @param {*} unreviewedCount Unreviewed count value used by this function. / 本函数使用的“unreviewed count”参数值。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function updateReviewProgressSegments(
     $card,
@@ -6823,8 +7259,10 @@ function updateReviewProgressSegments(
 }
 
 /**
- * EN: Updates application state for `syncExpandedSalesCardFromTiles` (sync Expanded Sales Card From Tiles).
- * 中文：更新 `syncExpandedSalesCardFromTiles`（sync Expanded Sales Card From Tiles）对应的应用状态。
+ * EN: Update the sync expanded sales card from tiles behavior used by the application UI.
+ * 中文：更新application UI 使用的“sync expanded sales card from tiles”行为。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function syncExpandedSalesCardFromTiles(){
     if(!expandedSalesId){
@@ -6879,8 +7317,15 @@ function syncExpandedSalesCardFromTiles(){
 }
 
     /**
-     * EN: Updates application state for `updateCard` (update Card).
-     * 中文：更新 `updateCard`（update Card）对应的应用状态。
+     * EN: Update the update card behavior used by the application UI.
+     * 中文：更新application UI 使用的“update card”行为。
+     *
+     * @param {*} $card $card value used by this function. / 本函数使用的“$card”参数值。
+     * @param {Object|*} row Current record or row being rendered or processed. / 当前正在渲染或处理的记录/行。
+     * @param {*} days Days value used by this function. / 本函数使用的“days”参数值。
+     * @param {*} period Period value used by this function. / 本函数使用的“period”参数值。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function updateCard($card, row, days, period){
         const oldCount = parseInt(
@@ -6976,8 +7421,10 @@ function syncExpandedSalesCardFromTiles(){
     }
 
     /**
-     * EN: Implements the application operation `closeExpandedPosts` (close Expanded Posts).
-     * 中文：实现应用操作 `closeExpandedPosts`（close Expanded Posts）。
+     * EN: Close or clear the close expanded posts behavior used by the application UI.
+     * 中文：关闭或清理application UI 使用的“close expanded posts”行为。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function closeExpandedPosts(){
         expandedSalesId = 0;
@@ -7009,8 +7456,12 @@ function syncExpandedSalesCardFromTiles(){
     }
 
 /**
- * EN: Implements the application operation `postDateGroupLabel` (post Date Group Label).
- * 中文：实现应用操作 `postDateGroupLabel`（post Date Group Label）。
+ * EN: Perform the post date group label behavior used by the application UI.
+ * 中文：执行application UI 使用的“post date group label”行为。
+ *
+ * @param {string|*} value Value read, transformed, or applied by this function. / 本函数读取、转换或应用的值。
+ *
+ * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function postDateGroupLabel(value){
     const raw=String(value||'').trim();
@@ -7038,8 +7489,12 @@ function postDateGroupLabel(value){
 }
 
 /**
- * EN: Implements the application operation `postDateTimeLabel` (post Date Time Label).
- * 中文：实现应用操作 `postDateTimeLabel`（post Date Time Label）。
+ * EN: Perform the post date time label behavior used by the application UI.
+ * 中文：执行application UI 使用的“post date time label”行为。
+ *
+ * @param {string|*} value Value read, transformed, or applied by this function. / 本函数读取、转换或应用的值。
+ *
+ * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function postDateTimeLabel(value){
     const raw=String(value||'').trim();
@@ -7071,8 +7526,12 @@ function postDateTimeLabel(value){
 }
 
 /**
- * EN: Implements the application operation `postThumbnailHtml` (post Thumbnail Html).
- * 中文：实现应用操作 `postThumbnailHtml`（post Thumbnail Html）。
+ * EN: Perform the post thumbnail html behavior used by the application UI.
+ * 中文：执行application UI 使用的“post thumbnail html”行为。
+ *
+ * @param {*} post Post value used by this function. / 本函数使用的“post”参数值。
+ *
+ * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function postThumbnailHtml(post){
     const url=String(post.thumbnail_url||'').trim();
@@ -7095,8 +7554,12 @@ function postThumbnailHtml(post){
 }
 
 /**
- * EN: Implements the application operation `periodReviewDateLabel` (period Review Date Label).
- * 中文：实现应用操作 `periodReviewDateLabel`（period Review Date Label）。
+ * EN: Perform the period review date label behavior used by the application UI.
+ * 中文：执行application UI 使用的“period review date label”行为。
+ *
+ * @param {*} review Review value used by this function. / 本函数使用的“review”参数值。
+ *
+ * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function periodReviewDateLabel(review){
     if(!review){
@@ -7125,8 +7588,13 @@ function periodReviewDateLabel(review){
 }
 
 /**
- * EN: Updates application state for `setHtmlNoteValue` (set Html Note Value).
- * 中文：更新 `setHtmlNoteValue`（set Html Note Value）对应的应用状态。
+ * EN: Update the set html note value behavior used by the application UI.
+ * 中文：更新application UI 使用的“set html note value”行为。
+ *
+ * @param {*} $root $root value used by this function. / 本函数使用的“$root”参数值。
+ * @param {string|*} html HTML content rendered or sanitized by this function. / 本函数渲染或清理的 HTML 内容。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function setHtmlNoteValue($root,html){
     if(!$root||!$root.length){
@@ -7149,8 +7617,12 @@ function setHtmlNoteValue($root,html){
 }
 
 /**
- * EN: Implements the application operation `salesRatingStars` (sales Rating Stars).
- * 中文：实现应用操作 `salesRatingStars`（sales Rating Stars）。
+ * EN: Perform the sales rating stars behavior used by the application UI.
+ * 中文：执行application UI 使用的“sales rating stars”行为。
+ *
+ * @param {*} rating Rating value used by this function. / 本函数使用的“rating”参数值。
+ *
+ * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function salesRatingStars(rating){
     rating=parseInt(rating,10)||0;
@@ -7158,8 +7630,12 @@ function salesRatingStars(rating){
 }
 
 /**
- * EN: Updates application state for `setSalesPeriodRating` (set Sales Period Rating).
- * 中文：更新 `setSalesPeriodRating`（set Sales Period Rating）对应的应用状态。
+ * EN: Update the set sales period rating behavior used by the application UI.
+ * 中文：更新application UI 使用的“set sales period rating”行为。
+ *
+ * @param {*} rating Rating value used by this function. / 本函数使用的“rating”参数值。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function setSalesPeriodRating(rating){
     rating=parseInt(rating,10)||0;
@@ -7174,8 +7650,13 @@ function setSalesPeriodRating(rating){
 }
 
 /**
- * EN: Builds, formats, or transforms data for `renderPersonReviewAttachments` (render Person Review Attachments).
- * 中文：为 `renderPersonReviewAttachments`（render Person Review Attachments）构建、格式化或转换数据。
+ * EN: Render the render person review attachments behavior used by the application UI.
+ * 中文：渲染application UI 使用的“render person review attachments”行为。
+ *
+ * @param {Array} items Collection of items processed by this function. / 本函数处理的数据项集合。
+ * @param {*} readOnly Read only value used by this function. / 本函数使用的“read only”参数值。
+ *
+ * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function renderPersonReviewAttachments(items,readOnly){
     items=(Array.isArray(items)?items:[]).filter(function(item){
@@ -7208,16 +7689,22 @@ function renderPersonReviewAttachments(items,readOnly){
 }
 
 /**
- * EN: Builds, formats, or transforms data for `renderCurrentPersonReviewAttachments` (render Current Person Review Attachments).
- * 中文：为 `renderCurrentPersonReviewAttachments`（render Current Person Review Attachments）构建、格式化或转换数据。
+ * EN: Render the render current person review attachments behavior used by the application UI.
+ * 中文：渲染application UI 使用的“render current person review attachments”行为。
+ *
+ * @param {Array} items Collection of items processed by this function. / 本函数处理的数据项集合。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function renderCurrentPersonReviewAttachments(items){
     $periodReviewAttachments.html(renderPersonReviewAttachments(items,false));
 }
 
 /**
- * EN: Updates application state for `updatePersonReviewFileSelection` (update Person Review File Selection).
- * 中文：更新 `updatePersonReviewFileSelection`（update Person Review File Selection）对应的应用状态。
+ * EN: Update the update person review file selection behavior used by the application UI.
+ * 中文：更新application UI 使用的“update person review file selection”行为。
+ *
+ * @returns {string} String result produced by this UI helper. / 本 UI 辅助函数生成的字符串结果。
  */
 function updatePersonReviewFileSelection(){
     const input=$periodReviewImages.get(0);
@@ -7228,8 +7715,10 @@ function updatePersonReviewFileSelection(){
 }
 
 /**
- * EN: Implements the application operation `resetSalesReviewHistoryDeleteArm` (reset Sales Review History Delete Arm).
- * 中文：实现应用操作 `resetSalesReviewHistoryDeleteArm`（reset Sales Review History Delete Arm）。
+ * EN: Close or clear the reset sales review history delete arm behavior used by the application UI.
+ * 中文：关闭或清理application UI 使用的“reset sales review history delete arm”行为。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function resetSalesReviewHistoryDeleteArm(){
     armedSalesReviewHistoryDeleteId=0;
@@ -7244,8 +7733,12 @@ function resetSalesReviewHistoryDeleteArm(){
 }
 
 /**
- * EN: Updates application state for `updateSalesReviewHistoryMeta` (update Sales Review History Meta).
- * 中文：更新 `updateSalesReviewHistoryMeta`（update Sales Review History Meta）对应的应用状态。
+ * EN: Update the update sales review history meta behavior used by the application UI.
+ * 中文：更新application UI 使用的“update sales review history meta”行为。
+ *
+ * @param {Array} items Collection of items processed by this function. / 本函数处理的数据项集合。
+ *
+ * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function updateSalesReviewHistoryMeta(items){
     items=Array.isArray(items)?items:[];
@@ -7265,8 +7758,12 @@ function updateSalesReviewHistoryMeta(items){
 }
 
 /**
- * EN: Builds, formats, or transforms data for `renderSalesReviewHistory` (render Sales Review History).
- * 中文：为 `renderSalesReviewHistory`（render Sales Review History）构建、格式化或转换数据。
+ * EN: Render the render sales review history behavior used by the application UI.
+ * 中文：渲染application UI 使用的“render sales review history”行为。
+ *
+ * @param {Array} items Collection of items processed by this function. / 本函数处理的数据项集合。
+ *
+ * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function renderSalesReviewHistory(items){
     items=Array.isArray(items)?items:[];
@@ -7441,8 +7938,12 @@ $periodReviewHistory.on('click','[data-person-review-history-delete]',function()
 });
 
 /**
- * EN: Builds, formats, or transforms data for `renderSalesPeriodReview` (render Sales Period Review).
- * 中文：为 `renderSalesPeriodReview`（render Sales Period Review）构建、格式化或转换数据。
+ * EN: Render the render sales period review behavior used by the application UI.
+ * 中文：渲染application UI 使用的“render sales period review”行为。
+ *
+ * @param {*} review Review value used by this function. / 本函数使用的“review”参数值。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function renderSalesPeriodReview(review){
     currentSalesPeriodReview=review||null;
@@ -7505,8 +8006,10 @@ function renderSalesPeriodReview(review){
 }
 
 /**
- * EN: Implements the application operation `openSalesPeriodReviewEditor` (open Sales Period Review Editor).
- * 中文：实现应用操作 `openSalesPeriodReviewEditor`（open Sales Period Review Editor）。
+ * EN: Open or show the open sales period review editor behavior used by the application UI.
+ * 中文：打开或显示application UI 使用的“open sales period review editor”行为。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function openSalesPeriodReviewEditor(){
     const review=currentSalesPeriodReview;
@@ -7578,8 +8081,10 @@ function openSalesPeriodReviewEditor(){
 }
 
 /**
- * EN: Implements the application operation `closeSalesPeriodReviewEditor` (close Sales Period Review Editor).
- * 中文：实现应用操作 `closeSalesPeriodReviewEditor`（close Sales Period Review Editor）。
+ * EN: Close or clear the close sales period review editor behavior used by the application UI.
+ * 中文：关闭或清理application UI 使用的“close sales period review editor”行为。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function closeSalesPeriodReviewEditor(){
     $periodReviewModal
@@ -7592,8 +8097,12 @@ function closeSalesPeriodReviewEditor(){
 }
 
 /**
- * EN: Builds, formats, or transforms data for `renderPostGrid` (render Post Grid).
- * 中文：为 `renderPostGrid`（render Post Grid）构建、格式化或转换数据。
+ * EN: Render the render post grid behavior used by the application UI.
+ * 中文：渲染application UI 使用的“render post grid”行为。
+ *
+ * @param {Object|*} data Structured data consumed by this function. / 本函数使用的结构化数据。
+ *
+ * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function renderPostGrid(data){
     const allPosts=Array.isArray(data.posts)
@@ -7772,8 +8281,12 @@ function renderPostGrid(data){
     $expandedList.html(html);
 }
     /**
-     * EN: Implements the application operation `openExpandedPosts` (open Expanded Posts).
-     * 中文：实现应用操作 `openExpandedPosts`（open Expanded Posts）。
+     * EN: Open or show the open expanded posts behavior used by the application UI.
+     * 中文：打开或显示application UI 使用的“open expanded posts”行为。
+     *
+     * @param {*} $card $card value used by this function. / 本函数使用的“$card”参数值。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function openExpandedPosts($card){
         const salesId = parseInt(
@@ -7877,8 +8390,12 @@ function renderPostGrid(data){
     }
 
     /**
-     * EN: Updates application state for `applyProgress` (apply Progress).
-     * 中文：更新 `applyProgress`（apply Progress）对应的应用状态。
+     * EN: Update the apply progress behavior used by the application UI.
+     * 中文：更新application UI 使用的“apply progress”行为。
+     *
+     * @param {Object|*} data Structured data consumed by this function. / 本函数使用的结构化数据。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function applyProgress(data){
         currentPeriod=data.period||'day';
@@ -7957,8 +8474,12 @@ function renderPostGrid(data){
     }
 
     /**
-     * EN: Retrieves or loads data for `loadProgress` (load Progress).
-     * 中文：读取或加载 `loadProgress`（load Progress）所需的数据。
+     * EN: Read or load the load progress behavior used by the application UI.
+     * 中文：读取或加载application UI 使用的“load progress”行为。
+     *
+     * @param {Object|*} options Optional settings that control this function. / 控制本函数行为的可选设置。
+     *
+     * @returns {boolean} Boolean result produced by this UI helper. / 本 UI 辅助函数生成的布尔结果。
      */
     function loadProgress(options){
         options=options||{};
@@ -8012,8 +8533,12 @@ function renderPostGrid(data){
     }
 
     /**
-     * EN: Implements the application operation `reloadCurrentProgress` (reload Current Progress).
-     * 中文：实现应用操作 `reloadCurrentProgress`（reload Current Progress）。
+     * EN: Perform the reload current progress behavior used by the application UI.
+     * 中文：执行application UI 使用的“reload current progress”行为。
+     *
+     * @param {Object|*} options Optional settings that control this function. / 控制本函数行为的可选设置。
+     *
+     * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
      */
     function reloadCurrentProgress(options){
         options=Object.assign({},options||{});
@@ -8098,8 +8623,12 @@ $('#appLanguageSwitch').on(
     );
 
     /**
-     * EN: Updates application state for `applyAdminRangeChange` (apply Admin Range Change).
-     * 中文：更新 `applyAdminRangeChange`（apply Admin Range Change）对应的应用状态。
+     * EN: Update the apply admin range change behavior used by the application UI.
+     * 中文：更新application UI 使用的“apply admin range change”行为。
+     *
+     * @param {*} changed Changed value used by this function. / 本函数使用的“changed”参数值。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function applyAdminRangeChange(changed){
         const $from=$('#dashboardFromInput');
@@ -8442,8 +8971,12 @@ $periodReviewForm.on('submit',function(event){
 });
 
     /**
-     * EN: Updates application state for `setModalEditorHtml` (set Modal Editor Html).
-     * 中文：更新 `setModalEditorHtml`（set Modal Editor Html）对应的应用状态。
+     * EN: Update the set modal editor html behavior used by the application UI.
+     * 中文：更新application UI 使用的“set modal editor html”行为。
+     *
+     * @param {string|*} html HTML content rendered or sanitized by this function. / 本函数渲染或清理的 HTML 内容。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function setModalEditorHtml(html){
         const $note = $modal.find('[data-html-note]').first();
@@ -8465,8 +8998,12 @@ $periodReviewForm.on('submit',function(event){
     }
 
 /**
- * EN: Builds, formats, or transforms data for `renderContentPreview` (render Content Preview).
- * 中文：为 `renderContentPreview`（render Content Preview）构建、格式化或转换数据。
+ * EN: Render the render content preview behavior used by the application UI.
+ * 中文：渲染application UI 使用的“render content preview”行为。
+ *
+ * @param {*} content Content value used by this function. / 本函数使用的“content”参数值。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function renderContentPreview(content){
     content=content||{};
@@ -8508,8 +9045,12 @@ function renderContentPreview(content){
 }
 
     /**
-     * EN: Implements the application operation `openListingImage` (open Listing Image).
-     * 中文：实现应用操作 `openListingImage`（open Listing Image）。
+     * EN: Open or show the open listing image behavior used by the application UI.
+     * 中文：打开或显示application UI 使用的“open listing image”行为。
+     *
+     * @param {string|*} url URL read, generated, or requested by this function. / 本函数读取、生成或请求的 URL。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function openListingImage(url){
         if(!url)return;
@@ -8517,8 +9058,10 @@ function renderContentPreview(content){
         $('#listingImageLightbox').removeClass('hidden').attr('aria-hidden','false');
     }
     /**
-     * EN: Implements the application operation `closeListingImage` (close Listing Image).
-     * 中文：实现应用操作 `closeListingImage`（close Listing Image）。
+     * EN: Close or clear the close listing image behavior used by the application UI.
+     * 中文：关闭或清理application UI 使用的“close listing image”行为。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function closeListingImage(){
         $('#listingImageLightbox').addClass('hidden').attr('aria-hidden','true');
@@ -8602,8 +9145,10 @@ function renderContentPreview(content){
 
 
 /**
- * EN: Implements the application operation `closeCommentDeletePopover` (close Comment Delete Popover).
- * 中文：实现应用操作 `closeCommentDeletePopover`（close Comment Delete Popover）。
+ * EN: Close or clear the close comment delete popover behavior used by the application UI.
+ * 中文：关闭或清理application UI 使用的“close comment delete popover”行为。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function closeCommentDeletePopover(){
     deleteCommentId=0;
@@ -8621,8 +9166,10 @@ function closeCommentDeletePopover(){
 }
 
 /**
- * EN: Implements the application operation `positionCommentDeletePopover` (position Comment Delete Popover).
- * 中文：实现应用操作 `positionCommentDeletePopover`（position Comment Delete Popover）。
+ * EN: Position the position comment delete popover behavior used by the application UI.
+ * 中文：定位application UI 使用的“position comment delete popover”行为。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function positionCommentDeletePopover(){
     if(!deleteAnchorButton||$deletePopover.hasClass('hidden')){
@@ -8676,8 +9223,13 @@ function positionCommentDeletePopover(){
 }
 
 /**
- * EN: Implements the application operation `openCommentDeletePopover` (open Comment Delete Popover).
- * 中文：实现应用操作 `openCommentDeletePopover`（open Comment Delete Popover）。
+ * EN: Open or show the open comment delete popover behavior used by the application UI.
+ * 中文：打开或显示application UI 使用的“open comment delete popover”行为。
+ *
+ * @param {Element|*} button Button value used by this function. / 本函数使用的“button”参数值。
+ * @param {string|number} commentId Identifier associated with the target record or entity. / 与目标记录或实体关联的 ID。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function openCommentDeletePopover(button,commentId){
     deleteCommentId=parseInt(commentId,10)||0;
@@ -8696,8 +9248,12 @@ function openCommentDeletePopover(button,commentId){
 }
 
 /**
- * EN: Implements the application operation `commentDateLabel` (comment Date Label).
- * 中文：实现应用操作 `commentDateLabel`（comment Date Label）。
+ * EN: Perform the comment date label behavior used by the application UI.
+ * 中文：执行application UI 使用的“comment date label”行为。
+ *
+ * @param {string|*} value Value read, transformed, or applied by this function. / 本函数读取、转换或应用的值。
+ *
+ * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function commentDateLabel(value){
     const raw=String(value||'');
@@ -8723,8 +9279,12 @@ function commentDateLabel(value){
 }
 
 /**
- * EN: Builds, formats, or transforms data for `renderCommentAttachments` (render Comment Attachments).
- * 中文：为 `renderCommentAttachments`（render Comment Attachments）构建、格式化或转换数据。
+ * EN: Render the render comment attachments behavior used by the application UI.
+ * 中文：渲染application UI 使用的“render comment attachments”行为。
+ *
+ * @param {Array} items Collection of items processed by this function. / 本函数处理的数据项集合。
+ *
+ * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function renderCommentAttachments(items){
     items=Array.isArray(items)?items:[];
@@ -8809,8 +9369,10 @@ function renderCommentAttachments(items){
 }
 
 /**
- * EN: Updates application state for `updateCommentFileSelection` (update Comment File Selection).
- * 中文：更新 `updateCommentFileSelection`（update Comment File Selection）对应的应用状态。
+ * EN: Update the update comment file selection behavior used by the application UI.
+ * 中文：更新application UI 使用的“update comment file selection”行为。
+ *
+ * @returns {string} String result produced by this UI helper. / 本 UI 辅助函数生成的字符串结果。
  */
 function updateCommentFileSelection(){
     const input=$commentImages.get(0);
@@ -8821,8 +9383,13 @@ function updateCommentFileSelection(){
 }
 
 /**
- * EN: Builds, formats, or transforms data for `renderComments` (render Comments).
- * 中文：为 `renderComments`（render Comments）构建、格式化或转换数据。
+ * EN: Render the render comments behavior used by the application UI.
+ * 中文：渲染application UI 使用的“render comments”行为。
+ *
+ * @param {Array} items Collection of items processed by this function. / 本函数处理的数据项集合。
+ * @param {*} reviewItems Review items value used by this function. / 本函数使用的“review items”参数值。
+ *
+ * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function renderComments(items,reviewItems){
     currentComments=Array.isArray(items)
@@ -9102,8 +9669,10 @@ $historyDeletedSwitch.on('click',function(){
 });
 
 /**
- * EN: Retrieves or loads data for `getCommentEditorHtml` (get Comment Editor Html).
- * 中文：读取或加载 `getCommentEditorHtml`（get Comment Editor Html）所需的数据。
+ * EN: Read or load the get comment editor html behavior used by the application UI.
+ * 中文：读取或加载application UI 使用的“get comment editor html”行为。
+ *
+ * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function getCommentEditorHtml(){
     const $note=$modal.find('[data-html-note]').first();
@@ -9120,8 +9689,10 @@ function getCommentEditorHtml(){
 }
 
 /**
- * EN: Removes or cleans data/state for `clearCommentComposer` (clear Comment Composer).
- * 中文：删除或清理 `clearCommentComposer`（clear Comment Composer）相关的数据或状态。
+ * EN: Close or clear the clear comment composer behavior used by the application UI.
+ * 中文：关闭或清理application UI 使用的“clear comment composer”行为。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function clearCommentComposer(){
     editingCommentId=0;
@@ -9138,8 +9709,12 @@ function clearCommentComposer(){
 }
 
 /**
- * EN: Implements the application operation `startCommentEdit` (start Comment Edit).
- * 中文：实现应用操作 `startCommentEdit`（start Comment Edit）。
+ * EN: Schedule or start the start comment edit behavior used by the application UI.
+ * 中文：调度或启动application UI 使用的“start comment edit”行为。
+ *
+ * @param {string|number} commentId Identifier associated with the target record or entity. / 与目标记录或实体关联的 ID。
+ *
+ * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function startCommentEdit(commentId){
     const comment=currentComments.find(function(item){
@@ -9177,8 +9752,12 @@ function startCommentEdit(commentId){
 }
 
 /**
- * EN: Builds, formats, or transforms data for `renderAttachments` (render Attachments).
- * 中文：为 `renderAttachments`（render Attachments）构建、格式化或转换数据。
+ * EN: Render the render attachments behavior used by the application UI.
+ * 中文：渲染application UI 使用的“render attachments”行为。
+ *
+ * @param {Array} items Collection of items processed by this function. / 本函数处理的数据项集合。
+ *
+ * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function renderAttachments(items){
     currentLegacyAttachments=Array.isArray(items)
@@ -9248,8 +9827,12 @@ function renderAttachments(items){
 }
 
 /**
- * EN: Updates application state for `syncDecisionVisualState` (sync Decision Visual State).
- * 中文：更新 `syncDecisionVisualState`（sync Decision Visual State）对应的应用状态。
+ * EN: Update the sync decision visual state behavior used by the application UI.
+ * 中文：更新application UI 使用的“sync decision visual state”行为。
+ *
+ * @param {*} decision Decision value used by this function. / 本函数使用的“decision”参数值。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function syncDecisionVisualState(decision){
     const normalized=['good','bad'].includes(
@@ -9275,8 +9858,10 @@ function syncDecisionVisualState(decision){
 }
 
     /**
-     * EN: Implements the application operation `resetReviewModal` (reset Review Modal).
-     * 中文：实现应用操作 `resetReviewModal`（reset Review Modal）。
+     * EN: Close or clear the reset review modal behavior used by the application UI.
+     * 中文：关闭或清理application UI 使用的“reset review modal”行为。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function resetReviewModal(){
         $modalMessage
@@ -9343,8 +9928,10 @@ function syncDecisionVisualState(decision){
     }
 
     /**
-     * EN: Implements the application operation `closeReviewModal` (close Review Modal).
-     * 中文：实现应用操作 `closeReviewModal`（close Review Modal）。
+     * EN: Close or clear the close review modal behavior used by the application UI.
+     * 中文：关闭或清理application UI 使用的“close review modal”行为。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function closeReviewModal(){
         if(reviewRequest && reviewRequest.readyState !== 4){
@@ -9358,8 +9945,12 @@ function syncDecisionVisualState(decision){
     }
 
     /**
-     * EN: Implements the application operation `openReviewModal` (open Review Modal).
-     * 中文：实现应用操作 `openReviewModal`（open Review Modal）。
+     * EN: Open or show the open review modal behavior used by the application UI.
+     * 中文：打开或显示application UI 使用的“open review modal”行为。
+     *
+     * @param {string|number} postId Identifier associated with the target record or entity. / 与目标记录或实体关联的 ID。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function openReviewModal(postId){
         postId = parseInt(postId, 10) || 0;
@@ -9571,8 +10162,12 @@ function syncDecisionVisualState(decision){
 
 
 /**
- * EN: Implements the application operation `showDecisionError` (show Decision Error).
- * 中文：实现应用操作 `showDecisionError`（show Decision Error）。
+ * EN: Open or show the show decision error behavior used by the application UI.
+ * 中文：打开或显示application UI 使用的“show decision error”行为。
+ *
+ * @param {string|*} message Human-readable message shown or recorded by the UI. / UI 显示或记录的可读消息。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function showDecisionError(message){
     const $decisionBlock=$modalForm.find(
@@ -9619,8 +10214,10 @@ function showDecisionError(message){
 }
 
     /**
-     * EN: Updates application state for `markReviewDirty` (mark Review Dirty).
-     * 中文：更新 `markReviewDirty`（mark Review Dirty）对应的应用状态。
+     * EN: Perform the mark review dirty behavior used by the application UI.
+     * 中文：执行application UI 使用的“mark review dirty”行为。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function markReviewDirty(){
         $reviewSaveState
@@ -9744,8 +10341,13 @@ $commentList.on('click','[data-comment-image]',function(){
 });
 
 /**
- * EN: Removes or cleans data/state for `deleteAttachment` (delete Attachment).
- * 中文：删除或清理 `deleteAttachment`（delete Attachment）相关的数据或状态。
+ * EN: Delete or remove the delete attachment behavior used by the application UI.
+ * 中文：删除或移除application UI 使用的“delete attachment”行为。
+ *
+ * @param {string|number} attachmentId Identifier associated with the target record or entity. / 与目标记录或实体关联的 ID。
+ * @param {*} $source $source value used by this function. / 本函数使用的“$source”参数值。
+ *
+ * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function deleteAttachment(attachmentId,$source){
     attachmentId=parseInt(attachmentId,10)||0;
@@ -10147,8 +10749,13 @@ $modalForm.on('submit', function(event){
     });
 
     /**
-     * EN: Implements the application operation `redrawAfterDailyTargetSave` (redraw After Daily Target Save).
-     * 中文：实现应用操作 `redrawAfterDailyTargetSave`（redraw After Daily Target Save）。
+     * EN: Render the redraw after daily target save behavior used by the application UI.
+     * 中文：渲染application UI 使用的“redraw after daily target save”行为。
+     *
+     * @param {*} $card $card value used by this function. / 本函数使用的“$card”参数值。
+     * @param {*} dailyTarget Daily target value used by this function. / 本函数使用的“daily target”参数值。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function redrawAfterDailyTargetSave($card, dailyTarget){
         const count = parseInt(
@@ -10205,8 +10812,10 @@ const $salesSettingsInput=$('#salesPersonDailyTarget');
 const $salesSettingsMessage=$('#salesPersonSettingsMessage');
 
 /**
- * EN: Implements the application operation `closeSalesPersonSettings` (close Sales Person Settings).
- * 中文：实现应用操作 `closeSalesPersonSettings`（close Sales Person Settings）。
+ * EN: Close or clear the close sales person settings behavior used by the application UI.
+ * 中文：关闭或清理application UI 使用的“close sales person settings”行为。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function closeSalesPersonSettings(){
     $salesSettingsModal
@@ -10435,8 +11044,12 @@ $('#salesPersonSettingsSave').on('click',function(){
     });
 
     /**
-     * EN: Implements the application operation `showRefreshNotice` (show Refresh Notice).
-     * 中文：实现应用操作 `showRefreshNotice`（show Refresh Notice）。
+     * EN: Open or show the show refresh notice behavior used by the application UI.
+     * 中文：打开或显示application UI 使用的“show refresh notice”行为。
+     *
+     * @param {Object|*} data Structured data consumed by this function. / 本函数使用的结构化数据。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function showRefreshNotice(data){
         if(noticeShown){
@@ -10466,8 +11079,10 @@ $('#salesPersonSettingsSave').on('click',function(){
     }
 
     /**
-     * EN: Checks or validates the condition represented by `checkDashboardActivity` (check Dashboard Activity).
-     * 中文：检查或校验 `checkDashboardActivity`（check Dashboard Activity）所表示的条件。
+     * EN: Check the check dashboard activity behavior used by the application UI.
+     * 中文：检查application UI 使用的“check dashboard activity”行为。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function checkDashboardActivity(){
         if(document.hidden || noticeShown){
@@ -10543,8 +11158,10 @@ let adminPostDeleteArmed=false;
 let adminPostDeleteTimer=null;
 
 /**
- * EN: Implements the application operation `resetAdminPostDelete` (reset Admin Post Delete).
- * 中文：实现应用操作 `resetAdminPostDelete`（reset Admin Post Delete）。
+ * EN: Close or clear the reset admin post delete behavior used by the application UI.
+ * 中文：关闭或清理application UI 使用的“reset admin post delete”行为。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function resetAdminPostDelete(){
     adminPostDeleteArmed=false;
@@ -10598,8 +11215,12 @@ $('#dashboardPostDelete').on('click',function(){
 });
 
 /**
- * EN: Implements the application operation `websiteReferenceRow` (website Reference Row).
- * 中文：实现应用操作 `websiteReferenceRow`（website Reference Row）。
+ * EN: Perform the website reference row behavior used by the application UI.
+ * 中文：执行application UI 使用的“website reference row”行为。
+ *
+ * @param {Object|*} row Current record or row being rendered or processed. / 当前正在渲染或处理的记录/行。
+ *
+ * @returns {string} String result produced by this UI helper. / 本 UI 辅助函数生成的字符串结果。
  */
 function websiteReferenceRow(row){
     const title=escapeHtml(String(row.title||''));
@@ -10618,8 +11239,13 @@ function websiteReferenceRow(row){
 }
 
 /**
- * EN: Updates application state for `setWebsiteReferenceMessage` (set Website Reference Message).
- * 中文：更新 `setWebsiteReferenceMessage`（set Website Reference Message）对应的应用状态。
+ * EN: Update the set website reference message behavior used by the application UI.
+ * 中文：更新application UI 使用的“set website reference message”行为。
+ *
+ * @param {string|*} message Human-readable message shown or recorded by the UI. / UI 显示或记录的可读消息。
+ * @param {*} type Type value used by this function. / 本函数使用的“type”参数值。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function setWebsiteReferenceMessage(message,type){
     const $box=$('#websiteReferenceMessage');
@@ -10629,8 +11255,10 @@ function setWebsiteReferenceMessage(message,type){
 }
 
 /**
- * EN: Retrieves or loads data for `loadWebsiteReferences` (load Website References).
- * 中文：读取或加载 `loadWebsiteReferences`（load Website References）所需的数据。
+ * EN: Read or load the load website references behavior used by the application UI.
+ * 中文：读取或加载application UI 使用的“load website references”行为。
+ *
+ * @returns {void} No value is returned. / 无返回值。
  */
 function loadWebsiteReferences(){
     const $library=$('#website-comparison');
@@ -10729,8 +11357,12 @@ $(document).on('click','.website-reference-delete',function(){
     let refreshSeq=0;
 
     /**
-     * EN: Builds, formats, or transforms data for `parseIso` (parse Iso).
-     * 中文：为 `parseIso`（parse Iso）构建、格式化或转换数据。
+     * EN: Parse an ISO date string into a local Date value used by the dashboard.
+     * 中文：将 ISO 日期字符串解析为 Dashboard 使用的本地 Date 值。
+     *
+     * @param {string|*} value Value read, transformed, or applied by this function. / 本函数读取、转换或应用的值。
+     *
+     * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
      */
     function parseIso(value){
         const m=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -10739,15 +11371,24 @@ $(document).on('click','.website-reference-delete',function(){
         return Number.isNaN(d.getTime())?null:d;
     }
     /**
-     * EN: Checks or validates the condition represented by `iso` (iso).
-     * 中文：检查或校验 `iso`（iso）所表示的条件。
+     * EN: Format a Date value as the ISO-style date key used by API requests and filters.
+     * 中文：将 Date 值格式化为 API 请求和筛选使用的 ISO 日期键。
+     *
+     * @param {*} d D value used by this function. / 本函数使用的“d”参数值。
+     *
+     * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
      */
     function iso(d){
         return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
     }
     /**
-     * EN: Implements the application operation `rangeFor` (range For).
-     * 中文：实现应用操作 `rangeFor`（range For）。
+     * EN: Build the range for behavior used by the application UI.
+     * 中文：构建application UI 使用的“range for”行为。
+     *
+     * @param {*} preset Preset value used by this function. / 本函数使用的“preset”参数值。
+     * @param {*} anchorValue Anchor value value used by this function. / 本函数使用的“anchor value”参数值。
+     *
+     * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
      */
     function rangeFor(preset,anchorValue){
         let anchor=parseIso(anchorValue)||parseIso(today);
@@ -10768,8 +11409,12 @@ $(document).on('click','.website-reference-delete',function(){
         return {from:iso(fromDate),to:iso(toDate)};
     }
     /**
-     * EN: Implements the application operation `selectPreset` (select Preset).
-     * 中文：实现应用操作 `selectPreset`（select Preset）。
+     * EN: Update the select preset behavior used by the application UI.
+     * 中文：更新application UI 使用的“select preset”行为。
+     *
+     * @param {*} preset Preset value used by this function. / 本函数使用的“preset”参数值。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function selectPreset(preset){
         $period.val(preset);
@@ -10779,8 +11424,12 @@ $(document).on('click','.website-reference-delete',function(){
         });
     }
     /**
-     * EN: Updates application state for `sync` (sync).
-     * 中文：更新 `sync`（sync）对应的应用状态。
+     * EN: Update the sync behavior used by the application UI.
+     * 中文：更新application UI 使用的“sync”行为。
+     *
+     * @param {*} changed Changed value used by this function. / 本函数使用的“changed”参数值。
+     *
+     * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
      */
     function sync(changed){
         let from=String($from.val()||'');
@@ -10796,22 +11445,32 @@ $(document).on('click','.website-reference-delete',function(){
         return true;
     }
     /**
-     * EN: Retrieves or loads data for `queryString` (query String).
-     * 中文：读取或加载 `queryString`（query String）所需的数据。
+     * EN: Perform the query string behavior used by the application UI.
+     * 中文：执行application UI 使用的“query string”行为。
+     *
+     * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
      */
     function queryString(){
         return $form.serialize();
     }
     /**
-     * EN: Updates application state for `setLoading` (set Loading).
-     * 中文：更新 `setLoading`（set Loading）对应的应用状态。
+     * EN: Update the set loading behavior used by the application UI.
+     * 中文：更新application UI 使用的“set loading”行为。
+     *
+     * @param {*} loading Loading value used by this function. / 本函数使用的“loading”参数值。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function setLoading(loading){
         $('#reportResultPanel').toggleClass('report-loading',loading).attr('aria-busy',loading?'true':'false');
     }
     /**
-     * EN: Updates application state for `refreshReport` (refresh Report).
-     * 中文：更新 `refreshReport`（refresh Report）对应的应用状态。
+     * EN: Perform the refresh report behavior used by the application UI.
+     * 中文：执行application UI 使用的“refresh report”行为。
+     *
+     * @param {string|*} pushUrl URL value used by this UI operation. / 本 UI 操作使用的 URL。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function refreshReport(pushUrl){
         if(!sync(''))return;
@@ -10868,8 +11527,12 @@ $(document).on('click','.website-reference-delete',function(){
         });
     }
     /**
-     * EN: Implements the application operation `scheduleRefresh` (schedule Refresh).
-     * 中文：实现应用操作 `scheduleRefresh`（schedule Refresh）。
+     * EN: Schedule or start the schedule refresh behavior used by the application UI.
+     * 中文：调度或启动application UI 使用的“schedule refresh”行为。
+     *
+     * @param {*} delay Delay value used by this function. / 本函数使用的“delay”参数值。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function scheduleRefresh(delay){
         if(refreshTimer)window.clearTimeout(refreshTimer);

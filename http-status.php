@@ -1,10 +1,10 @@
 <?php
 /**
  * File / 文件：http-status.php
- * EN: Application HTTP entry/endpoint source.
- * 中文：该文件是应用 HTTP 入口或端点。
- * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
- * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ * EN: Application PHP entry/helper file for http-status.
+ * 中文：用于 http-status 的应用 PHP 入口/辅助文件。
+ * Maintenance / 维护：Keep behavior, security checks, error logging, and public contracts unchanged unless the related feature is intentionally modified.
+ * 维护要求：除非明确修改相关功能，否则应保持行为、安全检查、错误日志及公开接口契约不变。
  */
 $config = require __DIR__ . '/config/config.php';
 require_once __DIR__ . '/app/Core/Logger.php';
@@ -41,8 +41,12 @@ $base = rtrim((string)($config['app']['base_path'] ?? '/sales-posts'), '/');
 $version = (string)($config['app']['version'] ?? 'dev');
 
 /**
- * EN: Implements the application operation `e` (e).
- * 中文：实现应用操作 `e`（e）。
+ * EN: Perform the e operation.
+ * 中文：执行“e”操作。
+ *
+ * @param string $value Value processed or stored by this operation. / 本操作处理或保存的值。
+ *
+ * @return string String result produced by this operation. / 本操作生成的字符串结果。
  */
 function e(string $value): string
 {

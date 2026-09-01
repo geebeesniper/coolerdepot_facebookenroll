@@ -1,10 +1,10 @@
 <?php
 /**
  * File / 文件：index.php
- * EN: Application HTTP entry/endpoint source.
- * 中文：该文件是应用 HTTP 入口或端点。
- * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
- * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ * EN: Application PHP entry/helper file for index.
+ * 中文：用于 index 的应用 PHP 入口/辅助文件。
+ * Maintenance / 维护：Keep behavior, security checks, error logging, and public contracts unchanged unless the related feature is intentionally modified.
+ * 维护要求：除非明确修改相关功能，否则应保持行为、安全检查、错误日志及公开接口契约不变。
  */
 $config = require __DIR__ . '/config/bootstrap.php';
 
@@ -16,6 +16,8 @@ use App\Controllers\AdminController;
 use App\Controllers\AdminSettingsController;
 use App\Controllers\ApiController;
 use App\Controllers\AttachmentController;
+use App\Controllers\ExternalApiController;
+use App\Controllers\GraphqlController;
 
 $router = new Router($config['app']['base_path']);
 
@@ -26,6 +28,23 @@ $router->post('/login', [AuthController::class, 'authenticate']);
 $router->post('/logout', [AuthController::class, 'logout']);
 $router->get('/auth/handoff', [AuthHandoffController::class, 'handoff']);
 $router->post('/auth/handoff', [AuthHandoffController::class, 'handoff']);
+
+// External integration APIs. REST and GraphQL share the same signed identity exchange,
+// Bearer-token store, and server-side Admin/Sales RBAC.
+$router->get('/api/v1/health', [ExternalApiController::class, 'health']);
+$router->post('/api/v1/auth/exchange', [ExternalApiController::class, 'exchange']);
+$router->get('/api/v1/auth/me', [ExternalApiController::class, 'me']);
+$router->post('/api/v1/auth/logout', [ExternalApiController::class, 'logout']);
+$router->get('/api/v1/admin/users', [ExternalApiController::class, 'adminUsers']);
+$router->get('/api/v1/sales/profile', [ExternalApiController::class, 'salesProfile']);
+$router->options('/api/v1/health', [ExternalApiController::class, 'cors']);
+$router->options('/api/v1/auth/exchange', [ExternalApiController::class, 'cors']);
+$router->options('/api/v1/auth/me', [ExternalApiController::class, 'cors']);
+$router->options('/api/v1/auth/logout', [ExternalApiController::class, 'cors']);
+$router->options('/api/v1/admin/users', [ExternalApiController::class, 'cors']);
+$router->options('/api/v1/sales/profile', [ExternalApiController::class, 'cors']);
+$router->post('/graphql', [GraphqlController::class, 'handle']);
+$router->options('/graphql', [GraphqlController::class, 'cors']);
 
 // Sales dashboard and post verification workflow.
 $router->get('/sales', [SalesController::class, 'dashboard']);

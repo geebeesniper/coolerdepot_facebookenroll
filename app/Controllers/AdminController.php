@@ -1,20 +1,26 @@
 <?php
 /**
  * File / 文件：app/Controllers/AdminController.php
- * EN: HTTP controller for request validation, orchestration, and responses.
- * 中文：该文件负责 HTTP 请求校验、业务编排与响应。
- * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
- * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ * EN: Defines the AdminController HTTP controller and request/response actions.
+ * 中文：定义 AdminController HTTP Controller 及其请求/响应操作。
+ * Maintenance / 维护：Keep behavior, security checks, error logging, and public contracts unchanged unless the related feature is intentionally modified.
+ * 维护要求：除非明确修改相关功能，否则应保持行为、安全检查、错误日志及公开接口契约不变。
  */
 namespace App\Controllers;
 
 use App\Services\HtmlNoteSanitizer;
 use App\Services\PostInspector;
 use App\Core\Controller;use App\Core\Auth;use App\Core\Csrf;use App\Core\Database;use App\Models\Post;use App\Models\User;use App\Services\UploadService;
+/**
+ * EN: HTTP controller for admin requests, responses, and server-side authorization.
+ * 中文：负责 admin 请求、响应及服务器端权限控制的 HTTP Controller。
+ */
 class AdminController extends Controller{
     /**
-     * EN: Implements the application operation `dashboard` (dashboard).
-     * 中文：实现应用操作 `dashboard`（dashboard）。
+     * EN: Handle the dashboard HTTP action for admin controller and return the appropriate response.
+     * 中文：处理 admin controller 的“dashboard”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public function dashboard():void{
         $admin=Auth::requireRole('admin');
@@ -99,8 +105,10 @@ class AdminController extends Controller{
     }
 
     /**
-     * EN: Implements the application operation `dashboardProgress` (dashboard Progress).
-     * 中文：实现应用操作 `dashboardProgress`（dashboard Progress）。
+     * EN: Handle the dashboard progress HTTP action for admin controller and return the appropriate response.
+     * 中文：处理 admin controller 的“dashboard progress”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public function dashboardProgress():void{
         Auth::requireRole('admin');
@@ -149,8 +157,10 @@ class AdminController extends Controller{
     }
 
     /**
-     * EN: Implements the application operation `dashboardSalesPosts` (dashboard Sales Posts).
-     * 中文：实现应用操作 `dashboardSalesPosts`（dashboard Sales Posts）。
+     * EN: Handle the dashboard sales posts HTTP action for admin controller and return the appropriate response.
+     * 中文：处理 admin controller 的“dashboard sales posts”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public function dashboardSalesPosts():void{
         Auth::requireRole('admin');
@@ -261,8 +271,12 @@ class AdminController extends Controller{
     }
 
     /**
-     * EN: Implements the application operation `dashboardSaveSalesReview` (dashboard Save Sales Review).
-     * 中文：实现应用操作 `dashboardSaveSalesReview`（dashboard Save Sales Review）。
+     * EN: Handle the dashboard save sales review HTTP action for admin controller and return the appropriate response.
+     * 中文：处理 admin controller 的“dashboard save sales review”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
+     *
+     * @throws \RuntimeException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     public function dashboardSaveSalesReview():void{
         $admin=Auth::requireRole('admin');
@@ -471,8 +485,10 @@ class AdminController extends Controller{
     }
 
     /**
-     * EN: Implements the application operation `dashboardDeleteSalesReviewHistory` (dashboard Delete Sales Review History).
-     * 中文：实现应用操作 `dashboardDeleteSalesReviewHistory`（dashboard Delete Sales Review History）。
+     * EN: Handle the dashboard delete sales review history HTTP action for admin controller and return the appropriate response.
+     * 中文：处理 admin controller 的“dashboard delete sales review history”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public function dashboardDeleteSalesReviewHistory():void{
         $admin=Auth::requireRole('admin');
@@ -561,8 +577,10 @@ class AdminController extends Controller{
     }
 
     /**
-     * EN: Implements the application operation `dashboardPostReview` (dashboard Post Review).
-     * 中文：实现应用操作 `dashboardPostReview`（dashboard Post Review）。
+     * EN: Handle the dashboard post review HTTP action for admin controller and return the appropriate response.
+     * 中文：处理 admin controller 的“dashboard post review”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public function dashboardPostReview():void{
         Auth::requireRole('admin');
@@ -691,8 +709,12 @@ class AdminController extends Controller{
     }
 
     /**
-     * EN: Implements the application operation `dashboardGetContent` (dashboard Get Content).
-     * 中文：实现应用操作 `dashboardGetContent`（dashboard Get Content）。
+     * EN: Handle the dashboard get content HTTP action for admin controller and return the appropriate response.
+     * 中文：处理 admin controller 的“dashboard get content”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
+     *
+     * @throws \RuntimeException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     public function dashboardGetContent():void{
         $admin=Auth::requireRole('admin');
@@ -780,8 +802,10 @@ class AdminController extends Controller{
     }
 
 /**
- * EN: Implements the application operation `dashboardAddComment` (dashboard Add Comment).
- * 中文：实现应用操作 `dashboardAddComment`（dashboard Add Comment）。
+ * EN: Handle the dashboard add comment HTTP action for admin controller and return the appropriate response.
+ * 中文：处理 admin controller 的“dashboard add comment”HTTP 操作并返回相应响应。
+ *
+ * @return void No value is returned. / 无返回值。
  */
 public function dashboardAddComment():void{
     $admin=Auth::requireRole('admin');
@@ -841,8 +865,10 @@ public function dashboardAddComment():void{
 }
 
 /**
- * EN: Implements the application operation `dashboardUpdateComment` (dashboard Update Comment).
- * 中文：实现应用操作 `dashboardUpdateComment`（dashboard Update Comment）。
+ * EN: Handle the dashboard update comment HTTP action for admin controller and return the appropriate response.
+ * 中文：处理 admin controller 的“dashboard update comment”HTTP 操作并返回相应响应。
+ *
+ * @return void No value is returned. / 无返回值。
  */
 public function dashboardUpdateComment():void{
     $admin=Auth::requireRole('admin');
@@ -951,8 +977,10 @@ public function dashboardUpdateComment():void{
 }
 
 /**
- * EN: Implements the application operation `dashboardDeleteComment` (dashboard Delete Comment).
- * 中文：实现应用操作 `dashboardDeleteComment`（dashboard Delete Comment）。
+ * EN: Handle the dashboard delete comment HTTP action for admin controller and return the appropriate response.
+ * 中文：处理 admin controller 的“dashboard delete comment”HTTP 操作并返回相应响应。
+ *
+ * @return void No value is returned. / 无返回值。
  */
 public function dashboardDeleteComment():void{
     $admin=Auth::requireRole('admin');
@@ -995,8 +1023,10 @@ public function dashboardDeleteComment():void{
 }
 
 /**
- * EN: Implements the application operation `dashboardDeleteAttachment` (dashboard Delete Attachment).
- * 中文：实现应用操作 `dashboardDeleteAttachment`（dashboard Delete Attachment）。
+ * EN: Handle the dashboard delete attachment HTTP action for admin controller and return the appropriate response.
+ * 中文：处理 admin controller 的“dashboard delete attachment”HTTP 操作并返回相应响应。
+ *
+ * @return void No value is returned. / 无返回值。
  */
 public function dashboardDeleteAttachment():void{
     $admin=Auth::requireRole('admin');
@@ -1082,8 +1112,12 @@ public function dashboardDeleteAttachment():void{
 }
 
     /**
-     * EN: Implements the application operation `dashboardEditorImage` (dashboard Editor Image).
-     * 中文：实现应用操作 `dashboardEditorImage`（dashboard Editor Image）。
+     * EN: Handle the dashboard editor image HTTP action for admin controller and return the appropriate response.
+     * 中文：处理 admin controller 的“dashboard editor image”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
+     *
+     * @throws \RuntimeException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     public function dashboardEditorImage():void{
         $admin=Auth::requireRole('admin');
@@ -1115,8 +1149,10 @@ public function dashboardDeleteAttachment():void{
     }
 
     /**
-     * EN: Creates or persists the `saveSalesTarget` operation (save Sales Target).
-     * 中文：创建或持久化 `saveSalesTarget`（save Sales Target）操作。
+     * EN: Handle the save sales target HTTP action for admin controller and return the appropriate response.
+     * 中文：处理 admin controller 的“save sales target”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public function saveSalesTarget():void{
         $admin=Auth::requireRole('admin');
@@ -1161,8 +1197,10 @@ public function dashboardDeleteAttachment():void{
     }
 
     /**
-     * EN: Implements the application operation `dashboardUpdates` (dashboard Updates).
-     * 中文：实现应用操作 `dashboardUpdates`（dashboard Updates）。
+     * EN: Handle the dashboard updates HTTP action for admin controller and return the appropriate response.
+     * 中文：处理 admin controller 的“dashboard updates”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public function dashboardUpdates():void{
         Auth::requireRole('admin');
@@ -1198,8 +1236,12 @@ public function dashboardDeleteAttachment():void{
     }
 
     /**
-     * EN: Updates application state for `marketplaceContentPreview` (marketplace Content Preview).
-     * 中文：更新 `marketplaceContentPreview`（marketplace Content Preview）对应的应用状态。
+     * EN: Update the marketplace content preview operation.
+     * 中文：更新“marketplace content preview”操作。
+     *
+     * @param array $item Current item being processed. / 当前正在处理的数据项。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     private function marketplaceContentPreview(array $item):array{
         $raw=is_array($item['raw']??null)
@@ -1248,8 +1290,12 @@ public function dashboardDeleteAttachment():void{
     }
 
     /**
-     * EN: Implements the application operation `firstScalar` (first Scalar).
-     * 中文：实现应用操作 `firstScalar`（first Scalar）。
+     * EN: Perform the first scalar operation.
+     * 中文：执行“first scalar”操作。
+     *
+     * @param array $values Values value used by this operation. / 本操作使用的“values”参数值。
+     *
+     * @return ?string String result produced by this operation, or null when no value is available. / 本操作生成的字符串结果；无可用值时返回 null。
      */
     private function firstScalar(array $values):?string{
         foreach($values as $value){
@@ -1267,8 +1313,12 @@ public function dashboardDeleteAttachment():void{
 
 
 /**
- * EN: Implements the application operation `extractMarketplacePhotos` (extract Marketplace Photos).
- * 中文：实现应用操作 `extractMarketplacePhotos`（extract Marketplace Photos）。
+ * EN: Parse or extract the extract marketplace photos operation.
+ * 中文：解析或提取“extract marketplace photos”操作。
+ *
+ * @param array $raw Raw value used by this operation. / 本操作使用的“raw”参数值。
+ *
+ * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
  */
 private function extractMarketplacePhotos(array $raw):array{
     $urls=[];
@@ -1343,8 +1393,14 @@ private function extractMarketplacePhotos(array $raw):array{
 }
 
 /**
- * EN: Implements the application operation `dashboardSalesReviewData` (dashboard Sales Review Data).
- * 中文：实现应用操作 `dashboardSalesReviewData`（dashboard Sales Review Data）。
+ * EN: Perform the dashboard sales review data operation.
+ * 中文：执行“dashboard sales review data”操作。
+ *
+ * @param int $salesUserId Application or external user identifier. / 应用或外部用户 ID。
+ * @param string $period Period value used by this operation. / 本操作使用的“period”参数值。
+ * @param array $periodInfo Period info value used by this operation. / 本操作使用的“period info”参数值。
+ *
+ * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
  */
 private function dashboardSalesReviewData(
     int $salesUserId,
@@ -1414,8 +1470,14 @@ private function dashboardSalesReviewData(
 
 
     /**
-     * EN: Implements the application operation `dashboardSalesReviewHistory` (dashboard Sales Review History).
-     * 中文：实现应用操作 `dashboardSalesReviewHistory`（dashboard Sales Review History）。
+     * EN: Perform the dashboard sales review history operation.
+     * 中文：执行“dashboard sales review history”操作。
+     *
+     * @param int $salesUserId Application or external user identifier. / 应用或外部用户 ID。
+     * @param string $period Period value used by this operation. / 本操作使用的“period”参数值。
+     * @param string $periodStart Period start value used by this operation. / 本操作使用的“period start”参数值。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     private function dashboardSalesReviewHistory(
         int $salesUserId,
@@ -1452,8 +1514,12 @@ private function dashboardSalesReviewData(
     }
 
     /**
-     * EN: Implements the application operation `salesReviewHistoryAttachments` (sales Review History Attachments).
-     * 中文：实现应用操作 `salesReviewHistoryAttachments`（sales Review History Attachments）。
+     * EN: Perform the sales review history attachments operation.
+     * 中文：执行“sales review history attachments”操作。
+     *
+     * @param int $historyId Identifier of the history record or entity. / history 记录或实体的标识 ID。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     private function salesReviewHistoryAttachments(int $historyId):array{
         $q=Database::connection()->prepare(
@@ -1473,8 +1539,12 @@ private function dashboardSalesReviewData(
     }
 
     /**
-     * EN: Implements the application operation `dashboardRequestContext` (dashboard Request Context).
-     * 中文：实现应用操作 `dashboardRequestContext`（dashboard Request Context）。
+     * EN: Perform the dashboard request context operation.
+     * 中文：执行“dashboard request context”操作。
+     *
+     * @param array $source Source value used by this operation. / 本操作使用的“source”参数值。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     private function dashboardRequestContext(array $source):array{
         $rawFrom=trim((string)($source['from']??''));
@@ -1561,8 +1631,13 @@ private function dashboardSalesReviewData(
     }
 
     /**
-     * EN: Implements the application operation `dashboardDetectPreset` (dashboard Detect Preset).
-     * 中文：实现应用操作 `dashboardDetectPreset`（dashboard Detect Preset）。
+     * EN: Perform the dashboard detect preset operation.
+     * 中文：执行“dashboard detect preset”操作。
+     *
+     * @param string $from From value used by this operation. / 本操作使用的“from”参数值。
+     * @param string $to To value used by this operation. / 本操作使用的“to”参数值。
+     *
+     * @return string String result produced by this operation. / 本操作生成的字符串结果。
      */
     private function dashboardDetectPreset(string $from,string $to):string{
         if($from===$to){return 'single';}
@@ -1581,8 +1656,13 @@ private function dashboardSalesReviewData(
     }
 
     /**
-     * EN: Implements the application operation `rollingPresetRange` (rolling Preset Range).
-     * 中文：实现应用操作 `rollingPresetRange`（rolling Preset Range）。
+     * EN: Perform the rolling preset range operation.
+     * 中文：执行“rolling preset range”操作。
+     *
+     * @param string $preset Preset value used by this operation. / 本操作使用的“preset”参数值。
+     * @param string $to To value used by this operation. / 本操作使用的“to”参数值。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     private function rollingPresetRange(string $preset,string $to):array{
         $today=date('Y-m-d');
@@ -1618,8 +1698,12 @@ private function dashboardSalesReviewData(
     }
 
     /**
-     * EN: Implements the application operation `validDashboardDate` (valid Dashboard Date).
-     * 中文：实现应用操作 `validDashboardDate`（valid Dashboard Date）。
+     * EN: Perform the valid dashboard date operation.
+     * 中文：执行“valid dashboard date”操作。
+     *
+     * @param string $date Date value used to scope the operation. / 用于限定本操作范围的日期值。
+     *
+     * @return string String result produced by this operation. / 本操作生成的字符串结果。
      */
     private function validDashboardDate(string $date):string{
         $today=date('Y-m-d');
@@ -1634,8 +1718,12 @@ private function dashboardSalesReviewData(
     }
 
     /**
-     * EN: Implements the application operation `validDashboardPeriod` (valid Dashboard Period).
-     * 中文：实现应用操作 `validDashboardPeriod`（valid Dashboard Period）。
+     * EN: Perform the valid dashboard period operation.
+     * 中文：执行“valid dashboard period”操作。
+     *
+     * @param string $period Period value used by this operation. / 本操作使用的“period”参数值。
+     *
+     * @return string String result produced by this operation. / 本操作生成的字符串结果。
      */
     private function validDashboardPeriod(string $period):string{
         return in_array($period,['day','week','month'],true)
@@ -1644,8 +1732,13 @@ private function dashboardSalesReviewData(
     }
 
     /**
-     * EN: Implements the application operation `dashboardPeriodInfo` (dashboard Period Info).
-     * 中文：实现应用操作 `dashboardPeriodInfo`（dashboard Period Info）。
+     * EN: Perform the dashboard period info operation.
+     * 中文：执行“dashboard period info”操作。
+     *
+     * @param string $date Date value used to scope the operation. / 用于限定本操作范围的日期值。
+     * @param string $period Period value used by this operation. / 本操作使用的“period”参数值。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     private function dashboardPeriodInfo(
         string $date,
@@ -1733,8 +1826,13 @@ private function dashboardSalesReviewData(
     }
 
     /**
-     * EN: Builds, formats, or transforms data for `formatProgressRows` (format Progress Rows).
-     * 中文：为 `formatProgressRows`（format Progress Rows）构建、格式化或转换数据。
+     * EN: Retrieve the format progress rows operation.
+     * 中文：读取“format progress rows”操作。
+     *
+     * @param array $rows Rows value used by this operation. / 本操作使用的“rows”参数值。
+     * @param array $periodInfo Period info value used by this operation. / 本操作使用的“period info”参数值。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     private function formatProgressRows(
         array $rows,
@@ -1788,8 +1886,10 @@ private function dashboardSalesReviewData(
     }
 
     /**
-     * EN: Implements the application operation `postReview` (post Review).
-     * 中文：实现应用操作 `postReview`（post Review）。
+     * EN: Handle the post review HTTP action for admin controller and return the appropriate response.
+     * 中文：处理 admin controller 的“post review”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public function postReview():void{
         $admin=Auth::requireRole('admin');$post=Post::find((int)($_GET['id']??0));if(!$post){
@@ -1800,8 +1900,13 @@ private function dashboardSalesReviewData(
         $attachments=$review?$this->attachments('post_review',(int)$review['id']):[];$this->render('admin/post_review',compact('admin','post','review','attachments'));
     }
 /**
- * EN: Creates or persists the `savePostReview` operation (save Post Review).
- * 中文：创建或持久化 `savePostReview`（save Post Review）操作。
+ * EN: Handle the save post review HTTP action for admin controller and return the appropriate response.
+ * 中文：处理 admin controller 的“save post review”HTTP 操作并返回相应响应。
+ *
+ * @return void No value is returned. / 无返回值。
+ *
+ * @throws \RuntimeException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
+ * @throws \Throwable When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
  */
 public function savePostReview():void{
     $admin=Auth::requireRole('admin');
@@ -1993,8 +2098,10 @@ public function savePostReview():void{
 }
 
     /**
-     * EN: Implements the application operation `dailyReview` (daily Review).
-     * 中文：实现应用操作 `dailyReview`（daily Review）。
+     * EN: Handle the daily review HTTP action for admin controller and return the appropriate response.
+     * 中文：处理 admin controller 的“daily review”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public function dailyReview():void{
         Auth::requireRole('admin');
@@ -2008,8 +2115,10 @@ public function savePostReview():void{
         $this->redirect('/admin?date='.rawurlencode($date).'&period=day&sales_id='.$sid.'&review=1');
     }
 /**
- * EN: Creates or persists the `saveDailyReview` operation (save Daily Review).
- * 中文：创建或持久化 `saveDailyReview`（save Daily Review）操作。
+ * EN: Handle the save daily review HTTP action for admin controller and return the appropriate response.
+ * 中文：处理 admin controller 的“save daily review”HTTP 操作并返回相应响应。
+ *
+ * @return void No value is returned. / 无返回值。
  */
 public function saveDailyReview():void{
     Auth::requireRole('admin');
@@ -2033,8 +2142,10 @@ public function saveDailyReview():void{
 }
 
     /**
-     * EN: Implements the application operation `reports` (reports).
-     * 中文：实现应用操作 `reports`（reports）。
+     * EN: Handle the reports HTTP action for admin controller and return the appropriate response.
+     * 中文：处理 admin controller 的“reports”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public function reports():void{
         $admin=Auth::requireRole('admin');
@@ -2060,8 +2171,10 @@ public function saveDailyReview():void{
     }
 
     /**
-     * EN: Implements the application operation `reportsDownload` (reports Download).
-     * 中文：实现应用操作 `reportsDownload`（reports Download）。
+     * EN: Handle the reports download HTTP action for admin controller and return the appropriate response.
+     * 中文：处理 admin controller 的“reports download”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public function reportsDownload():void{
         Auth::requireRole('admin');
@@ -2121,8 +2234,12 @@ public function saveDailyReview():void{
     }
 
     /**
-     * EN: Implements the application operation `managementReportContext` (management Report Context).
-     * 中文：实现应用操作 `managementReportContext`（management Report Context）。
+     * EN: Perform the management report context operation.
+     * 中文：执行“management report context”操作。
+     *
+     * @param array $source Source value used by this operation. / 本操作使用的“source”参数值。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     private function managementReportContext(array $source):array{
         $today=date('Y-m-d');
@@ -2156,8 +2273,14 @@ public function saveDailyReview():void{
     }
 
     /**
-     * EN: Implements the application operation `managementReportRows` (management Report Rows).
-     * 中文：实现应用操作 `managementReportRows`（management Report Rows）。
+     * EN: Perform the management report rows operation.
+     * 中文：执行“management report rows”操作。
+     *
+     * @param string $from From value used by this operation. / 本操作使用的“from”参数值。
+     * @param string $to To value used by this operation. / 本操作使用的“to”参数值。
+     * @param int $salesUserId Application or external user identifier. / 应用或外部用户 ID。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     private function managementReportRows(
         string $from,
@@ -2289,8 +2412,10 @@ public function saveDailyReview():void{
     }
 
 /**
- * EN: Creates or persists the `savePeriodReview` operation (save Period Review).
- * 中文：创建或持久化 `savePeriodReview`（save Period Review）操作。
+ * EN: Handle the save period review HTTP action for admin controller and return the appropriate response.
+ * 中文：处理 admin controller 的“save period review”HTTP 操作并返回相应响应。
+ *
+ * @return void No value is returned. / 无返回值。
  */
 public function savePeriodReview():void{
     Auth::requireRole('admin');
@@ -2321,8 +2446,12 @@ public function savePeriodReview():void{
 }
 
     /**
-     * EN: Handles the workflow/event for `handleDeleteRequest` (handle Delete Request).
-     * 中文：处理 `handleDeleteRequest`（handle Delete Request）对应的流程或事件。
+     * EN: Handle the handle delete request HTTP action for admin controller and return the appropriate response.
+     * 中文：处理 admin controller 的“handle delete request”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
+     *
+     * @throws \RuntimeException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     public function handleDeleteRequest():void{
         $admin=Auth::requireRole('admin');
@@ -2396,8 +2525,10 @@ public function savePeriodReview():void{
     }
 
     /**
-     * EN: Removes or cleans data/state for `deletePost` (delete Post).
-     * 中文：删除或清理 `deletePost`（delete Post）相关的数据或状态。
+     * EN: Handle the delete post HTTP action for admin controller and return the appropriate response.
+     * 中文：处理 admin controller 的“delete post”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public function deletePost():void{
         Auth::requireRole('admin');
@@ -2418,8 +2549,10 @@ public function savePeriodReview():void{
         }
     }
     /**
-     * EN: Checks or validates the condition represented by `isAjaxRequest` (is Ajax Request).
-     * 中文：检查或校验 `isAjaxRequest`（is Ajax Request）所表示的条件。
+     * EN: Check or validate the is ajax request operation.
+     * 中文：检查或验证“is ajax request”操作。
+     *
+     * @return bool True when the requested condition is satisfied; otherwise false. / 请求条件满足时返回 true，否则返回 false。
      */
     private function isAjaxRequest():bool{
         return strtolower((string)($_SERVER['HTTP_X_REQUESTED_WITH']??''))==='xmlhttprequest'
@@ -2427,8 +2560,10 @@ public function savePeriodReview():void{
     }
 
     /**
-     * EN: Checks or validates the condition represented by `verifyAjaxCsrf` (verify Ajax Csrf).
-     * 中文：检查或校验 `verifyAjaxCsrf`（verify Ajax Csrf）所表示的条件。
+     * EN: Check or validate the verify ajax csrf operation.
+     * 中文：检查或验证“verify ajax csrf”操作。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     private function verifyAjaxCsrf():void{
         $token=(string)($_POST['_csrf']??'');$sessionToken=(string)($_SESSION['_csrf']??'');
@@ -2438,8 +2573,10 @@ public function savePeriodReview():void{
     }
 
     /**
-     * EN: Implements the application operation `requestExceedsPostMaxSize` (request Exceeds Post Max Size).
-     * 中文：实现应用操作 `requestExceedsPostMaxSize`（request Exceeds Post Max Size）。
+     * EN: Send or process the request exceeds post max size operation.
+     * 中文：发送或处理“request exceeds post max size”操作。
+     *
+     * @return bool True when the requested condition is satisfied; otherwise false. / 请求条件满足时返回 true，否则返回 false。
      */
     private function requestExceedsPostMaxSize():bool{
         $contentLength=(int)($_SERVER['CONTENT_LENGTH']??0);if($contentLength<1)return false;
@@ -2448,8 +2585,12 @@ public function savePeriodReview():void{
     }
 
     /**
-     * EN: Implements the application operation `iniBytes` (ini Bytes).
-     * 中文：实现应用操作 `iniBytes`（ini Bytes）。
+     * EN: Perform the ini bytes operation.
+     * 中文：执行“ini bytes”操作。
+     *
+     * @param string $value Value processed or stored by this operation. / 本操作处理或保存的值。
+     *
+     * @return int Numeric result produced by this operation. / 本操作生成的数字结果。
      */
     private function iniBytes(string $value):int{
         $value=trim($value);if($value==='')return 0;$unit=strtolower(substr($value,-1));$number=(float)$value;
@@ -2457,8 +2598,12 @@ public function savePeriodReview():void{
     }
 
 /**
- * EN: Implements the application operation `postReviewHistory` (post Review History).
- * 中文：实现应用操作 `postReviewHistory`（post Review History）。
+ * EN: Perform the post review history operation.
+ * 中文：执行“post review history”操作。
+ *
+ * @param int $postId Sales post identifier. / 销售 Post ID。
+ *
+ * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
  */
 private function postReviewHistory(int $postId):array{
     $s=Database::connection()->prepare(
@@ -2488,8 +2633,12 @@ private function postReviewHistory(int $postId):array{
 }
 
 /**
- * EN: Implements the application operation `postReviewHistoryEvent` (post Review History Event).
- * 中文：实现应用操作 `postReviewHistoryEvent`（post Review History Event）。
+ * EN: Perform the post review history event operation.
+ * 中文：执行“post review history event”操作。
+ *
+ * @param int $historyId Identifier of the history record or entity. / history 记录或实体的标识 ID。
+ *
+ * @return ?array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
  */
 private function postReviewHistoryEvent(int $historyId):?array{
     if($historyId<1){
@@ -2520,8 +2669,12 @@ private function postReviewHistoryEvent(int $historyId):?array{
 }
 
 /**
- * EN: Builds, formats, or transforms data for `formatPostReviewHistoryEvent` (format Post Review History Event).
- * 中文：为 `formatPostReviewHistoryEvent`（format Post Review History Event）构建、格式化或转换数据。
+ * EN: Retrieve the format post review history event operation.
+ * 中文：读取“format post review history event”操作。
+ *
+ * @param array $row Database or structured data row being processed. / 正在处理的数据库或结构化数据行。
+ *
+ * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
  */
 private function formatPostReviewHistoryEvent(array $row):array{
     return [
@@ -2537,8 +2690,12 @@ private function formatPostReviewHistoryEvent(array $row):array{
 }
 
 /**
- * EN: Implements the application operation `postReviewComments` (post Review Comments).
- * 中文：实现应用操作 `postReviewComments`（post Review Comments）。
+ * EN: Perform the post review comments operation.
+ * 中文：执行“post review comments”操作。
+ *
+ * @param int $postId Sales post identifier. / 销售 Post ID。
+ *
+ * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
  */
 private function postReviewComments(int $postId):array{
     $s=Database::connection()->prepare(
@@ -2578,8 +2735,13 @@ private function postReviewComments(int $postId):array{
 }
 
 /**
- * EN: Implements the application operation `postReviewComment` (post Review Comment).
- * 中文：实现应用操作 `postReviewComment`（post Review Comment）。
+ * EN: Perform the post review comment operation.
+ * 中文：执行“post review comment”操作。
+ *
+ * @param int $commentId Identifier of the comment record or entity. / comment 记录或实体的标识 ID。
+ * @param bool $includeDeleted Include deleted value used by this operation. / 本操作使用的“include deleted”参数值。
+ *
+ * @return ?array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
  */
 private function postReviewComment(
     int $commentId,
@@ -2624,8 +2786,12 @@ private function postReviewComment(
 }
 
 /**
- * EN: Builds, formats, or transforms data for `formatPostReviewComment` (format Post Review Comment).
- * 中文：为 `formatPostReviewComment`（format Post Review Comment）构建、格式化或转换数据。
+ * EN: Retrieve the format post review comment operation.
+ * 中文：读取“format post review comment”操作。
+ *
+ * @param array $row Database or structured data row being processed. / 正在处理的数据库或结构化数据行。
+ *
+ * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
  */
 private function formatPostReviewComment(array $row):array{
     $created=(string)$row['created_at'];
@@ -2677,8 +2843,12 @@ private function formatPostReviewComment(array $row):array{
 }
 
 /**
- * EN: Implements the application operation `commentHasContent` (comment Has Content).
- * 中文：实现应用操作 `commentHasContent`（comment Has Content）。
+ * EN: Perform the comment has content operation.
+ * 中文：执行“comment has content”操作。
+ *
+ * @param string $html HTML content processed by the operation. / 本操作处理的 HTML 内容。
+ *
+ * @return bool True when the requested condition is satisfied; otherwise false. / 请求条件满足时返回 true，否则返回 false。
  */
 private function commentHasContent(string $html):bool{
     if(trim(strip_tags($html))!==''){
@@ -2689,8 +2859,12 @@ private function commentHasContent(string $html):bool{
 }
 
 /**
- * EN: Checks or validates the condition represented by `hasUploadedFiles` (has Uploaded Files).
- * 中文：检查或校验 `hasUploadedFiles`（has Uploaded Files）所表示的条件。
+ * EN: Check or validate the has uploaded files operation.
+ * 中文：检查或验证“has uploaded files”操作。
+ *
+ * @param string $field Field value used by this operation. / 本操作使用的“field”参数值。
+ *
+ * @return bool True when the requested condition is satisfied; otherwise false. / 请求条件满足时返回 true，否则返回 false。
  */
 private function hasUploadedFiles(string $field):bool{
     if(empty($_FILES[$field])) return false;
@@ -2703,8 +2877,12 @@ private function hasUploadedFiles(string $field):bool{
 }
 
 /**
- * EN: Builds, formats, or transforms data for `formatAttachment` (format Attachment).
- * 中文：为 `formatAttachment`（format Attachment）构建、格式化或转换数据。
+ * EN: Retrieve the format attachment operation.
+ * 中文：读取“format attachment”操作。
+ *
+ * @param array $attachment Attachment value used by this operation. / 本操作使用的“attachment”参数值。
+ *
+ * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
  */
 private function formatAttachment(array $attachment):array{
     return [
@@ -2726,8 +2904,12 @@ private function formatAttachment(array $attachment):array{
 }
 
 /**
- * EN: Builds, formats, or transforms data for `formatAttachments` (format Attachments).
- * 中文：为 `formatAttachments`（format Attachments）构建、格式化或转换数据。
+ * EN: Retrieve the format attachments operation.
+ * 中文：读取“format attachments”操作。
+ *
+ * @param array $items Items value used by this operation. / 本操作使用的“items”参数值。
+ *
+ * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
  */
 private function formatAttachments(array $items):array{
     $result=[];
@@ -2740,8 +2922,12 @@ private function formatAttachments(array $items):array{
 }
 
 /**
- * EN: Implements the application operation `attachmentById` (attachment By Id).
- * 中文：实现应用操作 `attachmentById`（attachment By Id）。
+ * EN: Perform the attachment by id operation.
+ * 中文：执行“attachment by id”操作。
+ *
+ * @param int $id Identifier of the record record or entity. / record 记录或实体的标识 ID。
+ *
+ * @return ?array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
  */
 private function attachmentById(int $id):?array{
     $s=Database::connection()->prepare(
@@ -2765,8 +2951,14 @@ private function attachmentById(int $id):?array{
 }
 
 /**
- * EN: Implements the application operation `attachments` (attachments).
- * 中文：实现应用操作 `attachments`（attachments）。
+ * EN: Perform the attachments operation.
+ * 中文：执行“attachments”操作。
+ *
+ * @param string $type Type value used by this operation. / 本操作使用的“type”参数值。
+ * @param int $id Identifier of the record record or entity. / record 记录或实体的标识 ID。
+ * @param bool $includeDeleted Include deleted value used by this operation. / 本操作使用的“include deleted”参数值。
+ *
+ * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
  */
 private function attachments(
     string $type,

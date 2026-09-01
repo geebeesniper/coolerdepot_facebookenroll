@@ -1,18 +1,26 @@
 <?php
 /**
  * File / 文件：app/Services/PlatformUrl.php
- * EN: Application service for reusable business or integration logic.
- * 中文：该文件负责可复用的业务逻辑或外部集成服务。
- * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
- * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ * EN: Defines the PlatformUrl service used by application business, security, or provider integration flows.
+ * 中文：定义 PlatformUrl 服务，用于应用业务、安全或 Provider 集成流程。
+ * Maintenance / 维护：Keep behavior, security checks, error logging, and public contracts unchanged unless the related feature is intentionally modified.
+ * 维护要求：除非明确修改相关功能，否则应保持行为、安全检查、错误日志及公开接口契约不变。
  */
 namespace App\Services;
 
+/**
+ * EN: Application service that encapsulates platform url business, security, or integration behavior.
+ * 中文：封装 platform url 业务、安全或外部集成行为的应用服务。
+ */
 class PlatformUrl
 {
     /**
-     * EN: Implements the application operation `platformFor` (platform For).
-     * 中文：实现应用操作 `platformFor`（platform For）。
+     * EN: Perform the platform for operation implemented by platform url.
+     * 中文：执行 platform url 实现的“platform for”操作。
+     *
+     * @param string $url URL to validate, resolve, fetch, or process. / 需要验证、解析、抓取或处理的 URL。
+     *
+     * @return ?string String result produced by this operation, or null when no value is available. / 本操作生成的字符串结果；无可用值时返回 null。
      */
     public static function platformFor(string $url): ?string
     {
@@ -51,8 +59,13 @@ class PlatformUrl
     }
 
     /**
-     * EN: Builds, formats, or transforms data for `normalize` (normalize).
-     * 中文：为 `normalize`（normalize）构建、格式化或转换数据。
+     * EN: Normalize or format the normalize operation implemented by platform url.
+     * 中文：规范化或格式化 platform url 实现的“normalize”操作。
+     *
+     * @param string $url URL to validate, resolve, fetch, or process. / 需要验证、解析、抓取或处理的 URL。
+     * @param ?string $expected Expected value used by this operation. / 本操作使用的“expected”参数值。
+     *
+     * @return ?string String result produced by this operation, or null when no value is available. / 本操作生成的字符串结果；无可用值时返回 null。
      */
     public static function normalize(string $url, ?string $expected = null): ?string
     {
@@ -104,8 +117,13 @@ class PlatformUrl
     }
 
     /**
-     * EN: Checks or validates the condition represented by `allowed` (allowed).
-     * 中文：检查或校验 `allowed`（allowed）所表示的条件。
+     * EN: Retrieve the allowed operation implemented by platform url.
+     * 中文：读取 platform url 实现的“allowed”操作。
+     *
+     * @param string $url URL to validate, resolve, fetch, or process. / 需要验证、解析、抓取或处理的 URL。
+     * @param ?string $expected Expected value used by this operation. / 本操作使用的“expected”参数值。
+     *
+     * @return bool True when the requested condition is satisfied; otherwise false. / 请求条件满足时返回 true，否则返回 false。
      */
     public static function allowed(string $url, ?string $expected = null): bool
     {
@@ -113,8 +131,13 @@ class PlatformUrl
     }
 
     /**
-     * EN: Checks or validates the condition represented by `allowedStrict` (allowed Strict).
-     * 中文：检查或校验 `allowedStrict`（allowed Strict）所表示的条件。
+     * EN: Retrieve the allowed strict operation implemented by platform url.
+     * 中文：读取 platform url 实现的“allowed strict”操作。
+     *
+     * @param string $url URL to validate, resolve, fetch, or process. / 需要验证、解析、抓取或处理的 URL。
+     * @param ?string $expected Expected value used by this operation. / 本操作使用的“expected”参数值。
+     *
+     * @return bool True when the requested condition is satisfied; otherwise false. / 请求条件满足时返回 true，否则返回 false。
      */
     private static function allowedStrict(string $url, ?string $expected = null): bool
     {
@@ -140,8 +163,12 @@ class PlatformUrl
     }
 
     /**
-     * EN: Implements the application operation `platformForStrict` (platform For Strict).
-     * 中文：实现应用操作 `platformForStrict`（platform For Strict）。
+     * EN: Perform the platform for strict operation implemented by platform url.
+     * 中文：执行 platform url 实现的“platform for strict”操作。
+     *
+     * @param string $url URL to validate, resolve, fetch, or process. / 需要验证、解析、抓取或处理的 URL。
+     *
+     * @return ?string String result produced by this operation, or null when no value is available. / 本操作生成的字符串结果；无可用值时返回 null。
      */
     private static function platformForStrict(string $url): ?string
     {
@@ -164,8 +191,14 @@ class PlatformUrl
     }
 
     /**
-     * EN: Implements the application operation `externalId` (external Id).
-     * 中文：实现应用操作 `externalId`（external Id）。
+     * EN: Perform the external id operation implemented by platform url.
+     * 中文：执行 platform url 实现的“external id”操作。
+     *
+     * @param string $platform Platform value used by this operation. / 本操作使用的“platform”参数值。
+     * @param string $url URL to validate, resolve, fetch, or process. / 需要验证、解析、抓取或处理的 URL。
+     * @param string $html HTML content processed by the operation. / 本操作处理的 HTML 内容。
+     *
+     * @return ?string String result produced by this operation, or null when no value is available. / 本操作生成的字符串结果；无可用值时返回 null。
      */
     public static function externalId(string $platform, string $url, string $html = ''): ?string
     {

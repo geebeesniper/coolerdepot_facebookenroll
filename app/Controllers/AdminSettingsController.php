@@ -1,10 +1,10 @@
 <?php
 /**
  * File / 文件：app/Controllers/AdminSettingsController.php
- * EN: HTTP controller for request validation, orchestration, and responses.
- * 中文：该文件负责 HTTP 请求校验、业务编排与响应。
- * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
- * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ * EN: Defines the AdminSettingsController HTTP controller and request/response actions.
+ * 中文：定义 AdminSettingsController HTTP Controller 及其请求/响应操作。
+ * Maintenance / 维护：Keep behavior, security checks, error logging, and public contracts unchanged unless the related feature is intentionally modified.
+ * 维护要求：除非明确修改相关功能，否则应保持行为、安全检查、错误日志及公开接口契约不变。
  */
 namespace App\Controllers;
 
@@ -20,13 +20,19 @@ use App\Services\PlatformUrl;
 use App\Services\ProviderValidationException;
 use App\Services\WebsiteCatalog;
 
+/**
+ * EN: HTTP controller for admin settings requests, responses, and server-side authorization.
+ * 中文：负责 admin settings 请求、响应及服务器端权限控制的 HTTP Controller。
+ */
 class AdminSettingsController extends Controller
 {
     private const TEST_TTL = 600;
 
     /**
-     * EN: Implements the application operation `index` (index).
-     * 中文：实现应用操作 `index`（index）。
+     * EN: Handle the index HTTP action for admin settings controller and return the appropriate response.
+     * 中文：处理 admin settings controller 的“index”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public function index(): void
     {
@@ -77,8 +83,10 @@ class AdminSettingsController extends Controller
     }
 
     /**
-     * EN: Implements the application operation `providerJobs` (provider Jobs).
-     * 中文：实现应用操作 `providerJobs`（provider Jobs）。
+     * EN: Handle the provider jobs HTTP action for admin settings controller and return the appropriate response.
+     * 中文：处理 admin settings controller 的“provider jobs”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public function providerJobs(): void
     {
@@ -132,8 +140,12 @@ class AdminSettingsController extends Controller
     }
 
     /**
-     * EN: Implements the application operation `importWebsiteCatalog` (import Website Catalog).
-     * 中文：实现应用操作 `importWebsiteCatalog`（import Website Catalog）。
+     * EN: Handle the import website catalog HTTP action for admin settings controller and return the appropriate response.
+     * 中文：处理 admin settings controller 的“import website catalog”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
+     *
+     * @throws \DomainException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     public function importWebsiteCatalog(): void
     {
@@ -164,8 +176,12 @@ class AdminSettingsController extends Controller
     }
 
     /**
-     * EN: Implements the application operation `testProvider` (test Provider).
-     * 中文：实现应用操作 `testProvider`（test Provider）。
+     * EN: Handle the test provider HTTP action for admin settings controller and return the appropriate response.
+     * 中文：处理 admin settings controller 的“test provider”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
+     *
+     * @throws ProviderValidationException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     public function testProvider(): void
     {
@@ -311,8 +327,12 @@ class AdminSettingsController extends Controller
     }
 
     /**
-     * EN: Creates or persists the `addProvider` operation (add Provider).
-     * 中文：创建或持久化 `addProvider`（add Provider）操作。
+     * EN: Handle the add provider HTTP action for admin settings controller and return the appropriate response.
+     * 中文：处理 admin settings controller 的“add provider”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
+     *
+     * @throws \RuntimeException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     public function addProvider(): void
     {
@@ -361,8 +381,12 @@ class AdminSettingsController extends Controller
     }
 
     /**
-     * EN: Implements the application operation `reorderProviders` (reorder Providers).
-     * 中文：实现应用操作 `reorderProviders`（reorder Providers）。
+     * EN: Handle the reorder providers HTTP action for admin settings controller and return the appropriate response.
+     * 中文：处理 admin settings controller 的“reorder providers”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
+     *
+     * @throws \RuntimeException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     public function reorderProviders(): void
     {
@@ -393,8 +417,12 @@ class AdminSettingsController extends Controller
     }
 
     /**
-     * EN: Implements the application operation `toggleProvider` (toggle Provider).
-     * 中文：实现应用操作 `toggleProvider`（toggle Provider）。
+     * EN: Handle the toggle provider HTTP action for admin settings controller and return the appropriate response.
+     * 中文：处理 admin settings controller 的“toggle provider”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
+     *
+     * @throws \RuntimeException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     public function toggleProvider(): void
     {
@@ -422,8 +450,12 @@ class AdminSettingsController extends Controller
     }
 
     /**
-     * EN: Removes or cleans data/state for `deleteProvider` (delete Provider).
-     * 中文：删除或清理 `deleteProvider`（delete Provider）相关的数据或状态。
+     * EN: Handle the delete provider HTTP action for admin settings controller and return the appropriate response.
+     * 中文：处理 admin settings controller 的“delete provider”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
+     *
+     * @throws \RuntimeException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     public function deleteProvider(): void
     {
@@ -451,8 +483,10 @@ class AdminSettingsController extends Controller
 
     // Old v0.1.11 endpoints stay harmless for bookmarks/forms during rollout.
     /**
-     * EN: Creates or persists the `save` operation (save).
-     * 中文：创建或持久化 `save`（save）操作。
+     * EN: Handle the save HTTP action for admin settings controller and return the appropriate response.
+     * 中文：处理 admin settings controller 的“save”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public function save(): void
     {
@@ -463,8 +497,10 @@ class AdminSettingsController extends Controller
     }
 
     /**
-     * EN: Implements the application operation `test` (test).
-     * 中文：实现应用操作 `test`（test）。
+     * EN: Handle the test HTTP action for admin settings controller and return the appropriate response.
+     * 中文：处理 admin settings controller 的“test”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public function test(): void
     {
@@ -475,8 +511,10 @@ class AdminSettingsController extends Controller
     }
 
     /**
-     * EN: Creates or persists the `saveBrand` operation (save Brand).
-     * 中文：创建或持久化 `saveBrand`（save Brand）操作。
+     * EN: Handle the save brand HTTP action for admin settings controller and return the appropriate response.
+     * 中文：处理 admin settings controller 的“save brand”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public function saveBrand(): void
     {
@@ -493,8 +531,10 @@ class AdminSettingsController extends Controller
     }
 
     /**
-     * EN: Creates or persists the `saveWebsiteSource` operation (save Website Source).
-     * 中文：创建或持久化 `saveWebsiteSource`（save Website Source）操作。
+     * EN: Handle the save website source HTTP action for admin settings controller and return the appropriate response.
+     * 中文：处理 admin settings controller 的“save website source”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public function saveWebsiteSource(): void
     {
@@ -512,8 +552,12 @@ class AdminSettingsController extends Controller
     }
 
     /**
-     * EN: Implements the application operation `scanWebsite` (scan Website).
-     * 中文：实现应用操作 `scanWebsite`（scan Website）。
+     * EN: Handle the scan website HTTP action for admin settings controller and return the appropriate response.
+     * 中文：处理 admin settings controller 的“scan website”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
+     *
+     * @throws \DomainException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     public function scanWebsite(): void
     {
@@ -544,8 +588,12 @@ class AdminSettingsController extends Controller
     }
 
     /**
-     * EN: Creates or persists the `addWebsiteReference` operation (add Website Reference).
-     * 中文：创建或持久化 `addWebsiteReference`（add Website Reference）操作。
+     * EN: Handle the add website reference HTTP action for admin settings controller and return the appropriate response.
+     * 中文：处理 admin settings controller 的“add website reference”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
+     *
+     * @throws \DomainException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     public function addWebsiteReference(): void
     {
@@ -570,8 +618,10 @@ class AdminSettingsController extends Controller
     }
 
     /**
-     * EN: Implements the application operation `websiteReferences` (website References).
-     * 中文：实现应用操作 `websiteReferences`（website References）。
+     * EN: Handle the website references HTTP action for admin settings controller and return the appropriate response.
+     * 中文：处理 admin settings controller 的“website references”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public function websiteReferences(): void
     {
@@ -587,8 +637,12 @@ class AdminSettingsController extends Controller
     }
 
     /**
-     * EN: Removes or cleans data/state for `deleteWebsiteReference` (delete Website Reference).
-     * 中文：删除或清理 `deleteWebsiteReference`（delete Website Reference）相关的数据或状态。
+     * EN: Handle the delete website reference HTTP action for admin settings controller and return the appropriate response.
+     * 中文：处理 admin settings controller 的“delete website reference”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
+     *
+     * @throws \DomainException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     public function deleteWebsiteReference(): void
     {
@@ -607,8 +661,10 @@ class AdminSettingsController extends Controller
     }
 
     /**
-     * EN: Implements the application operation `websiteCatalogSample` (website Catalog Sample).
-     * 中文：实现应用操作 `websiteCatalogSample`（website Catalog Sample）。
+     * EN: Handle the website catalog sample HTTP action for admin settings controller and return the appropriate response.
+     * 中文：处理 admin settings controller 的“website catalog sample”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public function websiteCatalogSample(): void
     {
@@ -622,8 +678,10 @@ class AdminSettingsController extends Controller
     }
 
     /**
-     * EN: Implements the application operation `pruneTickets` (prune Tickets).
-     * 中文：实现应用操作 `pruneTickets`（prune Tickets）。
+     * EN: Update the prune tickets operation.
+     * 中文：更新“prune tickets”操作。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     private function pruneTickets(): void
     {

@@ -1,16 +1,24 @@
 <?php
 /**
  * File / 文件：app/Core/Util.php
- * EN: Core runtime/infrastructure component used across the application.
- * 中文：该文件是应用全局复用的核心运行时或基础设施组件。
- * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
- * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ * EN: Defines the shared Util core infrastructure component.
+ * 中文：定义全应用共享的 Util 核心基础设施组件。
+ * Maintenance / 维护：Keep behavior, security checks, error logging, and public contracts unchanged unless the related feature is intentionally modified.
+ * 维护要求：除非明确修改相关功能，否则应保持行为、安全检查、错误日志及公开接口契约不变。
  */
 namespace App\Core;
+/**
+ * EN: Core infrastructure component that provides util behavior shared across the application.
+ * 中文：提供全应用共享 util 能力的核心基础设施组件。
+ */
 class Util {
     /**
-     * EN: Builds, formats, or transforms data for `normalizeText` (normalize Text).
-     * 中文：为 `normalizeText`（normalize Text）构建、格式化或转换数据。
+     * EN: Normalize or format the normalize text core operation provided by util.
+     * 中文：规范化或格式化 util 提供的“normalize text”核心操作。
+     *
+     * @param ?string $v V value used by this operation. / 本操作使用的“v”参数值。
+     *
+     * @return string String result produced by this operation. / 本操作生成的字符串结果。
      */
     public static function normalizeText(?string $v):string{
         $v=html_entity_decode(strip_tags((string)$v),ENT_QUOTES|ENT_HTML5,'UTF-8');
@@ -19,18 +27,30 @@ class Util {
         return trim(preg_replace('/\s+/u',' ',$v));
     }
     /**
-     * EN: Checks or validates the condition represented by `hashText` (hash Text).
-     * 中文：检查或校验 `hashText`（hash Text）所表示的条件。
+     * EN: Check or validate the hash text core operation provided by util.
+     * 中文：检查或验证 util 提供的“hash text”核心操作。
+     *
+     * @param ?string $v V value used by this operation. / 本操作使用的“v”参数值。
+     *
+     * @return string String result produced by this operation. / 本操作生成的字符串结果。
      */
     public static function hashText(?string $v):string{return hash('sha256',self::normalizeText($v));}
     /**
-     * EN: Implements the application operation `urlHash` (url Hash).
-     * 中文：实现应用操作 `urlHash`（url Hash）。
+     * EN: Perform the url hash core operation provided by util.
+     * 中文：执行 util 提供的“url hash”核心操作。
+     *
+     * @param ?string $v V value used by this operation. / 本操作使用的“v”参数值。
+     *
+     * @return string String result produced by this operation. / 本操作生成的字符串结果。
      */
     public static function urlHash(?string $v):string{return hash('sha256',strtolower(trim((string)$v)));}
     /**
-     * EN: Implements the application operation `e` (e).
-     * 中文：实现应用操作 `e`（e）。
+     * EN: Perform the e core operation provided by util.
+     * 中文：执行 util 提供的“e”核心操作。
+     *
+     * @param mixed $v V value used by this operation. / 本操作使用的“v”参数值。
+     *
+     * @return string String result produced by this operation. / 本操作生成的字符串结果。
      */
     public static function e($v):string{return htmlspecialchars((string)$v,ENT_QUOTES,'UTF-8');}
 }

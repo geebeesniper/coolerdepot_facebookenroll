@@ -63,6 +63,25 @@ CREATE TABLE IF NOT EXISTS cdsp_auth_sessions (
  KEY idx_auth_session_user(user_id),
  KEY idx_auth_session_expiry(expires_at,revoked_at),
  CONSTRAINT fk_auth_session_user FOREIGN KEY(user_id) REFERENCES cdsp_users(id)
+
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS cdsp_api_tokens (
+ id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+ user_id INT UNSIGNED NOT NULL,
+ token_hash CHAR(64) NOT NULL,
+ source VARCHAR(50) NOT NULL DEFAULT 'signed_exchange',
+ ip_address VARCHAR(45) NULL,
+ user_agent VARCHAR(500) NULL,
+ created_at DATETIME NOT NULL,
+ last_used_at DATETIME NOT NULL,
+ expires_at DATETIME NOT NULL,
+ revoked_at DATETIME NULL,
+ PRIMARY KEY(id),
+ UNIQUE KEY uq_api_token_hash(token_hash),
+ KEY idx_api_token_user(user_id),
+ KEY idx_api_token_expiry(expires_at,revoked_at),
+ CONSTRAINT fk_api_token_user FOREIGN KEY(user_id) REFERENCES cdsp_users(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS cdsp_post_inspections (

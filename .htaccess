@@ -5,6 +5,11 @@
 Options -Indexes
 RewriteEngine On
 
+# Preserve Bearer Authorization for REST/GraphQL when Apache/FastCGI would
+# otherwise strip it before PHP. The raw token is never written to logs by app code.
+RewriteCond %{HTTP:Authorization} .
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
 # Never expose source, runtime state, diagnostics, migrations, tests or docs as
 # static web files. PHP may still read these paths internally.
 RewriteRule ^(?:app|config|database|deploy|docs|integration|scripts|storage|tests)(?:/|$) - [F,L,NC]

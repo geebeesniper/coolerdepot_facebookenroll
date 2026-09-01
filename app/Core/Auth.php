@@ -1,18 +1,24 @@
 <?php
 /**
  * File / 文件：app/Core/Auth.php
- * EN: Core runtime/infrastructure component used across the application.
- * 中文：该文件是应用全局复用的核心运行时或基础设施组件。
- * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
- * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ * EN: Defines the shared Auth core infrastructure component.
+ * 中文：定义全应用共享的 Auth 核心基础设施组件。
+ * Maintenance / 维护：Keep behavior, security checks, error logging, and public contracts unchanged unless the related feature is intentionally modified.
+ * 维护要求：除非明确修改相关功能，否则应保持行为、安全检查、错误日志及公开接口契约不变。
  */
 namespace App\Core;
 
+/**
+ * EN: Core infrastructure component that provides auth behavior shared across the application.
+ * 中文：提供全应用共享 auth 能力的核心基础设施组件。
+ */
 class Auth
 {
     /**
-     * EN: Implements the application operation `user` (user).
-     * 中文：实现应用操作 `user`（user）。
+     * EN: Perform the user core operation provided by auth.
+     * 中文：执行 auth 提供的“user”核心操作。
+     *
+     * @return ?array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     public static function user(): ?array
     {
@@ -49,8 +55,13 @@ class Auth
     }
 
     /**
-     * EN: Implements the application operation `login` (login).
-     * 中文：实现应用操作 `login`（login）。
+     * EN: Authenticate a local user with a username and password and establish a browser session.
+     * 中文：使用用户名和密码认证本地用户并建立浏览器 Session。
+     *
+     * @param array $user User value used by this operation. / 本操作使用的“user”参数值。
+     * @param string $source Source value used by this operation. / 本操作使用的“source”参数值。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public static function login(array $user, string $source = 'handoff'): void
     {
@@ -77,8 +88,10 @@ class Auth
     }
 
     /**
-     * EN: Implements the application operation `logout` (logout).
-     * 中文：实现应用操作 `logout`（logout）。
+     * EN: Revoke the active browser authentication session and clear local session state.
+     * 中文：撤销当前浏览器认证 Session 并清理本地 Session 状态。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public static function logout(): void
     {
@@ -102,8 +115,10 @@ class Auth
     }
 
     /**
-     * EN: Implements the application operation `requireLogin` (require Login).
-     * 中文：实现应用操作 `requireLogin`（require Login）。
+     * EN: Perform the require login core operation provided by auth.
+     * 中文：执行 auth 提供的“require login”核心操作。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     public static function requireLogin(): array
     {
@@ -119,8 +134,12 @@ class Auth
     }
 
     /**
-     * EN: Implements the application operation `requireRole` (require Role).
-     * 中文：实现应用操作 `requireRole`（require Role）。
+     * EN: Perform the require role core operation provided by auth.
+     * 中文：执行 auth 提供的“require role”核心操作。
+     *
+     * @param string $role Required or assigned application role. / 要求或分配的应用角色。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     public static function requireRole(string $role): array
     {

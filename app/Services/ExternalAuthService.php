@@ -1,26 +1,28 @@
 <?php
 /**
  * File / 文件：app/Services/ExternalAuthService.php
- * EN: Application service for reusable business or integration logic.
- * 中文：该文件负责可复用的业务逻辑或外部集成服务。
- * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
- * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ * EN: Defines the ExternalAuthService service used by application business, security, or provider integration flows.
+ * 中文：定义 ExternalAuthService 服务，用于应用业务、安全或 Provider 集成流程。
+ * Maintenance / 维护：Keep behavior, security checks, error logging, and public contracts unchanged unless the related feature is intentionally modified.
+ * 维护要求：除非明确修改相关功能，否则应保持行为、安全检查、错误日志及公开接口契约不变。
  */
 namespace App\Services;
 
 use App\Core\Database;
 
 /**
- * Verifies the signed authentication handoff from the parent CoolerDepot app.
- *
- * Security-sensitive inputs (signature/secret) are deliberately never logged
- * here. The controller records only the resulting exception and correlation id.
+ * EN: Application service that encapsulates external auth service business, security, or integration behavior.
+ * 中文：封装 external auth service 业务、安全或外部集成行为的应用服务。
  */
 class ExternalAuthService
 {
     /**
-     * EN: Checks or validates the condition represented by `canonicalPayload` (canonical Payload).
-     * 中文：检查或校验 `canonicalPayload`（canonical Payload）所表示的条件。
+     * EN: Build the canonical newline-delimited payload used for HMAC authentication signatures.
+     * 中文：构建用于 HMAC 认证签名的标准换行分隔载荷。
+     *
+     * @param array $payload Input payload supplied to this operation. / 传入本操作的输入载荷。
+     *
+     * @return string String result produced by this operation. / 本操作生成的字符串结果。
      */
     public static function canonicalPayload(array $payload): string
     {
@@ -35,8 +37,15 @@ class ExternalAuthService
     }
 
     /**
-     * EN: Implements the application operation `accept` (accept).
-     * 中文：实现应用操作 `accept`（accept）。
+     * EN: Validate and accept a signed external authentication handoff, reject replay attempts, and resolve the local user.
+     * 中文：验证并接受外部系统签名的认证交接，拒绝重放请求，并解析或创建本地用户。
+     *
+     * @param array $payload Input payload supplied to this operation. / 传入本操作的输入载荷。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
+     *
+     * @throws \RuntimeException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
+     * @throws \Throwable When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     public function accept(array $payload): array
     {
@@ -51,7 +60,8 @@ class ExternalAuthService
         $salesId = trim((string)($payload['sales_id'] ?? ''));
         $name = trim((string)($payload['name'] ?? ''));
         $role = trim((string)($payload['role'] ?? ''));
-        $timestamp = (int)($payload['ts'] ?? 0);
+        $timestampRaw = $payload['ts'] ?? 0;
+        $timestamp = is_int($timestampRaw) ? $timestampRaw : (ctype_digit((string)$timestampRaw) ? (int)$timestampRaw : 0);
         $nonce = trim((string)($payload['nonce'] ?? ''));
         $signature = strtolower(trim((string)($payload['sig'] ?? '')));
 
@@ -69,8 +79,28 @@ class ExternalAuthService
             throw new \RuntimeException('Invalid role.');
         }
 
-        if ($role === 'sales' && ($salesId === '' || !ctype_digit($salesId))) {
-            throw new \RuntimeException('Sales handoff requires numeric sales_id.');
+        // Canonical HMAC fields are newline-delimited. Reject embedded control/newline
+        // characters so two different field layouts can never canonicalize ambiguously.
+        if (strlen($uid) > 191 || preg_match('/[\x00-\x1F\x7F]/', $uid)) {
+            throw new \RuntimeException('Invalid external user id.');
+        }
+        if (self::characterLength($name) > 150 || preg_match('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', $name)) {
+            throw new \RuntimeException('Invalid display name.');
+        }
+        if (!preg_match('/^[a-f0-9]{64}$/', $signature)) {
+            throw new \RuntimeException('Authentication signature is invalid.');
+        }
+
+        if ($role === 'sales') {
+            if ($salesId === '' || !ctype_digit($salesId)) {
+                throw new \RuntimeException('Sales handoff requires numeric sales_id.');
+            }
+            $salesNumeric = (int)$salesId;
+            if ($salesNumeric < 1 || $salesNumeric > 4294967295) {
+                throw new \RuntimeException('Sales handoff sales_id is out of range.');
+            }
+        } elseif ($salesId !== '' && (!ctype_digit($salesId) || (int)$salesId > 4294967295)) {
+            throw new \RuntimeException('Invalid admin sales_id.');
         }
 
         if (
@@ -159,7 +189,7 @@ class ExternalAuthService
             ]);
 
             $findUser = $pdo->prepare(
-                "SELECT id,sales_id,external_user_id,username,display_name,role,active,auth_source
+                "SELECT id,sales_id,external_user_id,username,display_name,role,active,daily_post_target,auth_source
                  FROM cdsp_users
                  WHERE external_user_id=?
                  LIMIT 1"
@@ -194,4 +224,22 @@ class ExternalAuthService
             throw $e;
         }
     }
+
+    /**
+     * EN: Perform the character length operation implemented by external auth service.
+     * 中文：执行 external auth service 实现的“character length”操作。
+     *
+     * @param string $value Value processed or stored by this operation. / 本操作处理或保存的值。
+     *
+     * @return int Numeric result produced by this operation. / 本操作生成的数字结果。
+     */
+    private static function characterLength(string $value): int
+    {
+        if (function_exists('mb_strlen')) {
+            return \mb_strlen($value, 'UTF-8');
+        }
+        $count = preg_match_all('/./us', $value, $matches);
+        return $count === false ? strlen($value) : $count;
+    }
+
 }

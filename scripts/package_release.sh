@@ -16,6 +16,8 @@ trap 'rm -rf "$TMP"' EXIT
 # EN: Enforce the bilingual source-comment contract before a release is copied.
 # 中文：复制发布文件前先强制执行源码双语注释契约。
 php "$ROOT/scripts/audit_bilingual_comments.php"
+php "$ROOT/scripts/audit_phpdoc_contract.php"
+php "$ROOT/scripts/audit_jsdoc_contract.php"
 
 mkdir -p "$TMP/sales-posts"
 rsync -a \
@@ -31,8 +33,10 @@ rsync -a \
   --exclude='SALES-LIST*.csv' \
   --include='storage/uploads/.gitkeep' \
   --include='storage/logs/.gitkeep' \
+  --include='storage/transfer/.gitkeep' \
   --exclude='storage/uploads/*' \
   --exclude='storage/logs/*' \
+  --exclude='storage/transfer/*' \
   "$ROOT/" "$TMP/sales-posts/"
 
 # Fail closed if an exclusion rule is ever weakened later.

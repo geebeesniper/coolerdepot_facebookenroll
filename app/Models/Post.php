@@ -1,18 +1,31 @@
 <?php
 /**
  * File / 文件：app/Models/Post.php
- * EN: Database model and query layer for this domain.
- * 中文：该文件负责此业务域的数据模型与数据库查询。
- * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
- * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ * EN: Defines the Post database model and its persistence/query helpers.
+ * 中文：定义 Post 数据库模型及其持久化与查询辅助逻辑。
+ * Maintenance / 维护：Keep behavior, security checks, error logging, and public contracts unchanged unless the related feature is intentionally modified.
+ * 维护要求：除非明确修改相关功能，否则应保持行为、安全检查、错误日志及公开接口契约不变。
  */
 namespace App\Models;
 use App\Core\Database;
 use App\Core\Util;
+/**
+ * EN: Database model for post records, queries, and persistence operations.
+ * 中文：负责 post 记录、查询及持久化操作的数据库 Model。
+ */
 class Post {
     /**
-     * EN: Implements the application operation `duplicate` (duplicate).
-     * 中文：实现应用操作 `duplicate`（duplicate）。
+     * EN: Calculate or compare the duplicate data for post in the application database.
+     * 中文：计算或比较 post 的“duplicate”数据，并访问应用数据库。
+     *
+     * @param int $uid External user identifier supplied by the parent authentication system. / 父级认证系统提供的外部用户 ID。
+     * @param string $platform Platform value used by this operation. / 本操作使用的“platform”参数值。
+     * @param ?string $url URL to validate, resolve, fetch, or process. / 需要验证、解析、抓取或处理的 URL。
+     * @param ?string $eid Identifier of the e record or entity. / e 记录或实体的标识 ID。
+     * @param ?string $title Title value used by this operation. / 本操作使用的“title”参数值。
+     * @param ?string $desc Desc value used by this operation. / 本操作使用的“desc”参数值。
+     *
+     * @return ?array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     public static function duplicate(int $uid,string $platform,?string $url,?string $eid,?string $title,?string $desc):?array{
         $pdo=Database::connection();
@@ -55,8 +68,15 @@ class Post {
         return null;
     }
     /**
-     * EN: Creates or persists the `create` operation (create).
-     * 中文：创建或持久化 `create`（create）操作。
+     * EN: Create or store the create data for post in the application database.
+     * 中文：创建或保存 post 的“create”数据，并访问应用数据库。
+     *
+     * @param array $i I value used by this operation. / 本操作使用的“i”参数值。
+     *
+     * @return int Numeric result produced by this operation. / 本操作生成的数字结果。
+     *
+     * @throws \LogicException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
+     * @throws \DomainException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     public static function create(array $i):int{
         // Never trust a preflight result at save time. All callers must serialize
@@ -79,24 +99,36 @@ class Post {
         return $id;
     }
     /**
-     * EN: Implements the application operation `forSales` (for Sales).
-     * 中文：实现应用操作 `forSales`（for Sales）。
+     * EN: Retrieve the for sales data for post in the application database.
+     * 中文：读取 post 的“for sales”数据，并访问应用数据库。
+     *
+     * @param int $uid External user identifier supplied by the parent authentication system. / 父级认证系统提供的外部用户 ID。
+     * @param string $from From value used by this operation. / 本操作使用的“from”参数值。
+     * @param string $to To value used by this operation. / 本操作使用的“to”参数值。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     public static function forSales(int $uid,string $from,string $to):array{
         $s=Database::connection()->prepare("SELECT p.*,r.decision review_decision FROM cdsp_sales_posts p LEFT JOIN cdsp_post_reviews r ON r.post_id=p.id WHERE p.sales_user_id=? AND p.published_date BETWEEN ? AND ? AND p.deleted_at IS NULL ORDER BY p.published_at DESC,p.id DESC");
         $s->execute([$uid,$from,$to]);return$s->fetchAll();
     }
     /**
-     * EN: Retrieves or loads data for `find` (find).
-     * 中文：读取或加载 `find`（find）所需的数据。
+     * EN: Retrieve the find data for post in the application database.
+     * 中文：读取 post 的“find”数据，并访问应用数据库。
+     *
+     * @param int $id Identifier of the record record or entity. / record 记录或实体的标识 ID。
+     *
+     * @return ?array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     public static function find(int $id):?array{
         $s=Database::connection()->prepare("SELECT p.*,u.display_name,u.sales_id FROM cdsp_sales_posts p JOIN cdsp_users u ON u.id=p.sales_user_id WHERE p.id=? LIMIT 1");
         $s->execute([$id]);return$s->fetch()?:null;
     }
     /**
-     * EN: Implements the application operation `pendingDeletionRequests` (pending Deletion Requests).
-     * 中文：实现应用操作 `pendingDeletionRequests`（pending Deletion Requests）。
+     * EN: Retrieve the pending deletion requests data for post in the application database.
+     * 中文：读取 post 的“pending deletion requests”数据，并访问应用数据库。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     public static function pendingDeletionRequests():array{
         $s=Database::connection()->query(
@@ -121,8 +153,13 @@ class Post {
         return $s->fetchAll();
     }
     /**
-     * EN: Implements the application operation `adminQueue` (admin Queue).
-     * 中文：实现应用操作 `adminQueue`（admin Queue）。
+     * EN: Perform the admin queue data for post in the application database.
+     * 中文：执行 post 的“admin queue”数据，并访问应用数据库。
+     *
+     * @param string $date Date value used to scope the operation. / 用于限定本操作范围的日期值。
+     * @param int $salesUserId Application or external user identifier. / 应用或外部用户 ID。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     public static function adminQueue(string $date, int $salesUserId = 0):array{
         $sql = "SELECT p.*,u.display_name,u.sales_id,r.decision
@@ -146,8 +183,14 @@ class Post {
     }
 
     /**
-     * EN: Implements the application operation `adminProgressStats` (admin Progress Stats).
-     * 中文：实现应用操作 `adminProgressStats`（admin Progress Stats）。
+     * EN: Perform the admin progress stats data for post in the application database.
+     * 中文：执行 post 的“admin progress stats”数据，并访问应用数据库。
+     *
+     * @param string $from From value used by this operation. / 本操作使用的“from”参数值。
+     * @param string $to To value used by this operation. / 本操作使用的“to”参数值。
+     * @param int $salesUserId Application or external user identifier. / 应用或外部用户 ID。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     public static function adminProgressStats(
         string $from,
@@ -212,8 +255,13 @@ class Post {
     }
 
     /**
-     * EN: Implements the application operation `adminSalesProgress` (admin Sales Progress).
-     * 中文：实现应用操作 `adminSalesProgress`（admin Sales Progress）。
+     * EN: Perform the admin sales progress data for post in the application database.
+     * 中文：执行 post 的“admin sales progress”数据，并访问应用数据库。
+     *
+     * @param string $from From value used by this operation. / 本操作使用的“from”参数值。
+     * @param string $to To value used by this operation. / 本操作使用的“to”参数值。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     public static function adminSalesProgress(
         string $from,
@@ -276,8 +324,13 @@ class Post {
     }
 
     /**
-     * EN: Implements the application operation `adminDashboardStateRange` (admin Dashboard State Range).
-     * 中文：实现应用操作 `adminDashboardStateRange`（admin Dashboard State Range）。
+     * EN: Perform the admin dashboard state range data for post in the application database.
+     * 中文：执行 post 的“admin dashboard state range”数据，并访问应用数据库。
+     *
+     * @param string $from From value used by this operation. / 本操作使用的“from”参数值。
+     * @param string $to To value used by this operation. / 本操作使用的“to”参数值。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     public static function adminDashboardStateRange(
         string $from,
@@ -301,8 +354,12 @@ class Post {
     }
 
     /**
-     * EN: Implements the application operation `adminDailySalesProgress` (admin Daily Sales Progress).
-     * 中文：实现应用操作 `adminDailySalesProgress`（admin Daily Sales Progress）。
+     * EN: Perform the admin daily sales progress data for post.
+     * 中文：执行 post 的“admin daily sales progress”数据。
+     *
+     * @param string $date Date value used to scope the operation. / 用于限定本操作范围的日期值。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     public static function adminDailySalesProgress(string $date): array
     {
@@ -310,8 +367,12 @@ class Post {
     }
 
     /**
-     * EN: Implements the application operation `adminDashboardState` (admin Dashboard State).
-     * 中文：实现应用操作 `adminDashboardState`（admin Dashboard State）。
+     * EN: Perform the admin dashboard state data for post.
+     * 中文：执行 post 的“admin dashboard state”数据。
+     *
+     * @param string $date Date value used to scope the operation. / 用于限定本操作范围的日期值。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     public static function adminDashboardState(string $date): array
     {
@@ -320,8 +381,14 @@ class Post {
 
 
     /**
-     * EN: Implements the application operation `adminSalesPostsForPeriod` (admin Sales Posts For Period).
-     * 中文：实现应用操作 `adminSalesPostsForPeriod`（admin Sales Posts For Period）。
+     * EN: Perform the admin sales posts for period data for post in the application database.
+     * 中文：执行 post 的“admin sales posts for period”数据，并访问应用数据库。
+     *
+     * @param int $salesUserId Application or external user identifier. / 应用或外部用户 ID。
+     * @param string $from From value used by this operation. / 本操作使用的“from”参数值。
+     * @param string $to To value used by this operation. / 本操作使用的“to”参数值。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     public static function adminSalesPostsForPeriod(
         int $salesUserId,
@@ -369,8 +436,15 @@ class Post {
 
 
     /**
-     * EN: Updates application state for `updateFetchedContent` (update Fetched Content).
-     * 中文：更新 `updateFetchedContent`（update Fetched Content）对应的应用状态。
+     * EN: Update the update fetched content data for post in the application database.
+     * 中文：更新 post 的“update fetched content”数据，并访问应用数据库。
+     *
+     * @param int $postId Sales post identifier. / 销售 Post ID。
+     * @param string $title Title value used by this operation. / 本操作使用的“title”参数值。
+     * @param string $description Description value used by this operation. / 本操作使用的“description”参数值。
+     * @param ?string $imageUrl Image url value used by this operation. / 本操作使用的“image url”参数值。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public static function updateFetchedContent(
         int $postId,
@@ -405,8 +479,14 @@ class Post {
     }
 
     /**
-     * EN: Implements the application operation `dailyCounts` (daily Counts).
-     * 中文：实现应用操作 `dailyCounts`（daily Counts）。
+     * EN: Perform the daily counts data for post in the application database.
+     * 中文：执行 post 的“daily counts”数据，并访问应用数据库。
+     *
+     * @param int $uid External user identifier supplied by the parent authentication system. / 父级认证系统提供的外部用户 ID。
+     * @param string $from From value used by this operation. / 本操作使用的“from”参数值。
+     * @param string $to To value used by this operation. / 本操作使用的“to”参数值。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     public static function dailyCounts(int $uid,string $from,string $to):array{
         $s=Database::connection()->prepare("SELECT DATE(created_at) work_date,platform,COUNT(*) cnt FROM cdsp_sales_posts WHERE sales_user_id=? AND created_at>=? AND created_at<DATE_ADD(?,INTERVAL 1 DAY) AND deleted_at IS NULL GROUP BY DATE(created_at),platform ORDER BY work_date DESC");
@@ -414,8 +494,17 @@ class Post {
     }
 
 /**
- * EN: Implements the application operation `dailyDatesForSales` (daily Dates For Sales).
- * 中文：实现应用操作 `dailyDatesForSales`（daily Dates For Sales）。
+ * EN: Perform the daily dates for sales data for post in the application database.
+ * 中文：执行 post 的“daily dates for sales”数据，并访问应用数据库。
+ *
+ * @param int $salesUserId Application or external user identifier. / 应用或外部用户 ID。
+ * @param string $from From value used by this operation. / 本操作使用的“from”参数值。
+ * @param string $to To value used by this operation. / 本操作使用的“to”参数值。
+ * @param int $limit Maximum number of records or items to process. / 允许处理的最大记录或数据项数量。
+ * @param int $offset Offset used when reading or paginating data. / 读取或分页数据时使用的偏移量。
+ * @param ?string $platform Platform value used by this operation. / 本操作使用的“platform”参数值。
+ *
+ * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
  */
 public static function dailyDatesForSales(
     int $salesUserId,
@@ -506,8 +595,14 @@ public static function dailyDatesForSales(
 }
 
 /**
- * EN: Implements the application operation `forSalesOnDate` (for Sales On Date).
- * 中文：实现应用操作 `forSalesOnDate`（for Sales On Date）。
+ * EN: Retrieve the for sales on date data for post in the application database.
+ * 中文：读取 post 的“for sales on date”数据，并访问应用数据库。
+ *
+ * @param int $salesUserId Application or external user identifier. / 应用或外部用户 ID。
+ * @param string $date Date value used to scope the operation. / 用于限定本操作范围的日期值。
+ * @param ?string $platform Platform value used by this operation. / 本操作使用的“platform”参数值。
+ *
+ * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
  */
 public static function forSalesOnDate(
     int $salesUserId,
@@ -567,8 +662,15 @@ public static function forSalesOnDate(
 
 
 /**
- * EN: Implements the application operation `forSalesPublishedRange` (for Sales Published Range).
- * 中文：实现应用操作 `forSalesPublishedRange`（for Sales Published Range）。
+ * EN: Retrieve the for sales published range data for post in the application database.
+ * 中文：读取 post 的“for sales published range”数据，并访问应用数据库。
+ *
+ * @param int $salesUserId Application or external user identifier. / 应用或外部用户 ID。
+ * @param string $from From value used by this operation. / 本操作使用的“from”参数值。
+ * @param string $to To value used by this operation. / 本操作使用的“to”参数值。
+ * @param ?string $platform Platform value used by this operation. / 本操作使用的“platform”参数值。
+ *
+ * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
  */
 public static function forSalesPublishedRange(
     int $salesUserId,
@@ -626,8 +728,15 @@ public static function forSalesPublishedRange(
 
 
 /**
- * EN: Implements the application operation `salesChartRows` (sales Chart Rows).
- * 中文：实现应用操作 `salesChartRows`（sales Chart Rows）。
+ * EN: Perform the sales chart rows data for post in the application database.
+ * 中文：执行 post 的“sales chart rows”数据，并访问应用数据库。
+ *
+ * @param int $salesUserId Application or external user identifier. / 应用或外部用户 ID。
+ * @param string $from From value used by this operation. / 本操作使用的“from”参数值。
+ * @param string $to To value used by this operation. / 本操作使用的“to”参数值。
+ * @param ?string $platform Platform value used by this operation. / 本操作使用的“platform”参数值。
+ *
+ * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
  */
 public static function salesChartRows(
     int $salesUserId,
@@ -718,8 +827,15 @@ public static function salesChartRows(
 }
 
 /**
- * EN: Implements the application operation `salesRangeSummary` (sales Range Summary).
- * 中文：实现应用操作 `salesRangeSummary`（sales Range Summary）。
+ * EN: Perform the sales range summary data for post in the application database.
+ * 中文：执行 post 的“sales range summary”数据，并访问应用数据库。
+ *
+ * @param int $salesUserId Application or external user identifier. / 应用或外部用户 ID。
+ * @param string $from From value used by this operation. / 本操作使用的“from”参数值。
+ * @param string $to To value used by this operation. / 本操作使用的“to”参数值。
+ * @param ?string $platform Platform value used by this operation. / 本操作使用的“platform”参数值。
+ *
+ * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
  */
 public static function salesRangeSummary(
     int $salesUserId,
@@ -800,8 +916,15 @@ public static function salesRangeSummary(
 }
 
 /**
- * EN: Implements the application operation `dailyDateCountForSales` (daily Date Count For Sales).
- * 中文：实现应用操作 `dailyDateCountForSales`（daily Date Count For Sales）。
+ * EN: Perform the daily date count for sales data for post in the application database.
+ * 中文：执行 post 的“daily date count for sales”数据，并访问应用数据库。
+ *
+ * @param int $salesUserId Application or external user identifier. / 应用或外部用户 ID。
+ * @param string $from From value used by this operation. / 本操作使用的“from”参数值。
+ * @param string $to To value used by this operation. / 本操作使用的“to”参数值。
+ * @param ?string $platform Platform value used by this operation. / 本操作使用的“platform”参数值。
+ *
+ * @return int Numeric result produced by this operation. / 本操作生成的数字结果。
  */
 public static function dailyDateCountForSales(
     int $salesUserId,
@@ -840,8 +963,16 @@ public static function dailyDateCountForSales(
 
 
 /**
- * EN: Implements the application operation `requestDeletion` (request Deletion).
- * 中文：实现应用操作 `requestDeletion`（request Deletion）。
+ * EN: Send or process the request deletion data for post in the application database.
+ * 中文：发送或处理 post 的“request deletion”数据，并访问应用数据库。
+ *
+ * @param int $salesUserId Application or external user identifier. / 应用或外部用户 ID。
+ * @param int $postId Sales post identifier. / 销售 Post ID。
+ * @param string $reason Reason value used by this operation. / 本操作使用的“reason”参数值。
+ *
+ * @return void No value is returned. / 无返回值。
+ *
+ * @throws \DomainException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
  */
 public static function requestDeletion(int $salesUserId,int $postId,string $reason): void
 {
@@ -864,8 +995,16 @@ public static function requestDeletion(int $salesUserId,int $postId,string $reas
 }
 
 /**
- * EN: Implements the application operation `hardDelete` (hard Delete).
- * 中文：实现应用操作 `hardDelete`（hard Delete）。
+ * EN: Delete or clean the hard delete data for post in the application database.
+ * 中文：删除或清理 post 的“hard delete”数据，并访问应用数据库。
+ *
+ * @param int $postId Sales post identifier. / 销售 Post ID。
+ *
+ * @return void No value is returned. / 无返回值。
+ *
+ * @throws \DomainException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
+ * @throws \RuntimeException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
+ * @throws \Throwable When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
  */
 public static function hardDelete(int $postId): void
 {

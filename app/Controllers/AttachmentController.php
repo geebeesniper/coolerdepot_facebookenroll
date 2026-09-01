@@ -1,10 +1,10 @@
 <?php
 /**
  * File / 文件：app/Controllers/AttachmentController.php
- * EN: HTTP controller for request validation, orchestration, and responses.
- * 中文：该文件负责 HTTP 请求校验、业务编排与响应。
- * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
- * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ * EN: Defines the AttachmentController HTTP controller and request/response actions.
+ * 中文：定义 AttachmentController HTTP Controller 及其请求/响应操作。
+ * Maintenance / 维护：Keep behavior, security checks, error logging, and public contracts unchanged unless the related feature is intentionally modified.
+ * 维护要求：除非明确修改相关功能，否则应保持行为、安全检查、错误日志及公开接口契约不变。
  */
 namespace App\Controllers;
 
@@ -13,11 +13,17 @@ use App\Core\Controller;
 use App\Core\Database;
 use App\Core\Logger;
 
+/**
+ * EN: HTTP controller for attachment requests, responses, and server-side authorization.
+ * 中文：负责 attachment 请求、响应及服务器端权限控制的 HTTP Controller。
+ */
 class AttachmentController extends Controller
 {
     /**
-     * EN: Handles the workflow/event for `show` (show).
-     * 中文：处理 `show`（show）对应的流程或事件。
+     * EN: Handle the show HTTP action for attachment controller and return the appropriate response.
+     * 中文：处理 attachment controller 的“show”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public function show(): void
     {

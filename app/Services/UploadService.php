@@ -1,20 +1,34 @@
 <?php
 /**
  * File / 文件：app/Services/UploadService.php
- * EN: Application service for reusable business or integration logic.
- * 中文：该文件负责可复用的业务逻辑或外部集成服务。
- * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
- * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ * EN: Defines the UploadService service used by application business, security, or provider integration flows.
+ * 中文：定义 UploadService 服务，用于应用业务、安全或 Provider 集成流程。
+ * Maintenance / 维护：Keep behavior, security checks, error logging, and public contracts unchanged unless the related feature is intentionally modified.
+ * 维护要求：除非明确修改相关功能，否则应保持行为、安全检查、错误日志及公开接口契约不变。
  */
 namespace App\Services;
 
 use App\Core\Database;
 
+/**
+ * EN: Application service that encapsulates upload service business, security, or integration behavior.
+ * 中文：封装 upload service 业务、安全或外部集成行为的应用服务。
+ */
 class UploadService
 {
     /**
-     * EN: Creates or persists the `save` operation (save).
-     * 中文：创建或持久化 `save`（save）操作。
+     * EN: Create or store the save operation implemented by upload service.
+     * 中文：创建或保存 upload service 实现的“save”操作。
+     *
+     * @param string $type Type value used by this operation. / 本操作使用的“type”参数值。
+     * @param int $entityId Identifier of the entity record or entity. / entity 记录或实体的标识 ID。
+     * @param int $uid External user identifier supplied by the parent authentication system. / 父级认证系统提供的外部用户 ID。
+     * @param string $field Field value used by this operation. / 本操作使用的“field”参数值。
+     * @param ?int $historyId Identifier of the history record or entity. / history 记录或实体的标识 ID。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
+     *
+     * @throws \RuntimeException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     public function save(
         string $type,
@@ -99,8 +113,12 @@ class UploadService
     }
 
     /**
-     * EN: Creates or persists the `uploadErrorMessage` operation (upload Error Message).
-     * 中文：创建或持久化 `uploadErrorMessage`（upload Error Message）操作。
+     * EN: Perform the upload error message operation implemented by upload service.
+     * 中文：执行 upload service 实现的“upload error message”操作。
+     *
+     * @param int $error Error value used by this operation. / 本操作使用的“error”参数值。
+     *
+     * @return string String result produced by this operation. / 本操作生成的字符串结果。
      */
     private function uploadErrorMessage(int $error): string
     {

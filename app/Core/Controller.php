@@ -1,18 +1,27 @@
 <?php
 /**
  * File / 文件：app/Core/Controller.php
- * EN: Core runtime/infrastructure component used across the application.
- * 中文：该文件是应用全局复用的核心运行时或基础设施组件。
- * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
- * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ * EN: Defines the shared Controller core infrastructure component.
+ * 中文：定义全应用共享的 Controller 核心基础设施组件。
+ * Maintenance / 维护：Keep behavior, security checks, error logging, and public contracts unchanged unless the related feature is intentionally modified.
+ * 维护要求：除非明确修改相关功能，否则应保持行为、安全检查、错误日志及公开接口契约不变。
  */
 namespace App\Core;
 
+/**
+ * EN: HTTP controller for application requests, responses, and server-side authorization.
+ * 中文：负责 应用 请求、响应及服务器端权限控制的 HTTP Controller。
+ */
 class Controller
 {
     /**
-     * EN: Builds, formats, or transforms data for `render` (render).
-     * 中文：为 `render`（render）构建、格式化或转换数据。
+     * EN: Render the render core operation provided by controller.
+     * 中文：渲染 controller 提供的“render”核心操作。
+     *
+     * @param string $view View value used by this operation. / 本操作使用的“view”参数值。
+     * @param array $data Structured input data processed by this operation. / 本操作处理的结构化输入数据。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     protected function render(string $view, array $data = []): void
     {
@@ -24,8 +33,13 @@ class Controller
     }
 
     /**
-     * EN: Implements the application operation `redirect` (redirect).
-     * 中文：实现应用操作 `redirect`（redirect）。
+     * EN: Perform the redirect core operation provided by controller.
+     * 中文：执行 controller 提供的“redirect”核心操作。
+     *
+     * @param string $path Filesystem, route, or data path used by the operation. / 本操作使用的文件、路由或数据路径。
+     * @param int $status Status value applied or evaluated by the operation. / 本操作设置或判断的状态值。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     protected function redirect(string $path, int $status = 302): void
     {
@@ -46,8 +60,13 @@ class Controller
      * because the controller converted an exception into user-facing JSON.
      */
     /**
-     * EN: Implements the application operation `json` (json).
-     * 中文：实现应用操作 `json`（json）。
+     * EN: Perform the json core operation provided by controller.
+     * 中文：执行 controller 提供的“json”核心操作。
+     *
+     * @param array $data Structured input data processed by this operation. / 本操作处理的结构化输入数据。
+     * @param int $status Status value applied or evaluated by the operation. / 本操作设置或判断的状态值。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     protected function json(array $data, int $status = 200): void
     {
@@ -72,7 +91,7 @@ class Controller
 
         http_response_code($status);
         header('Content-Type: application/json; charset=utf-8');
-        header('Cache-Control: no-store');
+        ApiRequest::securityHeaders();
         echo json_encode(
             $data,
             JSON_UNESCAPED_SLASHES
@@ -83,8 +102,13 @@ class Controller
     }
 
     /**
-     * EN: Builds, formats, or transforms data for `renderPartial` (render Partial).
-     * 中文：为 `renderPartial`（render Partial）构建、格式化或转换数据。
+     * EN: Render the render partial core operation provided by controller.
+     * 中文：渲染 controller 提供的“render partial”核心操作。
+     *
+     * @param string $view View value used by this operation. / 本操作使用的“view”参数值。
+     * @param array $data Structured input data processed by this operation. / 本操作处理的结构化输入数据。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     protected function renderPartial(string $view, array $data = []): void
     {

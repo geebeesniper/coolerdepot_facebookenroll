@@ -1,23 +1,29 @@
 <?php
 /**
  * File / 文件：app/Services/BrightDataMarketplaceProvider.php
- * EN: Application service for reusable business or integration logic.
- * 中文：该文件负责可复用的业务逻辑或外部集成服务。
- * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
- * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ * EN: Defines the BrightDataMarketplaceProvider service used by application business, security, or provider integration flows.
+ * 中文：定义 BrightDataMarketplaceProvider 服务，用于应用业务、安全或 Provider 集成流程。
+ * Maintenance / 维护：Keep behavior, security checks, error logging, and public contracts unchanged unless the related feature is intentionally modified.
+ * 维护要求：除非明确修改相关功能，否则应保持行为、安全检查、错误日志及公开接口契约不变。
  */
 namespace App\Services;
 
 use App\Models\FetchJob;
 use App\Models\Setting;
 
+/**
+ * EN: Application service that encapsulates bright data marketplace provider business, security, or integration behavior.
+ * 中文：封装 bright data marketplace provider 业务、安全或外部集成行为的应用服务。
+ */
 class BrightDataMarketplaceProvider
 {
     public const DEFAULT_DATASET_ID = 'gd_lvt9iwuh6fbcwmx1a';
 
     /**
-     * EN: Checks or validates the condition represented by `configured` (configured).
-     * 中文：检查或校验 `configured`（configured）所表示的条件。
+     * EN: Check or validate the configured operation for bright data marketplace provider.
+     * 中文：检查或验证 bright data marketplace provider 的“configured”操作。
+     *
+     * @return bool True when the requested condition is satisfied; otherwise false. / 请求条件满足时返回 true，否则返回 false。
      */
     public function configured(): bool
     {
@@ -36,8 +42,10 @@ class BrightDataMarketplaceProvider
     }
 
     /**
-     * EN: Implements the application operation `credentialStatus` (credential Status).
-     * 中文：实现应用操作 `credentialStatus`（credential Status）。
+     * EN: Perform the credential status operation for bright data marketplace provider.
+     * 中文：执行 bright data marketplace provider 的“credential status”操作。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     public function credentialStatus(): array
     {
@@ -50,8 +58,15 @@ class BrightDataMarketplaceProvider
     }
 
     /**
-     * EN: Retrieves or loads data for `fetch` (fetch).
-     * 中文：读取或加载 `fetch`（fetch）所需的数据。
+     * EN: Retrieve the fetch operation for bright data marketplace provider.
+     * 中文：读取 bright data marketplace provider 的“fetch”操作。
+     *
+     * @param string $url URL to validate, resolve, fetch, or process. / 需要验证、解析、抓取或处理的 URL。
+     * @param int $requestedByUserId Application or external user identifier. / 应用或外部用户 ID。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
+     *
+     * @throws \RuntimeException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     public function fetch(string $url, int $requestedByUserId): array
     {
@@ -180,8 +195,10 @@ class BrightDataMarketplaceProvider
     }
 
     /**
-     * EN: Implements the application operation `credentials` (credentials).
-     * 中文：实现应用操作 `credentials`（credentials）。
+     * EN: Perform the credentials operation for bright data marketplace provider.
+     * 中文：执行 bright data marketplace provider 的“credentials”操作。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     private function credentials(): array
     {
@@ -209,8 +226,22 @@ class BrightDataMarketplaceProvider
     }
 
     /**
-     * EN: Retrieves or loads data for `fetchWithCredential` (fetch With Credential).
-     * 中文：读取或加载 `fetchWithCredential`（fetch With Credential）所需的数据。
+     * EN: Retrieve the fetch with credential operation for bright data marketplace provider through the configured external provider.
+     * 中文：读取 bright data marketplace provider 的“fetch with credential”操作，并通过已配置的外部 Provider 完成。
+     *
+     * @param string $url URL to validate, resolve, fetch, or process. / 需要验证、解析、抓取或处理的 URL。
+     * @param ?string $externalId Identifier of the external record or entity. / external 记录或实体的标识 ID。
+     * @param int $requestedByUserId Application or external user identifier. / 应用或外部用户 ID。
+     * @param string $datasetId Identifier of the dataset record or entity. / dataset 记录或实体的标识 ID。
+     * @param int $timeout Timeout value used by this operation. / 本操作使用的“timeout”参数值。
+     * @param int $pollSeconds Poll seconds value used by this operation. / 本操作使用的“poll seconds”参数值。
+     * @param string $slot Slot value used by this operation. / 本操作使用的“slot”参数值。
+     * @param string $token Authentication, inspection, or operation token being processed. / 正在处理的认证、检查或操作 Token。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
+     *
+     * @throws \RuntimeException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
+     * @throws \Throwable When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     private function fetchWithCredential(
         string $url,
@@ -481,8 +512,12 @@ class BrightDataMarketplaceProvider
     }
 
     /**
-     * EN: Implements the application operation `complete` (complete).
-     * 中文：实现应用操作 `complete`（complete）。
+     * EN: Check or validate the complete operation for bright data marketplace provider.
+     * 中文：检查或验证 bright data marketplace provider 的“complete”操作。
+     *
+     * @param array $item Current item being processed. / 当前正在处理的数据项。
+     *
+     * @return bool True when the requested condition is satisfied; otherwise false. / 请求条件满足时返回 true，否则返回 false。
      */
     private function complete(array $item): bool
     {
@@ -493,8 +528,15 @@ class BrightDataMarketplaceProvider
     }
 
     /**
-     * EN: Implements the application operation `failJob` (fail Job).
-     * 中文：实现应用操作 `failJob`（fail Job）。
+     * EN: Perform the fail job operation for bright data marketplace provider.
+     * 中文：执行 bright data marketplace provider 的“fail job”操作。
+     *
+     * @param int $jobId Identifier of the job record or entity. / job 记录或实体的标识 ID。
+     * @param ?int $httpStatus Http status value used by this operation. / 本操作使用的“http status”参数值。
+     * @param string $slot Slot value used by this operation. / 本操作使用的“slot”参数值。
+     * @param string $message Human-readable message associated with the result or log entry. / 与结果或日志记录关联的可读消息。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     private function failJob(
         int $jobId,
@@ -511,8 +553,15 @@ class BrightDataMarketplaceProvider
     }
 
     /**
-     * EN: Builds, formats, or transforms data for `normalize` (normalize).
-     * 中文：为 `normalize`（normalize）构建、格式化或转换数据。
+     * EN: Normalize or format the normalize operation for bright data marketplace provider.
+     * 中文：规范化或格式化 bright data marketplace provider 的“normalize”操作。
+     *
+     * @param array $record Record value used by this operation. / 本操作使用的“record”参数值。
+     * @param string $submittedUrl Submitted url value used by this operation. / 本操作使用的“submitted url”参数值。
+     * @param string $snapshotId Identifier of the snapshot record or entity. / snapshot 记录或实体的标识 ID。
+     * @param string $credentialSlot Credential slot value used by this operation. / 本操作使用的“credential slot”参数值。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     private function normalize(
         array $record,
@@ -576,8 +625,12 @@ class BrightDataMarketplaceProvider
     }
 
     /**
-     * EN: Implements the application operation `firstRecord` (first Record).
-     * 中文：实现应用操作 `firstRecord`（first Record）。
+     * EN: Perform the first record operation for bright data marketplace provider.
+     * 中文：执行 bright data marketplace provider 的“first record”操作。
+     *
+     * @param mixed $data Structured input data processed by this operation. / 本操作处理的结构化输入数据。
+     *
+     * @return ?array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     private function firstRecord($data): ?array
     {
@@ -639,8 +692,13 @@ class BrightDataMarketplaceProvider
     }
 
     /**
-     * EN: Implements the application operation `providerMessage` (provider Message).
-     * 中文：实现应用操作 `providerMessage`（provider Message）。
+     * EN: Perform the provider message operation for bright data marketplace provider.
+     * 中文：执行 bright data marketplace provider 的“provider message”操作。
+     *
+     * @param mixed $json Json value used by this operation. / 本操作使用的“json”参数值。
+     * @param string $raw Raw value used by this operation. / 本操作使用的“raw”参数值。
+     *
+     * @return string String result produced by this operation. / 本操作生成的字符串结果。
      */
     private function providerMessage($json, string $raw): string
     {
@@ -672,8 +730,18 @@ class BrightDataMarketplaceProvider
     }
 
     /**
-     * EN: Implements the application operation `request` (request).
-     * 中文：实现应用操作 `request`（request）。
+     * EN: Send or process the request operation for bright data marketplace provider through the configured external provider.
+     * 中文：发送或处理 bright data marketplace provider 的“request”操作，并通过已配置的外部 Provider 完成。
+     *
+     * @param string $method HTTP or operation method being processed. / 正在处理的 HTTP 或操作方法。
+     * @param string $url URL to validate, resolve, fetch, or process. / 需要验证、解析、抓取或处理的 URL。
+     * @param string $token Authentication, inspection, or operation token being processed. / 正在处理的认证、检查或操作 Token。
+     * @param ?array $jsonBody Json body value used by this operation. / 本操作使用的“json body”参数值。
+     * @param int $timeout Timeout value used by this operation. / 本操作使用的“timeout”参数值。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
+     *
+     * @throws \RuntimeException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     private function request(
         string $method,

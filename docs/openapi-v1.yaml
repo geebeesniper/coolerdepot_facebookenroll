@@ -1,0 +1,120 @@
+openapi: 3.0.3
+info:
+  title: CoolerDepot Sales Post Tracker External API
+  version: 0.2.07
+  description: REST v1 identity exchange and Admin/Sales RBAC API. Signed exchange uses HMAC-SHA256; later calls use short-lived Bearer tokens.
+servers:
+  - url: https://salesposts.example.com
+paths:
+  /api/v1/health:
+    get:
+      summary: API and database readiness
+      responses:
+        '200':
+          description: Ready
+  /api/v1/auth/exchange:
+    post:
+      summary: Exchange a signed parent-system identity for a Bearer access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignedIdentity'
+      responses:
+        '200':
+          description: Bearer token issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Signature invalid, expired, replayed, or incomplete
+        '415':
+          description: Content-Type must be application/json
+  /api/v1/auth/me:
+    get:
+      summary: Current API user
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current user
+        '401':
+          description: Token missing, invalid, expired, or revoked
+  /api/v1/auth/logout:
+    post:
+      summary: Revoke current Bearer access token
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Token revoked
+  /api/v1/admin/users:
+    get:
+      summary: Active user directory (Admin only)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Active users
+        '403':
+          description: Caller is not Admin
+  /api/v1/sales/profile:
+    get:
+      summary: Current Sales profile (Sales only)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Sales profile
+        '403':
+          description: Caller is not Sales
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque
+  schemas:
+    SignedIdentity:
+      type: object
+      required: [uid, name, role, ts, nonce, sig]
+      properties:
+        uid:
+          type: string
+        sales_id:
+          type: string
+          description: Numeric string for Sales; empty/omitted for Admin.
+        name:
+          type: string
+        role:
+          type: string
+          enum: [admin, sales]
+        ts:
+          type: integer
+          format: int64
+        nonce:
+          type: string
+        sig:
+          type: string
+    User:
+      type: object
+      properties:
+        id: {type: integer}
+        externalUserId: {type: string, nullable: true}
+        salesId: {type: integer, nullable: true}
+        displayName: {type: string}
+        role: {type: string, enum: [admin, sales]}
+        dailyPostTarget: {type: integer, nullable: true}
+        authSource: {type: string}
+    AuthResponse:
+      type: object
+      properties:
+        ok: {type: boolean}
+        access_token: {type: string}
+        token_type: {type: string, example: Bearer}
+        expires_in: {type: integer, example: 3600}
+        expires_at: {type: string}
+        user:
+          $ref: '#/components/schemas/User'

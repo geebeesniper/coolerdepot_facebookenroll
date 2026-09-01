@@ -1,25 +1,18 @@
 <?php
 /**
  * File / 文件：app/Core/Logger.php
- * EN: Core runtime/infrastructure component used across the application.
- * 中文：该文件是应用全局复用的核心运行时或基础设施组件。
- * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
- * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ * EN: Defines the shared Logger core infrastructure component.
+ * 中文：定义全应用共享的 Logger 核心基础设施组件。
+ * Maintenance / 维护：Keep behavior, security checks, error logging, and public contracts unchanged unless the related feature is intentionally modified.
+ * 维护要求：除非明确修改相关功能，否则应保持行为、安全检查、错误日志及公开接口契约不变。
  */
 namespace App\Core;
 
 use Throwable;
 
 /**
- * Central application diagnostics logger.
- *
- * The file sink is the source of truth because it still works when MySQL is
- * unavailable. Each record is one JSON object (JSONL) and carries the same
- * request/correlation id across PHP, HTTP and browser-side diagnostics.
- *
- * Security rule: credentials, cookies, session values and token-like fields
- * are redacted before anything is written. Logging must never throw back into
- * the request that is already failing.
+ * EN: Core infrastructure component that provides logger behavior shared across the application.
+ * 中文：提供全应用共享 logger 能力的核心基础设施组件。
  */
 final class Logger
 {
@@ -39,8 +32,12 @@ final class Logger
     private static array $userContext = [];
 
     /**
-     * EN: Implements the application operation `init` (init).
-     * 中文：实现应用操作 `init`（init）。
+     * EN: Perform the init core operation provided by logger.
+     * 中文：执行 logger 提供的“init”核心操作。
+     *
+     * @param array $config Configuration values used by this operation. / 本操作使用的配置数据。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public static function init(array $config): void
     {
@@ -66,8 +63,12 @@ final class Logger
      * Do not store the session token or any credential here.
      */
     /**
-     * EN: Updates application state for `setUserContext` (set User Context).
-     * 中文：更新 `setUserContext`（set User Context）对应的应用状态。
+     * EN: Update the set user context core operation provided by logger.
+     * 中文：更新 logger 提供的“set user context”核心操作。
+     *
+     * @param ?array $user User value used by this operation. / 本操作使用的“user”参数值。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public static function setUserContext(?array $user): void
     {
@@ -84,8 +85,10 @@ final class Logger
     }
 
     /**
-     * EN: Implements the application operation `requestId` (request Id).
-     * 中文：实现应用操作 `requestId`（request Id）。
+     * EN: Send or process the request id core operation provided by logger.
+     * 中文：发送或处理 logger 提供的“request id”核心操作。
+     *
+     * @return string String result produced by this operation. / 本操作生成的字符串结果。
      */
     public static function requestId(): string
     {
@@ -97,8 +100,10 @@ final class Logger
     }
 
     /**
-     * EN: Implements the application operation `currentLogFile` (current Log File).
-     * 中文：实现应用操作 `currentLogFile`（current Log File）。
+     * EN: Retrieve the current log file core operation provided by logger.
+     * 中文：读取 logger 提供的“current log file”核心操作。
+     *
+     * @return string String result produced by this operation. / 本操作生成的字符串结果。
      */
     public static function currentLogFile(): string
     {
@@ -108,8 +113,14 @@ final class Logger
     }
 
     /**
-     * EN: Implements the application operation `debug` (debug).
-     * 中文：实现应用操作 `debug`（debug）。
+     * EN: Record the debug core operation provided by logger.
+     * 中文：记录 logger 提供的“debug”核心操作。
+     *
+     * @param string $message Human-readable message associated with the result or log entry. / 与结果或日志记录关联的可读消息。
+     * @param array $context Additional execution context associated with the operation. / 与本操作关联的附加执行上下文。
+     * @param string $channel Channel value used by this operation. / 本操作使用的“channel”参数值。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public static function debug(string $message, array $context = [], string $channel = 'app'): void
     {
@@ -117,8 +128,14 @@ final class Logger
     }
 
     /**
-     * EN: Implements the application operation `info` (info).
-     * 中文：实现应用操作 `info`（info）。
+     * EN: Record the info core operation provided by logger.
+     * 中文：记录 logger 提供的“info”核心操作。
+     *
+     * @param string $message Human-readable message associated with the result or log entry. / 与结果或日志记录关联的可读消息。
+     * @param array $context Additional execution context associated with the operation. / 与本操作关联的附加执行上下文。
+     * @param string $channel Channel value used by this operation. / 本操作使用的“channel”参数值。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public static function info(string $message, array $context = [], string $channel = 'app'): void
     {
@@ -126,8 +143,14 @@ final class Logger
     }
 
     /**
-     * EN: Implements the application operation `warning` (warning).
-     * 中文：实现应用操作 `warning`（warning）。
+     * EN: Record the warning core operation provided by logger.
+     * 中文：记录 logger 提供的“warning”核心操作。
+     *
+     * @param string $message Human-readable message associated with the result or log entry. / 与结果或日志记录关联的可读消息。
+     * @param array $context Additional execution context associated with the operation. / 与本操作关联的附加执行上下文。
+     * @param string $channel Channel value used by this operation. / 本操作使用的“channel”参数值。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public static function warning(string $message, array $context = [], string $channel = 'app'): void
     {
@@ -135,8 +158,14 @@ final class Logger
     }
 
     /**
-     * EN: Implements the application operation `error` (error).
-     * 中文：实现应用操作 `error`（error）。
+     * EN: Record the error core operation provided by logger.
+     * 中文：记录 logger 提供的“error”核心操作。
+     *
+     * @param string $message Human-readable message associated with the result or log entry. / 与结果或日志记录关联的可读消息。
+     * @param array $context Additional execution context associated with the operation. / 与本操作关联的附加执行上下文。
+     * @param string $channel Channel value used by this operation. / 本操作使用的“channel”参数值。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public static function error(string $message, array $context = [], string $channel = 'app'): void
     {
@@ -144,8 +173,14 @@ final class Logger
     }
 
     /**
-     * EN: Implements the application operation `critical` (critical).
-     * 中文：实现应用操作 `critical`（critical）。
+     * EN: Record the critical core operation provided by logger.
+     * 中文：记录 logger 提供的“critical”核心操作。
+     *
+     * @param string $message Human-readable message associated with the result or log entry. / 与结果或日志记录关联的可读消息。
+     * @param array $context Additional execution context associated with the operation. / 与本操作关联的附加执行上下文。
+     * @param string $channel Channel value used by this operation. / 本操作使用的“channel”参数值。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public static function critical(string $message, array $context = [], string $channel = 'app'): void
     {
@@ -156,8 +191,15 @@ final class Logger
      * Record an exception with type, origin and a bounded stack trace.
      */
     /**
-     * EN: Implements the application operation `exception` (exception).
-     * 中文：实现应用操作 `exception`（exception）。
+     * EN: Record the exception core operation provided by logger.
+     * 中文：记录 logger 提供的“exception”核心操作。
+     *
+     * @param Throwable $e Exception being handled or logged. / 正在处理或记录的异常对象。
+     * @param string $channel Channel value used by this operation. / 本操作使用的“channel”参数值。
+     * @param array $context Additional execution context associated with the operation. / 与本操作关联的附加执行上下文。
+     * @param string $level Level value used by this operation. / 本操作使用的“level”参数值。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public static function exception(
         Throwable $e,
@@ -186,8 +228,13 @@ final class Logger
      * logged because handoff URLs and provider callbacks can contain secrets.
      */
     /**
-     * EN: Implements the application operation `httpStatus` (http Status).
-     * 中文：实现应用操作 `httpStatus`（http Status）。
+     * EN: Perform the http status core operation provided by logger.
+     * 中文：执行 logger 提供的“http status”核心操作。
+     *
+     * @param int $status Status value applied or evaluated by the operation. / 本操作设置或判断的状态值。
+     * @param array $context Additional execution context associated with the operation. / 与本操作关联的附加执行上下文。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public static function httpStatus(int $status, array $context = []): void
     {
@@ -205,8 +252,15 @@ final class Logger
     }
 
     /**
-     * EN: Implements the application operation `log` (log).
-     * 中文：实现应用操作 `log`（log）。
+     * EN: Record the log core operation provided by logger.
+     * 中文：记录 logger 提供的“log”核心操作。
+     *
+     * @param string $level Level value used by this operation. / 本操作使用的“level”参数值。
+     * @param string $message Human-readable message associated with the result or log entry. / 与结果或日志记录关联的可读消息。
+     * @param array $context Additional execution context associated with the operation. / 与本操作关联的附加执行上下文。
+     * @param string $channel Channel value used by this operation. / 本操作使用的“channel”参数值。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public static function log(
         string $level,
@@ -269,8 +323,10 @@ final class Logger
     }
 
     /**
-     * EN: Implements the application operation `installPhpErrorHandler` (install Php Error Handler).
-     * 中文：实现应用操作 `installPhpErrorHandler`（install Php Error Handler）。
+     * EN: Perform the install php error handler core operation provided by logger.
+     * 中文：执行 logger 提供的“install php error handler”核心操作。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     private static function installPhpErrorHandler(): void
     {
@@ -307,8 +363,10 @@ final class Logger
     }
 
     /**
-     * EN: Implements the application operation `installShutdownHandler` (install Shutdown Handler).
-     * 中文：实现应用操作 `installShutdownHandler`（install Shutdown Handler）。
+     * EN: Perform the install shutdown handler core operation provided by logger.
+     * 中文：执行 logger 提供的“install shutdown handler”核心操作。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     private static function installShutdownHandler(): void
     {
@@ -344,8 +402,10 @@ final class Logger
     }
 
     /**
-     * EN: Implements the application operation `requestContext` (request Context).
-     * 中文：实现应用操作 `requestContext`（request Context）。
+     * EN: Send or process the request context core operation provided by logger.
+     * 中文：发送或处理 logger 提供的“request context”核心操作。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     private static function requestContext(): array
     {
@@ -379,8 +439,14 @@ final class Logger
     }
 
     /**
-     * EN: Implements the application operation `sanitize` (sanitize).
-     * 中文：实现应用操作 `sanitize`（sanitize）。
+     * EN: Normalize or format the sanitize core operation provided by logger.
+     * 中文：规范化或格式化 logger 提供的“sanitize”核心操作。
+     *
+     * @param mixed $value Value processed or stored by this operation. / 本操作处理或保存的值。
+     * @param ?string $key Key used to identify the requested value. / 用于标识目标值的键。
+     * @param int $depth Depth value used by this operation. / 本操作使用的“depth”参数值。
+     *
+     * @return mixed Result produced by this operation; the concrete type depends on the execution path. / 本操作生成的结果；具体类型取决于执行路径。
      */
     private static function sanitize($value, ?string $key = null, int $depth = 0)
     {
@@ -421,8 +487,12 @@ final class Logger
     }
 
     /**
-     * EN: Implements the application operation `sensitiveKey` (sensitive Key).
-     * 中文：实现应用操作 `sensitiveKey`（sensitive Key）。
+     * EN: Perform the sensitive key core operation provided by logger.
+     * 中文：执行 logger 提供的“sensitive key”核心操作。
+     *
+     * @param string $key Key used to identify the requested value. / 用于标识目标值的键。
+     *
+     * @return bool True when the requested condition is satisfied; otherwise false. / 请求条件满足时返回 true，否则返回 false。
      */
     private static function sensitiveKey(string $key): bool
     {
@@ -433,8 +503,12 @@ final class Logger
     }
 
     /**
-     * EN: Implements the application operation `redactString` (redact String).
-     * 中文：实现应用操作 `redactString`（redact String）。
+     * EN: Normalize or format the redact string core operation provided by logger.
+     * 中文：规范化或格式化 logger 提供的“redact string”核心操作。
+     *
+     * @param string $value Value processed or stored by this operation. / 本操作处理或保存的值。
+     *
+     * @return string String result produced by this operation. / 本操作生成的字符串结果。
      */
     private static function redactString(string $value): string
     {
@@ -462,8 +536,12 @@ final class Logger
     }
 
     /**
-     * EN: Implements the application operation `boundedTrace` (bounded Trace).
-     * 中文：实现应用操作 `boundedTrace`（bounded Trace）。
+     * EN: Perform the bounded trace core operation provided by logger.
+     * 中文：执行 logger 提供的“bounded trace”核心操作。
+     *
+     * @param Throwable $e Exception being handled or logged. / 正在处理或记录的异常对象。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     private static function boundedTrace(Throwable $e): array
     {
@@ -481,8 +559,12 @@ final class Logger
     }
 
     /**
-     * EN: Creates or persists the `writeLine` operation (write Line).
-     * 中文：创建或持久化 `writeLine`（write Line）操作。
+     * EN: Perform the write line core operation provided by logger.
+     * 中文：执行 logger 提供的“write line”核心操作。
+     *
+     * @param string $line Line value used by this operation. / 本操作使用的“line”参数值。
+     *
+     * @return bool True when the requested condition is satisfied; otherwise false. / 请求条件满足时返回 true，否则返回 false。
      */
     private static function writeLine(string $line): bool
     {
@@ -515,8 +597,13 @@ final class Logger
      * file rather than losing the original application error.
      */
     /**
-     * EN: Implements the application operation `rotateIfNeeded` (rotate If Needed).
-     * 中文：实现应用操作 `rotateIfNeeded`（rotate If Needed）。
+     * EN: Perform the rotate if needed core operation provided by logger.
+     * 中文：执行 logger 提供的“rotate if needed”核心操作。
+     *
+     * @param string $file File path or uploaded file metadata being processed. / 正在处理的文件路径或上传文件信息。
+     * @param int $incomingBytes Incoming bytes value used by this operation. / 本操作使用的“incoming bytes”参数值。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     private static function rotateIfNeeded(string $file, int $incomingBytes): void
     {
@@ -542,8 +629,10 @@ final class Logger
     }
 
     /**
-     * EN: Implements the application operation `logDirectory` (log Directory).
-     * 中文：实现应用操作 `logDirectory`（log Directory）。
+     * EN: Record the log directory core operation provided by logger.
+     * 中文：记录 logger 提供的“log directory”核心操作。
+     *
+     * @return string String result produced by this operation. / 本操作生成的字符串结果。
      */
     private static function logDirectory(): string
     {
@@ -559,8 +648,12 @@ final class Logger
     }
 
     /**
-     * EN: Checks or validates the condition represented by `shouldLog` (should Log).
-     * 中文：检查或校验 `shouldLog`（should Log）所表示的条件。
+     * EN: Perform the should log core operation provided by logger.
+     * 中文：执行 logger 提供的“should log”核心操作。
+     *
+     * @param string $level Level value used by this operation. / 本操作使用的“level”参数值。
+     *
+     * @return bool True when the requested condition is satisfied; otherwise false. / 请求条件满足时返回 true，否则返回 false。
      */
     private static function shouldLog(string $level): bool
     {
@@ -573,8 +666,10 @@ final class Logger
     }
 
     /**
-     * EN: Implements the application operation `maybePruneOldLogs` (maybe Prune Old Logs).
-     * 中文：实现应用操作 `maybePruneOldLogs`（maybe Prune Old Logs）。
+     * EN: Perform the maybe prune old logs core operation provided by logger.
+     * 中文：执行 logger 提供的“maybe prune old logs”核心操作。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     private static function maybePruneOldLogs(): void
     {
@@ -598,8 +693,10 @@ final class Logger
     }
 
     /**
-     * EN: Builds, formats, or transforms data for `makeRequestId` (make Request Id).
-     * 中文：为 `makeRequestId`（make Request Id）构建、格式化或转换数据。
+     * EN: Build the make request id core operation provided by logger.
+     * 中文：构建 logger 提供的“make request id”核心操作。
+     *
+     * @return string String result produced by this operation. / 本操作生成的字符串结果。
      */
     private static function makeRequestId(): string
     {
@@ -611,8 +708,12 @@ final class Logger
     }
 
     /**
-     * EN: Implements the application operation `phpSeverityName` (php Severity Name).
-     * 中文：实现应用操作 `phpSeverityName`（php Severity Name）。
+     * EN: Perform the php severity name core operation provided by logger.
+     * 中文：执行 logger 提供的“php severity name”核心操作。
+     *
+     * @param int $severity Severity value used by this operation. / 本操作使用的“severity”参数值。
+     *
+     * @return string String result produced by this operation. / 本操作生成的字符串结果。
      */
     private static function phpSeverityName(int $severity): string
     {

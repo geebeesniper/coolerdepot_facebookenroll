@@ -9,8 +9,12 @@
     'use strict';
 
     /**
-     * EN: Retrieves or loads data for `ready` (ready).
-     * 中文：读取或加载 `ready`（ready）所需的数据。
+     * EN: Run dashboard initialization after the document is ready.
+     * 中文：在文档就绪后执行 Dashboard 初始化。
+     *
+     * @param {*} fn Fn value used by this function. / 本函数使用的“fn”参数值。
+     *
+     * @returns {void} No value is returned. / 无返回值。
      */
     function ready(fn){
         // Match app.js's ready queue so legacy handlers are bound before
@@ -234,8 +238,12 @@
             chartHeight-xAxisHeight;
 
         /**
-         * EN: Implements the application operation `escapeHtml` (escape Html).
-         * 中文：实现应用操作 `escapeHtml`（escape Html）。
+         * EN: Escape text before inserting it into HTML output.
+         * 中文：在将文本插入 HTML 输出前进行转义。
+         *
+         * @param {string|*} value Value read, transformed, or applied by this function. / 本函数读取、转换或应用的值。
+         *
+         * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
          */
         function escapeHtml(value){
             return String(value??'')
@@ -247,8 +255,12 @@
         }
 
         /**
-         * EN: Builds, formats, or transforms data for `parseIso` (parse Iso).
-         * 中文：为 `parseIso`（parse Iso）构建、格式化或转换数据。
+         * EN: Parse an ISO date string into a local Date value used by the dashboard.
+         * 中文：将 ISO 日期字符串解析为 Dashboard 使用的本地 Date 值。
+         *
+         * @param {string|*} value Value read, transformed, or applied by this function. / 本函数读取、转换或应用的值。
+         *
+         * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
          */
         function parseIso(value){
             if(
@@ -270,8 +282,12 @@
         }
 
         /**
-         * EN: Checks or validates the condition represented by `iso` (iso).
-         * 中文：检查或校验 `iso`（iso）所表示的条件。
+         * EN: Format a Date value as the ISO-style date key used by API requests and filters.
+         * 中文：将 Date 值格式化为 API 请求和筛选使用的 ISO 日期键。
+         *
+         * @param {string|*} date Date value used by the calculation or filter. / 计算或筛选使用的日期值。
+         *
+         * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
          */
         function iso(date){
             const y=date.getFullYear();
@@ -286,8 +302,13 @@
         }
 
         /**
-         * EN: Implements the application operation `dateRange` (date Range).
-         * 中文：实现应用操作 `dateRange`（date Range）。
+         * EN: Perform the date range behavior used by the sales dashboard.
+         * 中文：执行sales dashboard 使用的“date range”行为。
+         *
+         * @param {*} from From value used by this function. / 本函数使用的“from”参数值。
+         * @param {*} to To value used by this function. / 本函数使用的“to”参数值。
+         *
+         * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
          */
         function dateRange(from,to){
             const start=parseIso(from);
@@ -318,8 +339,12 @@
         }
 
         /**
-         * EN: Implements the application operation `shortDate` (short Date).
-         * 中文：实现应用操作 `shortDate`（short Date）。
+         * EN: Format or normalize the short date behavior used by the sales dashboard.
+         * 中文：格式化或规范化sales dashboard 使用的“short date”行为。
+         *
+         * @param {string|*} value Value read, transformed, or applied by this function. / 本函数读取、转换或应用的值。
+         *
+         * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
          */
         function shortDate(value){
             const date=parseIso(value);
@@ -336,8 +361,12 @@
         }
 
         /**
-         * EN: Builds, formats, or transforms data for `normalizeRange` (normalize Range).
-         * 中文：为 `normalizeRange`（normalize Range）构建、格式化或转换数据。
+         * EN: Format or normalize the normalize range behavior used by the sales dashboard.
+         * 中文：格式化或规范化sales dashboard 使用的“normalize range”行为。
+         *
+         * @param {*} changed Changed value used by this function. / 本函数使用的“changed”参数值。
+         *
+         * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
          */
         function normalizeRange(changed){
             let from=String(
@@ -416,8 +445,13 @@
         }
 
         /**
-         * EN: Implements the application operation `presetRange` (preset Range).
-         * 中文：实现应用操作 `presetRange`（preset Range）。
+         * EN: Perform the preset range behavior used by the sales dashboard.
+         * 中文：执行sales dashboard 使用的“preset range”行为。
+         *
+         * @param {*} period Period value used by this function. / 本函数使用的“period”参数值。
+         * @param {*} anchorValue Anchor value value used by this function. / 本函数使用的“anchor value”参数值。
+         *
+         * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
          */
         function presetRange(
             period,
@@ -507,8 +541,10 @@
         }
 
         /**
-         * EN: Implements the application operation `titleForPeriod` (title For Period).
-         * 中文：实现应用操作 `titleForPeriod`（title For Period）。
+         * EN: Perform the title for period behavior used by the sales dashboard.
+         * 中文：执行sales dashboard 使用的“title for period”行为。
+         *
+         * @returns {string} String result produced by this UI helper. / 本 UI 辅助函数生成的字符串结果。
          */
         function titleForPeriod(){
             if(state.period==='single'){
@@ -530,8 +566,12 @@
         }
 
         /**
-         * EN: Updates application state for `setPeriod` (set Period).
-         * 中文：更新 `setPeriod`（set Period）对应的应用状态。
+         * EN: Update the set period behavior used by the sales dashboard.
+         * 中文：更新sales dashboard 使用的“set period”行为。
+         *
+         * @param {*} period Period value used by this function. / 本函数使用的“period”参数值。
+         *
+         * @returns {void} No value is returned. / 无返回值。
          */
         function setPeriod(period){
             state.period=String(
@@ -584,8 +624,12 @@
         }
 
         /**
-         * EN: Updates application state for `setChannel` (set Channel).
-         * 中文：更新 `setChannel`（set Channel）对应的应用状态。
+         * EN: Update the set channel behavior used by the sales dashboard.
+         * 中文：更新sales dashboard 使用的“set channel”行为。
+         *
+         * @param {*} channel Channel value used by this function. / 本函数使用的“channel”参数值。
+         *
+         * @returns {void} No value is returned. / 无返回值。
          */
         function setChannel(channel){
             state.channel=String(
@@ -627,8 +671,10 @@
         }
 
         /**
-         * EN: Updates application state for `updateBackToday` (update Back Today).
-         * 中文：更新 `updateBackToday`（update Back Today）对应的应用状态。
+         * EN: Update the update back today behavior used by the sales dashboard.
+         * 中文：更新sales dashboard 使用的“update back today”行为。
+         *
+         * @returns {void} No value is returned. / 无返回值。
          */
         function updateBackToday(){
             if(!backToday){
@@ -656,8 +702,12 @@
         }
 
         /**
-         * EN: Implements the application operation `aggregate` (aggregate).
-         * 中文：实现应用操作 `aggregate`（aggregate）。
+         * EN: Build the aggregate behavior used by the sales dashboard.
+         * 中文：构建sales dashboard 使用的“aggregate”行为。
+         *
+         * @param {string|*} date Date value used by the calculation or filter. / 计算或筛选使用的日期值。
+         *
+         * @returns {boolean} Boolean result produced by this UI helper. / 本 UI 辅助函数生成的布尔结果。
          */
         function aggregate(date){
             const result={
@@ -706,8 +756,12 @@
         }
 
         /**
-         * EN: Implements the application operation `tickStep` (tick Step).
-         * 中文：实现应用操作 `tickStep`（tick Step）。
+         * EN: Perform the tick step behavior used by the sales dashboard.
+         * 中文：执行sales dashboard 使用的“tick step”行为。
+         *
+         * @param {*} maxValue Max value value used by this function. / 本函数使用的“max value”参数值。
+         *
+         * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
          */
         function tickStep(maxValue){
             const rough=
@@ -761,8 +815,13 @@
         }
 
         /**
-         * EN: Builds, formats, or transforms data for `renderAxis` (render Axis).
-         * 中文：为 `renderAxis`（render Axis）构建、格式化或转换数据。
+         * EN: Render the render axis behavior used by the sales dashboard.
+         * 中文：渲染sales dashboard 使用的“render axis”行为。
+         *
+         * @param {*} cap Cap value used by this function. / 本函数使用的“cap”参数值。
+         * @param {Element|*} target Target DOM node or application object. / 目标 DOM 节点或应用对象。
+         *
+         * @returns {void} No value is returned. / 无返回值。
          */
         function renderAxis(cap,target){
             const step=
@@ -868,8 +927,12 @@
         let chartRenderKey='';
 
         /**
-         * EN: Builds, formats, or transforms data for `renderChart` (render Chart).
-         * 中文：为 `renderChart`（render Chart）构建、格式化或转换数据。
+         * EN: Render the render chart behavior used by the sales dashboard.
+         * 中文：渲染sales dashboard 使用的“render chart”行为。
+         *
+         * @param {Object|*} options Optional settings that control this function. / 控制本函数行为的可选设置。
+         *
+         * @returns {void} No value is returned. / 无返回值。
          */
         function renderChart(options){
             const animate=!options||options.animate!==false;
@@ -1178,8 +1241,12 @@
             renderChart;
 
         /**
-         * EN: Implements the application operation `rangeStatusLabel` (range Status Label).
-         * 中文：实现应用操作 `rangeStatusLabel`（range Status Label）。
+         * EN: Build the range status label behavior used by the sales dashboard.
+         * 中文：构建sales dashboard 使用的“range status label”行为。
+         *
+         * @param {*} filter Filter value used by this function. / 本函数使用的“filter”参数值。
+         *
+         * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
          */
         function rangeStatusLabel(filter){
             const key={all:'allPosts',good:'good',bad:'issues',unreviewed:'unreviewed'}[filter]||'allPosts';
@@ -1188,8 +1255,10 @@
         }
 
         /**
-         * EN: Updates application state for `applyRangePostFilter` (apply Range Post Filter).
-         * 中文：更新 `applyRangePostFilter`（apply Range Post Filter）对应的应用状态。
+         * EN: Update the apply range post filter behavior used by the sales dashboard.
+         * 中文：更新sales dashboard 使用的“apply range post filter”行为。
+         *
+         * @returns {void} No value is returned. / 无返回值。
          */
         function applyRangePostFilter(){
             const section=document.getElementById('salesRangePostSection');
@@ -1242,8 +1311,13 @@
         }
 
         /**
-         * EN: Updates application state for `setLoading` (set Loading).
-         * 中文：更新 `setLoading`（set Loading）对应的应用状态。
+         * EN: Update the set loading behavior used by the sales dashboard.
+         * 中文：更新sales dashboard 使用的“set loading”行为。
+         *
+         * @param {*} active Active value used by this function. / 本函数使用的“active”参数值。
+         * @param {*} reason Reason value used by this function. / 本函数使用的“reason”参数值。
+         *
+         * @returns {void} No value is returned. / 无返回值。
          */
         function setLoading(active,reason){
             if(
@@ -1301,8 +1375,12 @@
         }
 
         /**
-         * EN: Updates application state for `setError` (set Error).
-         * 中文：更新 `setError`（set Error）对应的应用状态。
+         * EN: Update the set error behavior used by the sales dashboard.
+         * 中文：更新sales dashboard 使用的“set error”行为。
+         *
+         * @param {string|*} message Human-readable message shown or recorded by the UI. / UI 显示或记录的可读消息。
+         *
+         * @returns {void} No value is returned. / 无返回值。
          */
         function setError(message){
             if(!rangeStatus){
@@ -1319,8 +1397,10 @@
         }
 
         /**
-         * EN: Updates application state for `updateUrl` (update Url).
-         * 中文：更新 `updateUrl`（update Url）对应的应用状态。
+         * EN: Update the update url behavior used by the sales dashboard.
+         * 中文：更新sales dashboard 使用的“update url”行为。
+         *
+         * @returns {void} No value is returned. / 无返回值。
          */
         function updateUrl(){
             const url=new URL(
@@ -1361,8 +1441,13 @@
         }
 
         /**
-         * EN: Updates application state for `applyServerData` (apply Server Data).
-         * 中文：更新 `applyServerData`（apply Server Data）对应的应用状态。
+         * EN: Update the apply server data behavior used by the sales dashboard.
+         * 中文：更新sales dashboard 使用的“apply server data”行为。
+         *
+         * @param {Object|*} data Structured data consumed by this function. / 本函数使用的结构化数据。
+         * @param {*} reason Reason value used by this function. / 本函数使用的“reason”参数值。
+         *
+         * @returns {void} No value is returned. / 无返回值。
          */
         function applyServerData(
             data,
@@ -1643,8 +1728,12 @@
         }
 
         /**
-         * EN: Implements the application operation `customInputPreview` (custom Input Preview).
-         * 中文：实现应用操作 `customInputPreview`（custom Input Preview）。
+         * EN: Perform the custom input preview behavior used by the sales dashboard.
+         * 中文：执行sales dashboard 使用的“custom input preview”行为。
+         *
+         * @param {*} changed Changed value used by this function. / 本函数使用的“changed”参数值。
+         *
+         * @returns {void} No value is returned. / 无返回值。
          */
         function customInputPreview(
             changed
@@ -1674,8 +1763,12 @@
         let dateFetchTimer=null;
 
         /**
-         * EN: Implements the application operation `scheduleDateFetch` (schedule Date Fetch).
-         * 中文：实现应用操作 `scheduleDateFetch`（schedule Date Fetch）。
+         * EN: Schedule or start the schedule date fetch behavior used by the sales dashboard.
+         * 中文：调度或启动sales dashboard 使用的“schedule date fetch”行为。
+         *
+         * @param {*} changed Changed value used by this function. / 本函数使用的“changed”参数值。
+         *
+         * @returns {void} No value is returned. / 无返回值。
          */
         function scheduleDateFetch(
             changed
@@ -2218,8 +2311,10 @@
             let touchDay=null;
 
             /**
-             * EN: Removes or cleans data/state for `clearHoverTimer` (clear Hover Timer).
-             * 中文：删除或清理 `clearHoverTimer`（clear Hover Timer）相关的数据或状态。
+             * EN: Close or clear the clear hover timer behavior used by the sales dashboard.
+             * 中文：关闭或清理sales dashboard 使用的“clear hover timer”行为。
+             *
+             * @returns {void} No value is returned. / 无返回值。
              */
             function clearHoverTimer(){
                 if(hoverTimer){
@@ -2229,8 +2324,10 @@
             }
 
             /**
-             * EN: Implements the application operation `hidePointerTooltip` (hide Pointer Tooltip).
-             * 中文：实现应用操作 `hidePointerTooltip`（hide Pointer Tooltip）。
+             * EN: Close or clear the hide pointer tooltip behavior used by the sales dashboard.
+             * 中文：关闭或清理sales dashboard 使用的“hide pointer tooltip”行为。
+             *
+             * @returns {void} No value is returned. / 无返回值。
              */
             function hidePointerTooltip(){
                 clearHoverTimer();
@@ -2249,8 +2346,13 @@
             }
 
             /**
-             * EN: Builds, formats, or transforms data for `renderPointerTooltip` (render Pointer Tooltip).
-             * 中文：为 `renderPointerTooltip`（render Pointer Tooltip）构建、格式化或转换数据。
+             * EN: Render the render pointer tooltip behavior used by the sales dashboard.
+             * 中文：渲染sales dashboard 使用的“render pointer tooltip”行为。
+             *
+             * @param {*} day Day value used by this function. / 本函数使用的“day”参数值。
+             * @param {Element|*} target Target DOM node or application object. / 目标 DOM 节点或应用对象。
+             *
+             * @returns {void} No value is returned. / 无返回值。
              */
             function renderPointerTooltip(day,target){
                 const total=
@@ -2360,8 +2462,14 @@
             }
 
             /**
-             * EN: Implements the application operation `positionPointerTooltip` (position Pointer Tooltip).
-             * 中文：实现应用操作 `positionPointerTooltip`（position Pointer Tooltip）。
+             * EN: Position the position pointer tooltip behavior used by the sales dashboard.
+             * 中文：定位sales dashboard 使用的“position pointer tooltip”行为。
+             *
+             * @param {*} day Day value used by this function. / 本函数使用的“day”参数值。
+             * @param {Event|*} event DOM event that triggered the operation. / 触发本操作的 DOM Event。
+             * @param {*} followPointer Follow pointer value used by this function. / 本函数使用的“follow pointer”参数值。
+             *
+             * @returns {void} No value is returned. / 无返回值。
              */
             function positionPointerTooltip(day,event,followPointer){
                 if(!day){
@@ -2425,8 +2533,12 @@
             }
 
             /**
-             * EN: Implements the application operation `chartDayFromTarget` (chart Day From Target).
-             * 中文：实现应用操作 `chartDayFromTarget`（chart Day From Target）。
+             * EN: Perform the chart day from target behavior used by the sales dashboard.
+             * 中文：执行sales dashboard 使用的“chart day from target”行为。
+             *
+             * @param {Element|*} target Target DOM node or application object. / 目标 DOM 节点或应用对象。
+             *
+             * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
              */
             function chartDayFromTarget(target){
                 if(!target||!target.closest){
@@ -2439,8 +2551,13 @@
             }
 
             /**
-             * EN: Implements the application operation `startMouseHover` (start Mouse Hover).
-             * 中文：实现应用操作 `startMouseHover`（start Mouse Hover）。
+             * EN: Schedule or start the start mouse hover behavior used by the sales dashboard.
+             * 中文：调度或启动sales dashboard 使用的“start mouse hover”行为。
+             *
+             * @param {*} day Day value used by this function. / 本函数使用的“day”参数值。
+             * @param {Event|*} event DOM event that triggered the operation. / 触发本操作的 DOM Event。
+             *
+             * @returns {void} No value is returned. / 无返回值。
              */
             function startMouseHover(day,event){
                 clearHoverTimer();
@@ -2507,8 +2624,12 @@
             let followEvent=null;
 
             /**
-             * EN: Implements the application operation `schedulePointerFollow` (schedule Pointer Follow).
-             * 中文：实现应用操作 `schedulePointerFollow`（schedule Pointer Follow）。
+             * EN: Schedule or start the schedule pointer follow behavior used by the sales dashboard.
+             * 中文：调度或启动sales dashboard 使用的“schedule pointer follow”行为。
+             *
+             * @param {Event|*} event DOM event that triggered the operation. / 触发本操作的 DOM Event。
+             *
+             * @returns {void} No value is returned. / 无返回值。
              */
             function schedulePointerFollow(event){
                 if(

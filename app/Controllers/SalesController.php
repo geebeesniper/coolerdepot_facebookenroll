@@ -1,10 +1,10 @@
 <?php
 /**
  * File / 文件：app/Controllers/SalesController.php
- * EN: HTTP controller for request validation, orchestration, and responses.
- * 中文：该文件负责 HTTP 请求校验、业务编排与响应。
- * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
- * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ * EN: Defines the SalesController HTTP controller and request/response actions.
+ * 中文：定义 SalesController HTTP Controller 及其请求/响应操作。
+ * Maintenance / 维护：Keep behavior, security checks, error logging, and public contracts unchanged unless the related feature is intentionally modified.
+ * 维护要求：除非明确修改相关功能，否则应保持行为、安全检查、错误日志及公开接口契约不变。
  */
 namespace App\Controllers;
 
@@ -16,11 +16,17 @@ use App\Models\Post;
 use App\Models\Inspection;
 use App\Models\User;
 
+/**
+ * EN: HTTP controller for sales requests, responses, and server-side authorization.
+ * 中文：负责 sales 请求、响应及服务器端权限控制的 HTTP Controller。
+ */
 class SalesController extends Controller
 {
     /**
-     * EN: Implements the application operation `dashboard` (dashboard).
-     * 中文：实现应用操作 `dashboard`（dashboard）。
+     * EN: Handle the dashboard HTTP action for sales controller and return the appropriate response.
+     * 中文：处理 sales controller 的“dashboard”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public function dashboard(): void
     {
@@ -71,8 +77,10 @@ class SalesController extends Controller
     }
 
     /**
-     * EN: Implements the application operation `dailyPostsAjax` (daily Posts Ajax).
-     * 中文：实现应用操作 `dailyPostsAjax`（daily Posts Ajax）。
+     * EN: Handle the daily posts ajax HTTP action for sales controller and return the appropriate response.
+     * 中文：处理 sales controller 的“daily posts ajax”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public function dailyPostsAjax(): void
     {
@@ -139,8 +147,14 @@ class SalesController extends Controller
     }
 
 /**
- * EN: Implements the application operation `salesPresetRange` (sales Preset Range).
- * 中文：实现应用操作 `salesPresetRange`（sales Preset Range）。
+ * EN: Perform the sales preset range operation.
+ * 中文：执行“sales preset range”操作。
+ *
+ * @param string $period Period value used by this operation. / 本操作使用的“period”参数值。
+ * @param string $to To value used by this operation. / 本操作使用的“to”参数值。
+ * @param string $today Today value used by this operation. / 本操作使用的“today”参数值。
+ *
+ * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
  */
 private function salesPresetRange(
     string $period,
@@ -204,8 +218,10 @@ private function salesPresetRange(
 
 
     /**
-     * EN: Creates or persists the `submitForm` operation (submit Form).
-     * 中文：创建或持久化 `submitForm`（submit Form）操作。
+     * EN: Handle the submit form HTTP action for sales controller and return the appropriate response.
+     * 中文：处理 sales controller 的“submit form”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public function submitForm(): void
     {
@@ -217,8 +233,12 @@ private function salesPresetRange(
     }
 
     /**
-     * EN: Creates or persists the `save` operation (save).
-     * 中文：创建或持久化 `save`（save）操作。
+     * EN: Handle the save HTTP action for sales controller and return the appropriate response.
+     * 中文：处理 sales controller 的“save”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
+     *
+     * @throws \DomainException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     public function save(): void
     {
@@ -308,8 +328,10 @@ private function salesPresetRange(
     }
 
     /**
-     * EN: Implements the application operation `requestDelete` (request Delete).
-     * 中文：实现应用操作 `requestDelete`（request Delete）。
+     * EN: Handle the request delete HTTP action for sales controller and return the appropriate response.
+     * 中文：处理 sales controller 的“request delete”HTTP 操作并返回相应响应。
+     *
+     * @return void No value is returned. / 无返回值。
      */
     public function requestDelete(): void
     {

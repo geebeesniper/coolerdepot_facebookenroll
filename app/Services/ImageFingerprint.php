@@ -1,19 +1,26 @@
 <?php
 /**
  * File / 文件：app/Services/ImageFingerprint.php
- * EN: Application service for reusable business or integration logic.
- * 中文：该文件负责可复用的业务逻辑或外部集成服务。
- * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
- * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ * EN: Defines the ImageFingerprint service used by application business, security, or provider integration flows.
+ * 中文：定义 ImageFingerprint 服务，用于应用业务、安全或 Provider 集成流程。
+ * Maintenance / 维护：Keep behavior, security checks, error logging, and public contracts unchanged unless the related feature is intentionally modified.
+ * 维护要求：除非明确修改相关功能，否则应保持行为、安全检查、错误日志及公开接口契约不变。
  */
 namespace App\Services;
 
-/** Fetch only public HTTPS image bytes, with DNS pinning and bounded decoding. */
+/**
+ * EN: Application service that encapsulates image fingerprint business, security, or integration behavior.
+ * 中文：封装 image fingerprint 业务、安全或外部集成行为的应用服务。
+ */
 class ImageFingerprint
 {
     /**
-     * EN: Implements the application operation `urls` (urls).
-     * 中文：实现应用操作 `urls`（urls）。
+     * EN: Perform the urls operation implemented by image fingerprint.
+     * 中文：执行 image fingerprint 实现的“urls”操作。
+     *
+     * @param array $meta Meta value used by this operation. / 本操作使用的“meta”参数值。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
     public static function urls(array $meta): array
     {
@@ -36,8 +43,14 @@ class ImageFingerprint
     }
 
     /**
-     * EN: Implements the application operation `fromUrl` (from Url).
-     * 中文：实现应用操作 `fromUrl`（from Url）。
+     * EN: Perform the from url operation implemented by image fingerprint.
+     * 中文：执行 image fingerprint 实现的“from url”操作。
+     *
+     * @param string $url URL to validate, resolve, fetch, or process. / 需要验证、解析、抓取或处理的 URL。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
+     *
+     * @throws \RuntimeException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     public static function fromUrl(string $url): array
     {
@@ -93,8 +106,14 @@ class ImageFingerprint
     }
 
     /**
-     * EN: Implements the application operation `fromBytes` (from Bytes).
-     * 中文：实现应用操作 `fromBytes`（from Bytes）。
+     * EN: Perform the from bytes operation implemented by image fingerprint.
+     * 中文：执行 image fingerprint 实现的“from bytes”操作。
+     *
+     * @param string $bytes Bytes value used by this operation. / 本操作使用的“bytes”参数值。
+     *
+     * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
+     *
+     * @throws \RuntimeException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     public static function fromBytes(string $bytes): array
     {
@@ -125,8 +144,13 @@ class ImageFingerprint
     }
 
     /**
-     * EN: Implements the application operation `distance` (distance).
-     * 中文：实现应用操作 `distance`（distance）。
+     * EN: Perform the distance operation implemented by image fingerprint.
+     * 中文：执行 image fingerprint 实现的“distance”操作。
+     *
+     * @param string $a A value used by this operation. / 本操作使用的“a”参数值。
+     * @param string $b B value used by this operation. / 本操作使用的“b”参数值。
+     *
+     * @return int Numeric result produced by this operation. / 本操作生成的数字结果。
      */
     public static function distance(string $a,string $b): int
     {

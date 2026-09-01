@@ -29,8 +29,18 @@ required=(
   "sales-posts/app/Core/Logger.php"
   "sales-posts/public/assets/diagnostics.js"
   "sales-posts/public/assets/responsive.css"
+  "sales-posts/app/Core/ApiAuth.php"
+  "sales-posts/app/Controllers/ExternalApiController.php"
+  "sales-posts/app/Controllers/GraphqlController.php"
+  "sales-posts/docs/API.md"
+  "sales-posts/docs/openapi-v1.yaml"
+  "sales-posts/docs/schema.graphql"
+  "sales-posts/scripts/migrate_v0_2_05_api.php"
   "sales-posts/scripts/audit_bilingual_comments.php"
+  "sales-posts/scripts/audit_phpdoc_contract.php"
+  "sales-posts/scripts/audit_jsdoc_contract.php"
   "sales-posts/storage/logs/.gitkeep"
+  "sales-posts/storage/transfer/.gitkeep"
 )
 
 for item in "${required[@]}"; do
@@ -68,6 +78,12 @@ for entry in "${ENTRIES[@]}"; do
         exit 1
       fi
       ;;
+    sales-posts/storage/transfer/*)
+      if [[ "$entry" != "sales-posts/storage/transfer/" && "$entry" != "sales-posts/storage/transfer/.gitkeep" ]]; then
+        echo "Forbidden database transfer file in release: $entry" >&2
+        exit 1
+      fi
+      ;;
     *.zip|*.tgz|*.tar.gz|*.dump|*.bak)
       echo "Forbidden backup/archive nested in release: $entry" >&2
       exit 1
@@ -96,6 +112,8 @@ VERIFY_TMP="$(mktemp -d)"
 trap 'rm -rf "$VERIFY_TMP"' EXIT
 unzip -q "$ARCHIVE" -d "$VERIFY_TMP"
 php "$VERIFY_TMP/sales-posts/scripts/audit_bilingual_comments.php"
+php "$VERIFY_TMP/sales-posts/scripts/audit_phpdoc_contract.php"
+php "$VERIFY_TMP/sales-posts/scripts/audit_jsdoc_contract.php"
 
 printf 'Release validation OK: %s (%d entries, version %s)\n' \
   "$ARCHIVE" "${#ENTRIES[@]}" "$archive_version"

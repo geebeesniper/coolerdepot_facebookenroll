@@ -1,18 +1,28 @@
 <?php
 /**
  * File / 文件：app/Services/MarketplaceProviderFactory.php
- * EN: Application service for reusable business or integration logic.
- * 中文：该文件负责可复用的业务逻辑或外部集成服务。
- * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
- * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ * EN: Defines the MarketplaceProviderFactory service used by application business, security, or provider integration flows.
+ * 中文：定义 MarketplaceProviderFactory 服务，用于应用业务、安全或 Provider 集成流程。
+ * Maintenance / 维护：Keep behavior, security checks, error logging, and public contracts unchanged unless the related feature is intentionally modified.
+ * 维护要求：除非明确修改相关功能，否则应保持行为、安全检查、错误日志及公开接口契约不变。
  */
 namespace App\Services;
 
+/**
+ * EN: Application service that encapsulates marketplace provider factory business, security, or integration behavior.
+ * 中文：封装 marketplace provider factory 业务、安全或外部集成行为的应用服务。
+ */
 class MarketplaceProviderFactory
 {
     /**
-     * EN: Builds, formats, or transforms data for `make` (make).
-     * 中文：为 `make`（make）构建、格式化或转换数据。
+     * EN: Build the make operation for marketplace provider factory.
+     * 中文：构建 marketplace provider factory 的“make”操作。
+     *
+     * @param array $profile Profile value used by this operation. / 本操作使用的“profile”参数值。
+     *
+     * @return object object result produced by this operation. / 本操作生成的 object 类型结果。
+     *
+     * @throws \RuntimeException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
     public static function make(array $profile): object
     {

@@ -252,7 +252,7 @@ statuses, which still use pending/approved/rejected.
 
 ## Release versioning
 
-Current release: `v0.1.99`
+Current release: `v0.2.02`
 
 `VERSION` in the project root is the application version source of truth.
 The footer reads this value and displays it on every page.
@@ -1584,3 +1584,54 @@ Upload `sales-posts-v0.1.74-chart-pointer-tooltip.zip` to `/opt/coolerdepot/www/
 - Adds `scripts/audit_bilingual_comments.php`; release packaging and ZIP validation both enforce the bilingual-comment contract.
 - Adds `docs/BILINGUAL_COMMENTS.md` and `docs/RESPONSIVE_CONTRACT.md`.
 - No database migration and no intentional business-logic change.
+
+## v0.2.02 — Production deployment export without demo data
+
+- Removes `database/demo.sql`, `scripts/install_demo.php`, and `scripts/refresh_demo_data.php` from the deployable codebase.
+- Keeps the production schema/install path unchanged: `database/schema.sql` + `scripts/install.php`.
+- No database migration and no intentional responsive/UI/business-logic change.
+
+## v0.2.03 — Production transfer database tooling
+
+- Removed Demo installer/data files from the production release path.
+- Added a dry-run-first Demo database cleanup script that hard-deletes only known demo posts and their post-linked dependent records; it never deletes the Sales user reused by Demo data.
+- Added a production database exporter for all `cdsp_*` tables. The exporter excludes known Demo posts, preserves encrypted provider credentials, writes with restrictive file permissions, and never prints decrypted tokens.
+- Documented the `AUTH_HANDOFF_SECRET` portability requirement: existing encrypted provider tokens can only be decrypted on the destination when the exact source secret is retained; otherwise provider tokens must be entered again from Admin Settings.
+- Added `deploy/PRODUCTION_TRANSFER.md` with source cleanup/export and destination import steps.
+## v0.2.04 — View comment rendering fix
+
+- Fixes bilingual PHP file-header comments in `app/Views/layout/footer.php` and `app/Views/auth/access_required.php` so the comments execute inside PHP tags and can never render as visible page text.
+- Audited all project PHP files for leading comments outside PHP tags; no other affected PHP files remain.
+- No database migration and no responsive/UI/business-logic change.
+
+
+## v0.2.05 — External REST + GraphQL authentication/RBAC API
+
+- Keeps the existing browser `GET|POST /auth/handoff` signed SSO flow unchanged.
+- Adds versioned REST authentication endpoints under `/api/v1`, including signed identity exchange, Bearer `me`, logout/revocation, Admin-only user directory, Sales-only profile, and health/readiness.
+- Adds `POST /graphql` with the same signed identity exchange, Bearer authentication, and server-side Admin/Sales RBAC. The authoritative SDL is shipped as `docs/schema.graphql`.
+- Adds `cdsp_api_tokens` as a dedicated short-lived API credential store. Only SHA-256 token hashes are stored; raw Bearer tokens are returned once to the client and are never written to application logs.
+- Adds CORS allowlisting through `API_ALLOWED_ORIGINS`; cross-origin browser access is disabled by default while same-origin/server-to-server calls remain available.
+- Adds `docs/API.md`, `docs/openapi-v1.yaml`, `docs/schema.graphql`, a parent-system API signing example, and a CLI signed-payload generator.
+- Updates production database export behavior so browser sessions, accepted handoff nonces, and API Bearer credentials are not migrated to a destination server.
+- Requires `scripts/migrate_v0_2_05_api.php` only when upgrading an existing database from an earlier release. New deployments importing the v0.2.05 schema/token-only database already contain the table.
+
+## v0.2.07 — Detailed bilingual source documentation
+
+- Documentation-focused production release; application runtime behavior and database schema are unchanged from v0.2.06.
+- Replaced generic PHP method comments with detailed bilingual PHPDoc across all project-owned PHP files.
+- Every named PHP function/method documents its purpose, every declared parameter with `@param`, and its return contract with `@return`; explicit exception paths include `@throws` where detected.
+- Every PHP class has a bilingual responsibility PHPDoc and every PHP file retains a bilingual file header.
+- Replaced generic named JavaScript function comments with bilingual JSDoc using `@param` and `@returns`.
+- Added `scripts/audit_phpdoc_contract.php`; release validation now runs both the bilingual comment audit and detailed PHPDoc audit against the exact ZIP contents.
+- No database migration is required. `VERSION`/footer source is `0.2.07`.
+
+### 中文
+
+- 本版本以源码文档完善为主，应用运行逻辑及数据库结构与 v0.2.06 保持一致。
+- 所有项目自有 PHP 文件中的泛化方法注释已改为详细中英文 PHPDoc。
+- 每个命名 PHP 函数/方法均说明具体用途；每个声明参数均包含 `@param`；每个函数均包含 `@return`；检测到明确异常路径时包含 `@throws`。
+- 每个 PHP Class 均包含中英文职责说明，每个 PHP 文件均保留中英文文件头。
+- 所有命名 JavaScript 函数的泛化注释已替换为包含 `@param` 与 `@returns` 的中英文 JSDoc。
+- 新增 `scripts/audit_phpdoc_contract.php`；正式打包验证会对 ZIP 内实际文件同时执行双语注释审计与详细 PHPDoc 审计。
+- 无需数据库迁移；`VERSION`/页脚版本来源为 `0.2.07`。
