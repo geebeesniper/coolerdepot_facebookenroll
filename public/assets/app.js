@@ -5065,6 +5065,7 @@ const dashboardI18n={
     en:{
         greeting:'Hi, {name}',
         pageTitle:'My Sales Activity',
+        dashboardSubtitle:'Review Sales posting activity, Post Review, and Sales Review status.',
         view:'View',
         from:'From',
         to:'To',
@@ -5630,24 +5631,47 @@ function applyDashboardLanguage(){
     const $adminSalesChartCanvas = $('#adminSalesChartCanvas');
     const $adminSalesChartScroll = $('#adminSalesChartScroll');
     const $adminSalesChartYAxis = $('#adminSalesChartYAxis');
-    const $adminRangeBar = $('.admin-dashboard-range-bar');
+    const $adminRangeBar = $('#adminDashboardRangeBar');
+    const $adminRangeAnchor = $('#adminDashboardRangeAnchor');
 
-    // Keep the range controls visually normal while they are in document flow.
-    // Only add the elevated sticky treatment after the bar actually reaches the
-    // viewport edge; position:sticky itself stays responsible for layout.
+    // In normal flow Admin uses the same right-side activity-header layout as
+    // Sales. After that toolbar scrolls underneath the universal header, move
+    // only the compact controls into a fixed layer. The anchor keeps the
+    // original space so the page never jumps, and no full-width blank sticky
+    // panel is created.
     let adminRangeStickyFrame = 0;
     function syncAdminRangeStickyState(){
-        if(!$adminRangeBar.length){
+        if(!$adminRangeBar.length||!$adminRangeAnchor.length){
             return;
         }
 
-        const node=$adminRangeBar.get(0);
-        const computed=window.getComputedStyle(node);
-        const stickyTop=parseFloat(computed.top)||0;
-        const rect=node.getBoundingClientRect();
-        const stuck=window.scrollY>0 && rect.top<=stickyTop+0.5;
+        const topbar=document.querySelector('.topbar');
+        const topbarHeight=topbar
+            ?Math.ceil(topbar.getBoundingClientRect().height)
+            :0;
+        const anchorNode=$adminRangeAnchor.get(0);
+        const anchorRect=anchorNode.getBoundingClientRect();
+        const barHeight=Math.ceil($adminRangeBar.outerHeight()||0);
+        const stuck=window.scrollY>0 && anchorRect.top<=topbarHeight+4;
 
-        $adminRangeBar.toggleClass('is-stuck',stuck);
+        if(stuck){
+            $adminRangeAnchor.css({
+                'min-height':barHeight+'px',
+                'width':Math.round(anchorRect.width)+'px'
+            });
+            $adminRangeBar
+                .addClass('is-stuck')
+                .css({
+                    top:(topbarHeight+4)+'px',
+                    left:Math.round(anchorRect.left)+'px',
+                    width:Math.round(anchorRect.width)+'px'
+                });
+        }else{
+            $adminRangeAnchor.css({'min-height':'','width':''});
+            $adminRangeBar
+                .removeClass('is-stuck')
+                .css({top:'',left:'',width:''});
+        }
     }
 
     function requestAdminRangeStickySync(){
@@ -6641,7 +6665,13 @@ $periodReviewHistory.on('click','[data-person-review-history-delete]',function()
         }
         resetSalesReviewHistoryDeleteArm();
         renderSalesReviewHistory(currentSalesPeriodReview.history||[]);
-        $periodReviewMessage.removeClass('error').text(data.message||'Sales Review history entry marked as deleted.');
+        $periodReviewSave
+            .prop('disabled',false)
+            .removeClass('saved')
+            .text('Save Review');
+        $periodReviewMessage
+            .removeClass('error')
+            .text((data.message||'Sales Review history entry marked as deleted.')+' Delete is already saved; no Save Review is required.');
     }).fail(function(xhr){
         $button.prop('disabled',false);
         $periodReviewMessage.addClass('error').text((xhr.responseJSON&&xhr.responseJSON.message)||'Review history could not be marked as deleted.');
@@ -7561,13 +7591,13 @@ $periodReviewForm.on('submit',function(event){
 
         $periodReviewSave
             .addClass('saved')
-            .text('Saved ✓');
+            .text(data.unchanged?'No changes':'Saved ✓');
 
         $periodReviewMessage.text(data.message||'Sales Review saved.');
 
         setTimeout(function(){
             closeSalesPeriodReviewEditor();
-        },600);
+        },data.unchanged?450:600);
     })
     .fail(function(xhr){
         const data=xhr.responseJSON||{};

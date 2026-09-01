@@ -11743,3 +11743,119 @@ body.admin-delete-request-modal-open{overflow:hidden;}
         width:max-content !important;
     }
 }
+
+/* v0.1.93 — Admin/Sales activity-header alignment + compact detached Admin range */
+.admin-activity-head{
+    display:grid !important;
+    grid-template-columns:minmax(260px,1fr) auto !important;
+    align-items:start !important;
+    gap:20px !important;
+}
+.admin-activity-head .admin-dashboard-heading{
+    min-width:0;
+}
+.admin-activity-head .admin-dashboard-heading .sales-portal-subtitle{
+    margin-top:7px;
+}
+.admin-dashboard-range-anchor{
+    display:flex;
+    align-items:flex-start;
+    justify-content:flex-end;
+    justify-self:end;
+    width:max-content;
+    min-width:0;
+    box-sizing:border-box;
+}
+.admin-activity-head .admin-dashboard-range-bar{
+    position:static !important;
+    top:auto !important;
+    z-index:auto;
+    width:max-content;
+    min-width:0;
+    height:auto !important;
+    min-height:0 !important;
+    max-height:none !important;
+    margin:0 !important;
+    padding:0 !important;
+    border:0 !important;
+    background:transparent !important;
+    box-shadow:none !important;
+    backdrop-filter:none !important;
+    overflow:visible;
+}
+.admin-activity-head .admin-dashboard-range-bar .admin-portal-head-actions{
+    display:grid !important;
+    grid-template-columns:auto auto !important;
+    align-items:start !important;
+    justify-content:end !important;
+    gap:10px !important;
+    width:auto !important;
+    height:auto !important;
+    min-height:0 !important;
+    max-height:none !important;
+}
+.admin-activity-head .admin-dashboard-range-bar .sales-head-period-switch{
+    margin-top:18px !important;
+}
+.admin-activity-head .admin-dashboard-range-bar .admin-range-field-stack{
+    padding-bottom:0 !important;
+}
+.admin-activity-head .admin-dashboard-range-bar .dashboard-back-today{
+    position:static !important;
+    display:block;
+    width:max-content;
+    margin:3px 0 0 auto;
+    line-height:1.2;
+}
+.admin-activity-head .admin-dashboard-range-bar .dashboard-back-today.hidden{
+    display:none !important;
+}
+
+/* Once detached, only the controls float under the universal header. There is
+ * no full-width white/gray panel and no fixed height. */
+.admin-activity-head .admin-dashboard-range-bar.is-stuck{
+    position:fixed !important;
+    z-index:90 !important;
+    box-sizing:border-box;
+    height:auto !important;
+    min-height:0 !important;
+    max-height:none !important;
+    padding:6px 8px !important;
+    border:0 !important;
+    border-bottom:1px solid #dbe3ee !important;
+    border-radius:0 !important;
+    background:rgba(248,250,252,.98) !important;
+    box-shadow:none !important;
+    backdrop-filter:blur(6px) !important;
+}
+.admin-activity-head .admin-dashboard-range-bar.is-stuck .sales-head-period-switch{
+    margin-top:18px !important;
+}
+.admin-activity-head .admin-dashboard-range-bar.is-stuck .dashboard-back-today{
+    display:none !important;
+}
+.admin-sales-progress-section{
+    margin-top:0 !important;
+}
+
+@media(max-width:860px){
+    .admin-activity-head{
+        grid-template-columns:1fr !important;
+    }
+    .admin-dashboard-range-anchor{
+        justify-self:stretch;
+        width:100%;
+    }
+    .admin-activity-head .admin-dashboard-range-bar{
+        width:100%;
+    }
+    .admin-activity-head .admin-dashboard-range-bar .admin-portal-head-actions{
+        grid-template-columns:1fr !important;
+        justify-content:start !important;
+        width:100% !important;
+    }
+    .admin-activity-head .admin-dashboard-range-bar .sales-head-period-switch{
+        width:100%;
+        margin-top:0 !important;
+    }
+}

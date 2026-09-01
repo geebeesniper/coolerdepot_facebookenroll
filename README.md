@@ -1522,3 +1522,9 @@ Upload `sales-posts-v0.1.74-chart-pointer-tooltip.zip` to `/opt/coolerdepot/www/
 - Sales Review deleted-history filter is shown as a separate filter row like Post Review deleted comments.
 - Display Name settings action is compact, and Good/Bad summary labels include thumb icons.
 - No database migration. VERSION/footer source is 0.1.92.
+
+## v0.1.93
+- Prevents unchanged Sales Review submissions from creating duplicate Review History rows, including after a history entry is marked deleted.
+- Sales Review history deletion is committed immediately; the editor explicitly states that Save Review is not required for the deletion.
+- Aligns the Admin activity header with the Sales activity header: title on the left, range controls on the right in normal desktop flow.
+- Admin range controls detach into a compact fixed toolbar only after scrolling beneath the universal header, without creating a full-width blank sticky panel.

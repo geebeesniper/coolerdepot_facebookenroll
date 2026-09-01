@@ -299,10 +299,56 @@ class AdminController extends Controller{
         );
 
         $pdo=Database::connection();
+        $attachmentType=$period==='day'?'daily_review':'period_review';
+        $hasNewAttachments=$this->hasUploadedFiles('images');
+
+        // Save Review is versioning, not a generic submit button. If the
+        // current form is identical to the latest active Sales Review and no
+        // new attachment is being uploaded, do not manufacture another
+        // history row. This is especially important after an Admin marks a
+        // history entry as deleted: the delete is already committed by its
+        // own endpoint and must not be followed by an accidental duplicate
+        // save of the fallback review.
+        $currentHistory=$pdo->prepare(
+            "SELECT id,rating,note
+             FROM cdsp_sales_review_history
+             WHERE sales_user_id=?
+               AND period_type=?
+               AND period_start=?
+               AND deleted_at IS NULL
+             ORDER BY created_at DESC,id DESC
+             LIMIT 1"
+        );
+        $currentHistory->execute([
+            $salesUserId,
+            $period,
+            $periodInfo['from'],
+        ]);
+        $currentHistoryRow=$currentHistory->fetch()?:null;
+
+        if(
+            $currentHistoryRow
+            && (int)($currentHistoryRow['rating']??0)===$rating
+            && trim((string)($currentHistoryRow['note']??''))===trim($note)
+            && !$hasNewAttachments
+        ){
+            $review=$this->dashboardSalesReviewData(
+                $salesUserId,
+                $period,
+                $periodInfo
+            );
+            $this->json([
+                'ok'=>true,
+                'unchanged'=>true,
+                'review'=>$review,
+                'upload_warning'=>null,
+                'message'=>'No Sales Review changes to save.',
+            ]);
+        }
+
         $pdo->beginTransaction();
         $reviewId=0;
         $historyId=0;
-        $attachmentType=$period==='day'?'daily_review':'period_review';
 
         try{
             if($period==='day'){
@@ -364,7 +410,7 @@ class AdminController extends Controller{
         }
 
         $uploadWarning=null;
-        if($this->hasUploadedFiles('images')){
+        if($hasNewAttachments){
             try{
                 (new UploadService())->save(
                     $attachmentType,
