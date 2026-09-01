@@ -12294,3 +12294,249 @@ body.admin-delete-request-modal-open{overflow:hidden;}
 }
 
 /* v0.1.97 — Sales chart owns one stable 3-second hover controller. */
+
+/* v0.2.00 — canonical responsive contract
+ * This block is intentionally last. Older release-specific media queries are
+ * retained for desktop compatibility, but narrow layouts are normalized here
+ * so fixed desktop widths cannot fight each other on tablets/phones. */
+html,body{max-width:100%;overflow-x:hidden;}
+img,svg,video,canvas{max-width:100%;}
+.container,.panel,.page-head,.sales-portal-head,.admin-activity-head,
+.sales-portal-head-actions,.admin-portal-head-actions,.report-head-actions,
+.report-toolbar,.settings-grid,.provider-form-grid{min-width:0;}
+
+@media(max-width:1024px){
+    .container{padding-left:18px;padding-right:18px;}
+    .topbar{height:auto;min-height:58px;padding:8px 18px;gap:12px;}
+    .topbar .brand{flex:0 0 auto;}
+    .topbar .nav{min-width:0;gap:6px 8px;justify-content:flex-end;}
+
+    .sales-portal-head,.admin-activity-head,.report-page-head.sales-portal-head{
+        grid-template-columns:1fr !important;
+        gap:14px !important;
+    }
+    .sales-portal-head-actions,.admin-portal-head-actions,.report-head-actions{
+        width:100% !important;
+        max-width:100% !important;
+        justify-self:stretch !important;
+        justify-content:flex-start !important;
+    }
+    .admin-dashboard-range-anchor,
+    .admin-activity-head .admin-dashboard-range-bar{width:100% !important;max-width:100% !important;}
+    .admin-activity-head .admin-dashboard-range-bar .admin-portal-head-actions{
+        width:100% !important;
+        grid-template-columns:minmax(0,1fr) auto !important;
+    }
+
+    .sales-activity-chart-head{flex-wrap:wrap;}
+    .sales-chart-toolbar{width:100%;max-width:100%;justify-content:flex-start;}
+    .sales-platform-filter{justify-content:flex-start;}
+    .website-settings-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+
+@media(max-width:860px){
+    :root{--cdsp-topbar-height:auto;}
+    .topbar[data-user-role="admin"],.topbar[data-user-role="sales"]{
+        position:relative;
+        top:auto;
+    }
+    .topbar{
+        align-items:flex-start;
+        flex-direction:column;
+        padding:10px 14px;
+    }
+    .topbar .brand{width:100%;font-size:17px;line-height:1.3;}
+    .topbar .nav{
+        width:100%;
+        display:grid;
+        grid-template-columns:minmax(0,1fr);
+        justify-items:stretch;
+        gap:8px;
+    }
+    .topbar .nav-user{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+    #appLanguageSwitch{
+        width:100% !important;
+        min-width:0 !important;
+        max-width:none !important;
+        flex:1 1 auto !important;
+        grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+    }
+    #appLanguageSwitch .app-language-button{
+        width:auto !important;
+        min-width:0 !important;
+        max-width:none !important;
+        min-height:36px;
+        overflow:hidden;
+        text-overflow:ellipsis;
+    }
+    .topbar .nav > [data-nav-i18n],
+    .topbar .nav > form,
+    .topbar .nav > form button{
+        box-sizing:border-box !important;
+        width:100% !important;
+        min-width:0 !important;
+        max-width:none !important;
+        min-height:36px;
+    }
+    .topbar .nav > a,.topbar .nav > form button{
+        display:flex;align-items:center;justify-content:flex-start;padding:7px 9px;border-radius:4px;
+    }
+    .topbar .admin-info-menu{width:100%;}
+    .topbar .admin-info-toggle{width:40px !important;min-width:40px !important;max-width:40px !important;}
+
+    .page-head{margin-bottom:16px;}
+    h1{font-size:26px;line-height:1.15;}
+
+    .sales-portal-head-actions,
+    .admin-activity-head .admin-dashboard-range-bar .admin-portal-head-actions{
+        display:grid !important;
+        grid-template-columns:1fr !important;
+        gap:8px !important;
+    }
+    .sales-portal-head-actions .sales-head-period-switch,
+    .admin-activity-head .admin-dashboard-range-bar .sales-head-period-switch{
+        width:100% !important;
+        min-width:0 !important;
+        max-width:none !important;
+        margin-top:0 !important;
+        grid-template-columns:repeat(5,minmax(0,1fr)) !important;
+    }
+    .sales-period-button{min-width:0 !important;padding-left:4px !important;padding-right:4px !important;}
+    .dashboard-date-controls,.sales-range-filter{width:100% !important;max-width:100% !important;}
+    .activity-range-date-row{width:100%;display:grid !important;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px !important;}
+    .activity-range-field,
+    .admin-range-field-stack.activity-range-field,
+    .sales-to-field-stack.activity-range-field{
+        flex:1 1 auto !important;
+        width:100% !important;
+        min-width:0 !important;
+        max-width:none !important;
+    }
+    .activity-range-field input[type="date"],
+    .admin-dashboard-range-bar .activity-range-field input[type="date"]{
+        width:100% !important;
+        min-width:0 !important;
+        max-width:none !important;
+    }
+    .sales-submit-cta{width:100%;min-height:40px;}
+
+    /* Fixed desktop sticky strips are intentionally disabled on narrow screens.
+     * The normal range controls remain visible and avoid covering content. */
+    .admin-dashboard-sticky-range{display:none !important;}
+
+    .sales-activity-chart-head{padding:12px;}
+    .sales-chart-toolbar,.sales-channel-control{width:100%;min-width:0;}
+    .sales-platform-filter{width:100%;overflow-x:auto;}
+    .sales-chart-shell{grid-template-columns:30px minmax(0,1fr);padding-left:5px;padding-right:8px;}
+    .sales-chart-scroll{max-width:100%;overflow-x:auto;}
+
+    .panel{padding:16px;}
+    .panel-head{align-items:flex-start;flex-wrap:wrap;gap:10px;}
+    .metrics,.sales-grid,.compact-metrics{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .post-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+
+    .report-toolbar{display:grid !important;grid-template-columns:repeat(2,minmax(0,1fr));width:100%;}
+    .report-range-control,.report-run-control{grid-column:1/-1;}
+    .report-range-control .sales-head-period-switch{width:100%;grid-template-columns:repeat(5,minmax(0,1fr));}
+    .report-date-field,.report-date-field input[type="date"],.report-sales-field,.report-sales-field select{width:100%;min-width:0;}
+    .report-table-wrap,.tablewrap,.website-reference-tablewrap{width:100%;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+    .report-table-wrap table,.website-reference-table{min-width:720px;}
+
+    .website-settings-grid{grid-template-columns:1fr;}
+    .website-manual-grid{grid-template-columns:1fr;}
+    .website-manual-wide{grid-column:auto;}
+    .website-library-toolbar{align-items:stretch;flex-direction:column;}
+    .website-library-search-row{width:100%;min-width:0;}
+
+    .provider-form-grid{grid-template-columns:1fr !important;}
+    .provider-card{min-width:0;}
+    .provider-card-actions{flex-wrap:wrap;}
+}
+
+@media(max-width:640px){
+    .container{padding:18px 12px 54px;}
+    .panel{padding:13px;margin-bottom:14px;}
+    h1{font-size:23px;}
+    h2{font-size:16px;}
+
+    .topbar .nav{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .topbar .nav-user,#appLanguageSwitch,.topbar .admin-info-menu{grid-column:1/-1;}
+    .topbar .nav > form{grid-column:auto;}
+
+    .activity-range-date-row{grid-template-columns:1fr !important;}
+    .activity-range-label-row{height:auto;min-height:14px;}
+    .activity-range-label-row .dashboard-back-today{font-size:8px !important;}
+
+    .sales-period-switch,.sales-head-period-switch{
+        overflow-x:auto;
+        scrollbar-width:thin;
+    }
+    .sales-portal-head-actions .sales-head-period-switch,
+    .admin-activity-head .admin-dashboard-range-bar .sales-head-period-switch,
+    .report-range-control .sales-head-period-switch{
+        grid-template-columns:repeat(5,minmax(58px,1fr)) !important;
+    }
+
+    .metrics,.sales-grid,.compact-metrics,.post-grid{grid-template-columns:1fr !important;}
+    .sales-card,.metric,.post-grid .post{min-width:0;}
+
+    .sales-activity-chart-head{display:grid;grid-template-columns:1fr;}
+    .sales-chart-toolbar{display:block;}
+    .sales-channel-control{max-width:100%;}
+    .sales-platform-filter{padding-bottom:4px;}
+    .sales-chart-shell{grid-template-columns:26px minmax(0,1fr);gap:4px;}
+
+    .report-toolbar{grid-template-columns:1fr !important;}
+    .report-range-control,.report-run-control{grid-column:auto;}
+    .report-table-wrap table,.website-reference-table{min-width:640px;}
+
+    .settings-inline-form,#application-settings .settings-inline-form{grid-template-columns:1fr !important;}
+    #application-settings .settings-inline-form .btn{width:100% !important;}
+
+    .sales-person-settings-backdrop,
+    .admin-delete-request-modal,
+    .sales-post-detail-backdrop,
+    .sales-submit-modal-backdrop{padding:8px !important;}
+    .sales-person-settings-modal,
+    .admin-delete-request-card,
+    .sales-post-detail-card,
+    .sales-submit-modal-card{
+        width:100% !important;
+        max-width:100% !important;
+        max-height:calc(100dvh - 16px) !important;
+        overflow:auto !important;
+    }
+    .review-modal-footer-actions{width:100%;}
+    .review-modal-footer-actions > *{flex:1 1 auto;}
+}
+
+@media(max-width:480px){
+    .container{padding-left:10px;padding-right:10px;}
+    .topbar{padding-left:10px;padding-right:10px;}
+    .topbar .nav{grid-template-columns:1fr;}
+    .topbar .nav-user,#appLanguageSwitch,.topbar .admin-info-menu,.topbar .nav > form{grid-column:auto;}
+    #appLanguageSwitch{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
+    #appLanguageSwitch .app-language-button{min-height:34px;}
+
+    .sales-portal-head-actions .sales-head-period-switch,
+    .admin-activity-head .admin-dashboard-range-bar .sales-head-period-switch,
+    .report-range-control .sales-head-period-switch{
+        display:flex !important;
+        width:100% !important;
+        overflow-x:auto;
+        gap:3px !important;
+    }
+    .sales-period-button{flex:0 0 auto !important;min-width:60px !important;}
+
+    .sales-chart-legend{gap:8px;padding-left:10px;padding-right:10px;}
+    .sales-chart-y-axis{font-size:7px;}
+    .sales-chart-tooltip{width:min(176px,calc(100vw - 20px));}
+
+    .website-library-search-row{flex-direction:column;}
+    .website-library-search-row .btn{width:100%;}
+
+    .request,.mini{grid-template-columns:1fr;align-items:stretch;}
+    .request .btn,.mini .btn{width:100%;}
+    .app-footer{align-items:flex-start;flex-direction:column;}
+}

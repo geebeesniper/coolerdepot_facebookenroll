@@ -1563,3 +1563,13 @@ Upload `sales-posts-v0.1.74-chart-pointer-tooltip.zip` to `/opt/coolerdepot/www/
 - Adds active log size rotation (`LOG_MAX_BYTES`, 25 MiB default) in addition to daily files and retention cleanup.
 - No database migration is required. VERSION/footer source is 0.1.99.
 
+
+## v0.2.00
+
+- Added one final canonical responsive contract for tablet and phone breakpoints.
+- Desktop-only fixed widths no longer fight narrow-screen layouts.
+- Header/navigation, language switch, Admin/Sales range controls, charts, reports,
+  settings, website-library tools, provider forms, cards and key modals now collapse
+  predictably at 1024/860/640/480px.
+- The detached Admin sticky range strip is disabled below 860px so it cannot cover
+  mobile content; the normal range controls remain visible in document flow.
