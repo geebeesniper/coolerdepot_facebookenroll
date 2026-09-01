@@ -5651,14 +5651,19 @@ function applyDashboardLanguage(){
             :0;
         const anchorNode=$adminRangeAnchor.get(0);
         const anchorRect=anchorNode.getBoundingClientRect();
-        const barHeight=Math.ceil($adminRangeBar.outerHeight()||0);
         const stuck=window.scrollY>0 && anchorRect.top<=topbarHeight+4;
 
         if(stuck){
-            $adminRangeAnchor.css({
-                'min-height':barHeight+'px',
-                'width':Math.round(anchorRect.width)+'px'
-            });
+            // The toolbar itself becomes fixed. Do not reserve its measured height
+            // in the grid anchor: older builds copied an inflated child height back
+            // into the anchor and created the large blank block below the toolbar.
+            $adminRangeAnchor
+                .addClass('range-is-stuck')
+                .css({
+                    'height':'0px',
+                    'min-height':'0px',
+                    'max-height':'0px'
+                });
             $adminRangeBar
                 .addClass('is-stuck')
                 .css({
@@ -5667,7 +5672,9 @@ function applyDashboardLanguage(){
                     width:Math.round(anchorRect.width)+'px'
                 });
         }else{
-            $adminRangeAnchor.css({'min-height':'','width':''});
+            $adminRangeAnchor
+                .removeClass('range-is-stuck')
+                .css({'height':'','min-height':'','max-height':''});
             $adminRangeBar
                 .removeClass('is-stuck')
                 .css({top:'',left:'',width:''});
@@ -6616,20 +6623,29 @@ $periodReviewHistory.on('click','[data-person-review-history-delete]',function()
         return;
     }
 
-    const $button=$(this);
-    if(armedSalesReviewHistoryDeleteId!==historyId){
-        resetSalesReviewHistoryDeleteArm();
-        armedSalesReviewHistoryDeleteId=historyId;
-        $button.addClass('confirm-delete')
-            .attr('title','Click again to confirm')
-            .attr('aria-label','Click again to confirm mark as deleted');
-        armedSalesReviewHistoryDeleteTimer=window.setTimeout(function(){
-            resetSalesReviewHistoryDeleteArm();
-        },3500);
-        return;
-    }
+    // One click means delete. Update the UI first so the user never waits on the
+    // network round trip; roll back only if the server rejects the request.
+    resetSalesReviewHistoryDeleteArm();
+    const previousHistory=(currentSalesPeriodReview.history||[]).map(function(item){
+        return Object.assign({},item);
+    });
+    const optimisticDeletedAt=new Date().toISOString();
 
-    $button.prop('disabled',true);
+    currentSalesPeriodReview.history=previousHistory.map(function(item){
+        if(parseInt(item.id,10)!==historyId){
+            return Object.assign({},item);
+        }
+        return Object.assign({},item,{
+            deleted:true,
+            deleted_at:optimisticDeletedAt,
+            deleted_by_name:item.deleted_by_name||'Administrator'
+        });
+    });
+    renderSalesReviewHistory(currentSalesPeriodReview.history);
+    $periodReviewMessage
+        .removeClass('error')
+        .text('Review marked as deleted. Saving…');
+
     $.ajax({
         url:salesReviewHistoryDeleteUrl,
         method:'POST',
@@ -6638,10 +6654,14 @@ $periodReviewHistory.on('click','[data-person-review-history-delete]',function()
         headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'}
     }).done(function(data){
         if(!data||!data.ok){
-            $periodReviewMessage.addClass('error').text((data&&data.message)||'Review history could not be marked as deleted.');
-            $button.prop('disabled',false);
+            currentSalesPeriodReview.history=previousHistory;
+            renderSalesReviewHistory(previousHistory);
+            $periodReviewMessage
+                .addClass('error')
+                .text((data&&data.message)||'Review history could not be marked as deleted.');
             return;
         }
+
         if(data.review){
             currentSalesPeriodReview=data.review;
             renderSalesPeriodReview(data.review);
@@ -6658,12 +6678,12 @@ $periodReviewHistory.on('click','[data-person-review-history-delete]',function()
                 }
                 return Object.assign({},item,{
                     deleted:true,
-                    deleted_at:data.deleted_at||'',
-                    deleted_by_name:data.deleted_by_name||'Administrator'
+                    deleted_at:data.deleted_at||item.deleted_at||optimisticDeletedAt,
+                    deleted_by_name:data.deleted_by_name||item.deleted_by_name||'Administrator'
                 });
             });
         }
-        resetSalesReviewHistoryDeleteArm();
+
         renderSalesReviewHistory(currentSalesPeriodReview.history||[]);
         $periodReviewSave
             .prop('disabled',false)
@@ -6671,10 +6691,13 @@ $periodReviewHistory.on('click','[data-person-review-history-delete]',function()
             .text('Save Review');
         $periodReviewMessage
             .removeClass('error')
-            .text((data.message||'Sales Review history entry marked as deleted.')+' Delete is already saved; no Save Review is required.');
+            .text((data.message||'Sales Review history entry marked as deleted.')+' No Save Review is required.');
     }).fail(function(xhr){
-        $button.prop('disabled',false);
-        $periodReviewMessage.addClass('error').text((xhr.responseJSON&&xhr.responseJSON.message)||'Review history could not be marked as deleted.');
+        currentSalesPeriodReview.history=previousHistory;
+        renderSalesReviewHistory(previousHistory);
+        $periodReviewMessage
+            .addClass('error')
+            .text((xhr.responseJSON&&xhr.responseJSON.message)||'Review history could not be marked as deleted.');
     });
 });
 

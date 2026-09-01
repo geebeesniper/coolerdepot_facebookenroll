@@ -11859,3 +11859,114 @@ body.admin-delete-request-modal-open{overflow:hidden;}
         margin-top:0 !important;
     }
 }
+
+
+/* v0.1.94 — compact sticky anchor, persistent Back to today, true thumb icons, instant review delete */
+/* When the Admin range deck detaches, its anchor must not reserve the deck's
+ * measured height. An inflated legacy measurement was the source of the large
+ * empty white block below the sticky controls. */
+.admin-dashboard-range-anchor.range-is-stuck{
+    height:0 !important;
+    min-height:0 !important;
+    max-height:0 !important;
+    overflow:visible !important;
+}
+.admin-activity-head .admin-dashboard-range-bar.is-stuck{
+    height:auto !important;
+    min-height:0 !important;
+    max-height:none !important;
+    padding:4px 6px !important;
+}
+.admin-activity-head .admin-dashboard-range-bar.is-stuck .admin-portal-head-actions,
+.admin-activity-head .admin-dashboard-range-bar.is-stuck .dashboard-date-controls,
+.admin-activity-head .admin-dashboard-range-bar.is-stuck .dashboard-date-control-row,
+.admin-activity-head .admin-dashboard-range-bar.is-stuck .admin-range-field-stack{
+    height:auto !important;
+    min-height:0 !important;
+    max-height:none !important;
+}
+.admin-activity-head .admin-dashboard-range-bar.is-stuck .admin-range-field-stack{
+    position:relative !important;
+    padding:0 !important;
+}
+/* Keep Back to today available while stuck without giving it a second row.
+ * It shares the To-label line and therefore contributes zero layout height. */
+.admin-activity-head .admin-dashboard-range-bar.is-stuck .dashboard-back-today:not(.hidden){
+    position:absolute !important;
+    display:inline-flex !important;
+    top:0 !important;
+    right:0 !important;
+    left:auto !important;
+    width:auto !important;
+    height:14px !important;
+    min-height:14px !important;
+    margin:0 !important;
+    padding:0 !important;
+    align-items:center !important;
+    font-size:7px !important;
+    line-height:14px !important;
+    white-space:nowrap !important;
+}
+.admin-activity-head .admin-dashboard-range-bar.is-stuck .dashboard-back-today.hidden{
+    display:none !important;
+}
+
+/* Use the same real thumb glyph shape as the Post Review decision control.
+ * Do not rely on emoji rendering, which differed by OS and looked like a tiny
+ * yellow marker instead of a thumb. */
+[data-card-good-label]::before,
+.post-summary.good > span:first-child::before,
+.sales-self-post-status.good > span:first-child::before,
+.sales-post-tile-status.good::before,
+.sales-expanded-post-status.good::before,
+.sales-post-detail-status.good::before,
+.review-history-decision.good::before{
+    content:'' !important;
+    display:inline-block !important;
+    width:11px !important;
+    height:11px !important;
+    margin-right:4px !important;
+    flex:0 0 11px !important;
+    vertical-align:-2px !important;
+    background:#16a34a !important;
+    -webkit-mask:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%3E%3Cpath%20d%3D%27M8.2%2010.1%2011%204.3c.3-.7%201-1.2%201.8-1.2%201.2%200%202.1%201%202%202.2l-.4%203.2h4.3c1.4%200%202.4%201.3%202%202.6l-2.1%207.2c-.3.9-1.1%201.5-2%201.5H8.2V10.1ZM3%2010h3.2v10H3V10Z%27%2F%3E%3C%2Fsvg%3E") center / contain no-repeat !important;
+    mask:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%3E%3Cpath%20d%3D%27M8.2%2010.1%2011%204.3c.3-.7%201-1.2%201.8-1.2%201.2%200%202.1%201%202%202.2l-.4%203.2h4.3c1.4%200%202.4%201.3%202%202.6l-2.1%207.2c-.3.9-1.1%201.5-2%201.5H8.2V10.1ZM3%2010h3.2v10H3V10Z%27%2F%3E%3C%2Fsvg%3E") center / contain no-repeat !important;
+}
+[data-card-issues-label]::before,
+.post-summary.bad > span:first-child::before,
+.sales-self-post-status.bad > span:first-child::before,
+.sales-post-tile-status.bad::before,
+.sales-expanded-post-status.bad::before,
+.sales-post-detail-status.bad::before,
+.review-history-decision.bad::before{
+    content:'' !important;
+    display:inline-block !important;
+    width:11px !important;
+    height:11px !important;
+    margin-right:4px !important;
+    flex:0 0 11px !important;
+    vertical-align:-2px !important;
+    background:#dc2626 !important;
+    -webkit-mask:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%3E%3Cpath%20d%3D%27m8.2%2013.9%202.8%205.8c.3.7%201%201.2%201.8%201.2%201.2%200%202.1-1%202-2.2l-.4-3.2h4.3c1.4%200%202.4-1.3%202-2.6l-2.1-7.2c-.3-.9-1.1-1.5-2-1.5H8.2v9.7ZM3%204h3.2v10H3V4Z%27%2F%3E%3C%2Fsvg%3E") center / contain no-repeat !important;
+    mask:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2024%2024%27%3E%3Cpath%20d%3D%27m8.2%2013.9%202.8%205.8c.3.7%201%201.2%201.8%201.2%201.2%200%202.1-1%202-2.2l-.4-3.2h4.3c1.4%200%202.4-1.3%202-2.6l-2.1-7.2c-.3-.9-1.1-1.5-2-1.5H8.2v9.7ZM3%204h3.2v10H3V4Z%27%2F%3E%3C%2Fsvg%3E") center / contain no-repeat !important;
+}
+.sales-self-post-status.good,
+.sales-self-post-status.bad,
+.sales-post-tile-status.good,
+.sales-post-tile-status.bad,
+.sales-expanded-post-status.good,
+.sales-expanded-post-status.bad,
+.sales-post-detail-status.good,
+.sales-post-detail-status.bad,
+.review-history-decision.good,
+.review-history-decision.bad{
+    align-items:center !important;
+}
+
+/* Review-history trash is now a one-click action. Give immediate visual
+ * feedback only for the short network reconciliation window. */
+.sales-review-history-item.is-optimistic-delete{
+    opacity:0 !important;
+    transform:translateY(-4px);
+    transition:opacity .12s ease,transform .12s ease;
+}

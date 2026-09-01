@@ -1528,3 +1528,9 @@ Upload `sales-posts-v0.1.74-chart-pointer-tooltip.zip` to `/opt/coolerdepot/www/
 - Sales Review history deletion is committed immediately; the editor explicitly states that Save Review is not required for the deletion.
 - Aligns the Admin activity header with the Sales activity header: title on the left, range controls on the right in normal desktop flow.
 - Admin range controls detach into a compact fixed toolbar only after scrolling beneath the universal header, without creating a full-width blank sticky panel.
+
+## v0.1.94
+- Fixed Admin sticky range spacing by removing the inflated anchor-height reservation when the toolbar detaches.
+- Kept Back to today visible in the sticky range toolbar without adding a second row of height.
+- Replaced emoji-like Good/Bad markers with the same real thumb-up/thumb-down SVG shapes used by Post Review.
+- Sales Review history delete is now one-click with optimistic UI; failed requests roll the row back.
