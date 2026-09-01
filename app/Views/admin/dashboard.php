@@ -184,10 +184,8 @@ $adminPresetNames = [
         </div>
 
         <div class="admin-sticky-date-row">
-            <div class="activity-range-field">
-                <div class="activity-range-label-row">
-                    <label for="dashboardStickyFrom" data-dashboard-i18n="from">From</label>
-                </div>
+            <div class="activity-range-field admin-sticky-range-field">
+                <label class="admin-sticky-sr-label" for="dashboardStickyFrom" data-dashboard-i18n="from">From</label>
                 <input
                     type="date"
                     id="dashboardStickyFrom"
@@ -196,17 +194,8 @@ $adminPresetNames = [
                 >
             </div>
 
-            <div class="activity-range-field activity-range-to-field">
-                <div class="activity-range-label-row">
-                    <label for="dashboardStickyTo" data-dashboard-i18n="to">To</label>
-                    <button
-                        type="button"
-                        class="dashboard-back-today<?= ((string)$periodInfo['to']===$today)?' hidden':'' ?>"
-                        id="dashboardStickyBackToday"
-                    >
-                        <span data-dashboard-i18n="backToday">Back to today</span>
-                    </button>
-                </div>
+            <div class="activity-range-field activity-range-to-field admin-sticky-range-field">
+                <label class="admin-sticky-sr-label" for="dashboardStickyTo" data-dashboard-i18n="to">To</label>
                 <input
                     type="date"
                     id="dashboardStickyTo"
@@ -215,6 +204,14 @@ $adminPresetNames = [
                     max="<?= Util::e($today) ?>"
                 >
             </div>
+
+            <button
+                type="button"
+                class="dashboard-back-today admin-sticky-back-today<?= ((string)$periodInfo['to']===$today)?' hidden':'' ?>"
+                id="dashboardStickyBackToday"
+            >
+                <span data-dashboard-i18n="backToday">Back to today</span>
+            </button>
         </div>
     </div>
 </div>

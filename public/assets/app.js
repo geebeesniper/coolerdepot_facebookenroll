@@ -6623,7 +6623,7 @@ function resetSalesReviewHistoryDeleteArm(){
         .attr('aria-label','Mark review as deleted');
 }
 
-function renderSalesReviewHistory(items){
+function updateSalesReviewHistoryMeta(items){
     items=Array.isArray(items)?items:[];
     const deletedCount=items.filter(function(item){return Boolean(item.deleted);}).length;
     const activeCount=items.length-deletedCount;
@@ -6638,6 +6638,11 @@ function renderSalesReviewHistory(items){
             ?'Hide deleted reviews'
             :'See deleted reviews ('+deletedCount+')'
     );
+}
+
+function renderSalesReviewHistory(items){
+    items=Array.isArray(items)?items:[];
+    updateSalesReviewHistoryMeta(items);
 
     const visible=items.filter(function(item){
         return showDeletedSalesReviewHistory||!item.deleted;
@@ -6681,18 +6686,24 @@ $periodReviewDeletedSwitch.on('click',function(){
 });
 
 $periodReviewHistory.on('click','[data-person-review-history-delete]',function(){
-    const historyId=parseInt($(this).attr('data-person-review-history-delete'),10)||0;
-    if(!historyId||!salesReviewHistoryDeleteUrl||!currentSalesPeriodReview){
+    const $button=$(this);
+    const $row=$button.closest('.sales-review-history-item');
+    const historyId=parseInt($button.attr('data-person-review-history-delete'),10)||0;
+    if(!historyId||!salesReviewHistoryDeleteUrl||!currentSalesPeriodReview||!$row.length){
         return;
     }
 
-    // One click means delete. Update the UI first so the user never waits on the
-    // network round trip; roll back only if the server rejects the request.
+    // The delete action is saved immediately. Keep the current history viewport
+    // stable and animate only the affected row; do not rebuild the whole list.
     resetSalesReviewHistoryDeleteArm();
+    $button.prop('disabled',true);
+
     const previousHistory=(currentSalesPeriodReview.history||[]).map(function(item){
         return Object.assign({},item);
     });
     const optimisticDeletedAt=new Date().toISOString();
+    const historyScrollTop=$periodReviewHistory.scrollTop();
+    const rowHeight=Math.max(1,Math.ceil($row.outerHeight()));
 
     currentSalesPeriodReview.history=previousHistory.map(function(item){
         if(parseInt(item.id,10)!==historyId){
@@ -6704,7 +6715,23 @@ $periodReviewHistory.on('click','[data-person-review-history-delete]',function()
             deleted_by_name:item.deleted_by_name||'Administrator'
         });
     });
-    renderSalesReviewHistory(currentSalesPeriodReview.history);
+    updateSalesReviewHistoryMeta(currentSalesPeriodReview.history);
+
+    // In the normal history view the row fades, then collapses smoothly. When
+    // deleted reviews are already visible, keep the row in place and simply
+    // refresh that audit view after the server confirms the delete.
+    if(!showDeletedSalesReviewHistory){
+        $row
+            .stop(true,true)
+            .css({height:rowHeight+'px',overflow:'hidden'})
+            .addClass('is-person-review-deleting');
+        window.requestAnimationFrame(function(){
+            $row.addClass('is-person-review-deleting-active');
+        });
+    }else{
+        $row.addClass('is-person-review-delete-pending');
+    }
+
     $periodReviewMessage
         .removeClass('error')
         .text('Review marked as deleted. Saving…');
@@ -6719,6 +6746,7 @@ $periodReviewHistory.on('click','[data-person-review-history-delete]',function()
         if(!data||!data.ok){
             currentSalesPeriodReview.history=previousHistory;
             renderSalesReviewHistory(previousHistory);
+            $periodReviewHistory.scrollTop(historyScrollTop);
             $periodReviewMessage
                 .addClass('error')
                 .text((data&&data.message)||'Review history could not be marked as deleted.');
@@ -6727,7 +6755,8 @@ $periodReviewHistory.on('click','[data-person-review-history-delete]',function()
 
         if(data.review){
             currentSalesPeriodReview=data.review;
-            renderSalesPeriodReview(data.review);
+            // Keep the current editor in sync with the server's surviving
+            // Sales Review without rebuilding the history list.
             setSalesPeriodRating(data.review.rating||0);
             setHtmlNoteValue(
                 $periodReviewModal.find('[data-html-note]').first(),
@@ -6747,7 +6776,25 @@ $periodReviewHistory.on('click','[data-person-review-history-delete]',function()
             });
         }
 
-        renderSalesReviewHistory(currentSalesPeriodReview.history||[]);
+        updateSalesReviewHistoryMeta(currentSalesPeriodReview.history||[]);
+
+        if(showDeletedSalesReviewHistory){
+            // Preserve the user's scroll position while converting the row to
+            // its deleted-audit state.
+            const preservedScroll=$periodReviewHistory.scrollTop();
+            renderSalesReviewHistory(currentSalesPeriodReview.history||[]);
+            $periodReviewHistory.scrollTop(preservedScroll);
+        }else{
+            // The CSS transition handles fade + collapse. Remove only after it
+            // finishes so neighboring review cards never jump back and forth.
+            window.setTimeout(function(){
+                $row.remove();
+                if(!$periodReviewHistory.children('.sales-review-history-item').length){
+                    $periodReviewHistory.html('<div class="sales-review-history-empty">'+escapeHtml(tr('notRated'))+'</div>');
+                }
+            },300);
+        }
+
         $periodReviewSave
             .prop('disabled',false)
             .removeClass('saved')
@@ -6758,6 +6805,7 @@ $periodReviewHistory.on('click','[data-person-review-history-delete]',function()
     }).fail(function(xhr){
         currentSalesPeriodReview.history=previousHistory;
         renderSalesReviewHistory(previousHistory);
+        $periodReviewHistory.scrollTop(historyScrollTop);
         $periodReviewMessage
             .addClass('error')
             .text((xhr.responseJSON&&xhr.responseJSON.message)||'Review history could not be marked as deleted.');

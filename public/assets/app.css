@@ -12262,3 +12262,158 @@ body.admin-delete-request-modal-open{overflow:hidden;}
         width:132px !important;
     }
 }
+
+/* v0.1.96 — stable review-delete motion + identical sticky typography */
+/* Person/Sales Review delete: fade and collapse the affected row only. The
+ * history list is never rebuilt during the optimistic delete, so its scroll
+ * position and neighboring cards remain stable. */
+.sales-review-history-item.is-person-review-deleting{
+    box-sizing:border-box !important;
+    min-height:0 !important;
+    overflow:hidden !important;
+    transform-origin:top center;
+    transition:
+        opacity .16s ease,
+        transform .16s ease,
+        height .22s ease .06s,
+        margin .22s ease .06s,
+        padding .22s ease .06s,
+        border-width .22s ease .06s !important;
+    will-change:opacity,transform,height,margin,padding;
+}
+.sales-review-history-item.is-person-review-deleting-active{
+    opacity:0 !important;
+    transform:translateY(-3px) !important;
+    height:0 !important;
+    min-height:0 !important;
+    margin-top:0 !important;
+    margin-bottom:0 !important;
+    padding-top:0 !important;
+    padding-bottom:0 !important;
+    border-top-width:0 !important;
+    border-bottom-width:0 !important;
+}
+.sales-review-history-item.is-person-review-delete-pending{
+    opacity:.58;
+    transition:opacity .16s ease;
+}
+
+/* The full Admin activity heading has normal breathing room only while it is
+ * in document flow. No fixed height: padding creates the normal top spacing. */
+.admin-activity-head{
+    box-sizing:border-box !important;
+    padding-top:10px !important;
+    padding-bottom:18px !important;
+    margin-bottom:0 !important;
+}
+
+/* Normal and sticky controls use exactly the same typography. */
+.admin-activity-head .sales-period-button,
+.admin-dashboard-sticky-range .sales-period-button{
+    font-family:Arial,Helvetica,sans-serif !important;
+    font-size:10px !important;
+    font-weight:800 !important;
+    line-height:1 !important;
+}
+.admin-activity-head input[type="date"],
+.admin-dashboard-sticky-range input[type="date"]{
+    font-family:Arial,Helvetica,sans-serif !important;
+    font-size:12px !important;
+    font-weight:700 !important;
+}
+.admin-activity-head .dashboard-back-today,
+.admin-dashboard-sticky-range .dashboard-back-today{
+    font-family:Arial,Helvetica,sans-serif !important;
+    font-size:7px !important;
+    font-weight:900 !important;
+    line-height:1 !important;
+}
+
+/* Once sticky, remove the From/To heading row entirely. The inputs and Back to
+ * today share one compact row under the universal header. */
+.admin-dashboard-sticky-inner{
+    align-items:center !important;
+    padding-top:6px !important;
+    padding-bottom:6px !important;
+}
+.admin-sticky-period-switch{
+    margin-top:0 !important;
+    height:34px !important;
+    min-height:34px !important;
+    align-self:center !important;
+}
+.admin-sticky-date-row{
+    align-items:center !important;
+    height:34px !important;
+    min-height:34px !important;
+    gap:8px !important;
+}
+.admin-dashboard-sticky-range .admin-sticky-range-field{
+    display:block !important;
+    height:34px !important;
+    min-height:34px !important;
+    max-height:34px !important;
+}
+.admin-sticky-sr-label{
+    position:absolute !important;
+    width:1px !important;
+    height:1px !important;
+    margin:-1px !important;
+    padding:0 !important;
+    overflow:hidden !important;
+    clip:rect(0 0 0 0) !important;
+    clip-path:inset(50%) !important;
+    white-space:nowrap !important;
+    border:0 !important;
+}
+.admin-dashboard-sticky-range .admin-sticky-range-field input[type="date"]{
+    display:block !important;
+    width:144px !important;
+    height:34px !important;
+    min-height:34px !important;
+    max-height:34px !important;
+    margin:0 !important;
+    padding:0 8px !important;
+    line-height:34px !important;
+}
+.admin-sticky-back-today{
+    box-sizing:border-box !important;
+    position:static !important;
+    inset:auto !important;
+    display:inline-flex !important;
+    flex:0 0 92px !important;
+    width:92px !important;
+    min-width:92px !important;
+    max-width:92px !important;
+    height:34px !important;
+    min-height:34px !important;
+    max-height:34px !important;
+    margin:0 !important;
+    padding:0 4px !important;
+    align-items:center !important;
+    justify-content:flex-end !important;
+    border:0 !important;
+    background:transparent !important;
+    color:#2563eb !important;
+    white-space:nowrap !important;
+}
+/* Preserve sticky geometry when the link is not needed so the controls never
+ * shift sideways as the selected date reaches today. */
+.admin-sticky-back-today.hidden{
+    display:inline-flex !important;
+    visibility:hidden !important;
+    pointer-events:none !important;
+}
+
+@media(max-width:860px){
+    .admin-activity-head{
+        padding-top:8px !important;
+        padding-bottom:14px !important;
+    }
+    .admin-sticky-back-today{
+        flex-basis:84px !important;
+        width:84px !important;
+        min-width:84px !important;
+        max-width:84px !important;
+    }
+}
