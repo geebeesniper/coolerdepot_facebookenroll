@@ -46,7 +46,7 @@ $salesPlatformIcon=static function(string $platform): string {
         <div class="daily-post-summary sales-day-filter sales-range-post-filter" role="group" aria-label="Filter posts by review status">
             <button type="button" class="post-summary total active" data-sales-post-filter="all" aria-pressed="true" title="All: <?= $postCount ?>"><span data-sales-i18n="allPosts">All</span><strong><?= $postCount ?></strong></button>
             <button type="button" class="post-summary good" data-sales-post-filter="good" aria-pressed="false" title="Good: <?= $goodCount ?>"><span data-sales-i18n="good">Good</span><strong><?= $goodCount ?></strong></button>
-            <button type="button" class="post-summary bad" data-sales-post-filter="bad" aria-pressed="false" title="Issues: <?= $badCount ?>"><span data-sales-i18n="issues">Issues</span><strong><?= $badCount ?></strong></button>
+            <button type="button" class="post-summary bad" data-sales-post-filter="bad" aria-pressed="false" title="Bad: <?= $badCount ?>"><span data-sales-i18n="issues">Bad</span><strong><?= $badCount ?></strong></button>
             <button type="button" class="post-summary neutral" data-sales-post-filter="unreviewed" aria-pressed="false" title="Unreviewed: <?= $unreviewedCount ?>"><span data-sales-i18n="unreviewed">Unreviewed</span><strong><?= $unreviewedCount ?></strong></button>
         </div>
     </div>
@@ -93,7 +93,7 @@ $salesPlatformIcon=static function(string $platform): string {
                 </div>
                 <div class="sales-self-post-footer">
                     <button type="button" class="sales-view-details" data-view-sales-post><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5c5.5 0 9.5 5.2 9.5 7s-4 7-9.5 7S2.5 13.8 2.5 12 6.5 5 12 5Zm0 2C8.3 7 5.3 10.2 4.6 12c.7 1.8 3.7 5 7.4 5s6.7-3.2 7.4-5C18.7 10.2 15.7 7 12 7Zm0 2.2a2.8 2.8 0 1 1 0 5.6 2.8 2.8 0 0 1 0-5.6Z"/></svg><span data-sales-i18n="viewDetails">View details</span></button>
-                    <span class="sales-self-post-status<?= $status ? ' '.$status : '' ?>"><?php if ($status==='good'): ?><span data-sales-i18n="good">Good</span><?php elseif ($status==='bad'): ?><span data-sales-i18n="issues">Issues</span><?php else: ?><span data-sales-i18n="unreviewed">Unreviewed</span><?php endif; ?></span>
+                    <span class="sales-self-post-status<?= $status ? ' '.$status : '' ?>"><?php if ($status==='good'): ?><span data-sales-i18n="good">Good</span><?php elseif ($status==='bad'): ?><span data-sales-i18n="issues">Bad</span><?php else: ?><span data-sales-i18n="unreviewed">Unreviewed</span><?php endif; ?></span>
                 </div>
             </article>
         <?php endforeach; ?>

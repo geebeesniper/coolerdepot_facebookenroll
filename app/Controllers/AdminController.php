@@ -2,7 +2,7 @@
 namespace App\Controllers;
 
 use App\Services\HtmlNoteSanitizer;
-use App\Services\FacebookMarketplaceProviderChain;
+use App\Services\PostInspector;
 use App\Core\Controller;use App\Core\Auth;use App\Core\Csrf;use App\Core\Database;use App\Models\Post;use App\Models\User;use App\Services\UploadService;
 class AdminController extends Controller{
     public function dashboard():void{
@@ -624,13 +624,6 @@ class AdminController extends Controller{
 
             $platform=strtolower((string)$post['platform']);
 
-            if($platform!=='facebook'){
-                $this->json([
-                    'ok'=>false,
-                    'message'=>'Get Content currently uses the configured Facebook Marketplace provider chain for Facebook posts.',
-                ],422);
-            }
-
             $url=trim((string)(
                 $post['canonical_url']
                 ?: $post['submitted_url']
@@ -647,13 +640,12 @@ class AdminController extends Controller{
                 session_write_close();
             }
 
-            // Explicit Admin action: force a real provider request instead of
-            // serving the 10-minute provider cache.
-            $item=(new FacebookMarketplaceProviderChain())->fetch(
-                $url,
+            // Explicit Admin action: fetch the newest source content. Facebook
+            // bypasses the provider cache; OfferUp/Craigslist re-fetch the live page.
+            $item=(new PostInspector())->refreshExistingContent(
                 (int)$admin['id'],
-                true,
-                true
+                $platform,
+                $url
             );
 
             $title=trim((string)($item['title']??''));

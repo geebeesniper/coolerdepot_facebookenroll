@@ -9,6 +9,87 @@ use App\Models\Post;
 
 class PostInspector
 {
+    /**
+     * Fetch the newest content for an already-saved post without running
+     * duplicate/save validation against that same post. This is used only by
+     * the explicit Admin Refresh Content action.
+     */
+    public function refreshExistingContent(
+        int $actorUserId,
+        string $platform,
+        string $url
+    ): array {
+        $platform = strtolower(trim($platform));
+        $url = trim($url);
+
+        if (!in_array($platform, ['facebook','offerup','craigslist'], true)) {
+            throw new \DomainException('Refresh Content is not available for this platform.');
+        }
+
+        if (!PlatformUrl::allowed($url, $platform)) {
+            throw new \DomainException('The saved source URL is not valid for this platform.');
+        }
+
+        if ($platform === 'facebook') {
+            // Force a live provider request and bypass the normal provider cache.
+            return (new FacebookMarketplaceProviderChain())->fetch(
+                $url,
+                $actorUserId,
+                true,
+                true
+            );
+        }
+
+        $f = (new SafeFetcher())->fetch($url, $platform);
+        $html = (string)($f['html'] ?? '');
+        $meta = $this->meta($html);
+
+        if ($platform === 'craigslist') {
+            $meta = array_merge(
+                $meta,
+                array_filter(
+                    $this->craigslist($html),
+                    static fn($value) => $value !== null && $value !== ''
+                )
+            );
+        }
+
+        if (empty($meta['published_at'])) {
+            $meta['published_at'] = $this->embeddedDate($platform, $html)
+                ?: $this->relativeDate($html);
+        }
+
+        $canonical = trim((string)($meta['canonical_url'] ?? ''));
+        if ($canonical === '' || !PlatformUrl::allowed($canonical, $platform)) {
+            $canonical = trim((string)($f['resolved_url'] ?? $url));
+        }
+
+        $images = array_values(array_filter(
+            array_map('trim', (array)($meta['images'] ?? [])),
+            static fn($value) => $value !== ''
+        ));
+        $raw = $meta;
+        $raw['photos'] = array_map(
+            static fn(string $imageUrl): array => ['url' => $imageUrl],
+            $images
+        );
+
+        return [
+            'provider' => 'direct_fetch',
+            'provider_name' => ucfirst($platform) . ' live page',
+            'title' => trim((string)($meta['title'] ?? '')),
+            'description' => trim((string)($meta['description'] ?? '')),
+            'published_raw' => trim((string)($meta['published_at'] ?? '')),
+            'canonical_url' => $canonical,
+            'external_post_id' => PlatformUrl::externalId(
+                $platform,
+                $canonical,
+                $html
+            ),
+            'raw' => $raw,
+        ];
+    }
+
     public function inspect(int $uid, string $platform, string $submitted): array
     {
         global $config;

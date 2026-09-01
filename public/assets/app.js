@@ -377,7 +377,7 @@ const salesI18n={
         selectedRange:'Selected range',
         good:'Good',
         passedReview:'Passed review',
-        issues:'Issues',
+        issues:'Bad',
         needsAttention:'Needs attention',
         unreviewed:'Unreviewed',
         awaitingReview:'Awaiting Admin review',
@@ -471,7 +471,7 @@ const salesI18n={
         selectedRange:'所选日期范围',
         good:'通过',
         passedReview:'审核通过',
-        issues:'有问题',
+        issues:'不合格',
         needsAttention:'需要处理',
         unreviewed:'未审核',
         awaitingReview:'等待管理员审核',
@@ -556,7 +556,7 @@ const salesI18n={
         selectedRange:'所選日期範圍',
         good:'通過',
         passedReview:'審核通過',
-        issues:'有問題',
+        issues:'不合格',
         needsAttention:'需要處理',
         unreviewed:'未審核',
         awaitingReview:'等待管理員審核',
@@ -642,7 +642,7 @@ const salesI18n={
         selectedRange:'Rango seleccionado',
         good:'Aprobado',
         passedReview:'Revisión aprobada',
-        issues:'Problemas',
+        issues:'Malo',
         needsAttention:'Requiere atención',
         unreviewed:'Sin revisar',
         awaitingReview:'Esperando revisión del administrador',
@@ -5086,8 +5086,8 @@ const dashboardI18n={
         day:'day',
         days:'days',
         good:'Good',
-        issues:'Issues',
-        issue:'Issue',
+        issues:'Bad',
+        issue:'Bad',
         unreviewed:'Unreviewed',
         dailyReview:'Daily Sales Review',
         weeklyReview:'Weekly Sales Review',
@@ -5168,8 +5168,8 @@ const dashboardI18n={
         day:'天',
         days:'天',
         good:'通过',
-        issues:'有问题',
-        issue:'有问题',
+        issues:'不合格',
+        issue:'不合格',
         unreviewed:'未审核',
         dailyReview:'每日销售评估',
         weeklyReview:'每周销售评估',
@@ -5250,8 +5250,8 @@ const dashboardI18n={
         day:'天',
         days:'天',
         good:'通過',
-        issues:'有問題',
-        issue:'有問題',
+        issues:'不合格',
+        issue:'不合格',
         unreviewed:'未審核',
         dailyReview:'每日銷售評估',
         weeklyReview:'每週銷售評估',
@@ -5332,8 +5332,8 @@ const dashboardI18n={
         day:'día',
         days:'días',
         good:'Aprobado',
-        issues:'Problemas',
-        issue:'Problema',
+        issues:'Malo',
+        issue:'Malo',
         unreviewed:'Sin revisar',
         dailyReview:'Evaluación diaria de ventas',
         weeklyReview:'Evaluación semanal de ventas',
@@ -7661,6 +7661,78 @@ function renderContentPreview(content){
     $('#listingImageClose').on('click',closeListingImage);
     $('#listingImageLightbox').on('click',function(event){if(event.target===this)closeListingImage();});
 
+    // Admin-only explicit refresh. This reuses the existing server-side Get Content
+    // path, which forces a fresh provider request rather than the provider cache.
+    $getContent.on('click',function(){
+        const postId=parseInt($('#dashboardReviewPostId').val(),10)||0;
+        if(!postId||!getContentUrl){
+            return;
+        }
+
+        const $button=$(this);
+        $button
+            .prop('disabled',true)
+            .addClass('is-loading')
+            .text('Refreshing…');
+        $modalMessage
+            .removeClass('error warning')
+            .text('Refreshing listing content…');
+
+        $.ajax({
+            url:getContentUrl,
+            method:'POST',
+            dataType:'json',
+            cache:false,
+            data:{_csrf:csrf,post_id:postId},
+            headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'}
+        })
+        .done(function(data){
+            if(!data||!data.ok){
+                $modalMessage
+                    .addClass('error')
+                    .text((data&&data.message)||'Content could not be refreshed.');
+                return;
+            }
+
+            renderContentPreview(data.content||{});
+
+            if(currentExpandedData&&Array.isArray(currentExpandedData.posts)){
+                currentExpandedData.posts.forEach(function(post){
+                    if(parseInt(post.id,10)!==postId){
+                        return;
+                    }
+                    post.title=String((data.content&&data.content.title)||post.title||'');
+                    post.description=String((data.content&&data.content.description)||post.description||'');
+                    const photos=Array.isArray(data.content&&data.content.photos)
+                        ?data.content.photos.filter(Boolean)
+                        :[];
+                    if(photos.length){
+                        post.thumbnail_url=photos[0];
+                    }
+                });
+                renderPostGrid(currentExpandedData);
+            }
+
+            $modalMessage
+                .removeClass('error warning')
+                .text(data.message||'Content refreshed.');
+        })
+        .fail(function(xhr){
+            const data=xhr.responseJSON||{};
+            $modalMessage
+                .addClass('error')
+                .text(data.message||String(xhr.responseText||'').trim()||'Content could not be refreshed.');
+        })
+        .always(function(){
+            if(parseInt($('#dashboardReviewPostId').val(),10)===postId){
+                $button
+                    .prop('disabled',false)
+                    .removeClass('is-loading')
+                    .text('Refresh Content');
+            }
+        });
+    });
+
 
 function closeCommentDeletePopover(){
     deleteCommentId=0;
@@ -8322,6 +8394,10 @@ function syncDecisionVisualState(decision){
         $('#dashboardReviewOriginal')
             .addClass('hidden')
             .attr('href', '#');
+        $getContent
+            .prop('disabled',true)
+            .removeClass('is-loading')
+            .text('Refresh Content');
         window.cdspReviewListingPhotos=[];
         editingCommentId=0;
         currentComments=[];
@@ -8423,6 +8499,8 @@ function syncDecisionVisualState(decision){
                     .removeClass('hidden')
                     .attr('href', data.post.canonical_url);
             }
+
+            $getContent.prop('disabled',false);
 
             const historyItems=Array.isArray(
                 data.review_history
@@ -9012,7 +9090,7 @@ $modalForm.on('submit', function(event){
                 .removeClass('good bad')
                 .addClass(status)
                 .text(
-                    status === 'good' ? 'Good' : 'Issue'
+                    status === 'good' ? 'Good' : 'Bad'
                 );
 
             syncDecisionVisualState(status);
@@ -9644,6 +9722,25 @@ $(document).on('click','.website-reference-delete',function(){
     });
 });
 
+
+// v0.1.91 Universal logged-in header: measure its real responsive height so
+// secondary sticky controls can sit directly below it without hard-coded heights.
+(function(){
+    const topbar=document.querySelector('.topbar[data-user-role="admin"],.topbar[data-user-role="sales"]');
+    if(!topbar){
+        return;
+    }
+    const syncTopbarHeight=function(){
+        const height=Math.max(0,Math.ceil(topbar.getBoundingClientRect().height));
+        document.documentElement.style.setProperty('--cdsp-topbar-height',height+'px');
+    };
+    syncTopbarHeight();
+    window.addEventListener('resize',syncTopbarHeight,{passive:true});
+    if('ResizeObserver' in window){
+        const observer=new ResizeObserver(syncTopbarHeight);
+        observer.observe(topbar);
+    }
+})();
 
 // v0.1.81 Management Reports: in-panel shared date controls + live result refresh.
 (function(){

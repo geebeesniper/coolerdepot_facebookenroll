@@ -90,7 +90,7 @@ $salesPlatformIcon = static function(string $platform): string
                 data-sales-day-filter="bad"
                 aria-pressed="false"
             >
-                <span data-sales-i18n="issues">Issues</span>
+                <span data-sales-i18n="issues">Bad</span>
                 <strong><?= $badCount ?></strong>
             </button>
 
@@ -200,7 +200,7 @@ $salesPlatformIcon = static function(string $platform): string
                         <?php if ($status === 'good'): ?>
                             <span data-sales-i18n="good">Good</span>
                         <?php elseif ($status === 'bad'): ?>
-                            <span data-sales-i18n="issues">Issues</span>
+                            <span data-sales-i18n="issues">Bad</span>
                         <?php else: ?>
                             <span data-sales-i18n="unreviewed">Unreviewed</span>
                         <?php endif; ?>

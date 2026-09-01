@@ -1109,7 +1109,7 @@
         function rangeStatusLabel(filter){
             const key={all:'allPosts',good:'good',bad:'issues',unreviewed:'unreviewed'}[filter]||'allPosts';
             if(window.cdspSalesLanguage){return window.cdspSalesLanguage.translate(key);}
-            return {all:'All',good:'Good',bad:'Issues',unreviewed:'Unreviewed'}[filter]||'All';
+            return {all:'All',good:'Good',bad:'Bad',unreviewed:'Unreviewed'}[filter]||'All';
         }
 
         function applyRangePostFilter(){
@@ -2156,7 +2156,7 @@
                             ?'Good'
                             :(
                                 type==='bad'
-                                    ?'Issues'
+                                    ?'Bad'
                                     :'Unreviewed'
                             );
 
@@ -2194,7 +2194,7 @@
                     +'<span>Good: <b>'
                     +good
                     +'</b></span>'
-                    +'<span>Issues: <b>'
+                    +'<span>Bad: <b>'
                     +bad
                     +'</b></span>'
                     +'<span>Unreviewed: <b>'

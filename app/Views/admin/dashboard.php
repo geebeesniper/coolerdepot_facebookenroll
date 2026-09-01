@@ -306,7 +306,7 @@ $adminPresetNames = [
                     </span>
                     <span>
                         <b data-bad-count><?= (int)$row['bad_count'] ?></b>
-                        <span data-card-issues-label>Issues</span>
+                        <span data-card-issues-label>Bad</span>
                     </span>
                     <span>
                         <b data-unreviewed-count><?= (int)$row['unreviewed_count'] ?></b>
@@ -525,7 +525,7 @@ $adminPresetNames = [
 
             <div class="sales-chart-legend">
                 <span><i class="good"></i> Good</span>
-                <span><i class="bad"></i> Issues</span>
+                <span><i class="bad"></i> Bad</span>
                 <span><i class="unreviewed"></i> Unreviewed</span>
             </div>
 
@@ -829,6 +829,15 @@ $adminPresetNames = [
             </div>
 
             <div class="review-modal-head-actions">
+                <button
+                    type="button"
+                    class="review-modal-refresh"
+                    id="dashboardGetContent"
+                    disabled
+                >
+                    Refresh Content
+                </button>
+
                 <a
                     class="review-modal-original hidden"
                     id="dashboardReviewOriginal"

@@ -352,7 +352,7 @@ $chartTargetTop=
 
     <div class="sales-chart-legend">
         <span><i class="good"></i><b data-sales-i18n="good">Good</b></span>
-        <span><i class="bad"></i><b data-sales-i18n="issues">Issues</b></span>
+        <span><i class="bad"></i><b data-sales-i18n="issues">Bad</b></span>
         <span><i class="unreviewed"></i><b data-sales-i18n="unreviewed">Unreviewed</b></span>
     </div>
 

@@ -11546,3 +11546,58 @@ body.admin-delete-request-modal-open{overflow:hidden;}
         margin-right:0;
     }
 }
+
+
+/* v0.1.91 — universal sticky header, safe sticky layers, Bad wording, Admin Refresh Content */
+:root{
+    --cdsp-topbar-height:52px;
+}
+.topbar[data-user-role="admin"],
+.topbar[data-user-role="sales"]{
+    position:sticky;
+    top:0;
+    z-index:100;
+}
+
+/* The Admin range toolbar lives below the universal header. Keep its layer below
+ * every existing modal (Post Review starts at z-index 120). */
+.admin-dashboard-range-bar{
+    top:var(--cdsp-topbar-height,52px);
+    z-index:90;
+}
+
+.review-modal-refresh{
+    min-height:40px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding:7px 10px;
+    border:1px solid #cbd5e1;
+    border-radius:4px;
+    background:#fff;
+    color:#334155;
+    cursor:pointer;
+    font-size:9px;
+    font-weight:900;
+    white-space:nowrap;
+}
+.review-modal-refresh:hover:not(:disabled),
+.review-modal-refresh:focus-visible:not(:disabled){
+    border-color:#93c5fd;
+    background:#eff6ff;
+    color:#1d4ed8;
+    outline:none;
+}
+.review-modal-refresh:disabled{
+    opacity:.55;
+    cursor:wait;
+}
+.review-modal-refresh.is-loading{
+    background:#f8fafc;
+}
+
+@media(max-width:560px){
+    .review-modal-refresh{
+        min-height:36px;
+    }
+}
