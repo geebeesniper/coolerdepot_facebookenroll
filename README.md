@@ -1534,3 +1534,10 @@ Upload `sales-posts-v0.1.74-chart-pointer-tooltip.zip` to `/opt/coolerdepot/www/
 - Kept Back to today visible in the sticky range toolbar without adding a second row of height.
 - Replaced emoji-like Good/Bad markers with the same real thumb-up/thumb-down SVG shapes used by Post Review.
 - Sales Review history delete is now one-click with optimistic UI; failed requests roll the row back.
+
+## v0.1.95
+- Replaces the inherited Admin sticky range bar with a dedicated compact sticky strip that appears only after the normal header controls scroll under the universal header. The fixed strip uses content-sized padding, a single bottom border, and no side shadow/panel geometry.
+- Moves `Back to today` into the To-field label row on both Admin and Sales so it never creates a second row; the sticky Admin strip mirrors it and keeps it visible whenever the selected To date is not the latest date.
+- Gives the language switch and translated top-navigation items stable fixed widths so changing language cannot resize or shuffle the header.
+- Replaces the Sales chart delegated mouseenter controller with one native pointer controller. Desktop hover waits a continuous 3 seconds, then shows and follows the pointer; touch/pen remains tap-to-pin.
+- No database migration. VERSION/footer source is 0.1.95.

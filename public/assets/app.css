@@ -11970,3 +11970,295 @@ body.admin-delete-request-modal-open{overflow:hidden;}
     transform:translateY(-4px);
     transition:opacity .12s ease,transform .12s ease;
 }
+
+/* v0.1.95 — clean sticky range deck, stable header widths, stable range fields */
+/*
+ * The original Admin range controls stay in normal document flow. A separate
+ * compact sticky deck is shown only after the original controls scroll under
+ * the universal header. This prevents legacy page-head/stack rules from ever
+ * inflating the fixed layer.
+ */
+.admin-activity-head .admin-dashboard-range-bar,
+.admin-activity-head .admin-dashboard-range-bar.is-stuck{
+    position:static !important;
+    inset:auto !important;
+    width:max-content !important;
+    height:auto !important;
+    min-height:0 !important;
+    max-height:none !important;
+    margin:0 !important;
+    padding:0 !important;
+    border:0 !important;
+    background:transparent !important;
+    box-shadow:none !important;
+    backdrop-filter:none !important;
+    overflow:visible !important;
+}
+.admin-dashboard-range-anchor,
+.admin-dashboard-range-anchor.range-is-stuck{
+    width:max-content !important;
+    height:auto !important;
+    min-height:0 !important;
+    max-height:none !important;
+    overflow:visible !important;
+}
+
+/* From/To use one stable label row. Back to today shares the To label row and
+ * never creates another line or absolute-positioned spacer. */
+.activity-range-date-row{
+    display:flex !important;
+    align-items:flex-start !important;
+    gap:8px !important;
+    min-height:0 !important;
+    height:auto !important;
+}
+.activity-range-field,
+.admin-range-field-stack.activity-range-field,
+.sales-to-field-stack.activity-range-field{
+    box-sizing:border-box !important;
+    display:flex !important;
+    flex:0 0 144px !important;
+    width:144px !important;
+    min-width:144px !important;
+    max-width:144px !important;
+    height:auto !important;
+    min-height:0 !important;
+    max-height:none !important;
+    flex-direction:column !important;
+    align-items:stretch !important;
+    align-self:flex-start !important;
+    gap:3px !important;
+    margin:0 !important;
+    padding:0 !important;
+    position:relative !important;
+}
+.activity-range-label-row{
+    box-sizing:border-box;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:6px;
+    width:100%;
+    height:14px;
+    min-height:14px;
+    margin:0;
+    padding:0;
+    line-height:14px;
+}
+.activity-range-label-row label{
+    display:block !important;
+    width:auto !important;
+    margin:0 !important;
+    padding:0 !important;
+    color:#64748b;
+    font-size:8px !important;
+    font-weight:800;
+    line-height:14px !important;
+}
+.activity-range-field input[type="date"],
+.admin-dashboard-range-bar .activity-range-field input[type="date"]{
+    box-sizing:border-box !important;
+    width:144px !important;
+    height:38px !important;
+    min-height:38px !important;
+    max-height:38px !important;
+    margin:0 !important;
+    padding:0 9px !important;
+    line-height:38px !important;
+}
+.activity-range-label-row .dashboard-back-today,
+.admin-range-field-stack .activity-range-label-row .dashboard-back-today,
+.sales-to-field-stack .activity-range-label-row .dashboard-back-today{
+    position:static !important;
+    inset:auto !important;
+    display:inline-flex !important;
+    align-items:center !important;
+    justify-content:flex-end !important;
+    width:auto !important;
+    height:14px !important;
+    min-height:0 !important;
+    max-height:14px !important;
+    margin:0 !important;
+    padding:0 !important;
+    border:0 !important;
+    background:transparent !important;
+    color:#2563eb !important;
+    font-size:7px !important;
+    font-weight:900 !important;
+    line-height:14px !important;
+    white-space:nowrap !important;
+}
+.activity-range-label-row .dashboard-back-today.hidden{
+    display:none !important;
+}
+
+/* Dedicated Admin sticky range strip. It has no dependency on .page-head,
+ * .admin-range-field-stack, or legacy sticky rules. */
+.admin-dashboard-sticky-range{
+    position:fixed;
+    left:0;
+    right:0;
+    z-index:90;
+    display:none;
+    box-sizing:border-box;
+    width:100%;
+    margin:0;
+    padding:0;
+    border:0;
+    border-bottom:1px solid #dbe3ee;
+    background:rgba(248,250,252,.985);
+    box-shadow:none;
+}
+.admin-dashboard-sticky-range.is-visible{
+    display:block;
+}
+.admin-dashboard-sticky-inner{
+    box-sizing:border-box;
+    width:min(1320px,100%);
+    height:auto;
+    min-height:0;
+    margin:0 auto;
+    padding:5px 24px 6px;
+    display:flex;
+    align-items:flex-start;
+    justify-content:flex-end;
+    gap:9px;
+}
+.admin-sticky-period-switch{
+    box-sizing:border-box;
+    flex:0 0 318px;
+    width:318px;
+    min-width:318px;
+    max-width:318px;
+    height:34px;
+    min-height:34px;
+    margin:13px 0 0;
+    padding:2px;
+    display:grid;
+    grid-template-columns:52px 54px 62px 66px 76px;
+    gap:2px;
+    border:1px solid #d7dee8;
+    border-radius:4px;
+    background:#f1f4f8;
+}
+.admin-sticky-period-switch .sales-period-button{
+    box-sizing:border-box;
+    width:100%;
+    min-width:0;
+    height:28px;
+    min-height:28px;
+    margin:0;
+    padding:0 5px;
+    font-size:8px;
+    white-space:nowrap;
+}
+.admin-sticky-date-row{
+    display:flex;
+    align-items:flex-start;
+    gap:8px;
+    height:auto;
+    min-height:0;
+}
+.admin-dashboard-sticky-range .activity-range-field{
+    flex-basis:144px !important;
+}
+.admin-dashboard-sticky-range .activity-range-field input[type="date"]{
+    height:34px !important;
+    min-height:34px !important;
+    max-height:34px !important;
+    line-height:34px !important;
+    padding:0 8px !important;
+}
+.admin-dashboard-sticky-range .activity-range-label-row{
+    height:12px;
+    min-height:12px;
+    line-height:12px;
+}
+.admin-dashboard-sticky-range .activity-range-label-row label,
+.admin-dashboard-sticky-range .activity-range-label-row .dashboard-back-today{
+    line-height:12px !important;
+    height:12px !important;
+    max-height:12px !important;
+}
+
+/* Stable top navigation widths: changing UI language must never resize or
+ * shuffle the header. */
+#appLanguageSwitch{
+    box-sizing:border-box !important;
+    display:grid !important;
+    grid-template-columns:repeat(4,56px) !important;
+    flex:0 0 230px !important;
+    width:230px !important;
+    min-width:230px !important;
+    max-width:230px !important;
+    gap:1px !important;
+}
+#appLanguageSwitch .app-language-button{
+    box-sizing:border-box !important;
+    width:56px !important;
+    min-width:56px !important;
+    max-width:56px !important;
+    padding-left:2px !important;
+    padding-right:2px !important;
+    overflow:hidden;
+    text-overflow:clip;
+    white-space:nowrap;
+}
+.topbar .nav > [data-nav-i18n="dashboard"]{width:78px !important;min-width:78px !important;max-width:78px !important;}
+.topbar .nav > [data-nav-i18n="reports"]{width:76px !important;min-width:76px !important;max-width:76px !important;}
+.topbar .nav > [data-nav-i18n="settings"]{width:94px !important;min-width:94px !important;max-width:94px !important;}
+.topbar .nav > [data-nav-i18n="submit"]{width:70px !important;min-width:70px !important;max-width:70px !important;}
+.topbar .nav > form{width:78px !important;min-width:78px !important;max-width:78px !important;}
+.topbar .nav > form button{width:78px !important;min-width:78px !important;max-width:78px !important;}
+
+/* The Sales chart day itself always owns pointer interaction. Chart decoration
+ * cannot intercept the delayed hover controller. */
+.sales-chart-day{
+    pointer-events:auto !important;
+}
+.sales-chart-day-plot,
+.sales-chart-stack,
+.sales-chart-segment,
+.sales-chart-target-line,
+.sales-chart-grid-lines{
+    pointer-events:none !important;
+}
+.sales-chart-tooltip{
+    z-index:500 !important;
+}
+
+@media(max-width:860px){
+    .admin-dashboard-sticky-inner{
+        padding-left:14px;
+        padding-right:14px;
+        justify-content:flex-start;
+        overflow-x:auto;
+    }
+    .admin-sticky-period-switch{
+        flex:0 0 286px;
+        width:286px;
+        min-width:286px;
+        max-width:286px;
+        grid-template-columns:46px 48px 56px 56px 68px;
+    }
+}
+@media(max-width:620px){
+    .activity-range-date-row{
+        flex-wrap:wrap;
+    }
+    .admin-dashboard-sticky-inner{
+        gap:7px;
+    }
+    .admin-sticky-date-row{
+        gap:6px;
+    }
+    .admin-dashboard-sticky-range .activity-range-field{
+        flex-basis:132px !important;
+        width:132px !important;
+        min-width:132px !important;
+        max-width:132px !important;
+    }
+    .admin-dashboard-sticky-range .activity-range-field input[type="date"]{
+        width:132px !important;
+    }
+}

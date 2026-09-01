@@ -199,9 +199,11 @@ $chartTargetTop=
             action="<?= Util::e($config['app']['base_path']) ?>/sales"
             novalidate
         >
-            <div class="dashboard-date-control-row sales-date-control-row">
-                <label class="admin-range-field">
-                    <span data-sales-i18n="from">From</span>
+            <div class="dashboard-date-control-row sales-date-control-row activity-range-date-row">
+                <div class="admin-range-field activity-range-field">
+                    <div class="activity-range-label-row">
+                        <label for="salesRangeFrom" data-sales-i18n="from">From</label>
+                    </div>
                     <input
                         type="date"
                         name="from"
@@ -209,32 +211,29 @@ $chartTargetTop=
                         value="<?= Util::e($from) ?>"
                         max="<?= Util::e(min($to,$today)) ?>"
                     >
-                </label>
+                </div>
 
-                <div class="sales-to-field-stack">
-                    <label class="admin-range-field">
-                        <span data-sales-i18n="to">To</span>
-                        <input
-                            type="date"
-                            name="to"
-                            id="salesRangeTo"
-                            value="<?= Util::e($to) ?>"
-                            min="<?= Util::e($from) ?>"
-                            max="<?= Util::e($today) ?>"
+                <div class="sales-to-field-stack activity-range-field activity-range-to-field">
+                    <div class="activity-range-label-row">
+                        <label for="salesRangeTo" data-sales-i18n="to">To</label>
+                        <button
+                            type="button"
+                            class="dashboard-back-today sales-back-today<?= (
+                                $to===$today
+                            ) ? ' hidden' : '' ?>"
+                            id="salesBackToday"
                         >
-                    </label>
-
-                    <button
-                        type="button"
-                        class="dashboard-back-today sales-back-today<?= (
-                            $to===$today
-                        ) ? ' hidden' : '' ?>"
-                        id="salesBackToday"
+                            <span data-sales-i18n="backToday">Back to today</span>
+                        </button>
+                    </div>
+                    <input
+                        type="date"
+                        name="to"
+                        id="salesRangeTo"
+                        value="<?= Util::e($to) ?>"
+                        min="<?= Util::e($from) ?>"
+                        max="<?= Util::e($today) ?>"
                     >
-                        <span data-sales-i18n="backToday">
-                            Back to today
-                        </span>
-                    </button>
                 </div>
             </div>
 

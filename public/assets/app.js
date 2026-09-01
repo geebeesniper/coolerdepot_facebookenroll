@@ -3565,87 +3565,120 @@ $salesImageLightbox.on(
 );
 
 /*
- * Desktop mouse: show only after a continuous 3-second hover. jQuery's
- * mouseenter/mouseleave avoids child-element pointer transitions resetting the
- * timer. Once visible, the tooltip follows the mouse.
+ * Desktop mouse: one native pointer controller for both server-rendered and
+ * AJAX-rendered chart days. Start the 3-second timer only when the pointer
+ * truly enters a new day; moving between children inside the same day never
+ * resets it. This avoids delegated mouseenter edge cases that could leave the
+ * tooltip permanently hidden after chart re-renders.
  */
-$(document).on(
-    'mouseenter',
-    '.sales-chart-day',
-    function(event){
-        cancelSalesChartHoverTimer();
-        salesTouchChartDay=null;
-        $salesChartTooltip.addClass('hidden');
-
-        const day=this;
-        const raw=event.originalEvent||event;
-        salesChartHoverDay=day;
-        salesChartHoverPoint={
-            clientX:Number(raw.clientX)||0,
-            clientY:Number(raw.clientY)||0,
-            pointerType:'mouse'
-        };
-
-        salesChartHoverTimer=window.setTimeout(
-            function(){
-                salesChartHoverTimer=null;
-
-                if(
-                    salesChartHoverDay!==day
-                    ||!document.documentElement.contains(day)
-                ){
-                    cancelSalesChartHoverTimer();
-                    return;
-                }
-
-                showSalesChartTooltip(
-                    $(day),
-                    salesChartHoverPoint,
-                    'pointer'
-                );
-            },
-            3000
-        );
+function salesChartDayFromPointerTarget(target){
+    if(!target||!target.closest){
+        return null;
     }
-);
 
-$(document).on(
-    'mousemove',
-    '.sales-chart-day',
+    return target.closest('.sales-chart-day');
+}
+
+function startSalesChartMouseHover(day,event){
+    cancelSalesChartHoverTimer();
+    salesTouchChartDay=null;
+    $salesChartTooltip.addClass('hidden');
+
+    const raw=event||{};
+    salesChartHoverDay=day;
+    salesChartHoverPoint={
+        clientX:Number(raw.clientX)||0,
+        clientY:Number(raw.clientY)||0,
+        pointerType:'mouse'
+    };
+
+    salesChartHoverTimer=window.setTimeout(
+        function(){
+            salesChartHoverTimer=null;
+
+            if(
+                salesChartHoverDay!==day
+                ||!document.documentElement.contains(day)
+            ){
+                cancelSalesChartHoverTimer();
+                return;
+            }
+
+            showSalesChartTooltip(
+                $(day),
+                salesChartHoverPoint,
+                'pointer'
+            );
+        },
+        3000
+    );
+}
+
+document.addEventListener(
+    'pointerover',
     function(event){
-        if(salesTouchChartDay){
+        if(String(event.pointerType||'mouse')!=='mouse'){
             return;
         }
 
-        if(salesChartHoverDay===this){
-            const raw=event.originalEvent||event;
+        const day=salesChartDayFromPointerTarget(event.target);
+        if(!day){
+            return;
+        }
+
+        if(event.relatedTarget&&day.contains(event.relatedTarget)){
+            return;
+        }
+
+        startSalesChartMouseHover(day,event);
+    }
+);
+
+document.addEventListener(
+    'pointermove',
+    function(event){
+        if(String(event.pointerType||'mouse')!=='mouse'){
+            return;
+        }
+
+        const day=salesChartDayFromPointerTarget(event.target);
+        if(!day){
+            return;
+        }
+
+        if(salesChartHoverDay===day){
             salesChartHoverPoint={
-                clientX:Number(raw.clientX)||0,
-                clientY:Number(raw.clientY)||0,
+                clientX:Number(event.clientX)||0,
+                clientY:Number(event.clientY)||0,
                 pointerType:'mouse'
             };
         }
 
-        if($salesChartTooltip.hasClass('hidden')){
-            return;
+        if(!$salesChartTooltip.hasClass('hidden')){
+            moveSalesChartTooltipWithPointer($(day),event);
         }
-
-        moveSalesChartTooltipWithPointer(
-            $(this),
-            event
-        );
     }
 );
 
-$(document).on(
-    'mouseleave',
-    '.sales-chart-day',
-    function(){
-        if(salesTouchChartDay===this){
+document.addEventListener(
+    'pointerout',
+    function(event){
+        if(String(event.pointerType||'mouse')!=='mouse'){
             return;
         }
 
-        hideSalesChartTooltip();
+        const day=salesChartDayFromPointerTarget(event.target);
+        if(!day){
+            return;
+        }
+
+        if(event.relatedTarget&&day.contains(event.relatedTarget)){
+            return;
+        }
+
+        if(salesTouchChartDay!==day){
+            hideSalesChartTooltip();
+        }
     }
 );
 
@@ -5485,6 +5518,10 @@ function applyDashboardLanguage(){
         const preset=String($(this).attr('data-admin-preset')||'single');
         $(this).text(adminPresetLabels[preset]||preset);
     });
+    $('#dashboardStickyPeriodSwitch [data-admin-sticky-preset]').each(function(){
+        const preset=String($(this).attr('data-admin-sticky-preset')||'single');
+        $(this).text(adminPresetLabels[preset]||preset);
+    });
 
     $('#dashboardProgressTitle').text(
         tr('postingProgress',{
@@ -5633,15 +5670,51 @@ function applyDashboardLanguage(){
     const $adminSalesChartYAxis = $('#adminSalesChartYAxis');
     const $adminRangeBar = $('#adminDashboardRangeBar');
     const $adminRangeAnchor = $('#adminDashboardRangeAnchor');
+    const $adminStickyRange = $('#adminDashboardStickyRange');
+    const $adminStickyFrom = $('#dashboardStickyFrom');
+    const $adminStickyTo = $('#dashboardStickyTo');
+    const $adminStickyBackToday = $('#dashboardStickyBackToday');
 
-    // In normal flow Admin uses the same right-side activity-header layout as
-    // Sales. After that toolbar scrolls underneath the universal header, move
-    // only the compact controls into a fixed layer. The anchor keeps the
-    // original space so the page never jumps, and no full-width blank sticky
-    // panel is created.
+    /*
+     * v0.1.95: the normal Admin activity header never becomes fixed. A separate
+     * compact sticky strip mirrors the controls after the normal range deck
+     * scrolls behind the universal header. This keeps legacy page-head/flex
+     * rules completely out of the fixed layer and prevents the tall blank box.
+     */
     let adminRangeStickyFrame = 0;
+
+    function syncAdminStickyRangeControls(){
+        if(!$adminStickyRange.length){
+            return;
+        }
+
+        const $from=$('#dashboardFromInput');
+        const $to=$('#dashboardToInput');
+
+        $adminStickyFrom
+            .val(String($from.val()||currentFrom||''))
+            .attr('max',String($from.attr('max')||''));
+
+        $adminStickyTo
+            .val(String($to.val()||currentTo||''))
+            .attr('min',String($to.attr('min')||''))
+            .attr('max',String($to.attr('max')||''));
+
+        $('#dashboardStickyPeriodSwitch [data-admin-sticky-preset]').each(function(){
+            const active=String($(this).attr('data-admin-sticky-preset')||'')===currentPreset;
+            $(this)
+                .toggleClass('active',active)
+                .attr('aria-pressed',active?'true':'false');
+        });
+
+        $adminStickyBackToday.toggleClass(
+            'hidden',
+            $('#dashboardBackToday').hasClass('hidden')
+        );
+    }
+
     function syncAdminRangeStickyState(){
-        if(!$adminRangeBar.length||!$adminRangeAnchor.length){
+        if(!$adminRangeBar.length||!$adminRangeAnchor.length||!$adminStickyRange.length){
             return;
         }
 
@@ -5649,35 +5722,16 @@ function applyDashboardLanguage(){
         const topbarHeight=topbar
             ?Math.ceil(topbar.getBoundingClientRect().height)
             :0;
-        const anchorNode=$adminRangeAnchor.get(0);
-        const anchorRect=anchorNode.getBoundingClientRect();
-        const stuck=window.scrollY>0 && anchorRect.top<=topbarHeight+4;
+        const rangeRect=$adminRangeBar.get(0).getBoundingClientRect();
+        const stuck=window.scrollY>0 && rangeRect.bottom<=topbarHeight+2;
+
+        $adminStickyRange
+            .toggleClass('is-visible',stuck)
+            .attr('aria-hidden',stuck?'false':'true')
+            .css('top',topbarHeight+'px');
 
         if(stuck){
-            // The toolbar itself becomes fixed. Do not reserve its measured height
-            // in the grid anchor: older builds copied an inflated child height back
-            // into the anchor and created the large blank block below the toolbar.
-            $adminRangeAnchor
-                .addClass('range-is-stuck')
-                .css({
-                    'height':'0px',
-                    'min-height':'0px',
-                    'max-height':'0px'
-                });
-            $adminRangeBar
-                .addClass('is-stuck')
-                .css({
-                    top:(topbarHeight+4)+'px',
-                    left:Math.round(anchorRect.left)+'px',
-                    width:Math.round(anchorRect.width)+'px'
-                });
-        }else{
-            $adminRangeAnchor
-                .removeClass('range-is-stuck')
-                .css({'height':'','min-height':'','max-height':''});
-            $adminRangeBar
-                .removeClass('is-stuck')
-                .css({top:'',left:'',width:''});
+            syncAdminStickyRangeControls();
         }
     }
 
@@ -6078,6 +6132,9 @@ function platformLogoHtml(platform){
             'hidden',
             atLatest
         );
+        if(typeof syncAdminStickyRangeControls==='function'){
+            syncAdminStickyRangeControls();
+        }
     }
 
     function syncAdminRangeInputs(){
@@ -6099,6 +6156,9 @@ function platformLogoHtml(platform){
             .val(currentTo)
             .attr('min',currentFrom)
             .attr('max',today||'');
+        if(typeof syncAdminStickyRangeControls==='function'){
+            syncAdminStickyRangeControls();
+        }
     }
 
     function adminAjaxRangeData(extra){
@@ -6124,6 +6184,9 @@ function platformLogoHtml(platform){
                 .attr('aria-pressed',active?'true':'false');
         });
         $live.attr('data-preset',currentPreset);
+        if(typeof syncAdminStickyRangeControls==='function'){
+            syncAdminStickyRangeControls();
+        }
     }
 
     function adminPresetRange(preset,anchorValue){
@@ -7390,6 +7453,29 @@ $('#appLanguageSwitch').on(
         currentTo=today;
         currentDate=today;
         loadProgress({date:today,period:'day',preset:'single'});
+    });
+
+    $('#dashboardStickyPeriodSwitch').on(
+        'click',
+        '[data-admin-sticky-preset]',
+        function(){
+            const preset=String($(this).attr('data-admin-sticky-preset')||'single');
+            $('#dashboardPeriodSwitch [data-admin-preset="'+preset+'"]').trigger('click');
+        }
+    );
+
+    $adminStickyFrom.on('change',function(){
+        $('#dashboardFromInput').val(String($(this).val()||''));
+        applyAdminRangeChange('from');
+    });
+
+    $adminStickyTo.on('change',function(){
+        $('#dashboardToInput').val(String($(this).val()||''));
+        applyAdminRangeChange('to');
+    });
+
+    $adminStickyBackToday.on('click',function(){
+        $('#dashboardBackToday').trigger('click');
     });
 
     $grid.on('click','[data-daily-review]',function(event){

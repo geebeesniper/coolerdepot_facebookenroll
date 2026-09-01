@@ -114,9 +114,11 @@ $adminPresetNames = [
                     id="dashboardDateForm"
                     novalidate
                 >
-                    <div class="dashboard-date-control-row sales-date-control-row">
-                        <label class="admin-range-field">
-                            <span data-dashboard-i18n="from">From</span>
+                    <div class="dashboard-date-control-row sales-date-control-row activity-range-date-row">
+                        <div class="admin-range-field activity-range-field">
+                            <div class="activity-range-label-row">
+                                <label for="dashboardFromInput" data-dashboard-i18n="from">From</label>
+                            </div>
                             <input
                                 type="date"
                                 name="from"
@@ -124,31 +126,94 @@ $adminPresetNames = [
                                 value="<?= Util::e((string)$periodInfo['from']) ?>"
                                 max="<?= Util::e(min((string)$periodInfo['to'],$today)) ?>"
                             >
-                        </label>
+                        </div>
 
-                        <div class="admin-range-field-stack">
-                            <label class="admin-range-field">
-                                <span data-dashboard-i18n="to">To</span>
-                                <input
-                                    type="date"
-                                    name="to"
-                                    id="dashboardToInput"
-                                    value="<?= Util::e((string)$periodInfo['to']) ?>"
-                                    min="<?= Util::e((string)$periodInfo['from']) ?>"
-                                    max="<?= Util::e($today) ?>"
+                        <div class="admin-range-field-stack activity-range-field activity-range-to-field">
+                            <div class="activity-range-label-row">
+                                <label for="dashboardToInput" data-dashboard-i18n="to">To</label>
+                                <button
+                                    type="button"
+                                    class="dashboard-back-today sales-back-today<?= ((string)$periodInfo['to']===$today)?' hidden':'' ?>"
+                                    id="dashboardBackToday"
                                 >
-                            </label>
-
-                            <button
-                                type="button"
-                                class="dashboard-back-today sales-back-today<?= ((string)$periodInfo['to']===$today)?' hidden':'' ?>"
-                                id="dashboardBackToday"
+                                    <span data-dashboard-i18n="backToday">Back to today</span>
+                                </button>
+                            </div>
+                            <input
+                                type="date"
+                                name="to"
+                                id="dashboardToInput"
+                                value="<?= Util::e((string)$periodInfo['to']) ?>"
+                                min="<?= Util::e((string)$periodInfo['from']) ?>"
+                                max="<?= Util::e($today) ?>"
                             >
-                                <span data-dashboard-i18n="backToday">Back to today</span>
-                            </button>
                         </div>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div
+    class="admin-dashboard-sticky-range"
+    id="adminDashboardStickyRange"
+    aria-hidden="true"
+>
+    <div class="admin-dashboard-sticky-inner">
+        <div
+            class="sales-period-switch admin-sticky-period-switch"
+            id="dashboardStickyPeriodSwitch"
+            role="group"
+            aria-label="Admin sales activity period"
+        >
+            <?php foreach([
+                'single'=>'1 Day',
+                'day'=>'3 Days',
+                'week'=>'Weekly',
+                'month'=>'Monthly',
+                'custom'=>'Custom',
+            ] as $presetKey=>$presetLabel): ?>
+                <button
+                    type="button"
+                    class="sales-period-button<?= $adminPreset===$presetKey?' active':'' ?>"
+                    data-admin-sticky-preset="<?= Util::e($presetKey) ?>"
+                    aria-pressed="<?= $adminPreset===$presetKey?'true':'false' ?>"
+                ><?= Util::e($presetLabel) ?></button>
+            <?php endforeach; ?>
+        </div>
+
+        <div class="admin-sticky-date-row">
+            <div class="activity-range-field">
+                <div class="activity-range-label-row">
+                    <label for="dashboardStickyFrom" data-dashboard-i18n="from">From</label>
+                </div>
+                <input
+                    type="date"
+                    id="dashboardStickyFrom"
+                    value="<?= Util::e((string)$periodInfo['from']) ?>"
+                    max="<?= Util::e(min((string)$periodInfo['to'],$today)) ?>"
+                >
+            </div>
+
+            <div class="activity-range-field activity-range-to-field">
+                <div class="activity-range-label-row">
+                    <label for="dashboardStickyTo" data-dashboard-i18n="to">To</label>
+                    <button
+                        type="button"
+                        class="dashboard-back-today<?= ((string)$periodInfo['to']===$today)?' hidden':'' ?>"
+                        id="dashboardStickyBackToday"
+                    >
+                        <span data-dashboard-i18n="backToday">Back to today</span>
+                    </button>
+                </div>
+                <input
+                    type="date"
+                    id="dashboardStickyTo"
+                    value="<?= Util::e((string)$periodInfo['to']) ?>"
+                    min="<?= Util::e((string)$periodInfo['from']) ?>"
+                    max="<?= Util::e($today) ?>"
+                >
             </div>
         </div>
     </div>
