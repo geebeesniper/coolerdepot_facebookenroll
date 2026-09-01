@@ -117,7 +117,7 @@ $downloadQuery=http_build_query([
         <div>
             <h2 id="reportSelectedSalesTitle"><?= Util::e($selectedSalesLabel) ?></h2>
             <p class="report-review-explainer">
-                One row per Sales person per day. Post Review and Person Review are separate: Good/Bad measures posts; Person Review rates the employee for that date.
+                One row per Sales person per day. Post Review and Sales Review are separate: Good/Bad measures posts; Sales Rating measures the employee for that date.
             </p>
         </div>
     </div>
@@ -133,13 +133,13 @@ $downloadQuery=http_build_query([
                     <th rowspan="2">OfferUp</th>
                     <th rowspan="2">Craigslist</th>
                     <th colspan="3" class="report-post-review-group">Post Review</th>
-                    <th colspan="1" class="report-person-review-group">Person Review</th>
+                    <th colspan="1" class="report-person-review-group">Sales Review</th>
                 </tr>
                 <tr class="report-sub-head">
                     <th>Good</th>
                     <th>Bad</th>
                     <th>Good %</th>
-                    <th>Rating</th>
+                    <th>Sales Rating</th>
                 </tr>
             </thead>
 

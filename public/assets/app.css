@@ -11336,3 +11336,60 @@ body.admin-delete-request-modal-open{overflow:hidden;}
     }
 }
 .sales-review-history-delete svg{width:13px;height:13px;fill:currentColor;display:block;}
+
+
+/* v0.1.88 — compact sticky Admin range + explicit Sales Review semantics */
+.admin-dashboard-range-bar{
+    min-height:0;
+    margin:0 0 5px;
+    padding:3px 0 4px;
+}
+.admin-dashboard-range-bar .admin-portal-head-actions{
+    min-height:0;
+    align-items:flex-start;
+}
+.admin-dashboard-range-bar .sales-head-period-switch{
+    height:34px;
+    min-height:34px;
+    margin-top:15px;
+    padding:2px;
+}
+.admin-dashboard-range-bar .sales-head-period-switch .sales-period-button{
+    height:28px;
+    min-height:28px;
+    padding:0 9px;
+}
+.admin-dashboard-range-bar .admin-range-field input[type="date"]{
+    height:34px;
+    min-height:34px;
+    padding-top:6px;
+    padding-bottom:6px;
+}
+.admin-dashboard-range-bar .admin-range-field-stack{
+    padding-bottom:0;
+}
+.admin-dashboard-range-bar .dashboard-back-today{
+    top:51px;
+}
+.admin-dashboard-range-bar + .admin-section-head{
+    margin-top:0;
+}
+.sales-review-history-head-actions .history-deleted-switch:not(.hidden){
+    display:inline-flex;
+}
+.management-report-table .report-person-review-group{
+    white-space:nowrap;
+}
+
+/* v0.1.88 sticky range height hard cap */
+@media(min-width:981px){
+    .admin-dashboard-range-bar{
+        height:54px;
+        max-height:54px;
+        overflow:visible;
+    }
+    .admin-dashboard-range-bar .admin-portal-head-actions{
+        height:46px;
+        max-height:46px;
+    }
+}

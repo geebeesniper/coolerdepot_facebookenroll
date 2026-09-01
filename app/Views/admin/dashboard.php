@@ -325,7 +325,7 @@ $adminPresetNames = [
                             data-daily-review
                         >
                             <span data-card-daily-review-label>
-                                Person Review
+                                Daily Sales Review
                             </span>
                         </button>
 
@@ -567,7 +567,7 @@ $adminPresetNames = [
                 class="sales-period-review-label"
                 id="salesExpandedReviewLabel"
             >
-                Person Review
+                Sales Review
             </span>
 
             <strong
@@ -640,14 +640,14 @@ $adminPresetNames = [
                     class="eyebrow"
                     id="salesPeriodReviewModalEyebrow"
                 >
-                    Person Review
+                    Sales Review
                 </div>
                 <h2 id="salesPeriodReviewModalTitle">
-                    Person Review
+                    Sales Review
                 </h2>
                 <p id="salesPeriodReviewModalSubtitle"></p>
                 <p class="sales-review-purpose">
-                    This Person Review rates the Sales employee for the selected period. Post Review remains separate and is measured by each post's Good/Bad decision.
+                    This Sales Review rates the employee for the selected period. Post Review stays separate and is measured only by each post's Good/Bad decision.
                 </p>
             </div>
 
@@ -697,7 +697,7 @@ $adminPresetNames = [
                     id="salesPeriodReviewRatingField"
                 >
                     <div class="sales-review-rating-label">
-                        <strong>Person Rating</strong>
+                        <strong>Sales Rating</strong>
                         <span>Required</span>
                     </div>
                     <input type="hidden" name="rating" id="salesPeriodReviewRating" value="">
@@ -727,7 +727,7 @@ $adminPresetNames = [
 
                 <?php
                 $fieldName = 'note';
-                $fieldLabel = 'Person / Behavior Review';
+                $fieldLabel = 'Sales / Behavior Review';
                 $fieldId = 'sales-period-review-note';
                 $noteValue = '';
                 $enableImageUpload = false;
@@ -736,7 +736,7 @@ $adminPresetNames = [
 
                 <section class="review-comment-media person-review-attachment-composer">
                     <label for="salesPeriodReviewImages">
-                        Attachments <span>saved with this Person Review</span>
+                        Attachments <span>saved with this Sales Review</span>
                     </label>
                     <input
                         id="salesPeriodReviewImages"

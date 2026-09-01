@@ -262,7 +262,7 @@ class AdminController extends Controller{
         if($rawPeriod==='range'){
             $this->json([
                 'ok'=>false,
-                'message'=>'Custom date ranges do not have a single Person Review.',
+                'message'=>'Custom date ranges do not have a single Sales Review.',
             ],422);
         }
 
@@ -344,7 +344,7 @@ class AdminController extends Controller{
 
             $reviewId=(int)$idQuery->fetchColumn();
             if($reviewId<1){
-                throw new \RuntimeException('Person Review row could not be resolved after saving.');
+                throw new \RuntimeException('Sales Review row could not be resolved after saving.');
             }
 
             $history=$pdo->prepare(
@@ -359,7 +359,7 @@ class AdminController extends Controller{
             if($pdo->inTransaction())$pdo->rollBack();
             $this->json([
                 'ok'=>false,
-                'message'=>'Person Review save failed: '.$e->getMessage(),
+                'message'=>'Sales Review save failed: '.$e->getMessage(),
             ],422);
         }
 
@@ -403,7 +403,7 @@ class AdminController extends Controller{
         if($historyId<1){
             $this->json([
                 'ok'=>false,
-                'message'=>'Person Review history entry was not found.',
+                'message'=>'Sales Review history entry was not found.',
             ],404);
         }
 
@@ -420,14 +420,14 @@ class AdminController extends Controller{
         if(!$history){
             $this->json([
                 'ok'=>false,
-                'message'=>'Person Review history entry was not found.',
+                'message'=>'Sales Review history entry was not found.',
             ],404);
         }
 
         if(!empty($history['deleted_at'])){
             $this->json([
                 'ok'=>false,
-                'message'=>'This Person Review history entry is already marked as deleted.',
+                'message'=>'This Sales Review history entry is already marked as deleted.',
             ],409);
         }
 
@@ -441,7 +441,7 @@ class AdminController extends Controller{
         if($d->rowCount()<1){
             $this->json([
                 'ok'=>false,
-                'message'=>'Person Review history entry could not be marked as deleted.',
+                'message'=>'Sales Review history entry could not be marked as deleted.',
             ],409);
         }
 
@@ -459,12 +459,24 @@ class AdminController extends Controller{
         $fresh->execute([$historyId]);
         $row=$fresh->fetch()?:[];
 
+        $period=(string)$history['period_type'];
+        $periodInfo=$this->dashboardPeriodInfo(
+            (string)$history['period_start'],
+            $period
+        );
+        $review=$this->dashboardSalesReviewData(
+            (int)$history['sales_user_id'],
+            $period,
+            $periodInfo
+        );
+
         $this->json([
             'ok'=>true,
             'history_id'=>$historyId,
             'deleted_at'=>(string)($row['deleted_at']??''),
             'deleted_by_name'=>(string)($row['deleted_by_name']??$admin['display_name']??'Administrator'),
-            'message'=>'Person Review history entry marked as deleted.',
+            'review'=>$review,
+            'message'=>'Sales Review history entry marked as deleted.',
         ]);
     }
 
@@ -1201,62 +1213,44 @@ private function dashboardSalesReviewData(
     string $period,
     array $periodInfo
 ):array{
-    if($period==='day'){
-        $s=Database::connection()->prepare(
-            "SELECT
-                r.id,
-                r.rating,
-                r.note,
-                r.reviewed_at,
-                r.updated_at,
-                u.display_name AS admin_name
-             FROM cdsp_daily_sales_reviews r
-             JOIN cdsp_users u
-               ON u.id=r.admin_user_id
-             WHERE r.sales_user_id=?
-               AND r.work_date=?
-             LIMIT 1"
-        );
+    $pdo=Database::connection();
 
-        $s->execute([
-            $salesUserId,
-            $periodInfo['from'],
-        ]);
-    }else{
-        $s=Database::connection()->prepare(
-            "SELECT
-                r.id,
-                r.rating,
-                r.note,
-                r.reviewed_at,
-                r.updated_at,
-                u.display_name AS admin_name
-             FROM cdsp_period_sales_reviews r
-             JOIN cdsp_users u
-               ON u.id=r.admin_user_id
-             WHERE r.sales_user_id=?
-               AND r.period_type=?
-               AND r.period_start=?
-             LIMIT 1"
-        );
-
-        $s->execute([
-            $salesUserId,
-            $period,
-            $periodInfo['from'],
-        ]);
-    }
-
-    $row=$s->fetch()?:null;
+    // Sales Review is a separate employee-performance record. The latest
+    // non-deleted history save is authoritative for the visible/current
+    // Sales Rating. This keeps "mark as deleted" meaningful: deleting the
+    // latest save rolls back to the previous active save, and deleting every
+    // save leaves the period unrated without touching Post Good/Bad data.
+    $active=$pdo->prepare(
+        "SELECT
+            h.id AS history_id,
+            h.rating,
+            h.note,
+            h.created_at AS reviewed_at,
+            u.display_name AS admin_name
+         FROM cdsp_sales_review_history h
+         JOIN cdsp_users u ON u.id=h.admin_user_id
+         WHERE h.sales_user_id=?
+           AND h.period_type=?
+           AND h.period_start=?
+           AND h.deleted_at IS NULL
+         ORDER BY h.created_at DESC,h.id DESC
+         LIMIT 1"
+    );
+    $active->execute([
+        $salesUserId,
+        $period,
+        $periodInfo['from'],
+    ]);
+    $row=$active->fetch()?:null;
 
     $label=match($period){
-        'week'=>'Weekly Person Review',
-        'month'=>'Monthly Person Review',
-        default=>'Person Review',
+        'week'=>'Weekly Sales Review',
+        'month'=>'Monthly Sales Review',
+        default=>'Sales Review',
     };
 
     return [
-        'id'=>$row ? (int)$row['id'] : null,
+        'id'=>$row ? (int)$row['history_id'] : null,
         'period'=>$period,
         'label'=>$label,
         'from'=>(string)$periodInfo['from'],
@@ -1266,19 +1260,10 @@ private function dashboardSalesReviewData(
             ? (int)$row['rating']
             : null,
         'note'=>$row ? (string)$row['note'] : '',
-        'reviewed_at'=>$row
-            ? (string)($row['reviewed_at']??$row['updated_at'])
-            : null,
-        'admin_name'=>$row
-            ? (string)$row['admin_name']
-            : null,
+        'reviewed_at'=>$row ? (string)$row['reviewed_at'] : null,
+        'admin_name'=>$row ? (string)$row['admin_name'] : null,
         'attachments'=>$row
-            ? $this->formatAttachments(
-                $this->attachments(
-                    $period==='day'?'daily_review':'period_review',
-                    (int)$row['id']
-                )
-            )
+            ? $this->salesReviewHistoryAttachments((int)$row['history_id'])
             : [],
         'history'=>$this->dashboardSalesReviewHistory(
             $salesUserId,
@@ -1893,7 +1878,7 @@ public function saveDailyReview():void{
         fwrite($out,"\xEF\xBB\xBF");
         fputcsv($out,[
             'Date','Sales','Total','Facebook','OfferUp','Craigslist',
-            'Post Review - Good','Post Review - Bad','Post Review - Good %','Person Review - Rating'
+            'Post Review - Good','Post Review - Bad','Post Review - Good %','Sales Review - Sales Rating'
         ]);
 
         foreach($rows as $row){
@@ -2021,24 +2006,27 @@ public function saveDailyReview():void{
             $reviewParams[]=$salesUserId;
         }
 
-        // A Daily Rating belongs only to this exact Sales + work_date.
-        // The schema has a unique key for that pair, but selecting MAX(id)
-        // also protects older/partially migrated databases from duplicate rows.
+        // Sales Rating is intentionally independent from Post Review.
+        // Reports use the latest NON-DELETED day-level Sales Review history
+        // for the exact Sales + date key. Legacy/current-row values cannot
+        // leak into the report after an Admin marks the Sales Review deleted.
         $reviewStmt=$pdo->prepare(
             "SELECT
-                r.id,
-                r.sales_user_id,
-                r.work_date,
-                r.rating,
-                r.note,
-                r.reviewed_at
-             FROM cdsp_daily_sales_reviews r
+                h.id,
+                h.sales_user_id,
+                h.period_start AS work_date,
+                h.rating,
+                h.note,
+                h.created_at AS reviewed_at
+             FROM cdsp_sales_review_history h
              INNER JOIN (
-                SELECT sales_user_id,work_date,MAX(id) AS max_id
-                FROM cdsp_daily_sales_reviews
-                WHERE work_date BETWEEN ? AND ?{$reviewFilter}
-                GROUP BY sales_user_id,work_date
-             ) latest ON latest.max_id=r.id"
+                SELECT sales_user_id,period_start,MAX(id) AS max_id
+                FROM cdsp_sales_review_history
+                WHERE period_type='day'
+                  AND deleted_at IS NULL
+                  AND period_start BETWEEN ? AND ?{$reviewFilter}
+                GROUP BY sales_user_id,period_start
+             ) latest ON latest.max_id=h.id"
         );
         $reviewStmt->execute($reviewParams);
         $reviewMap=[];

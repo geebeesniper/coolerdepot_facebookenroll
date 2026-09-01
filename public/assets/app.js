@@ -5089,9 +5089,9 @@ const dashboardI18n={
         issues:'Issues',
         issue:'Issue',
         unreviewed:'Unreviewed',
-        dailyReview:'Person Review',
-        weeklyReview:'Weekly Person Review',
-        monthlyReview:'Monthly Person Review',
+        dailyReview:'Daily Sales Review',
+        weeklyReview:'Weekly Sales Review',
+        monthlyReview:'Monthly Sales Review',
         dailyTarget:'Daily Target',
         settings:'Settings',
         salesSettings:'Sales Settings',
@@ -5104,11 +5104,12 @@ const dashboardI18n={
         editReview:'Edit Review',
         noReviewYet:'No review yet',
         rating:'Rating',
+        salesRating:'Sales Rating',
         required:'Required',
         notRated:'Not rated',
         reviewHistory:'Review History',
         saves:'saves',
-        addManagementReview:'Add a Person / Behavior Review for this Sales period.',
+        addManagementReview:'Add a Sales / Behavior Review for this period.',
         reviewed:'Reviewed',
         reviewedBy:'Reviewed by {name}',
         viewPosts:'View posts',
@@ -5170,9 +5171,9 @@ const dashboardI18n={
         issues:'有问题',
         issue:'有问题',
         unreviewed:'未审核',
-        dailyReview:'人员评估',
-        weeklyReview:'每周人员评估',
-        monthlyReview:'每月人员评估',
+        dailyReview:'每日销售评估',
+        weeklyReview:'每周销售评估',
+        monthlyReview:'每月销售评估',
         dailyTarget:'每日目标',
         settings:'设置',
         salesSettings:'销售设置',
@@ -5185,6 +5186,7 @@ const dashboardI18n={
         editReview:'修改评语',
         noReviewYet:'暂无评语',
         rating:'评分',
+        salesRating:'销售评分',
         required:'必选',
         notRated:'未评分',
         reviewHistory:'评语历史',
@@ -5251,9 +5253,9 @@ const dashboardI18n={
         issues:'有問題',
         issue:'有問題',
         unreviewed:'未審核',
-        dailyReview:'人員評估',
-        weeklyReview:'每週人員評估',
-        monthlyReview:'每月人員評估',
+        dailyReview:'每日銷售評估',
+        weeklyReview:'每週銷售評估',
+        monthlyReview:'每月銷售評估',
         dailyTarget:'每日目標',
         settings:'設定',
         salesSettings:'銷售設定',
@@ -5266,6 +5268,7 @@ const dashboardI18n={
         editReview:'修改評語',
         noReviewYet:'尚無評語',
         rating:'評分',
+        salesRating:'銷售評分',
         required:'必選',
         notRated:'未評分',
         reviewHistory:'評語歷史',
@@ -5332,9 +5335,9 @@ const dashboardI18n={
         issues:'Problemas',
         issue:'Problema',
         unreviewed:'Sin revisar',
-        dailyReview:'Evaluación personal',
-        weeklyReview:'Evaluación personal semanal',
-        monthlyReview:'Evaluación personal mensual',
+        dailyReview:'Evaluación diaria de ventas',
+        weeklyReview:'Evaluación semanal de ventas',
+        monthlyReview:'Evaluación mensual de ventas',
         dailyTarget:'Meta diaria',
         settings:'Configuración',
         salesSettings:'Configuración de ventas',
@@ -5347,6 +5350,7 @@ const dashboardI18n={
         editReview:'Editar revisión',
         noReviewYet:'Sin revisión todavía',
         rating:'Calificación',
+        salesRating:'Calificación de ventas',
         required:'Obligatorio',
         notRated:'Sin calificar',
         reviewHistory:'Historial de revisión',
@@ -5540,9 +5544,9 @@ function applyDashboardLanguage(){
         .replaceWith(tr('decision')+' ');
 
     $('.review-required').text(tr('required'));
-    $('#salesPeriodReviewRatingField .sales-review-rating-label strong').text(tr('rating'));
+    $('#salesPeriodReviewRatingField .sales-review-rating-label strong').text(tr('salesRating'));
     $('#salesPeriodReviewRatingField .sales-review-rating-label span').text(tr('required'));
-    $('.sales-review-save-history-head span').text(tr('reviewHistory'));
+    $('.sales-review-save-history-head > span').text(tr('reviewHistory'));
 
     $('.review-decision-option.good strong').text(tr('good'));
     $('.review-decision-option.bad strong').text(
@@ -6578,19 +6582,30 @@ $periodReviewHistory.on('click','[data-person-review-history-delete]',function()
             $button.prop('disabled',false);
             return;
         }
-        currentSalesPeriodReview.history=(currentSalesPeriodReview.history||[]).map(function(item){
-            if(parseInt(item.id,10)!==historyId){
-                return item;
-            }
-            return Object.assign({},item,{
-                deleted:true,
-                deleted_at:data.deleted_at||'',
-                deleted_by_name:data.deleted_by_name||'Administrator'
+        if(data.review){
+            currentSalesPeriodReview=data.review;
+            renderSalesPeriodReview(data.review);
+            setSalesPeriodRating(data.review.rating||0);
+            setHtmlNoteValue(
+                $periodReviewModal.find('[data-html-note]').first(),
+                data.review.note||''
+            );
+            renderCurrentPersonReviewAttachments(data.review.attachments||[]);
+        }else{
+            currentSalesPeriodReview.history=(currentSalesPeriodReview.history||[]).map(function(item){
+                if(parseInt(item.id,10)!==historyId){
+                    return item;
+                }
+                return Object.assign({},item,{
+                    deleted:true,
+                    deleted_at:data.deleted_at||'',
+                    deleted_by_name:data.deleted_by_name||'Administrator'
+                });
             });
-        });
+        }
         resetSalesReviewHistoryDeleteArm();
         renderSalesReviewHistory(currentSalesPeriodReview.history||[]);
-        $periodReviewMessage.removeClass('error').text(data.message||'Person Review history entry marked as deleted.');
+        $periodReviewMessage.removeClass('error').text(data.message||'Sales Review history entry marked as deleted.');
     }).fail(function(xhr){
         $button.prop('disabled',false);
         $periodReviewMessage.addClass('error').text((xhr.responseJSON&&xhr.responseJSON.message)||'Review history could not be marked as deleted.');
@@ -7512,7 +7527,7 @@ $periodReviewForm.on('submit',function(event){
             .addClass('saved')
             .text('Saved ✓');
 
-        $periodReviewMessage.text(data.message||'Person Review saved.');
+        $periodReviewMessage.text(data.message||'Sales Review saved.');
 
         setTimeout(function(){
             closeSalesPeriodReviewEditor();
