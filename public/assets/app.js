@@ -3579,6 +3579,14 @@ function salesChartDayFromPointerTarget(target){
     return target.closest('.sales-chart-day');
 }
 
+function salesChartDayOwnedByPortal(day){
+    return !!(
+        day
+        &&day.closest
+        &&day.closest('#salesPortalDashboard')
+    );
+}
+
 function startSalesChartMouseHover(day,event){
     cancelSalesChartHoverTimer();
     salesTouchChartDay=null;
@@ -3622,7 +3630,7 @@ document.addEventListener(
         }
 
         const day=salesChartDayFromPointerTarget(event.target);
-        if(!day){
+        if(!day||salesChartDayOwnedByPortal(day)){
             return;
         }
 
@@ -3642,7 +3650,7 @@ document.addEventListener(
         }
 
         const day=salesChartDayFromPointerTarget(event.target);
-        if(!day){
+        if(!day||salesChartDayOwnedByPortal(day)){
             return;
         }
 
@@ -3668,7 +3676,7 @@ document.addEventListener(
         }
 
         const day=salesChartDayFromPointerTarget(event.target);
-        if(!day){
+        if(!day||salesChartDayOwnedByPortal(day)){
             return;
         }
 
@@ -3687,6 +3695,10 @@ $(document).on(
     'focus',
     '.sales-chart-day',
     function(event){
+        if(salesChartDayOwnedByPortal(this)){
+            return;
+        }
+
         if(salesTouchChartDay===this){
             return;
         }
@@ -3707,6 +3719,10 @@ $(document).on(
     'blur',
     '.sales-chart-day',
     function(){
+        if(salesChartDayOwnedByPortal(this)){
+            return;
+        }
+
         if(salesTouchChartDay!==this){
             hideSalesChartTooltip();
         }
@@ -3721,6 +3737,10 @@ $(document).on(
     'pointerup',
     '.sales-chart-day',
     function(event){
+        if(salesChartDayOwnedByPortal(this)){
+            return;
+        }
+
         const raw=event.originalEvent||event;
         const pointerType=String(raw.pointerType||'');
 
@@ -3749,6 +3769,10 @@ $(document).on(
     'pointerdown',
     function(event){
         if(!salesTouchChartDay){
+            return;
+        }
+
+        if(salesChartDayOwnedByPortal(this)){
             return;
         }
 

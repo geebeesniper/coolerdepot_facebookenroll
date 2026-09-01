@@ -12417,3 +12417,5 @@ body.admin-delete-request-modal-open{overflow:hidden;}
         max-width:84px !important;
     }
 }
+
+/* v0.1.97 — Sales chart owns one stable 3-second hover controller. */

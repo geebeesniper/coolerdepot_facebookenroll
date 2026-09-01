@@ -2091,9 +2091,29 @@
             );
         }
 
-        if(chartBars&&tooltip&&!window.CDSP_SALES_TOOLTIP_MANAGED){
+        if(chartBars&&tooltip){
             let tooltipDay=null;
             let tooltipSegment='';
+            let hoverDay=null;
+            let hoverTimer=null;
+            let hoverPoint=null;
+            let touchDay=null;
+
+            function clearHoverTimer(){
+                if(hoverTimer){
+                    window.clearTimeout(hoverTimer);
+                    hoverTimer=null;
+                }
+            }
+
+            function hidePointerTooltip(){
+                clearHoverTimer();
+                hoverDay=null;
+                hoverPoint=null;
+                tooltipDay=null;
+                tooltipSegment='';
+                tooltip.classList.add('hidden');
+            }
 
             function renderPointerTooltip(day,target){
                 const total=
@@ -2169,14 +2189,6 @@
                         +'</b></span>';
                 }
 
-                if(
-                    tooltipDay===day
-                    &&tooltipSegment===segmentKey
-                    &&!tooltip.classList.contains('hidden')
-                ){
-                    return;
-                }
-
                 tooltipDay=day;
                 tooltipSegment=segmentKey;
                 tooltip.innerHTML=
@@ -2207,103 +2219,249 @@
                     )
                     +'</b></span>';
 
-                tooltip.classList.remove(
-                    'hidden'
-                );
+                tooltip.classList.remove('hidden');
             }
 
-            function movePointerTooltip(event){
-                if(
-                    !event
-                    ||typeof event.clientX!=='number'
-                    ||typeof event.clientY!=='number'
-                ){
+            function positionPointerTooltip(day,event,followPointer){
+                if(!day){
                     return;
                 }
 
-                const gap=14;
+                const gap=12;
                 const edge=8;
-                const width=
-                    tooltip.offsetWidth||176;
-                const height=
-                    tooltip.offsetHeight||120;
+                const width=tooltip.offsetWidth||176;
+                const height=tooltip.offsetHeight||120;
                 const viewportWidth=
                     document.documentElement.clientWidth
                     ||window.innerWidth;
                 const viewportHeight=
                     document.documentElement.clientHeight
                     ||window.innerHeight;
-
-                let left=event.clientX+gap;
-                let top=event.clientY+gap;
-
-                if(
-                    left+width+edge
-                    >viewportWidth
-                ){
-                    left=event.clientX-width-gap;
-                }
+                const rect=day.getBoundingClientRect();
+                let left;
+                let top;
 
                 if(
-                    top+height+edge
-                    >viewportHeight
+                    followPointer
+                    &&event
+                    &&typeof event.clientX==='number'
+                    &&typeof event.clientY==='number'
                 ){
-                    top=event.clientY-height-gap;
+                    left=event.clientX+gap;
+                    top=event.clientY+gap;
+
+                    if(left+width+edge>viewportWidth){
+                        left=event.clientX-width-gap;
+                    }
+                    if(top+height+edge>viewportHeight){
+                        top=event.clientY-height-gap;
+                    }
+                }else{
+                    left=rect.left+(rect.width/2)-(width/2);
+                    top=rect.top-height-gap;
+                    if(top<edge){
+                        top=rect.bottom+gap;
+                    }
                 }
 
                 left=Math.max(
                     edge,
                     Math.min(
-                        viewportWidth-width-edge,
+                        Math.max(edge,viewportWidth-width-edge),
                         left
                     )
                 );
                 top=Math.max(
                     edge,
                     Math.min(
-                        viewportHeight-height-edge,
+                        Math.max(edge,viewportHeight-height-edge),
                         top
                     )
                 );
 
-                tooltip.style.left=left+'px';
-                tooltip.style.top=top+'px';
+                tooltip.style.left=Math.round(left)+'px';
+                tooltip.style.top=Math.round(top)+'px';
             }
 
-            chartBars.addEventListener(
-                'pointermove',
-                function(event){
-                    const day=
-                        event.target.closest(
-                            '.sales-chart-day'
-                        );
+            function chartDayFromTarget(target){
+                if(!target||!target.closest){
+                    return null;
+                }
+                const day=target.closest('.sales-chart-day');
+                return day&&chartBars.contains(day)
+                    ?day
+                    :null;
+            }
 
-                    if(!day||!chartBars.contains(day)){
-                        tooltip.classList.add(
-                            'hidden'
+            function startMouseHover(day,event){
+                clearHoverTimer();
+                touchDay=null;
+                tooltip.classList.add('hidden');
+                hoverDay=day;
+                hoverPoint={
+                    clientX:Number(event.clientX)||0,
+                    clientY:Number(event.clientY)||0
+                };
+
+                hoverTimer=window.setTimeout(
+                    function(){
+                        hoverTimer=null;
+                        if(
+                            hoverDay!==day
+                            ||!document.documentElement.contains(day)
+                        ){
+                            return;
+                        }
+                        renderPointerTooltip(day,day);
+                        positionPointerTooltip(
+                            day,
+                            hoverPoint,
+                            true
                         );
-                        tooltipDay=null;
-                        tooltipSegment='';
+                    },
+                    3000
+                );
+            }
+
+            /*
+             * Desktop uses classic mouse events intentionally. They are more
+             * reliable here than mixing pointerover with the chart's nested
+             * SVG-like decoration and survive every AJAX chart redraw because
+             * #salesChartBars itself is never replaced.
+             */
+            chartBars.addEventListener(
+                'mouseover',
+                function(event){
+                    const day=chartDayFromTarget(event.target);
+                    if(!day){
                         return;
                     }
-
-                    renderPointerTooltip(
-                        day,
-                        event.target
-                    );
-                    movePointerTooltip(event);
+                    if(
+                        event.relatedTarget
+                        &&day.contains(event.relatedTarget)
+                    ){
+                        return;
+                    }
+                    startMouseHover(day,event);
                 }
             );
 
             chartBars.addEventListener(
-                'pointerleave',
-                function(){
-                    tooltip.classList.add(
-                        'hidden'
-                    );
-                    tooltipDay=null;
-                    tooltipSegment='';
+                'mousemove',
+                function(event){
+                    const day=chartDayFromTarget(event.target);
+                    if(!day){
+                        return;
+                    }
+
+                    if(hoverDay===day){
+                        hoverPoint={
+                            clientX:Number(event.clientX)||0,
+                            clientY:Number(event.clientY)||0
+                        };
+                    }
+
+                    if(
+                        tooltipDay===day
+                        &&!tooltip.classList.contains('hidden')
+                    ){
+                        positionPointerTooltip(day,event,true);
+                    }
                 }
+            );
+
+            chartBars.addEventListener(
+                'mouseout',
+                function(event){
+                    const day=chartDayFromTarget(event.target);
+                    if(!day){
+                        return;
+                    }
+                    if(
+                        event.relatedTarget
+                        &&day.contains(event.relatedTarget)
+                    ){
+                        return;
+                    }
+                    if(touchDay!==day){
+                        hidePointerTooltip();
+                    }
+                }
+            );
+
+            chartBars.addEventListener(
+                'focusin',
+                function(event){
+                    const day=chartDayFromTarget(event.target);
+                    if(!day){
+                        return;
+                    }
+                    clearHoverTimer();
+                    renderPointerTooltip(day,day);
+                    positionPointerTooltip(day,null,false);
+                }
+            );
+
+            chartBars.addEventListener(
+                'focusout',
+                function(event){
+                    const day=chartDayFromTarget(event.target);
+                    if(day&&touchDay!==day){
+                        hidePointerTooltip();
+                    }
+                }
+            );
+
+            chartBars.addEventListener(
+                'pointerup',
+                function(event){
+                    const pointerType=String(event.pointerType||'');
+                    if(pointerType!=='touch'&&pointerType!=='pen'){
+                        return;
+                    }
+
+                    const day=chartDayFromTarget(event.target);
+                    if(!day){
+                        return;
+                    }
+
+                    event.preventDefault();
+                    if(touchDay===day){
+                        touchDay=null;
+                        hidePointerTooltip();
+                        return;
+                    }
+
+                    clearHoverTimer();
+                    touchDay=day;
+                    hoverDay=null;
+                    renderPointerTooltip(day,day);
+                    positionPointerTooltip(day,event,false);
+                }
+            );
+
+            document.addEventListener(
+                'pointerdown',
+                function(event){
+                    if(!touchDay){
+                        return;
+                    }
+                    const pointerType=String(event.pointerType||'');
+                    if(pointerType!=='touch'&&pointerType!=='pen'){
+                        return;
+                    }
+                    if(chartDayFromTarget(event.target)){
+                        return;
+                    }
+                    touchDay=null;
+                    hidePointerTooltip();
+                }
+            );
+
+            window.addEventListener(
+                'resize',
+                hidePointerTooltip,
+                {passive:true}
             );
         }
 
