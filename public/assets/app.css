@@ -11474,3 +11474,75 @@ body.admin-delete-request-modal-open{overflow:hidden;}
         padding:8px 14px;
     }
 }
+
+/* v0.1.90 — compact padding-driven sticky range + flat Admin Posting Activity */
+@media(min-width:981px){
+    .admin-dashboard-range-bar,
+    .admin-dashboard-range-bar.is-stuck{
+        height:auto !important;
+        min-height:0 !important;
+        max-height:none !important;
+        overflow:visible;
+    }
+    .admin-dashboard-range-bar .admin-portal-head-actions,
+    .admin-dashboard-range-bar.is-stuck .admin-portal-head-actions{
+        height:auto !important;
+        min-height:0 !important;
+        max-height:none !important;
+    }
+}
+
+/* In normal flow the toolbar keeps the regular page spacing. Once it is
+ * actually stuck, compact only the padding; never reserve a fixed-height box. */
+.admin-dashboard-range-bar{
+    padding:10px 0;
+    box-shadow:none !important;
+}
+.admin-dashboard-range-bar.is-stuck{
+    padding:5px 0 6px;
+    border-top:0;
+    border-right:0;
+    border-bottom:1px solid #dbe3ee;
+    border-left:0;
+    background:rgba(248,250,252,.98);
+    box-shadow:none !important;
+}
+.admin-dashboard-range-bar.is-stuck .admin-range-field-stack{
+    padding-bottom:0;
+}
+.admin-dashboard-range-bar.is-stuck .dashboard-back-today{
+    display:none;
+}
+
+/* The selected Sales Posting Activity belongs to the Post List section; do
+ * not render it as another card nested inside that card. */
+.admin-sales-activity-panel{
+    margin:0;
+    border-top:0;
+    border-right:0;
+    border-bottom:1px solid #dbe3ee;
+    border-left:0;
+    border-radius:0;
+    box-shadow:none !important;
+}
+.admin-sales-activity-panel .sales-activity-chart-head{
+    border-radius:0;
+    background:transparent;
+}
+
+@media(max-width:980px){
+    .admin-dashboard-range-bar.is-stuck{
+        padding:6px 0;
+        box-shadow:none !important;
+    }
+    .admin-dashboard-range-bar.is-stuck .admin-range-field-stack{
+        padding-bottom:0;
+    }
+    .admin-dashboard-range-bar.is-stuck .dashboard-back-today{
+        display:none;
+    }
+    .admin-sales-activity-panel{
+        margin-left:0;
+        margin-right:0;
+    }
+}
