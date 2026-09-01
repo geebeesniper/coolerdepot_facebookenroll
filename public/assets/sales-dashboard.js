@@ -1531,6 +1531,14 @@
                     reason
                 );
 
+                if(window.CDSPDiagnostics&&typeof window.CDSPDiagnostics.report==='function'){
+                    window.CDSPDiagnostics.report({
+                        type:'sales_dashboard_fetch_error',
+                        message:error&&error.message?error.message:'Could not load posts.',
+                        request_url:base+'/sales/daily-posts'
+                    });
+                }
+
                 setError(
                     error&&error.message
                         ?error.message
@@ -2080,6 +2088,13 @@
                         loadMore.disabled=
                             !data.has_more;
                     }catch(error){
+                        if(window.CDSPDiagnostics&&typeof window.CDSPDiagnostics.report==='function'){
+                            window.CDSPDiagnostics.report({
+                                type:'sales_dashboard_fetch_error',
+                                message:error&&error.message?error.message:'Could not load posts.',
+                                request_url:base+'/sales/daily-posts'
+                            });
+                        }
                         loadMore.disabled=false;
                         setError(
                             error&&error.message

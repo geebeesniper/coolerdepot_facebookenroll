@@ -35,6 +35,12 @@ class AdminSettingsController extends Controller
                 $websiteReferences = WebsiteCatalog::search($websiteQuery, 100);
                 $websiteStats['library_ready'] = true;
             } catch (\Throwable $e) {
+                \App\Core\Logger::exception(
+                    $e,
+                    'website-catalog',
+                    ['event' => 'Website reference library could not be loaded'],
+                    'warning'
+                );
                 $websiteReferences = [];
             }
         }
@@ -129,9 +135,10 @@ class AdminSettingsController extends Controller
                 $_SESSION['flash_success'].=' Some rows failed; search the website library to review the imported records.';
             }
         } catch (\DomainException $e) {
+            \App\Core\Logger::exception($e, 'website-catalog', ['event' => 'Website catalog import rejected'], 'warning');
             $_SESSION['flash_error']=$e->getMessage();
         } catch (\Throwable $e) {
-            error_log('[CDSP website catalog] '.$e->getMessage());
+            \App\Core\Logger::exception($e, 'website-catalog', ['event' => 'Website catalog import failed'], 'error');
             $_SESSION['flash_error']='Website catalog could not be imported. Check the migration and CSV, then retry.';
         }
         $this->redirect('/admin/settings#website-comparison');
@@ -270,6 +277,7 @@ class AdminSettingsController extends Controller
                 'message' => $e->getMessage(),
             ], 422);
         } catch (\Throwable $e) {
+            \App\Core\Logger::exception($e, 'admin-settings', ['event' => 'Provider test failed'], 'warning');
             $this->json([
                 'ok' => false,
                 'message' => $e->getMessage() !== ''
@@ -317,6 +325,7 @@ class AdminSettingsController extends Controller
                 'message' => 'Provider added and enabled.',
             ]);
         } catch (\Throwable $e) {
+            \App\Core\Logger::exception($e, 'admin-settings', ['event' => 'Provider add failed'], 'warning');
             $this->json([
                 'ok' => false,
                 'message' => $e->getMessage(),
@@ -347,6 +356,7 @@ class AdminSettingsController extends Controller
                 'message' => 'Provider priority updated.',
             ]);
         } catch (\Throwable $e) {
+            \App\Core\Logger::exception($e, 'admin-settings', ['event' => 'Provider reorder failed'], 'warning');
             $this->json(['ok' => false, 'message' => $e->getMessage()], 422);
         }
     }
@@ -371,6 +381,7 @@ class AdminSettingsController extends Controller
                 'message' => $enabled ? 'Provider enabled.' : 'Provider disabled.',
             ]);
         } catch (\Throwable $e) {
+            \App\Core\Logger::exception($e, 'admin-settings', ['event' => 'Provider toggle failed'], 'warning');
             $this->json(['ok' => false, 'message' => $e->getMessage()], 422);
         }
     }
@@ -394,6 +405,7 @@ class AdminSettingsController extends Controller
                 'message' => 'Provider removed.',
             ]);
         } catch (\Throwable $e) {
+            \App\Core\Logger::exception($e, 'admin-settings', ['event' => 'Provider delete failed'], 'warning');
             $this->json(['ok' => false, 'message' => $e->getMessage()], 422);
         }
     }
@@ -438,6 +450,7 @@ class AdminSettingsController extends Controller
             Setting::set('company_website_url',$url,(int)$admin['id']);
             $_SESSION['flash_success']='Company website URL saved.';
         }catch(\Throwable $e){
+            \App\Core\Logger::exception($e, 'website-catalog', ['event' => 'Website source save failed'], 'warning');
             $_SESSION['flash_error']=$e->getMessage();
         }
         $this->redirect('/admin/settings#website-comparison');
@@ -465,6 +478,7 @@ class AdminSettingsController extends Controller
             $_SESSION['flash_success']=$message.'.';
         }catch(\Throwable $e){
             if(session_status()!==PHP_SESSION_ACTIVE){@session_start();}
+            \App\Core\Logger::exception($e, 'website-catalog', ['event' => 'Website scan failed'], 'warning');
             $_SESSION['flash_error']=$e->getMessage();
         }
         $this->redirect('/admin/settings#website-comparison');
@@ -486,6 +500,7 @@ class AdminSettingsController extends Controller
             );
             $_SESSION['flash_success']='Website reference saved.';
         }catch(\Throwable $e){
+            \App\Core\Logger::exception($e, 'website-catalog', ['event' => 'Manual website reference save failed'], 'warning');
             $_SESSION['flash_error']=$e->getMessage();
         }
         $this->redirect('/admin/settings#website-comparison');
@@ -499,6 +514,7 @@ class AdminSettingsController extends Controller
             $rows=WebsiteCatalog::search(trim((string)($_GET['q']??'')),100);
             $this->json(['ok'=>true,'rows'=>$rows]);
         }catch(\Throwable $e){
+            \App\Core\Logger::exception($e, 'website-catalog', ['event' => 'Website reference search failed'], 'warning');
             $this->json(['ok'=>false,'message'=>$e->getMessage()],422);
         }
     }
@@ -514,6 +530,7 @@ class AdminSettingsController extends Controller
             }
             $this->json(['ok'=>true,'id'=>$id,'message'=>'Website reference deleted.']);
         }catch(\Throwable $e){
+            \App\Core\Logger::exception($e, 'website-catalog', ['event' => 'Website reference delete failed'], 'warning');
             $this->json(['ok'=>false,'message'=>$e->getMessage()],422);
         }
     }

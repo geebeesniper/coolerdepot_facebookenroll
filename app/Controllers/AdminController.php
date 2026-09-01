@@ -403,6 +403,12 @@ class AdminController extends Controller{
             $pdo->commit();
         }catch(\Throwable $e){
             if($pdo->inTransaction())$pdo->rollBack();
+            \App\Core\Logger::exception(
+                $e,
+                'sales-review',
+                ['event' => 'Sales Review database save failed'],
+                'error'
+            );
             $this->json([
                 'ok'=>false,
                 'message'=>'Sales Review save failed: '.$e->getMessage(),
@@ -420,6 +426,7 @@ class AdminController extends Controller{
                     $historyId
                 );
             }catch(\Throwable $e){
+                \App\Core\Logger::exception($e, 'upload', ['event' => 'Sales Review attachment upload failed'], 'warning');
                 $uploadWarning=$e->getMessage();
             }
         }
@@ -722,6 +729,12 @@ class AdminController extends Controller{
                     : 'Content and first image fetched successfully.',
             ]);
         }catch(\Throwable $e){
+            \App\Core\Logger::exception(
+                $e,
+                'post-content',
+                ['event' => 'Admin listing content refresh failed'],
+                'warning'
+            );
             $this->json([
                 'ok'=>false,
                 'message'=>$e->getMessage()!=='' 
@@ -774,6 +787,7 @@ public function dashboardAddComment():void{
             'post_comment',$commentId,(int)$admin['id'],'comment_images'
         );
     }catch(\Throwable $e){
+        \App\Core\Logger::exception($e, 'upload', ['event' => 'Review comment attachment upload failed'], 'warning');
         $uploadWarning=$e->getMessage();
     }
 
@@ -865,6 +879,7 @@ public function dashboardUpdateComment():void{
                 'comment_images'
             );
         }catch(\Throwable $e){
+            \App\Core\Logger::exception($e, 'upload', ['event' => 'Review attachment upload failed'], 'warning');
             $uploadWarning=$e->getMessage();
         }
     }
@@ -1034,6 +1049,12 @@ public function dashboardDeleteAttachment():void{
                 'url'=>$GLOBALS['config']['app']['base_path'].'/attachment?id='.(int)$image['id'],
             ]]);
         }catch(\Throwable $e){
+            \App\Core\Logger::exception(
+                $e,
+                'upload',
+                ['event' => 'Editor image upload failed'],
+                'warning'
+            );
             $this->json(['ok'=>false,'message'=>$e->getMessage()!==''?$e->getMessage():'Could not upload editor image.'],422);
         }
     }
@@ -1652,7 +1673,10 @@ private function dashboardSalesReviewData(
     }
 
     public function postReview():void{
-        $admin=Auth::requireRole('admin');$post=Post::find((int)($_GET['id']??0));if(!$post){http_response_code(404);exit('Post not found');}
+        $admin=Auth::requireRole('admin');$post=Post::find((int)($_GET['id']??0));if(!$post){
+            \App\Core\Logger::httpStatus(404,['event'=>'admin_post_review_not_found','post_id'=>(int)($_GET['id']??0)]);
+            http_response_code(404);exit('Post not found');
+        }
         $s=Database::connection()->prepare("SELECT * FROM cdsp_post_reviews WHERE post_id=? LIMIT 1");$s->execute([$post['id']]);$review=$s->fetch()?:null;
         $attachments=$review?$this->attachments('post_review',(int)$review['id']):[];$this->render('admin/post_review',compact('admin','post','review','attachments'));
     }
@@ -1701,6 +1725,7 @@ public function savePostReview():void{
             ],404);
         }
 
+        \App\Core\Logger::httpStatus(404,['event'=>'admin_post_review_save_not_found','post_id'=>$pid]);
         http_response_code(404);
         exit('Post not found');
     }
@@ -1782,6 +1807,12 @@ public function savePostReview():void{
         if($pdo->inTransaction()){
             $pdo->rollBack();
         }
+        \App\Core\Logger::exception(
+            $e,
+            'post-review',
+            ['event' => 'Post Review database save failed'],
+            'error'
+        );
 
         if($isAjax){
             $this->json([
@@ -1803,6 +1834,7 @@ public function savePostReview():void{
             (int)$admin['id']
         );
     }catch(\Throwable $e){
+        \App\Core\Logger::exception($e, 'upload', ['event' => 'Post Review attachment upload failed'], 'warning');
         $uploadWarning=$e->getMessage();
     }
 
@@ -1842,7 +1874,10 @@ public function savePostReview():void{
         $sid=(int)($_GET['sales_id']??0);
         $date=$this->validDashboardDate((string)($_GET['date']??date('Y-m-d')));
         $salesUser=User::find($sid);
-        if(!$salesUser||($salesUser['role']??'')!=='sales'){http_response_code(404);exit('Sales user not found');}
+        if(!$salesUser||($salesUser['role']??'')!=='sales'){
+            \App\Core\Logger::httpStatus(404,['event'=>'admin_daily_sales_user_not_found','sales_user_id'=>$sid]);
+            http_response_code(404);exit('Sales user not found');
+        }
         $this->redirect('/admin?date='.rawurlencode($date).'&period=day&sales_id='.$sid.'&review=1');
     }
 public function saveDailyReview():void{
@@ -1911,6 +1946,7 @@ public function saveDailyReview():void{
 
         $out=fopen('php://output','wb');
         if($out===false){
+            \App\Core\Logger::httpStatus(500,['event'=>'report_output_open_failed']);
             http_response_code(500);
             exit('Could not create report download.');
         }
@@ -2174,6 +2210,12 @@ public function savePeriodReview():void{
             $pdo->commit();
         }catch(\Throwable $e){
             if($pdo->inTransaction())$pdo->rollBack();
+            \App\Core\Logger::exception(
+                $e,
+                'delete-request',
+                ['event' => 'Admin deletion-request action failed'],
+                'error'
+            );
             if($isAjax){
                 $this->json(['ok'=>false,'message'=>$e->getMessage()],422);
             }
@@ -2212,7 +2254,7 @@ public function savePeriodReview():void{
         }catch(\DomainException $e){
             $this->json(['ok'=>false,'message'=>$e->getMessage()],404);
         }catch(\Throwable $e){
-            error_log('[CDSP hard delete] '.$e->getMessage());
+            \App\Core\Logger::exception($e, 'admin', ['event' => 'Hard delete failed'], 'error');
             $this->json(['ok'=>false,'message'=>'Post could not be deleted.'],500);
         }
     }

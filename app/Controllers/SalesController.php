@@ -198,11 +198,7 @@ private function salesPresetRange(
         global $config;
         $u=Auth::requireRole('sales');
         $isAjax=strtolower((string)($_SERVER['HTTP_X_REQUESTED_WITH']??''))==='xmlhttprequest';
-        $csrf=(string)($_POST['_csrf']??'');
-        if(!$csrf||empty($_SESSION['_csrf'])||!hash_equals((string)$_SESSION['_csrf'],$csrf)){
-            if($isAjax){$this->json(['ok'=>false,'message'=>'Security token expired. Refresh and try again.'],419);}
-            http_response_code(419);exit('CSRF validation failed');
-        }
+        Csrf::verify($_POST['_csrf']??null);
         $token=trim((string)($_POST['inspection_token']??''));
         $inspection=Inspection::verified($token,(int)$u['id']);
         if(!$inspection){
@@ -225,6 +221,12 @@ private function salesPresetRange(
             $pdo->commit();
         }catch(\Throwable $e){
             if($pdo->inTransaction())$pdo->rollBack();
+            \App\Core\Logger::exception(
+                $e,
+                'sales-save',
+                ['event' => 'Sales post save transaction failed'],
+                $e instanceof \DomainException ? 'warning' : 'error'
+            );
             if($e instanceof \DomainException){
                 $error=$e->getMessage();
                 if(isset($inspection) && is_array($inspection)){
@@ -247,10 +249,9 @@ private function salesPresetRange(
             elseif($e instanceof \PDOException
                 && (int)($e->errorInfo[1]??0)===1048
                 && stripos($e->getMessage(),'admin_review_status')!==false){
-                error_log('[CDSP save] '.$e->getMessage());
                 $error='Database review-status migration is required. Ask an administrator to run the v0.1.72 migration.';
             }
-            else{error_log('[CDSP save] '.$e->getMessage());$error='Post could not be saved. Please check it again and retry.';}
+            else{$error='Post could not be saved. Please check it again and retry.';}
         }finally{
             if($locked){$release=$pdo->prepare('SELECT RELEASE_LOCK(?)');$release->execute([$lockName]);}
         }

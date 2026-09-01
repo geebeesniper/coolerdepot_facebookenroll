@@ -30,4 +30,11 @@ return [
   'session_name'=>'coolerdepot_sales_posts','cookie_domain'=>getenv('SESSION_COOKIE_DOMAIN') ?: '',
   'allowed_upload_mimes'=>['image/jpeg'=>'jpg','image/png'=>'png','image/webp'=>'webp'],
  ],
+ 'logging'=>[
+  // JSONL application diagnostics. Relative paths are resolved from project root.
+  'path'=>getenv('LOG_PATH') ?: 'storage/logs',
+  'level'=>strtolower(getenv('LOG_LEVEL') ?: 'warning'),
+  'retention_days'=>max(1,(int)(getenv('LOG_RETENTION_DAYS') ?: 30)),
+  'max_bytes'=>max(1048576,(int)(getenv('LOG_MAX_BYTES') ?: 26214400)),
+ ],
 ];

@@ -11,7 +11,17 @@ class DuplicateIndex
         try{
             Database::connection()->query('SELECT id FROM cdsp_post_image_fingerprints LIMIT 0');
             Database::connection()->query('SELECT id FROM cdsp_website_references LIMIT 0');return true;
-        }catch(\PDOException $e){return false;}
+        }catch(\PDOException $e){
+            // Readiness is used as a feature gate, so without this record a
+            // database/schema failure would be misreported only as "migration required".
+            \App\Core\Logger::exception(
+                $e,
+                'duplicate-index',
+                ['event' => 'Duplicate comparison readiness check failed'],
+                'error'
+            );
+            return false;
+        }
     }
 
     public static function inspect(string $platform,string $title,array $meta): array
@@ -21,7 +31,7 @@ class DuplicateIndex
         foreach(array_slice($urls,0,8) as $url){
             if(microtime(true)-$started>20){$warnings[]='Image comparison time limit reached; some photos were not checked.';break;}
             try{$assets[]=ImageFingerprint::fromUrl($url);}catch(\Throwable $e){
-                error_log('[CDSP image comparison] '.$e->getMessage());
+                \App\Core\Logger::exception($e, 'duplicate-index', ['event' => 'Image comparison failed'], 'warning');
                 $warnings[]='A listing image could not be checked. Image comparison is incomplete.';
             }
         }

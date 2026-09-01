@@ -69,6 +69,12 @@ class GenericJsonMarketplaceProvider
             try {
                 FetchJob::setStatus($jobId, 'failed', null, $e->getMessage());
             } catch (\Throwable $ignored) {
+                \App\Core\Logger::exception(
+                    $ignored,
+                    'provider',
+                    ['event' => 'Generic JSON provider fetch-job failure could not be persisted'],
+                    'error'
+                );
             }
             throw $e;
         }

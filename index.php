@@ -1,6 +1,80 @@
 <?php
-$config=require __DIR__.'/config/bootstrap.php';
-use App\Core\Router;use App\Controllers\AuthController;use App\Controllers\AuthHandoffController;use App\Controllers\SalesController;use App\Controllers\AdminController;use App\Controllers\AdminSettingsController;use App\Controllers\ApiController;use App\Controllers\AttachmentController;
-$r=new Router($config['app']['base_path']);$r->get('/',[AuthController::class,'home']);$r->get('/login',[AuthController::class,'login']);$r->post('/login',[AuthController::class,'authenticate']);$r->post('/logout',[AuthController::class,'logout']);$r->get('/auth/handoff',[AuthHandoffController::class,'handoff']);$r->post('/auth/handoff',[AuthHandoffController::class,'handoff']);
-$r->get('/sales',[SalesController::class,'dashboard']);$r->get('/sales/submit',[SalesController::class,'submitForm']);$r->get('/sales/daily-posts',[SalesController::class,'dailyPostsAjax']);$r->post('/sales/save',[SalesController::class,'save']);$r->post('/sales/delete-request',[SalesController::class,'requestDelete']);$r->post('/api/inspect/preflight',[ApiController::class,'inspectPreflight']);$r->post('/api/inspect',[ApiController::class,'inspect']);
-$r->get('/admin',[AdminController::class,'dashboard']);$r->get('/admin/dashboard/updates',[AdminController::class,'dashboardUpdates']);$r->get('/admin/dashboard/progress',[AdminController::class,'dashboardProgress']);$r->get('/admin/dashboard/sales-posts',[AdminController::class,'dashboardSalesPosts']);$r->get('/admin/dashboard/post-review',[AdminController::class,'dashboardPostReview']);$r->post('/admin/dashboard/sales-review/save',[AdminController::class,'dashboardSaveSalesReview']);$r->post('/admin/dashboard/sales-review/history/delete',[AdminController::class,'dashboardDeleteSalesReviewHistory']);$r->post('/admin/dashboard/get-content',[AdminController::class,'dashboardGetContent']);$r->post('/admin/dashboard/editor-image',[AdminController::class,'dashboardEditorImage']);$r->post('/admin/dashboard/comment/add',[AdminController::class,'dashboardAddComment']);$r->post('/admin/dashboard/comment/update',[AdminController::class,'dashboardUpdateComment']);$r->post('/admin/dashboard/comment/delete',[AdminController::class,'dashboardDeleteComment']);$r->post('/admin/dashboard/attachment/delete',[AdminController::class,'dashboardDeleteAttachment']);$r->post('/admin/sales-target',[AdminController::class,'saveSalesTarget']);$r->get('/admin/settings',[AdminSettingsController::class,'index']);$r->post('/admin/settings/brand',[AdminSettingsController::class,'saveBrand']);$r->post('/admin/settings/website',[AdminSettingsController::class,'saveWebsiteSource']);$r->post('/admin/website/scan',[AdminSettingsController::class,'scanWebsite']);$r->post('/admin/website/reference/add',[AdminSettingsController::class,'addWebsiteReference']);$r->get('/admin/website/references',[AdminSettingsController::class,'websiteReferences']);$r->post('/admin/website/reference/delete',[AdminSettingsController::class,'deleteWebsiteReference']);$r->get('/admin/website-catalog/sample.csv',[AdminSettingsController::class,'websiteCatalogSample']);$r->post('/admin/settings/save',[AdminSettingsController::class,'save']);$r->post('/admin/settings/test',[AdminSettingsController::class,'test']);$r->post('/admin/providers/test',[AdminSettingsController::class,'testProvider']);$r->get('/admin/providers/jobs',[AdminSettingsController::class,'providerJobs']);$r->post('/admin/providers/add',[AdminSettingsController::class,'addProvider']);$r->post('/admin/providers/reorder',[AdminSettingsController::class,'reorderProviders']);$r->post('/admin/providers/toggle',[AdminSettingsController::class,'toggleProvider']);$r->post('/admin/providers/delete',[AdminSettingsController::class,'deleteProvider']);$r->get('/admin/post',[AdminController::class,'postReview']);$r->post('/admin/post/review',[AdminController::class,'savePostReview']);$r->get('/admin/daily',[AdminController::class,'dailyReview']);$r->post('/admin/daily/review',[AdminController::class,'saveDailyReview']);$r->get('/admin/reports',[AdminController::class,'reports']);$r->get('/admin/reports/download',[AdminController::class,'reportsDownload']);$r->post('/admin/period/review',[AdminController::class,'savePeriodReview']);$r->post('/admin/delete-request',[AdminController::class,'handleDeleteRequest']);$r->post('/admin/post/delete',[AdminController::class,'deletePost']);$r->get('/attachment',[AttachmentController::class,'show']);$r->post('/admin/duplicate-catalog/import',[AdminSettingsController::class,'importWebsiteCatalog']);$r->dispatch($_SERVER['REQUEST_METHOD'],$_SERVER['REQUEST_URI']);
+$config = require __DIR__ . '/config/bootstrap.php';
+
+use App\Core\Router;
+use App\Controllers\AuthController;
+use App\Controllers\AuthHandoffController;
+use App\Controllers\SalesController;
+use App\Controllers\AdminController;
+use App\Controllers\AdminSettingsController;
+use App\Controllers\ApiController;
+use App\Controllers\AttachmentController;
+
+$router = new Router($config['app']['base_path']);
+
+// Authentication and signed parent-portal handoff.
+$router->get('/', [AuthController::class, 'home']);
+$router->get('/login', [AuthController::class, 'login']);
+$router->post('/login', [AuthController::class, 'authenticate']);
+$router->post('/logout', [AuthController::class, 'logout']);
+$router->get('/auth/handoff', [AuthHandoffController::class, 'handoff']);
+$router->post('/auth/handoff', [AuthHandoffController::class, 'handoff']);
+
+// Sales dashboard and post verification workflow.
+$router->get('/sales', [SalesController::class, 'dashboard']);
+$router->get('/sales/submit', [SalesController::class, 'submitForm']);
+$router->get('/sales/daily-posts', [SalesController::class, 'dailyPostsAjax']);
+$router->post('/sales/save', [SalesController::class, 'save']);
+$router->post('/sales/delete-request', [SalesController::class, 'requestDelete']);
+$router->post('/api/inspect/preflight', [ApiController::class, 'inspectPreflight']);
+$router->post('/api/inspect', [ApiController::class, 'inspect']);
+$router->post('/api/client-log', [ApiController::class, 'clientLog']);
+
+// Admin dashboard, review and reporting workflow.
+$router->get('/admin', [AdminController::class, 'dashboard']);
+$router->get('/admin/dashboard/updates', [AdminController::class, 'dashboardUpdates']);
+$router->get('/admin/dashboard/progress', [AdminController::class, 'dashboardProgress']);
+$router->get('/admin/dashboard/sales-posts', [AdminController::class, 'dashboardSalesPosts']);
+$router->get('/admin/dashboard/post-review', [AdminController::class, 'dashboardPostReview']);
+$router->post('/admin/dashboard/sales-review/save', [AdminController::class, 'dashboardSaveSalesReview']);
+$router->post('/admin/dashboard/sales-review/history/delete', [AdminController::class, 'dashboardDeleteSalesReviewHistory']);
+$router->post('/admin/dashboard/get-content', [AdminController::class, 'dashboardGetContent']);
+$router->post('/admin/dashboard/editor-image', [AdminController::class, 'dashboardEditorImage']);
+$router->post('/admin/dashboard/comment/add', [AdminController::class, 'dashboardAddComment']);
+$router->post('/admin/dashboard/comment/update', [AdminController::class, 'dashboardUpdateComment']);
+$router->post('/admin/dashboard/comment/delete', [AdminController::class, 'dashboardDeleteComment']);
+$router->post('/admin/dashboard/attachment/delete', [AdminController::class, 'dashboardDeleteAttachment']);
+$router->post('/admin/sales-target', [AdminController::class, 'saveSalesTarget']);
+$router->get('/admin/post', [AdminController::class, 'postReview']);
+$router->post('/admin/post/review', [AdminController::class, 'savePostReview']);
+$router->get('/admin/daily', [AdminController::class, 'dailyReview']);
+$router->post('/admin/daily/review', [AdminController::class, 'saveDailyReview']);
+$router->get('/admin/reports', [AdminController::class, 'reports']);
+$router->get('/admin/reports/download', [AdminController::class, 'reportsDownload']);
+$router->post('/admin/period/review', [AdminController::class, 'savePeriodReview']);
+$router->post('/admin/delete-request', [AdminController::class, 'handleDeleteRequest']);
+$router->post('/admin/post/delete', [AdminController::class, 'deletePost']);
+
+// Admin settings, provider registry and website duplicate-reference library.
+$router->get('/admin/settings', [AdminSettingsController::class, 'index']);
+$router->post('/admin/settings/brand', [AdminSettingsController::class, 'saveBrand']);
+$router->post('/admin/settings/website', [AdminSettingsController::class, 'saveWebsiteSource']);
+$router->post('/admin/settings/save', [AdminSettingsController::class, 'save']);
+$router->post('/admin/settings/test', [AdminSettingsController::class, 'test']);
+$router->post('/admin/providers/test', [AdminSettingsController::class, 'testProvider']);
+$router->get('/admin/providers/jobs', [AdminSettingsController::class, 'providerJobs']);
+$router->post('/admin/providers/add', [AdminSettingsController::class, 'addProvider']);
+$router->post('/admin/providers/reorder', [AdminSettingsController::class, 'reorderProviders']);
+$router->post('/admin/providers/toggle', [AdminSettingsController::class, 'toggleProvider']);
+$router->post('/admin/providers/delete', [AdminSettingsController::class, 'deleteProvider']);
+$router->post('/admin/website/scan', [AdminSettingsController::class, 'scanWebsite']);
+$router->post('/admin/website/reference/add', [AdminSettingsController::class, 'addWebsiteReference']);
+$router->get('/admin/website/references', [AdminSettingsController::class, 'websiteReferences']);
+$router->post('/admin/website/reference/delete', [AdminSettingsController::class, 'deleteWebsiteReference']);
+$router->get('/admin/website-catalog/sample.csv', [AdminSettingsController::class, 'websiteCatalogSample']);
+$router->post('/admin/duplicate-catalog/import', [AdminSettingsController::class, 'importWebsiteCatalog']);
+
+// Authenticated attachment delivery.
+$router->get('/attachment', [AttachmentController::class, 'show']);
+
+$router->dispatch($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI']);

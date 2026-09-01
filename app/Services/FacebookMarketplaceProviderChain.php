@@ -80,6 +80,12 @@ private function fetchRegistry(
                 $label
                 . ': listing metadata was returned, but no image was returned.';
         } catch (\Throwable $e) {
+            \App\Core\Logger::exception(
+                $e,
+                'provider',
+                ['event' => 'Registry provider attempt failed', 'provider' => $label],
+                'warning'
+            );
             $attempts[] = $label . ': ' . $e->getMessage();
         }
     }
@@ -143,6 +149,12 @@ private function fetchLegacy(
             $attempts[] =
                 $name . ' returned metadata but no image.';
         } catch (\Throwable $e) {
+            \App\Core\Logger::exception(
+                $e,
+                'provider',
+                ['event' => 'Legacy provider attempt failed', 'provider' => $name],
+                'warning'
+            );
             $attempts[] = $name . ': ' . $e->getMessage();
         }
     }

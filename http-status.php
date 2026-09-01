@@ -1,6 +1,8 @@
 <?php
 
 $config = require __DIR__ . '/config/config.php';
+require_once __DIR__ . '/app/Core/Logger.php';
+\App\Core\Logger::init($config);
 
 $allowed = [
     400 => ['Bad Request', 'The request could not be understood.'],
@@ -8,6 +10,7 @@ $allowed = [
     404 => ['Page Not Found', 'The page you requested could not be found.'],
     405 => ['Method Not Allowed', 'This action is not available for this request method.'],
     408 => ['Request Timeout', 'The request took too long to complete.'],
+    419 => ['Session Validation Failed', 'Your page security token is no longer valid. Refresh the page and try again.'],
     421 => ['Wrong Host', 'This application is not available on this host name.'],
     429 => ['Too Many Requests', 'Too many requests were received. Please try again shortly.'],
     500 => ['Server Error', 'Something went wrong while processing your request.'],
@@ -22,6 +25,7 @@ $status = isset($allowed[$redirectStatus])
     : (isset($allowed[$queryStatus]) ? $queryStatus : 500);
 
 [$title, $message] = $allowed[$status];
+\App\Core\Logger::httpStatus($status, ['event' => 'apache_error_document']);
 
 http_response_code($status);
 header('Content-Type: text/html; charset=utf-8');

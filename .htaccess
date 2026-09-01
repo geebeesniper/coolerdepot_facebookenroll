@@ -1,5 +1,19 @@
 Options -Indexes
 RewriteEngine On
+
+# Never expose source, runtime state, diagnostics, migrations, tests or docs as
+# static web files. PHP may still read these paths internally.
+RewriteRule ^(?:app|config|database|deploy|docs|integration|scripts|storage|tests)(?:/|$) - [F,L,NC]
+
+# Protect dot-files/secrets and local backup/export artifacts that may be left
+# in the project directory during SSH/FileZilla maintenance.
+RewriteRule ^\. - [F,L]
+RewriteRule \.(?:zip|tar|tgz|gz|sql|dump|log|bak)$ - [F,L,NC]
+RewriteRule ^README(?:\.[A-Za-z0-9_-]+)?\.md$ - [F,L,NC]
+RewriteRule ^VERSION$ - [F,L,NC]
+
+# Existing public assets/status files are served directly. Everything else is
+# dispatched through the application router.
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^ index.php [QSA,L]

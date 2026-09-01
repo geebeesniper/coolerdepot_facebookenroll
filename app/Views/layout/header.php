@@ -2,6 +2,7 @@
 use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Util;
+use App\Core\Logger;
 use App\Models\Setting;
 use App\Models\Post;
 
@@ -13,6 +14,7 @@ unset($_SESSION['flash_success'], $_SESSION['flash_error']);
 try {
     $companyName = trim((string)Setting::get('company_name', 'CoolerDepot')) ?: 'CoolerDepot';
 } catch (\Throwable $e) {
+    Logger::exception($e, 'view', ['event' => 'Company name lookup failed'], 'warning');
     $companyName = 'CoolerDepot';
 }
 $deletionRequests = [];
@@ -20,6 +22,7 @@ if ($u && ($u['role'] ?? '') === 'admin') {
     try {
         $deletionRequests = Post::pendingDeletionRequests();
     } catch (\Throwable $e) {
+        Logger::exception($e, 'view', ['event' => 'Pending deletion request lookup failed'], 'warning');
         $deletionRequests = [];
     }
 }
@@ -29,11 +32,15 @@ if ($u && ($u['role'] ?? '') === 'admin') {
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="cdsp-csrf" content="<?= Util::e(Csrf::token()) ?>">
+    <meta name="cdsp-request-id" content="<?= Util::e(Logger::requestId()) ?>">
+    <meta name="cdsp-client-log-url" content="<?= Util::e($base) ?>/api/client-log">
     <title><?= Util::e($companyName) ?> Sales Post Tracker</title>
     <link
         rel="stylesheet"
         href="<?= Util::e($base) ?>/public/assets/app.css?v=<?= rawurlencode($config['app']['version']) ?>"
     >
+    <script src="<?= Util::e($base) ?>/public/assets/diagnostics.js?v=<?= rawurlencode($config['app']['version']) ?>"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 </head>
 <body>

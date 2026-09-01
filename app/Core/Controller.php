@@ -25,11 +25,41 @@ class Controller
         exit;
     }
 
+    /**
+     * Emit a JSON response and centrally record every non-success application
+     * response. This catches handled failures that would otherwise disappear
+     * because the controller converted an exception into user-facing JSON.
+     */
     protected function json(array $data, int $status = 200): void
     {
+        $failed = $status >= 400 || (($data['ok'] ?? true) === false);
+        if ($failed) {
+            Logger::log(
+                $status >= 500 ? 'error' : 'warning',
+                'JSON response reported failure',
+                [
+                    'status' => $status,
+                    'message' => $data['message'] ?? null,
+                    'error' => $data['error'] ?? null,
+                    'failure_code' => $data['failure_code'] ?? null,
+                ],
+                'http'
+            );
+        }
+
+        if ($status >= 400 && !isset($data['request_id'])) {
+            $data['request_id'] = Logger::requestId();
+        }
+
         http_response_code($status);
         header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        header('Cache-Control: no-store');
+        echo json_encode(
+            $data,
+            JSON_UNESCAPED_SLASHES
+            | JSON_UNESCAPED_UNICODE
+            | JSON_INVALID_UTF8_SUBSTITUTE
+        );
         exit;
     }
 

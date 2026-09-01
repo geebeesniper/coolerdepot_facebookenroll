@@ -15,6 +15,12 @@ class ApifyMarketplaceProvider
             return Setting::get('apify_enabled', '0') === '1'
                 && trim((string)Setting::get('apify_api_token', '')) !== '';
         } catch (\Throwable $e) {
+            \App\Core\Logger::exception(
+                $e,
+                'provider',
+                ['event' => 'Apify configuration check failed'],
+                'warning'
+            );
             return false;
         }
     }
@@ -139,6 +145,12 @@ class ApifyMarketplaceProvider
                     $e->getMessage()
                 );
             } catch (\Throwable $ignored) {
+                \App\Core\Logger::exception(
+                    $ignored,
+                    'provider',
+                    ['event' => 'Apify fetch-job failure could not be persisted'],
+                    'error'
+                );
             }
 
             throw $e;

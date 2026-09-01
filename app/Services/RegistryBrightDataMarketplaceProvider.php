@@ -139,6 +139,12 @@ class RegistryBrightDataMarketplaceProvider
             try {
                 FetchJob::setStatus($jobId, 'failed', null, $e->getMessage());
             } catch (\Throwable $ignored) {
+                \App\Core\Logger::exception(
+                    $ignored,
+                    'provider',
+                    ['event' => 'Registry Bright Data fetch-job failure could not be persisted'],
+                    'error'
+                );
             }
             throw $e;
         }

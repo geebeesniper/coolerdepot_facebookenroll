@@ -220,7 +220,7 @@ The database also contains unique keys for canonical URL and platform/external i
 - Background queue for slow inspections.
 - Admin account-management/password-reset screen.
 - Admin Sales CSV upload UI.
-- Better audit log coverage for every change.
+- Optional Admin diagnostics viewer/search UI on top of the central JSONL logs.
 - Export/report charts.
 ## UI update
 
@@ -252,7 +252,7 @@ statuses, which still use pending/approved/rejected.
 
 ## Release versioning
 
-Current release: `v0.1.80`
+Current release: `v0.1.99`
 
 `VERSION` in the project root is the application version source of truth.
 The footer reads this value and displays it on every page.
@@ -1547,3 +1547,19 @@ Upload `sales-posts-v0.1.74-chart-pointer-tooltip.zip` to `/opt/coolerdepot/www/
 - Sales chart tooltip keeps the existing 3-second desktop hover delay, then follows the live mouse pointer on every document-level mousemove using requestAnimationFrame.
 - Tooltip collision handling still flips left/up near viewport edges; touch/pen behavior is unchanged.
 - No database migration. VERSION/footer source is 0.1.98.
+
+## v0.1.99 — centralized diagnostics, release-security and conflict cleanup
+
+- Adds `App\Core\Logger` as the central JSONL diagnostics sink with server request ids plus originating-page correlation ids for browser errors.
+- Captures uncaught exceptions, PHP warnings/notices/deprecations, fatal shutdown errors, database connection failures, router failures, HTTP/JSON error responses, CSRF failures, important caught provider/upload/catalog/auth errors and failed post inspections.
+- Adds `public/assets/diagnostics.js` for browser `window.onerror`, unhandled Promise rejections and jQuery AJAX failures. Reports are same-origin, CSRF-protected, rate-limited and deduplicated; authenticated user context is attached when available.
+- Adds `scripts/diagnostics_status.php` plus `docs/DIAGNOSTICS.md` for log health/tail instructions.
+- Redacts password/secret/token/cookie/session/API-key/credential fields and omits request query strings from central request context.
+- Fixes release packaging so production `.env`, runtime logs, uploads and nested backups cannot be copied into a release ZIP; `.env.example` remains included. The generated ZIP is automatically validated and production credential values are checked for accidental hard-coding.
+- Reformats the route registry into maintainable Auth / Sales / Admin / Settings groups without changing existing routes.
+- Removes the stale Sales tooltip ownership global and provably dead legacy `.is-stuck` Admin range CSS selectors. The dedicated sticky strip remains the only active fixed Admin range implementation.
+- Adds focused backend comments/docblocks around non-obvious diagnostics/security behavior instead of adding noisy line-by-line comments.
+- Reformats the security-sensitive local-login and signed-handoff code, logs rejected local-login attempts without passwords, and records underlying website-schema readiness failures before converting them to operator-facing messages.
+- Adds active log size rotation (`LOG_MAX_BYTES`, 25 MiB default) in addition to daily files and retention cleanup.
+- No database migration is required. VERSION/footer source is 0.1.99.
+

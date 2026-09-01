@@ -1235,13 +1235,12 @@ if($salesChartTooltip.length&&!$salesChartTooltip.parent().is('body')){
 }
 
 /*
- * v0.1.77: successful Sales deletion requests finish the submit state and
- * reload the current dashboard instead of leaving the request button on Sending….
- * v0.1.76: app.js owns chart tooltip interaction. The dedicated dashboard
- * module still owns chart data/rendering, but must not register a second
- * tooltip controller or the two positioning systems fight each other.
+ * Sales dashboard tooltip ownership is intentionally split by scope:
+ * sales-dashboard.js owns #salesPortalDashboard; this shared file only handles
+ * chart-day tooltips outside that portal (for example Admin activity charts).
+ * Keeping the scope check below prevents two positioning systems from binding
+ * to the same Sales chart.
  */
-window.CDSP_SALES_TOOLTIP_MANAGED=true;
 
 function parseSalesChartInitialData(){
     const node=document.getElementById('salesChartInitialData');

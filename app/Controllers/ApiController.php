@@ -4,6 +4,7 @@ namespace App\Controllers;
 use App\Core\Controller;
 use App\Core\Auth;
 use App\Core\Csrf;
+use App\Core\Logger;
 use App\Models\Inspection;
 use App\Models\Post;
 use App\Services\PostInspector;
@@ -110,4 +111,103 @@ class ApiController extends Controller
             'message' => $r['failure_message'] ?: 'Post verified. It will be saved to '.$r['published_date'].'. Review any comparison warnings before saving.'
         ]);
     }
+    /**
+     * Receive same-origin browser diagnostics from diagnostics.js.
+     *
+     * The endpoint is same-origin/CSRF-protected and session-rate-limited
+     * so a browser error cannot be turned into an unbounded log flood.
+     */
+    public function clientLog(): void
+    {
+        $user = Auth::user();
+        $raw = (string)file_get_contents('php://input');
+        $payload = json_decode($raw, true);
+        if (!is_array($payload)) {
+            $payload = $_POST;
+        }
+
+        $csrf = (string)($_SERVER['HTTP_X_CSRF_TOKEN'] ?? ($payload['_csrf'] ?? ''));
+        Csrf::verify($csrf);
+
+        $now = time();
+        $window = (int)($_SESSION['client_log_window'] ?? 0);
+        $count = (int)($_SESSION['client_log_count'] ?? 0);
+        if ($window <= 0 || ($now - $window) >= 60) {
+            $window = $now;
+            $count = 0;
+        }
+        $count++;
+        $_SESSION['client_log_window'] = $window;
+        $_SESSION['client_log_count'] = $count;
+
+        if ($count > 30) {
+            Logger::warning(
+                'Browser diagnostics rate limit reached.',
+                ['event' => 'client_log_rate_limited'],
+                'client'
+            );
+            $this->json(['ok' => true, 'rate_limited' => true], 202);
+        }
+
+        $type = substr(trim((string)($payload['type'] ?? 'client_error')), 0, 80);
+        $message = substr(trim((string)($payload['message'] ?? 'Browser error')), 0, 2000);
+
+        $httpStatus = (int)($payload['http_status'] ?? 0);
+        $severeClientFailure = in_array(
+            $type,
+            ['javascript_error', 'unhandled_promise_rejection'],
+            true
+        ) || $httpStatus >= 500;
+
+        Logger::log(
+            $severeClientFailure ? 'error' : 'warning',
+            'Browser diagnostic: ' . $message,
+            [
+                'event' => $type,
+                'source' => $this->diagnosticUrl((string)($payload['source'] ?? '')),
+                'line' => (int)($payload['line'] ?? 0),
+                'column' => (int)($payload['column'] ?? 0),
+                'stack' => substr((string)($payload['stack'] ?? ''), 0, 8000),
+                'page_url' => $this->diagnosticUrl((string)($payload['page_url'] ?? '')),
+                'page_request_id' => substr((string)($payload['page_request_id'] ?? ''), 0, 64),
+                'http_status' => $httpStatus,
+                'request_url' => $this->diagnosticUrl((string)($payload['request_url'] ?? '')),
+                'server_request_id' => substr((string)($payload['server_request_id'] ?? ''), 0, 64),
+                'user_id' => (int)($user['id'] ?? 0),
+            ],
+            'client'
+        );
+
+        $this->json(['ok' => true], 202);
+    }
+
+    /**
+     * Strip query strings/fragments from browser-supplied diagnostic URLs.
+     * Client-side cleaning is helpful but cannot be trusted as the security
+     * boundary because /api/client-log is still a normal HTTP endpoint.
+     */
+    private function diagnosticUrl(string $value): string
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return '';
+        }
+
+        $parts = parse_url($value);
+        if (!is_array($parts)) {
+            return substr(preg_split('/[?#]/', $value, 2)[0] ?? '', 0, 1000);
+        }
+
+        $path = (string)($parts['path'] ?? '');
+        $scheme = strtolower((string)($parts['scheme'] ?? ''));
+        $host = (string)($parts['host'] ?? '');
+
+        if (in_array($scheme, ['http', 'https'], true) && $host !== '') {
+            $port = isset($parts['port']) ? ':' . (int)$parts['port'] : '';
+            return substr($scheme . '://' . $host . $port . ($path !== '' ? $path : '/'), 0, 1000);
+        }
+
+        return substr($path !== '' ? $path : $value, 0, 1000);
+    }
+
 }

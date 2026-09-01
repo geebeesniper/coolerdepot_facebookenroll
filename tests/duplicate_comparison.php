@@ -2,6 +2,10 @@
 // Run with PHP CLI + PDO SQLite + mbstring; GD adds perceptual-image tests.
 // Uses an isolated in-memory database; never reads production DB credentials.
 if(PHP_SAPI!=='cli'){http_response_code(404);exit;}
+if(!in_array('sqlite',PDO::getAvailableDrivers(),true)){
+    echo "SKIP duplicate comparison regression: PDO SQLite driver unavailable.\n";
+    exit(0);
+}
 spl_autoload_register(function($class){if(str_starts_with($class,'App\\')){require dirname(__DIR__).'/app/'.str_replace('\\','/',substr($class,4)).'.php';}});
 use App\Core\Database;
 use App\Core\Util;
@@ -9,7 +13,7 @@ use App\Models\Post;
 use App\Services\DuplicateIndex;
 use App\Services\ImageFingerprint;
 use App\Services\PostInspector;
-$config=['app'=>['timezone'=>'America/Los_Angeles']];
+$config=['app'=>['timezone'=>'America/Los_Angeles','version'=>'test'],'logging'=>['path'=>sys_get_temp_dir().'/cdsp-test-logs','level'=>'critical','retention_days'=>1,'max_bytes'=>1048576]];
 $pdo=new PDO('sqlite::memory:',null,null,[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION,PDO::ATTR_DEFAULT_FETCH_MODE=>PDO::FETCH_ASSOC]);
 $pdo->sqliteCreateFunction('NOW',fn()=>date('Y-m-d H:i:s'));
 $property=new ReflectionProperty(Database::class,'pdo');$property->setValue(null,$pdo);

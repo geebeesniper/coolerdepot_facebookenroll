@@ -71,6 +71,12 @@ class WebsiteCatalog
                     self::upsertReference($host,$pageUrl,$title,$description,$imageUrl);
                     $saved++;
                 }catch(\Throwable $e){
+                    \App\Core\Logger::exception(
+                        $e,
+                        'website-catalog',
+                        ['event' => 'Website CSV row import failed', 'row' => $processed + 1],
+                        'warning'
+                    );
                     if(count($failed)<25){$failed[]='Row '.($processed+1).': '.$e->getMessage();}
                 }
             }
@@ -126,6 +132,12 @@ class WebsiteCatalog
                 $saved++;
                 $results[]=['url'=>$url,'ok'=>true,'id'=>$id,'title'=>$meta['title']];
             }catch(\Throwable $e){
+                \App\Core\Logger::exception(
+                    $e,
+                    'website-catalog',
+                    ['event' => 'Website page scan failed', 'url' => $url],
+                    'warning'
+                );
                 $failed++;
                 $results[]=['url'=>$url,'ok'=>false,'message'=>$e->getMessage()];
             }
@@ -202,6 +214,14 @@ class WebsiteCatalog
         try{
             Database::connection()->query('SELECT description FROM cdsp_website_references LIMIT 0');
         }catch(\Throwable $e){
+            // Preserve the underlying database/schema failure before converting
+            // it to the stable operator-facing migration message below.
+            \App\Core\Logger::exception(
+                $e,
+                'website-catalog',
+                ['event' => 'Website reference schema readiness check failed'],
+                'error'
+            );
             throw new \DomainException('Run scripts/migrate_v0_1_71.php before using the website library.');
         }
     }
@@ -292,6 +312,7 @@ class WebsiteCatalog
         foreach($xp->query('//*[local-name()="loc"]')?:[] as $node){
             $loc=trim((string)$node->textContent);
             if($loc===''){continue;}
+            // Malformed third-party sitemap URLs are rejected input, not an application failure.
             try{$loc=self::normalizeUrl($loc);}catch(\Throwable $e){continue;}
             if(self::host($loc)!==$host){continue;}
             $parent=strtolower((string)$node->parentNode?->localName);
@@ -310,6 +331,7 @@ class WebsiteCatalog
                     $x=new \DOMXPath($d);
                     foreach($x->query('//*[local-name()="url"]/*[local-name()="loc"]')?:[] as $node){
                         $loc=trim((string)$node->textContent);
+                        // Malformed child-sitemap URLs are rejected input, not an application failure.
                         try{$loc=self::normalizeUrl($loc);}catch(\Throwable $e){continue;}
                         if(self::host($loc)===$host){$urls[]=$loc;}
                         if(count(array_unique($urls))>=self::MAX_SCAN_URLS){break;}
@@ -317,7 +339,14 @@ class WebsiteCatalog
                 }
                 libxml_clear_errors();
             }catch(\Throwable $e){
-                // A child sitemap may fail without invalidating the others.
+                // A child sitemap may fail without invalidating the others,
+                // but the failure is still recorded for later diagnosis.
+                \App\Core\Logger::exception(
+                    $e,
+                    'website-catalog',
+                    ['event' => 'Child sitemap scan failed', 'sitemap_url' => $sitemap],
+                    'warning'
+                );
             }
         }
 
@@ -361,7 +390,13 @@ class WebsiteCatalog
         if($canonicalFound!==''){
             $candidate=self::absoluteUrl($f['effective_url'],$canonicalFound);
             if($candidate){
-                try{if(self::host($candidate)===$host){$canonical=$candidate;}}catch(\Throwable $e){}
+                // A malformed third-party canonical URL is rejected input,
+                // not an application failure; keep the fetched page URL.
+                try{
+                    if(self::host($candidate)===$host){$canonical=$candidate;}
+                }catch(\Throwable $e){
+                    // Malformed third-party canonical metadata is safely ignored.
+                }
             }
         }
         if($image!==''){$image=self::absoluteUrl($f['effective_url'],$image)?:$image;}

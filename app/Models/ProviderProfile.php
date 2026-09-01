@@ -12,6 +12,12 @@ class ProviderProfile
             return Setting::get('provider_registry_enabled', '0') === '1'
                 && self::tableExists();
         } catch (\Throwable $e) {
+            \App\Core\Logger::exception(
+                $e,
+                'provider-registry',
+                ['event' => 'Provider registry availability check failed'],
+                'warning'
+            );
             return false;
         }
     }
@@ -24,6 +30,12 @@ class ProviderProfile
             );
             return (bool)$stmt->fetchColumn();
         } catch (\Throwable $e) {
+            \App\Core\Logger::exception(
+                $e,
+                'provider-registry',
+                ['event' => 'Provider registry table check failed'],
+                'warning'
+            );
             return false;
         }
     }

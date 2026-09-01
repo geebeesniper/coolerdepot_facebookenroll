@@ -12,6 +12,7 @@ class ErrorPage
         404 => ['Page Not Found', 'The page you requested could not be found.'],
         405 => ['Method Not Allowed', 'This action is not available for this request method.'],
         408 => ['Request Timeout', 'The request took too long to complete.'],
+        419 => ['Session Validation Failed', 'Your page security token is no longer valid. Refresh the page and try again.'],
         421 => ['Wrong Host', 'This application is not available on this host name.'],
         429 => ['Too Many Requests', 'Too many requests were received. Please try again shortly.'],
         500 => ['Server Error', 'Something went wrong while processing your request.'],
@@ -33,6 +34,13 @@ class ErrorPage
         $body = $message ?: $meta[1];
         $base = rtrim((string)($config['app']['base_path'] ?? ''), '/');
         $version = (string)($config['app']['version'] ?? 'dev');
+
+        if ($status >= 400) {
+            Logger::httpStatus($status, [
+                'event' => 'error_page',
+                'message' => $body,
+            ]);
+        }
 
         // Status pages always return through the application root.
         // The root route decides whether the logged-in user goes to Admin or Sales dashboard.
@@ -88,6 +96,12 @@ class ErrorPage
     public static function renderJson(int $status, ?string $message = null): void
     {
         $meta = self::STATUS[$status] ?? ['Request Error', 'The request could not be completed.'];
+        if ($status >= 400) {
+            Logger::httpStatus($status, [
+                'event' => 'json_error_page',
+                'message' => $message ?: $meta[1],
+            ]);
+        }
         http_response_code($status);
         header('Content-Type: application/json; charset=utf-8');
         header('Cache-Control: no-store');
@@ -96,6 +110,7 @@ class ErrorPage
             'status' => $status,
             'error' => $meta[0],
             'message' => $message ?: $meta[1],
+            'request_id' => Logger::requestId(),
         ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         exit;
     }

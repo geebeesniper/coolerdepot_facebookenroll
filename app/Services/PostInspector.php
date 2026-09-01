@@ -372,7 +372,7 @@ class PostInspector
         try {
             $report = DuplicateIndex::inspect($platform, $title, $meta);
         } catch (\Throwable $e) {
-            error_log('[CDSP duplicate comparison] '.$e->getMessage());
+            \App\Core\Logger::exception($e, 'post-inspector', ['event' => 'Duplicate comparison failed'], 'error');
             return $this->fail($uid, $platform, $submitted, 'COMPARISON_UNAVAILABLE',
                 'Duplicate comparison is unavailable. Ask an administrator to run the v0.1.70 migration, then try again.',
                 $resolved, $canonical, $eid, $meta);
@@ -643,6 +643,21 @@ class PostInspector
         ?string $eid = null,
         array $meta = []
     ): array {
+        \App\Core\Logger::warning(
+            'Post inspection failed.',
+            [
+                'event' => 'post_inspection_failed',
+                'sales_user_id' => $uid,
+                'platform' => $p,
+                'failure_code' => $code,
+                'failure_message' => $msg,
+                'submitted_url' => $s,
+                'resolved_url' => $resolved,
+                'external_post_id' => $eid,
+            ],
+            'post-inspector'
+        );
+
         return [
             'sales_user_id' => $uid,
             'platform' => $p,

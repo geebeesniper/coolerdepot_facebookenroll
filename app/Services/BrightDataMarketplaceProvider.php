@@ -14,6 +14,12 @@ class BrightDataMarketplaceProvider
             return Setting::get('brightdata_enabled', '0') === '1'
                 && count($this->credentials()) > 0;
         } catch (\Throwable $e) {
+            \App\Core\Logger::exception(
+                $e,
+                'provider',
+                ['event' => 'Bright Data configuration check failed'],
+                'warning'
+            );
             return false;
         }
     }
@@ -130,6 +136,16 @@ class BrightDataMarketplaceProvider
 
                 return $item;
             } catch (\Throwable $e) {
+                \App\Core\Logger::exception(
+                    $e,
+                    'provider',
+                    [
+                        'event' => 'Bright Data credential attempt failed',
+                        'credential_slot' => $slot,
+                        'attempt' => $attempt,
+                    ],
+                    'warning'
+                );
                 $failures[] =
                     'Key #' . $attempt . ' (' . $slot . '): '
                     . $e->getMessage();
@@ -425,6 +441,12 @@ class BrightDataMarketplaceProvider
                     $e->getMessage()
                 );
             } catch (\Throwable $ignored) {
+                \App\Core\Logger::exception(
+                    $ignored,
+                    'provider',
+                    ['event' => 'Bright Data fetch-job failure could not be persisted'],
+                    'error'
+                );
             }
 
             throw $e;

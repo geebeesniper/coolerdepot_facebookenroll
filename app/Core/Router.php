@@ -45,6 +45,8 @@ class Router
 
             $status = $pathExists ? 405 : 404;
 
+            // ErrorPage records the HTTP status centrally. Logging it here as
+            // well would create duplicate 404/405 rows with the same request id.
             if (ErrorPage::isApiRequest()) {
                 ErrorPage::renderJson($status);
             }
@@ -56,13 +58,16 @@ class Router
             [$class, $action] = $handler;
             (new $class())->$action();
         } catch (\Throwable $e) {
-            error_log(sprintf(
-                '[CDSP] Unhandled exception %s: %s in %s:%d',
-                get_class($e),
-                $e->getMessage(),
-                $e->getFile(),
-                $e->getLine()
-            ));
+            Logger::exception(
+                $e,
+                'router',
+                [
+                    'event' => 'Route handler failed',
+                    'handler_class' => $class ?? null,
+                    'handler_action' => $action ?? null,
+                ],
+                'error'
+            );
 
             if (ErrorPage::isApiRequest()) {
                 ErrorPage::renderJson(500);

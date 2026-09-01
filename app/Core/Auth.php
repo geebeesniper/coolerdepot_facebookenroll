@@ -24,6 +24,7 @@ class Auth
 
         if (!$user) {
             unset($_SESSION['auth_db_token']);
+            Logger::setUserContext(null);
             return null;
         }
 
@@ -31,6 +32,7 @@ class Auth
             "UPDATE cdsp_auth_sessions SET last_seen_at=NOW() WHERE id=?"
         );
         $touch->execute([(int)$user['auth_session_id']]);
+        Logger::setUserContext($user);
 
         return $user;
     }
@@ -56,6 +58,7 @@ class Auth
         ]);
 
         $_SESSION['auth_db_token'] = $raw;
+        Logger::setUserContext($user);
     }
 
     public static function logout(): void
@@ -70,6 +73,8 @@ class Auth
             $stmt->execute([hash('sha256', $raw)]);
         }
 
+        Logger::info('User session logged out.', [], 'auth');
+        Logger::setUserContext(null);
         $_SESSION = [];
 
         if (session_status() === PHP_SESSION_ACTIVE) {

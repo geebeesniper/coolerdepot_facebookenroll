@@ -14,6 +14,12 @@ class ScrapeCreatorsMarketplaceProvider
             return Setting::get('scrapecreators_enabled', '0') === '1'
                 && trim((string)Setting::get('scrapecreators_api_key', '')) !== '';
         } catch (\Throwable $e) {
+            \App\Core\Logger::exception(
+                $e,
+                'provider',
+                ['event' => 'ScrapeCreators configuration check failed'],
+                'warning'
+            );
             return false;
         }
     }
@@ -108,6 +114,12 @@ class ScrapeCreatorsMarketplaceProvider
             try {
                 FetchJob::setStatus($jobId, 'failed', null, $e->getMessage());
             } catch (\Throwable $ignored) {
+                \App\Core\Logger::exception(
+                    $ignored,
+                    'provider',
+                    ['event' => 'ScrapeCreators fetch-job failure could not be persisted'],
+                    'error'
+                );
             }
 
             throw $e;

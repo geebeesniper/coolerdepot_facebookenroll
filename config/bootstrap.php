@@ -18,14 +18,19 @@ spl_autoload_register(function ($class) {
     }
 });
 
+/*
+ * Diagnostics is initialized before database/session work so bootstrap, PDO,
+ * routing and shutdown failures all receive the same correlation id.
+ */
+\App\Core\Logger::init($config);
+
 set_exception_handler(function (\Throwable $e) {
-    error_log(sprintf(
-        '[CDSP] Uncaught exception %s: %s in %s:%d',
-        get_class($e),
-        $e->getMessage(),
-        $e->getFile(),
-        $e->getLine()
-    ));
+    \App\Core\Logger::exception(
+        $e,
+        'uncaught',
+        ['event' => 'Uncaught exception'],
+        'critical'
+    );
 
     if (class_exists(\App\Core\ErrorPage::class)) {
         if (\App\Core\ErrorPage::isApiRequest()) {
@@ -40,9 +45,14 @@ set_exception_handler(function (\Throwable $e) {
 });
 
 if ($config['app']['enforce_host'] && $config['app']['host']) {
-    $requestHost = strtolower(preg_replace('/:\\d+$/', '', $_SERVER['HTTP_HOST'] ?? ''));
+    $requestHost = strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'] ?? ''));
 
     if ($requestHost !== strtolower($config['app']['host'])) {
+        \App\Core\Logger::warning(
+            'Request rejected because the host did not match APP_HOST.',
+            ['request_host' => $requestHost],
+            'security'
+        );
         \App\Core\ErrorPage::render(421);
     }
 }
