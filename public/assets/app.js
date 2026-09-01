@@ -5630,6 +5630,42 @@ function applyDashboardLanguage(){
     const $adminSalesChartCanvas = $('#adminSalesChartCanvas');
     const $adminSalesChartScroll = $('#adminSalesChartScroll');
     const $adminSalesChartYAxis = $('#adminSalesChartYAxis');
+    const $adminRangeBar = $('.admin-dashboard-range-bar');
+
+    // Keep the range controls visually normal while they are in document flow.
+    // Only add the elevated sticky treatment after the bar actually reaches the
+    // viewport edge; position:sticky itself stays responsible for layout.
+    let adminRangeStickyFrame = 0;
+    function syncAdminRangeStickyState(){
+        if(!$adminRangeBar.length){
+            return;
+        }
+
+        const node=$adminRangeBar.get(0);
+        const computed=window.getComputedStyle(node);
+        const stickyTop=parseFloat(computed.top)||0;
+        const rect=node.getBoundingClientRect();
+        const stuck=window.scrollY>0 && rect.top<=stickyTop+0.5;
+
+        $adminRangeBar.toggleClass('is-stuck',stuck);
+    }
+
+    function requestAdminRangeStickySync(){
+        if(adminRangeStickyFrame){
+            return;
+        }
+
+        adminRangeStickyFrame=window.requestAnimationFrame(function(){
+            adminRangeStickyFrame=0;
+            syncAdminRangeStickyState();
+        });
+    }
+
+    $(window).on(
+        'scroll.cdspAdminRangeSticky resize.cdspAdminRangeSticky',
+        requestAdminRangeStickySync
+    );
+    syncAdminRangeStickyState();
 
     const $periodReviewModal = $('#salesPeriodReviewModal');
     const $periodReviewForm = $('#salesPeriodReviewForm');

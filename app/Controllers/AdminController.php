@@ -1367,9 +1367,11 @@ private function dashboardSalesReviewData(
                 ?$requestedPreset
                 :$this->dashboardDetectPreset($from,$to);
 
-            // A single day keeps the existing daily review semantics.
-            // Rolling 3-day/7-day/month and custom ranges remain range views.
-            $period=($preset==='single'&&$from===$to)
+            // Any exact one-day selection is a day-level Sales Review context,
+            // even when the user reached it through Custom. Preset controls the
+            // range UI; period controls review semantics. This keeps Sales Review
+            // addressable by the real Sales + work date pair.
+            $period=($from===$to)
                 ?'day'
                 :'range';
 

@@ -1506,3 +1506,11 @@ Upload `sales-posts-v0.1.74-chart-pointer-tooltip.zip` to `/opt/coolerdepot/www/
 - Separates Post Review from Sales Review / Sales Rating in labels and reports.
 - Sales Rating reports use the latest non-deleted Sales Review history for each Sales + date.
 - Fixes the Sales Review deleted-history filter rendering.
+
+
+## v0.1.89
+
+- Treats every exact one-day Admin selection as a day-level Sales Review context, including Custom ranges whose From and To are the same date. This restores the Sales Review button for historical single dates such as 2026-08-28 without conflating it with Post Review.
+- Restores natural, full-size range controls while the Admin toolbar is in normal document flow. The toolbar only receives the elevated sticky background/shadow after it actually reaches the viewport edge.
+- Removes the always-on desktop hard height cap that made the non-sticky toolbar look detached from Posting Progress.
+- No database migration. VERSION/footer source is 0.1.89.
