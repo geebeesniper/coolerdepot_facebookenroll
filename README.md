@@ -1514,3 +1514,11 @@ Upload `sales-posts-v0.1.74-chart-pointer-tooltip.zip` to `/opt/coolerdepot/www/
 - Restores natural, full-size range controls while the Admin toolbar is in normal document flow. The toolbar only receives the elevated sticky background/shadow after it actually reaches the viewport edge.
 - Removes the always-on desktop hard height cap that made the non-sticky toolbar look detached from Posting Progress.
 - No database migration. VERSION/footer source is 0.1.89.
+
+### v0.1.92
+- Split Admin and Sales date-stack CSS classes so the same element no longer receives both `admin-range-field-stack` and `sales-to-field-stack` sizing rules.
+- Sticky Admin range toolbar is content/padding sized only; no fixed height, stretch, or duplicate stack padding.
+- Sales desktop range/date/submit controls remain on the right side of the title until the responsive breakpoint.
+- Sales Review deleted-history filter is shown as a separate filter row like Post Review deleted comments.
+- Display Name settings action is compact, and Good/Bad summary labels include thumb icons.
+- No database migration. VERSION/footer source is 0.1.92.

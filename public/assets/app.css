@@ -11601,3 +11601,145 @@ body.admin-delete-request-modal-open{overflow:hidden;}
         min-height:36px;
     }
 }
+
+/* v0.1.92 — de-conflict range stacks, truly content-sized sticky bar, right-side Sales controls */
+
+/* Admin and Sales no longer share both stack classes in markup. Keep each stack
+ * intrinsically sized so no inherited flex/stretch/min-height can inflate a sticky bar. */
+.admin-range-field-stack,
+.sales-to-field-stack{
+    box-sizing:border-box;
+    height:auto !important;
+    min-height:0 !important;
+    max-height:none !important;
+    flex:0 0 auto !important;
+    align-self:flex-start !important;
+}
+
+/* Admin sticky toolbar: content + padding only. */
+.admin-dashboard-range-bar,
+.admin-dashboard-range-bar.is-stuck,
+.admin-dashboard-range-bar .admin-portal-head-actions,
+.admin-dashboard-range-bar.is-stuck .admin-portal-head-actions,
+.admin-dashboard-range-bar .dashboard-date-controls,
+.admin-dashboard-range-bar.is-stuck .dashboard-date-controls,
+.admin-dashboard-range-bar .dashboard-date-control-row,
+.admin-dashboard-range-bar.is-stuck .dashboard-date-control-row,
+.admin-dashboard-range-bar .admin-range-field-stack,
+.admin-dashboard-range-bar.is-stuck .admin-range-field-stack{
+    height:auto !important;
+    min-height:0 !important;
+    max-height:none !important;
+}
+.admin-dashboard-range-bar .admin-range-field-stack{
+    padding-bottom:18px;
+}
+.admin-dashboard-range-bar.is-stuck{
+    padding:5px 0 6px !important;
+    overflow:visible;
+}
+.admin-dashboard-range-bar.is-stuck .admin-range-field-stack{
+    padding:0 !important;
+    gap:0 !important;
+}
+.admin-dashboard-range-bar.is-stuck .dashboard-date-control-row{
+    align-items:flex-start !important;
+}
+.admin-dashboard-range-bar.is-stuck .dashboard-back-today{
+    display:none !important;
+}
+
+/* Desktop Sales controls belong to the right of the page title. Older <=1120px
+ * rules stacked them too early, even when there is ample horizontal room. */
+@media(min-width:861px){
+    .sales-portal-head{
+        display:grid !important;
+        grid-template-columns:minmax(260px,1fr) auto !important;
+        align-items:start !important;
+        gap:20px !important;
+    }
+    .sales-portal-head-actions{
+        width:auto !important;
+        display:grid !important;
+        grid-template-columns:auto auto auto !important;
+        align-items:start !important;
+        justify-content:end !important;
+        justify-self:end !important;
+        gap:10px !important;
+    }
+    .sales-portal-head-actions .sales-head-period-switch{
+        margin-top:18px !important;
+    }
+}
+@media(max-width:860px){
+    .sales-portal-head{
+        grid-template-columns:1fr !important;
+    }
+    .sales-portal-head-actions{
+        width:100% !important;
+        justify-content:start !important;
+    }
+}
+
+/* Person/Sales Review deleted-history filter: separate, obvious row like the
+ * Post Review deleted-comments filter. */
+.sales-review-history-filter-row{
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    min-height:30px;
+    padding:5px 8px;
+    border-top:1px solid #e2e8f0;
+    border-bottom:1px solid #e2e8f0;
+    background:#f8fafc;
+}
+.sales-review-history-filter-row .history-deleted-switch{
+    min-height:26px;
+    padding:3px 6px;
+    gap:6px;
+}
+.sales-review-history-filter-row .history-deleted-switch-label{
+    font-size:8px;
+    font-weight:800;
+    text-transform:none;
+}
+
+/* Settings Display Name should look like a normal field/action pair. */
+#application-settings .settings-inline-form{
+    grid-template-columns:minmax(220px,520px) auto;
+    justify-content:start;
+    align-items:end;
+    gap:8px;
+}
+#application-settings .settings-inline-form .btn{
+    width:auto !important;
+    min-width:92px;
+    height:38px;
+    min-height:38px;
+    padding:0 14px;
+    font-size:10px;
+    white-space:nowrap;
+}
+
+/* Compact thumb cues anywhere the dashboard exposes Good/Bad summary labels. */
+[data-card-good-label]::before,
+.post-summary.good > span:first-child::before{
+    content:'👍';
+    margin-right:3px;
+    font-size:.9em;
+}
+[data-card-issues-label]::before,
+.post-summary.bad > span:first-child::before{
+    content:'👎';
+    margin-right:3px;
+    font-size:.9em;
+}
+
+@media(max-width:640px){
+    #application-settings .settings-inline-form{
+        grid-template-columns:1fr;
+    }
+    #application-settings .settings-inline-form .btn{
+        width:max-content !important;
+    }
+}

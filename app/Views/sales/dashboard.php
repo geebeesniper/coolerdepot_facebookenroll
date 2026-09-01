@@ -211,7 +211,7 @@ $chartTargetTop=
                     >
                 </label>
 
-                <div class="admin-range-field-stack sales-to-field-stack">
+                <div class="sales-to-field-stack">
                     <label class="admin-range-field">
                         <span data-sales-i18n="to">To</span>
                         <input

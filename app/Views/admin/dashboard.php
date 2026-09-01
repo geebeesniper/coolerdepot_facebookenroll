@@ -126,7 +126,7 @@ $adminPresetNames = [
                         >
                     </label>
 
-                    <div class="admin-range-field-stack sales-to-field-stack">
+                    <div class="admin-range-field-stack">
                         <label class="admin-range-field">
                             <span data-dashboard-i18n="to">To</span>
                             <input
@@ -758,22 +758,22 @@ $adminPresetNames = [
                 <section class="sales-review-save-history">
                     <div class="sales-review-save-history-head">
                         <span>Review History</span>
-                        <div class="sales-review-history-head-actions">
-                            <button
-                                type="button"
-                                class="history-deleted-switch hidden"
-                                id="salesPeriodReviewDeletedSwitch"
-                                role="switch"
-                                aria-checked="false"
-                            >
-                                <span class="history-deleted-switch-track"><span></span></span>
-                                <span
-                                    class="history-deleted-switch-label"
-                                    id="salesPeriodReviewDeletedLabel"
-                                >Deleted</span>
-                            </button>
-                            <strong id="salesPeriodReviewHistoryCount">0 saves</strong>
-                        </div>
+                        <strong id="salesPeriodReviewHistoryCount">0 saves</strong>
+                    </div>
+                    <div class="sales-review-history-filter-row">
+                        <button
+                            type="button"
+                            class="history-deleted-switch hidden"
+                            id="salesPeriodReviewDeletedSwitch"
+                            role="switch"
+                            aria-checked="false"
+                        >
+                            <span class="history-deleted-switch-track"><span></span></span>
+                            <span
+                                class="history-deleted-switch-label"
+                                id="salesPeriodReviewDeletedLabel"
+                            >See deleted reviews</span>
+                        </button>
                     </div>
                     <div
                         class="sales-review-save-history-list"

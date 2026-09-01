@@ -6541,8 +6541,8 @@ function renderSalesReviewHistory(items){
         .attr('aria-checked',showDeletedSalesReviewHistory?'true':'false');
     $periodReviewDeletedLabel.text(
         showDeletedSalesReviewHistory
-            ?'Hide deleted'
-            :'Deleted '+deletedCount
+            ?'Hide deleted reviews'
+            :'See deleted reviews ('+deletedCount+')'
     );
 
     const visible=items.filter(function(item){
