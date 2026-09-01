@@ -2108,6 +2108,13 @@
 
             function hidePointerTooltip(){
                 clearHoverTimer();
+                if(typeof followFrame!=='undefined'&&followFrame){
+                    window.cancelAnimationFrame(followFrame);
+                    followFrame=0;
+                }
+                if(typeof followEvent!=='undefined'){
+                    followEvent=null;
+                }
                 hoverDay=null;
                 hoverPoint=null;
                 tooltipDay=null;
@@ -2346,6 +2353,73 @@
                 }
             );
 
+            /*
+             * Keep the visible desktop tooltip physically attached to the
+             * pointer.  The chart itself is AJAX-rendered and some browser
+             * combinations do not deliver every mousemove to #salesChartBars
+             * while the cursor crosses stacked chart decoration.  A document
+             * level mousemove is therefore the single source of pointer
+             * coordinates once the 3-second hover has opened the tooltip.
+             */
+            let followFrame=0;
+            let followEvent=null;
+
+            function schedulePointerFollow(event){
+                if(
+                    !hoverDay
+                    ||tooltipDay!==hoverDay
+                    ||tooltip.classList.contains('hidden')
+                ){
+                    return;
+                }
+
+                followEvent={
+                    clientX:Number(event.clientX)||0,
+                    clientY:Number(event.clientY)||0
+                };
+
+                if(followFrame){
+                    return;
+                }
+
+                followFrame=window.requestAnimationFrame(
+                    function(){
+                        followFrame=0;
+
+                        if(
+                            !followEvent
+                            ||!hoverDay
+                            ||tooltipDay!==hoverDay
+                            ||tooltip.classList.contains('hidden')
+                        ){
+                            return;
+                        }
+
+                        const rect=hoverDay.getBoundingClientRect();
+                        const x=followEvent.clientX;
+                        const y=followEvent.clientY;
+
+                        /* If the pointer has left the active day, let the
+                         * normal mouseout path close it instead of leaving a
+                         * detached card floating over the page. */
+                        if(
+                            x<rect.left
+                            ||x>rect.right
+                            ||y<rect.top
+                            ||y>rect.bottom
+                        ){
+                            return;
+                        }
+
+                        positionPointerTooltip(
+                            hoverDay,
+                            followEvent,
+                            true
+                        );
+                    }
+                );
+            }
+
             chartBars.addEventListener(
                 'mousemove',
                 function(event){
@@ -2361,13 +2435,26 @@
                         };
                     }
 
-                    if(
-                        tooltipDay===day
-                        &&!tooltip.classList.contains('hidden')
-                    ){
-                        positionPointerTooltip(day,event,true);
-                    }
+                    schedulePointerFollow(event);
                 }
+            );
+
+            document.addEventListener(
+                'mousemove',
+                function(event){
+                    if(!hoverDay){
+                        return;
+                    }
+
+                    if(hoverDay===tooltipDay){
+                        hoverPoint={
+                            clientX:Number(event.clientX)||0,
+                            clientY:Number(event.clientY)||0
+                        };
+                        schedulePointerFollow(event);
+                    }
+                },
+                {passive:true}
             );
 
             chartBars.addEventListener(

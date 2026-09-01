@@ -1541,3 +1541,9 @@ Upload `sales-posts-v0.1.74-chart-pointer-tooltip.zip` to `/opt/coolerdepot/www/
 - Gives the language switch and translated top-navigation items stable fixed widths so changing language cannot resize or shuffle the header.
 - Replaces the Sales chart delegated mouseenter controller with one native pointer controller. Desktop hover waits a continuous 3 seconds, then shows and follows the pointer; touch/pen remains tap-to-pin.
 - No database migration. VERSION/footer source is 0.1.97.
+
+## v0.1.98
+
+- Sales chart tooltip keeps the existing 3-second desktop hover delay, then follows the live mouse pointer on every document-level mousemove using requestAnimationFrame.
+- Tooltip collision handling still flips left/up near viewport edges; touch/pen behavior is unchanged.
+- No database migration. VERSION/footer source is 0.1.98.
