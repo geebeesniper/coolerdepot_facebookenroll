@@ -1,4 +1,11 @@
 <?php
+/**
+ * File / 文件：app/Controllers/SalesController.php
+ * EN: HTTP controller for request validation, orchestration, and responses.
+ * 中文：该文件负责 HTTP 请求校验、业务编排与响应。
+ * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
+ * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ */
 namespace App\Controllers;
 
 use App\Core\Controller;
@@ -11,6 +18,10 @@ use App\Models\User;
 
 class SalesController extends Controller
 {
+    /**
+     * EN: Implements the application operation `dashboard` (dashboard).
+     * 中文：实现应用操作 `dashboard`（dashboard）。
+     */
     public function dashboard(): void
     {
         $u=Auth::requireRole('sales');
@@ -59,6 +70,10 @@ class SalesController extends Controller
         ]);
     }
 
+    /**
+     * EN: Implements the application operation `dailyPostsAjax` (daily Posts Ajax).
+     * 中文：实现应用操作 `dailyPostsAjax`（daily Posts Ajax）。
+     */
     public function dailyPostsAjax(): void
     {
         $u=Auth::requireRole('sales');
@@ -123,6 +138,10 @@ class SalesController extends Controller
         ]);
     }
 
+/**
+ * EN: Implements the application operation `salesPresetRange` (sales Preset Range).
+ * 中文：实现应用操作 `salesPresetRange`（sales Preset Range）。
+ */
 private function salesPresetRange(
     string $period,
     string $to,
@@ -184,6 +203,10 @@ private function salesPresetRange(
 
 
 
+    /**
+     * EN: Creates or persists the `submitForm` operation (submit Form).
+     * 中文：创建或持久化 `submitForm`（submit Form）操作。
+     */
     public function submitForm(): void
     {
         $u=Auth::requireRole('sales');
@@ -193,6 +216,10 @@ private function salesPresetRange(
         ]);
     }
 
+    /**
+     * EN: Creates or persists the `save` operation (save).
+     * 中文：创建或持久化 `save`（save）操作。
+     */
     public function save(): void
     {
         global $config;
@@ -280,6 +307,10 @@ private function salesPresetRange(
         $this->redirect($dashboardPath);
     }
 
+    /**
+     * EN: Implements the application operation `requestDelete` (request Delete).
+     * 中文：实现应用操作 `requestDelete`（request Delete）。
+     */
     public function requestDelete(): void
     {
         $u = Auth::requireRole('sales');

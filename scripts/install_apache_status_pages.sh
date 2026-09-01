@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# File / 文件：scripts/install_apache_status_pages.sh
+# EN: Operations/deployment/diagnostics script owned by this project.
+# 中文：该文件是本项目自有的运维、部署或诊断脚本。
+# Maintenance / 维护：Preserve validation, safety, and diagnostics when editing. / 修改时保留校验、安全与诊断。
 set -euo pipefail
 
 ROOT="/opt/coolerdepot"

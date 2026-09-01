@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# File / 文件：scripts/package_release.sh
+# EN: Operations/deployment/diagnostics script owned by this project.
+# 中文：该文件是本项目自有的运维、部署或诊断脚本。
+# Maintenance / 维护：Preserve validation, safety, and diagnostics when editing. / 修改时保留校验、安全与诊断。
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -8,6 +12,10 @@ OUT="${2:-$ROOT/../sales-posts-v${VERSION}-${LABEL}.zip}"
 
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
+
+# EN: Enforce the bilingual source-comment contract before a release is copied.
+# 中文：复制发布文件前先强制执行源码双语注释契约。
+php "$ROOT/scripts/audit_bilingual_comments.php"
 
 mkdir -p "$TMP/sales-posts"
 rsync -a \

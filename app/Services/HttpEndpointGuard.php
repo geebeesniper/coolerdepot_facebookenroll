@@ -1,8 +1,19 @@
 <?php
+/**
+ * File / 文件：app/Services/HttpEndpointGuard.php
+ * EN: Application service for reusable business or integration logic.
+ * 中文：该文件负责可复用的业务逻辑或外部集成服务。
+ * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
+ * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ */
 namespace App\Services;
 
 class HttpEndpointGuard
 {
+    /**
+     * EN: Checks or validates the condition represented by `assertPublicHttps` (assert Public Https).
+     * 中文：检查或校验 `assertPublicHttps`（assert Public Https）所表示的条件。
+     */
     public static function assertPublicHttps(string $url): string
     {
         $url = trim($url);
@@ -53,6 +64,10 @@ class HttpEndpointGuard
         return $url;
     }
 
+    /**
+     * EN: Implements the application operation `optionalWebsite` (optional Website).
+     * 中文：实现应用操作 `optionalWebsite`（optional Website）。
+     */
     public static function optionalWebsite(string $url): string
     {
         $url = trim($url);

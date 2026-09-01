@@ -1,4 +1,11 @@
 <?php
+/**
+ * File / 文件：app/Core/ErrorPage.php
+ * EN: Core runtime/infrastructure component used across the application.
+ * 中文：该文件是应用全局复用的核心运行时或基础设施组件。
+ * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
+ * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ */
 namespace App\Core;
 
 class ErrorPage
@@ -20,6 +27,10 @@ class ErrorPage
         503 => ['Temporarily Unavailable', 'This service is temporarily unavailable. Please try again.'],
     ];
 
+    /**
+     * EN: Builds, formats, or transforms data for `render` (render).
+     * 中文：为 `render`（render）构建、格式化或转换数据。
+     */
     public static function render(
         int $status,
         ?string $message = null,
@@ -93,6 +104,10 @@ class ErrorPage
         exit;
     }
 
+    /**
+     * EN: Builds, formats, or transforms data for `renderJson` (render Json).
+     * 中文：为 `renderJson`（render Json）构建、格式化或转换数据。
+     */
     public static function renderJson(int $status, ?string $message = null): void
     {
         $meta = self::STATUS[$status] ?? ['Request Error', 'The request could not be completed.'];
@@ -115,6 +130,10 @@ class ErrorPage
         exit;
     }
 
+    /**
+     * EN: Checks or validates the condition represented by `isApiRequest` (is Api Request).
+     * 中文：检查或校验 `isApiRequest`（is Api Request）所表示的条件。
+     */
     public static function isApiRequest(): bool
     {
         global $config;
@@ -128,6 +147,10 @@ class ErrorPage
         return strncmp($path, '/api/', 5) === 0;
     }
 
+    /**
+     * EN: Implements the application operation `url` (url).
+     * 中文：实现应用操作 `url`（url）。
+     */
     private static function url(string $base, string $path): string
     {
         if ($path === '') {
@@ -141,6 +164,10 @@ class ErrorPage
         return $base . '/' . ltrim($path, '/');
     }
 
+    /**
+     * EN: Implements the application operation `e` (e).
+     * 中文：实现应用操作 `e`（e）。
+     */
     private static function e(string $value): string
     {
         return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');

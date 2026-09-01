@@ -1,9 +1,20 @@
 <?php
+/**
+ * File / 文件：app/Services/ImageFingerprint.php
+ * EN: Application service for reusable business or integration logic.
+ * 中文：该文件负责可复用的业务逻辑或外部集成服务。
+ * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
+ * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ */
 namespace App\Services;
 
 /** Fetch only public HTTPS image bytes, with DNS pinning and bounded decoding. */
 class ImageFingerprint
 {
+    /**
+     * EN: Implements the application operation `urls` (urls).
+     * 中文：实现应用操作 `urls`（urls）。
+     */
     public static function urls(array $meta): array
     {
         $urls=[];
@@ -24,6 +35,10 @@ class ImageFingerprint
         return array_keys($urls);
     }
 
+    /**
+     * EN: Implements the application operation `fromUrl` (from Url).
+     * 中文：实现应用操作 `fromUrl`（from Url）。
+     */
     public static function fromUrl(string $url): array
     {
         $original=$url;
@@ -77,6 +92,10 @@ class ImageFingerprint
         throw new \RuntimeException('Too many image redirects.');
     }
 
+    /**
+     * EN: Implements the application operation `fromBytes` (from Bytes).
+     * 中文：实现应用操作 `fromBytes`（from Bytes）。
+     */
     public static function fromBytes(string $bytes): array
     {
         $info=@getimagesizefromstring($bytes);
@@ -105,6 +124,10 @@ class ImageFingerprint
         return $out;
     }
 
+    /**
+     * EN: Implements the application operation `distance` (distance).
+     * 中文：实现应用操作 `distance`（distance）。
+     */
     public static function distance(string $a,string $b): int
     {
         if(!preg_match('/^[a-f0-9]{16}$/i',$a)||!preg_match('/^[a-f0-9]{16}$/i',$b)){return 65;}

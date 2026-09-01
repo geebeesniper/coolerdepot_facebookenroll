@@ -1,3 +1,10 @@
+/**
+ * File / 文件：public/assets/diagnostics.js
+ * EN: Browser diagnostics bridge that reports client-side failures to central logging.
+ * 中文：该文件负责浏览器诊断，并将前端错误上报到中央日志。
+ * Maintenance / 维护：Feature ownership and error paths should stay explicit and centrally diagnosable.
+ * 维护要求：功能归属与错误路径必须清晰，并可进入中央诊断。
+ */
 (function(){
     'use strict';
 
@@ -13,6 +20,10 @@
         return;
     }
 
+    /**
+     * EN: Removes or cleans data/state for `cleanUrl` (clean Url).
+     * 中文：删除或清理 `cleanUrl`（clean Url）相关的数据或状态。
+     */
     function cleanUrl(value){
         try{
             const url=new URL(String(value||''),window.location.href);
@@ -22,15 +33,27 @@
         }
     }
 
+    /**
+     * EN: Implements the application operation `text` (text).
+     * 中文：实现应用操作 `text`（text）。
+     */
     function text(value,max){
         const out=String(value==null?'':value);
         return out.length>max?out.slice(0,max)+'…[truncated]':out;
     }
 
+    /**
+     * EN: Implements the application operation `fingerprint` (fingerprint).
+     * 中文：实现应用操作 `fingerprint`（fingerprint）。
+     */
     function fingerprint(payload){
         return [payload.type,payload.message,payload.source,payload.line,payload.http_status].join('|');
     }
 
+    /**
+     * EN: Checks or validates the condition represented by `shouldSend` (should Send).
+     * 中文：检查或校验 `shouldSend`（should Send）所表示的条件。
+     */
     function shouldSend(payload){
         const key=fingerprint(payload);
         const now=Date.now();
@@ -52,6 +75,10 @@
         return true;
     }
 
+    /**
+     * EN: Implements the application operation `report` (report).
+     * 中文：实现应用操作 `report`（report）。
+     */
     function report(payload){
         const body={
             type:text(payload.type||'client_error',80),
@@ -134,6 +161,10 @@
     },true);
 
     let ajaxDiagnosticsBound=false;
+    /**
+     * EN: Implements the application operation `bindAjaxDiagnostics` (bind Ajax Diagnostics).
+     * 中文：实现应用操作 `bindAjaxDiagnostics`（bind Ajax Diagnostics）。
+     */
     function bindAjaxDiagnostics(){
         if(ajaxDiagnosticsBound||!window.jQuery){
             return;

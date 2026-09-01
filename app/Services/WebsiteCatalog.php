@@ -1,4 +1,11 @@
 <?php
+/**
+ * File / 文件：app/Services/WebsiteCatalog.php
+ * EN: Application service for reusable business or integration logic.
+ * 中文：该文件负责可复用的业务逻辑或外部集成服务。
+ * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
+ * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ */
 namespace App\Services;
 
 use App\Core\Database;
@@ -15,6 +22,10 @@ class WebsiteCatalog
      *   url
      *   page_url,title,description,image_url
      * Missing title/description/image fields are fetched from the page.
+     */
+    /**
+     * EN: Implements the application operation `importCsv` (import Csv).
+     * 中文：实现应用操作 `importCsv`（import Csv）。
      */
     public static function importCsv(string $path, string $website): array
     {
@@ -90,6 +101,10 @@ class WebsiteCatalog
         return ['processed'=>$processed,'saved'=>$saved,'failed'=>$failed];
     }
 
+    /**
+     * EN: Creates or persists the `addManual` operation (add Manual).
+     * 中文：创建或持久化 `addManual`（add Manual）操作。
+     */
     public static function addManual(
         string $website,
         string $pageUrl,
@@ -107,6 +122,10 @@ class WebsiteCatalog
         return self::upsertReference($host,$pageUrl,$title,$description,$imageUrl);
     }
 
+    /**
+     * EN: Implements the application operation `scan` (scan).
+     * 中文：实现应用操作 `scan`（scan）。
+     */
     public static function scan(string $website,string $sourceUrl=''): array
     {
         self::assertReady();
@@ -153,6 +172,10 @@ class WebsiteCatalog
         ];
     }
 
+    /**
+     * EN: Retrieves or loads data for `search` (search).
+     * 中文：读取或加载 `search`（search）所需的数据。
+     */
     public static function search(string $query='',int $limit=100): array
     {
         self::assertReady();
@@ -179,6 +202,10 @@ class WebsiteCatalog
         return $q->fetchAll();
     }
 
+    /**
+     * EN: Removes or cleans data/state for `deleteReference` (delete Reference).
+     * 中文：删除或清理 `deleteReference`（delete Reference）相关的数据或状态。
+     */
     public static function deleteReference(int $id): bool
     {
         self::assertReady();
@@ -188,6 +215,10 @@ class WebsiteCatalog
         return $q->rowCount()===1;
     }
 
+    /**
+     * EN: Builds, formats, or transforms data for `normalizeUrl` (normalize Url).
+     * 中文：为 `normalizeUrl`（normalize Url）构建、格式化或转换数据。
+     */
     public static function normalizeUrl(string $url): string
     {
         $url=trim($url);
@@ -206,6 +237,10 @@ class WebsiteCatalog
         return $url;
     }
 
+    /**
+     * EN: Checks or validates the condition represented by `assertReady` (assert Ready).
+     * 中文：检查或校验 `assertReady`（assert Ready）所表示的条件。
+     */
     private static function assertReady(): void
     {
         if(!DuplicateIndex::ready()){
@@ -226,6 +261,10 @@ class WebsiteCatalog
         }
     }
 
+    /**
+     * EN: Implements the application operation `upsertReference` (upsert Reference).
+     * 中文：实现应用操作 `upsertReference`（upsert Reference）。
+     */
     private static function upsertReference(
         string $host,
         string $pageUrl,
@@ -267,6 +306,10 @@ class WebsiteCatalog
         return (int)$find->fetchColumn();
     }
 
+    /**
+     * EN: Implements the application operation `discoverUrls` (discover Urls).
+     * 中文：实现应用操作 `discoverUrls`（discover Urls）。
+     */
     private static function discoverUrls(string $sourceUrl,string $host): array
     {
         $first=self::fetchRaw($sourceUrl,$host);
@@ -299,6 +342,10 @@ class WebsiteCatalog
         return array_values(array_unique($urls));
     }
 
+    /**
+     * EN: Implements the application operation `sitemapUrls` (sitemap Urls).
+     * 中文：实现应用操作 `sitemapUrls`（sitemap Urls）。
+     */
     private static function sitemapUrls(string $sourceUrl,string $xml,string $host): array
     {
         $urls=[];$sitemaps=[];
@@ -355,6 +402,10 @@ class WebsiteCatalog
         return $urls;
     }
 
+    /**
+     * EN: Retrieves or loads data for `fetchPageMeta` (fetch Page Meta).
+     * 中文：读取或加载 `fetchPageMeta`（fetch Page Meta）所需的数据。
+     */
     private static function fetchPageMeta(string $url,string $host): array
     {
         $f=self::fetchRaw($url,$host);
@@ -410,6 +461,10 @@ class WebsiteCatalog
         ];
     }
 
+    /**
+     * EN: Retrieves or loads data for `fetchRaw` (fetch Raw).
+     * 中文：读取或加载 `fetchRaw`（fetch Raw）所需的数据。
+     */
     private static function fetchRaw(string $url,string $host): array
     {
         $url=self::normalizeUrl($url);
@@ -450,6 +505,10 @@ class WebsiteCatalog
         return ['body'=>$body,'content_type'=>$type,'effective_url'=>$effective];
     }
 
+    /**
+     * EN: Implements the application operation `absoluteUrl` (absolute Url).
+     * 中文：实现应用操作 `absoluteUrl`（absolute Url）。
+     */
     private static function absoluteUrl(string $base,string $relative): ?string
     {
         $relative=trim(html_entity_decode($relative,ENT_QUOTES|ENT_HTML5,'UTF-8'));
@@ -472,12 +531,20 @@ class WebsiteCatalog
         return $origin.'/'.implode('/',$parts);
     }
 
+    /**
+     * EN: Implements the application operation `host` (host).
+     * 中文：实现应用操作 `host`（host）。
+     */
     private static function host(string $url): string
     {
         $p=parse_url($url);
         return strtolower((string)($p['host']??''));
     }
 
+    /**
+     * EN: Checks or validates the condition represented by `assertPublicHost` (assert Public Host).
+     * 中文：检查或校验 `assertPublicHost`（assert Public Host）所表示的条件。
+     */
     private static function assertPublicHost(string $host): void
     {
         $ips=gethostbynamel($host)?:[];

@@ -1,4 +1,11 @@
 <?php
+/**
+ * File / 文件：app/Services/MarketplaceProviderDraft.php
+ * EN: Application service for reusable business or integration logic.
+ * 中文：该文件负责可复用的业务逻辑或外部集成服务。
+ * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
+ * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ */
 namespace App\Services;
 
 class MarketplaceProviderDraft
@@ -10,6 +17,10 @@ class MarketplaceProviderDraft
         'generic_json',
     ];
 
+    /**
+     * EN: Builds, formats, or transforms data for `fromPost` (from Post).
+     * 中文：为 `fromPost`（from Post）构建、格式化或转换数据。
+     */
     public static function fromPost(array $input): array
     {
         $type = strtolower(trim((string)($input['provider_type'] ?? '')));
@@ -150,6 +161,10 @@ class MarketplaceProviderDraft
         return $profile;
     }
 
+    /**
+     * EN: Implements the application operation `fingerprint` (fingerprint).
+     * 中文：实现应用操作 `fingerprint`（fingerprint）。
+     */
     public static function fingerprint(array $profile): string
     {
         $safe = $profile;
@@ -165,6 +180,10 @@ class MarketplaceProviderDraft
         );
     }
 
+    /**
+     * EN: Implements the application operation `typeLabel` (type Label).
+     * 中文：实现应用操作 `typeLabel`（type Label）。
+     */
     public static function typeLabel(string $type): string
     {
         return match ($type) {

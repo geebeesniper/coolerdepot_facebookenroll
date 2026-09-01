@@ -1,8 +1,19 @@
 <?php
+/**
+ * File / 文件：app/Core/Auth.php
+ * EN: Core runtime/infrastructure component used across the application.
+ * 中文：该文件是应用全局复用的核心运行时或基础设施组件。
+ * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
+ * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ */
 namespace App\Core;
 
 class Auth
 {
+    /**
+     * EN: Implements the application operation `user` (user).
+     * 中文：实现应用操作 `user`（user）。
+     */
     public static function user(): ?array
     {
         $raw = $_SESSION['auth_db_token'] ?? '';
@@ -37,6 +48,10 @@ class Auth
         return $user;
     }
 
+    /**
+     * EN: Implements the application operation `login` (login).
+     * 中文：实现应用操作 `login`（login）。
+     */
     public static function login(array $user, string $source = 'handoff'): void
     {
         global $config;
@@ -61,6 +76,10 @@ class Auth
         Logger::setUserContext($user);
     }
 
+    /**
+     * EN: Implements the application operation `logout` (logout).
+     * 中文：实现应用操作 `logout`（logout）。
+     */
     public static function logout(): void
     {
         $raw = $_SESSION['auth_db_token'] ?? '';
@@ -82,6 +101,10 @@ class Auth
         }
     }
 
+    /**
+     * EN: Implements the application operation `requireLogin` (require Login).
+     * 中文：实现应用操作 `requireLogin`（require Login）。
+     */
     public static function requireLogin(): array
     {
         $user = self::user();
@@ -95,6 +118,10 @@ class Auth
         return $user;
     }
 
+    /**
+     * EN: Implements the application operation `requireRole` (require Role).
+     * 中文：实现应用操作 `requireRole`（require Role）。
+     */
     public static function requireRole(string $role): array
     {
         $user = self::requireLogin();

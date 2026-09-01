@@ -1,4 +1,11 @@
 <?php
+/**
+ * File / 文件：app/Services/DuplicateIndex.php
+ * EN: Application service for reusable business or integration logic.
+ * 中文：该文件负责可复用的业务逻辑或外部集成服务。
+ * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
+ * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ */
 namespace App\Services;
 
 use App\Core\Database;
@@ -6,6 +13,10 @@ use App\Core\Util;
 
 class DuplicateIndex
 {
+    /**
+     * EN: Retrieves or loads data for `ready` (ready).
+     * 中文：读取或加载 `ready`（ready）所需的数据。
+     */
     public static function ready(): bool
     {
         try{
@@ -24,6 +35,10 @@ class DuplicateIndex
         }
     }
 
+    /**
+     * EN: Implements the application operation `inspect` (inspect).
+     * 中文：实现应用操作 `inspect`（inspect）。
+     */
     public static function inspect(string $platform,string $title,array $meta): array
     {
         if(!self::ready()){throw new \RuntimeException('Run the v0.1.70 duplicate-comparison migration before submitting posts.');}
@@ -44,6 +59,10 @@ class DuplicateIndex
         return $report;
     }
 
+    /**
+     * EN: Implements the application operation `compare` (compare).
+     * 中文：实现应用操作 `compare`（compare）。
+     */
     public static function compare(string $platform,string $title,array $assets): array
     {
         $pdo=Database::connection();$warnings=[];$matches=[];$blocked=null;
@@ -106,6 +125,10 @@ class DuplicateIndex
         return ['blocked'=>$blocked,'warnings'=>$warnings,'matches'=>$matches,'website_count'=>$website,'unindexed_posts'=>$unindexed];
     }
 
+    /**
+     * EN: Creates or persists the `storePost` operation (store Post).
+     * 中文：创建或持久化 `storePost`（store Post）操作。
+     */
     public static function storePost(int $postId,array $assets): void
     {
         if(!$assets){return;}
@@ -113,6 +136,10 @@ class DuplicateIndex
         foreach($assets as $a){$q->execute([$postId,$a['url'],hash('sha256',$a['url']),$a['sha256'],$a['dhash']??null]);}
     }
 
+    /**
+     * EN: Implements the application operation `websiteStats` (website Stats).
+     * 中文：实现应用操作 `websiteStats`（website Stats）。
+     */
     public static function websiteStats(): array
     {
         if(!self::ready()){return ['ready'=>false,'total'=>0,'pending'=>0];}

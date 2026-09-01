@@ -1,8 +1,19 @@
 <?php
+/**
+ * File / 文件：app/Models/Post.php
+ * EN: Database model and query layer for this domain.
+ * 中文：该文件负责此业务域的数据模型与数据库查询。
+ * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
+ * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ */
 namespace App\Models;
 use App\Core\Database;
 use App\Core\Util;
 class Post {
+    /**
+     * EN: Implements the application operation `duplicate` (duplicate).
+     * 中文：实现应用操作 `duplicate`（duplicate）。
+     */
     public static function duplicate(int $uid,string $platform,?string $url,?string $eid,?string $title,?string $desc):?array{
         $pdo=Database::connection();
         $checks=[];
@@ -43,6 +54,10 @@ class Post {
         }
         return null;
     }
+    /**
+     * EN: Creates or persists the `create` operation (create).
+     * 中文：创建或持久化 `create`（create）操作。
+     */
     public static function create(array $i):int{
         // Never trust a preflight result at save time. All callers must serialize
         // same-platform saves and own the surrounding transaction.
@@ -63,14 +78,26 @@ class Post {
         \App\Services\DuplicateIndex::storePost($id,$assets);
         return $id;
     }
+    /**
+     * EN: Implements the application operation `forSales` (for Sales).
+     * 中文：实现应用操作 `forSales`（for Sales）。
+     */
     public static function forSales(int $uid,string $from,string $to):array{
         $s=Database::connection()->prepare("SELECT p.*,r.decision review_decision FROM cdsp_sales_posts p LEFT JOIN cdsp_post_reviews r ON r.post_id=p.id WHERE p.sales_user_id=? AND p.published_date BETWEEN ? AND ? AND p.deleted_at IS NULL ORDER BY p.published_at DESC,p.id DESC");
         $s->execute([$uid,$from,$to]);return$s->fetchAll();
     }
+    /**
+     * EN: Retrieves or loads data for `find` (find).
+     * 中文：读取或加载 `find`（find）所需的数据。
+     */
     public static function find(int $id):?array{
         $s=Database::connection()->prepare("SELECT p.*,u.display_name,u.sales_id FROM cdsp_sales_posts p JOIN cdsp_users u ON u.id=p.sales_user_id WHERE p.id=? LIMIT 1");
         $s->execute([$id]);return$s->fetch()?:null;
     }
+    /**
+     * EN: Implements the application operation `pendingDeletionRequests` (pending Deletion Requests).
+     * 中文：实现应用操作 `pendingDeletionRequests`（pending Deletion Requests）。
+     */
     public static function pendingDeletionRequests():array{
         $s=Database::connection()->query(
             "SELECT
@@ -93,6 +120,10 @@ class Post {
         );
         return $s->fetchAll();
     }
+    /**
+     * EN: Implements the application operation `adminQueue` (admin Queue).
+     * 中文：实现应用操作 `adminQueue`（admin Queue）。
+     */
     public static function adminQueue(string $date, int $salesUserId = 0):array{
         $sql = "SELECT p.*,u.display_name,u.sales_id,r.decision
                 FROM cdsp_sales_posts p
@@ -114,6 +145,10 @@ class Post {
         return $s->fetchAll();
     }
 
+    /**
+     * EN: Implements the application operation `adminProgressStats` (admin Progress Stats).
+     * 中文：实现应用操作 `adminProgressStats`（admin Progress Stats）。
+     */
     public static function adminProgressStats(
         string $from,
         string $to,
@@ -176,6 +211,10 @@ class Post {
         return $s->fetchAll();
     }
 
+    /**
+     * EN: Implements the application operation `adminSalesProgress` (admin Sales Progress).
+     * 中文：实现应用操作 `adminSalesProgress`（admin Sales Progress）。
+     */
     public static function adminSalesProgress(
         string $from,
         string $to
@@ -236,6 +275,10 @@ class Post {
         return $s->fetchAll();
     }
 
+    /**
+     * EN: Implements the application operation `adminDashboardStateRange` (admin Dashboard State Range).
+     * 中文：实现应用操作 `adminDashboardStateRange`（admin Dashboard State Range）。
+     */
     public static function adminDashboardStateRange(
         string $from,
         string $to
@@ -257,17 +300,29 @@ class Post {
         ];
     }
 
+    /**
+     * EN: Implements the application operation `adminDailySalesProgress` (admin Daily Sales Progress).
+     * 中文：实现应用操作 `adminDailySalesProgress`（admin Daily Sales Progress）。
+     */
     public static function adminDailySalesProgress(string $date): array
     {
         return self::adminSalesProgress($date,$date);
     }
 
+    /**
+     * EN: Implements the application operation `adminDashboardState` (admin Dashboard State).
+     * 中文：实现应用操作 `adminDashboardState`（admin Dashboard State）。
+     */
     public static function adminDashboardState(string $date): array
     {
         return self::adminDashboardStateRange($date,$date);
     }
 
 
+    /**
+     * EN: Implements the application operation `adminSalesPostsForPeriod` (admin Sales Posts For Period).
+     * 中文：实现应用操作 `adminSalesPostsForPeriod`（admin Sales Posts For Period）。
+     */
     public static function adminSalesPostsForPeriod(
         int $salesUserId,
         string $from,
@@ -313,6 +368,10 @@ class Post {
     }
 
 
+    /**
+     * EN: Updates application state for `updateFetchedContent` (update Fetched Content).
+     * 中文：更新 `updateFetchedContent`（update Fetched Content）对应的应用状态。
+     */
     public static function updateFetchedContent(
         int $postId,
         string $title,
@@ -345,11 +404,19 @@ class Post {
         ]);
     }
 
+    /**
+     * EN: Implements the application operation `dailyCounts` (daily Counts).
+     * 中文：实现应用操作 `dailyCounts`（daily Counts）。
+     */
     public static function dailyCounts(int $uid,string $from,string $to):array{
         $s=Database::connection()->prepare("SELECT DATE(created_at) work_date,platform,COUNT(*) cnt FROM cdsp_sales_posts WHERE sales_user_id=? AND created_at>=? AND created_at<DATE_ADD(?,INTERVAL 1 DAY) AND deleted_at IS NULL GROUP BY DATE(created_at),platform ORDER BY work_date DESC");
         $s->execute([$uid,$from.' 00:00:00',$to.' 00:00:00']);return$s->fetchAll();
     }
 
+/**
+ * EN: Implements the application operation `dailyDatesForSales` (daily Dates For Sales).
+ * 中文：实现应用操作 `dailyDatesForSales`（daily Dates For Sales）。
+ */
 public static function dailyDatesForSales(
     int $salesUserId,
     string $from,
@@ -438,6 +505,10 @@ public static function dailyDatesForSales(
     return $stmt->fetchAll();
 }
 
+/**
+ * EN: Implements the application operation `forSalesOnDate` (for Sales On Date).
+ * 中文：实现应用操作 `forSalesOnDate`（for Sales On Date）。
+ */
 public static function forSalesOnDate(
     int $salesUserId,
     string $date,
@@ -495,6 +566,10 @@ public static function forSalesOnDate(
 }
 
 
+/**
+ * EN: Implements the application operation `forSalesPublishedRange` (for Sales Published Range).
+ * 中文：实现应用操作 `forSalesPublishedRange`（for Sales Published Range）。
+ */
 public static function forSalesPublishedRange(
     int $salesUserId,
     string $from,
@@ -550,6 +625,10 @@ public static function forSalesPublishedRange(
 }
 
 
+/**
+ * EN: Implements the application operation `salesChartRows` (sales Chart Rows).
+ * 中文：实现应用操作 `salesChartRows`（sales Chart Rows）。
+ */
 public static function salesChartRows(
     int $salesUserId,
     string $from,
@@ -638,6 +717,10 @@ public static function salesChartRows(
     return $rows;
 }
 
+/**
+ * EN: Implements the application operation `salesRangeSummary` (sales Range Summary).
+ * 中文：实现应用操作 `salesRangeSummary`（sales Range Summary）。
+ */
 public static function salesRangeSummary(
     int $salesUserId,
     string $from,
@@ -716,6 +799,10 @@ public static function salesRangeSummary(
     ];
 }
 
+/**
+ * EN: Implements the application operation `dailyDateCountForSales` (daily Date Count For Sales).
+ * 中文：实现应用操作 `dailyDateCountForSales`（daily Date Count For Sales）。
+ */
 public static function dailyDateCountForSales(
     int $salesUserId,
     string $from,
@@ -752,6 +839,10 @@ public static function dailyDateCountForSales(
 
 
 
+/**
+ * EN: Implements the application operation `requestDeletion` (request Deletion).
+ * 中文：实现应用操作 `requestDeletion`（request Deletion）。
+ */
 public static function requestDeletion(int $salesUserId,int $postId,string $reason): void
 {
     $pdo=Database::connection();
@@ -772,6 +863,10 @@ public static function requestDeletion(int $salesUserId,int $postId,string $reas
     $q->execute([$postId,$salesUserId,$reason]);
 }
 
+/**
+ * EN: Implements the application operation `hardDelete` (hard Delete).
+ * 中文：实现应用操作 `hardDelete`（hard Delete）。
+ */
 public static function hardDelete(int $postId): void
 {
     if($postId<1){throw new \DomainException('Post was not found.');}

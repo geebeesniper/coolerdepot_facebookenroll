@@ -1,4 +1,11 @@
 <?php
+/**
+ * File / 文件：app/Services/BrightDataMarketplaceProvider.php
+ * EN: Application service for reusable business or integration logic.
+ * 中文：该文件负责可复用的业务逻辑或外部集成服务。
+ * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
+ * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ */
 namespace App\Services;
 
 use App\Models\FetchJob;
@@ -8,6 +15,10 @@ class BrightDataMarketplaceProvider
 {
     public const DEFAULT_DATASET_ID = 'gd_lvt9iwuh6fbcwmx1a';
 
+    /**
+     * EN: Checks or validates the condition represented by `configured` (configured).
+     * 中文：检查或校验 `configured`（configured）所表示的条件。
+     */
     public function configured(): bool
     {
         try {
@@ -24,6 +35,10 @@ class BrightDataMarketplaceProvider
         }
     }
 
+    /**
+     * EN: Implements the application operation `credentialStatus` (credential Status).
+     * 中文：实现应用操作 `credentialStatus`（credential Status）。
+     */
     public function credentialStatus(): array
     {
         $credentials = $this->credentials();
@@ -34,6 +49,10 @@ class BrightDataMarketplaceProvider
         ];
     }
 
+    /**
+     * EN: Retrieves or loads data for `fetch` (fetch).
+     * 中文：读取或加载 `fetch`（fetch）所需的数据。
+     */
     public function fetch(string $url, int $requestedByUserId): array
     {
         if (Setting::get('brightdata_enabled', '0') !== '1') {
@@ -160,6 +179,10 @@ class BrightDataMarketplaceProvider
         );
     }
 
+    /**
+     * EN: Implements the application operation `credentials` (credentials).
+     * 中文：实现应用操作 `credentials`（credentials）。
+     */
     private function credentials(): array
     {
         $credentials = [];
@@ -185,6 +208,10 @@ class BrightDataMarketplaceProvider
         return $credentials;
     }
 
+    /**
+     * EN: Retrieves or loads data for `fetchWithCredential` (fetch With Credential).
+     * 中文：读取或加载 `fetchWithCredential`（fetch With Credential）所需的数据。
+     */
     private function fetchWithCredential(
         string $url,
         ?string $externalId,
@@ -453,6 +480,10 @@ class BrightDataMarketplaceProvider
         }
     }
 
+    /**
+     * EN: Implements the application operation `complete` (complete).
+     * 中文：实现应用操作 `complete`（complete）。
+     */
     private function complete(array $item): bool
     {
         return trim((string)($item['external_post_id'] ?? '')) !== ''
@@ -461,6 +492,10 @@ class BrightDataMarketplaceProvider
             && trim((string)($item['published_raw'] ?? '')) !== '';
     }
 
+    /**
+     * EN: Implements the application operation `failJob` (fail Job).
+     * 中文：实现应用操作 `failJob`（fail Job）。
+     */
     private function failJob(
         int $jobId,
         ?int $httpStatus,
@@ -475,6 +510,10 @@ class BrightDataMarketplaceProvider
         );
     }
 
+    /**
+     * EN: Builds, formats, or transforms data for `normalize` (normalize).
+     * 中文：为 `normalize`（normalize）构建、格式化或转换数据。
+     */
     private function normalize(
         array $record,
         string $submittedUrl,
@@ -536,6 +575,10 @@ class BrightDataMarketplaceProvider
         ];
     }
 
+    /**
+     * EN: Implements the application operation `firstRecord` (first Record).
+     * 中文：实现应用操作 `firstRecord`（first Record）。
+     */
     private function firstRecord($data): ?array
     {
         if (!is_array($data)) {
@@ -595,6 +638,10 @@ class BrightDataMarketplaceProvider
         return null;
     }
 
+    /**
+     * EN: Implements the application operation `providerMessage` (provider Message).
+     * 中文：实现应用操作 `providerMessage`（provider Message）。
+     */
     private function providerMessage($json, string $raw): string
     {
         if (is_array($json)) {
@@ -624,6 +671,10 @@ class BrightDataMarketplaceProvider
             : 'Unknown provider error.';
     }
 
+    /**
+     * EN: Implements the application operation `request` (request).
+     * 中文：实现应用操作 `request`（request）。
+     */
     private function request(
         string $method,
         string $url,

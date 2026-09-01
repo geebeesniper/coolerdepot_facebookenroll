@@ -1,4 +1,11 @@
 <?php
+/**
+ * File / 文件：app/Services/PostInspector.php
+ * EN: Application service for reusable business or integration logic.
+ * 中文：该文件负责可复用的业务逻辑或外部集成服务。
+ * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
+ * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ */
 namespace App\Services;
 
 use DOMDocument;
@@ -13,6 +20,10 @@ class PostInspector
      * Fetch the newest content for an already-saved post without running
      * duplicate/save validation against that same post. This is used only by
      * the explicit Admin Refresh Content action.
+     */
+    /**
+     * EN: Updates application state for `refreshExistingContent` (refresh Existing Content).
+     * 中文：更新 `refreshExistingContent`（refresh Existing Content）对应的应用状态。
      */
     public function refreshExistingContent(
         int $actorUserId,
@@ -90,6 +101,10 @@ class PostInspector
         ];
     }
 
+    /**
+     * EN: Implements the application operation `inspect` (inspect).
+     * 中文：实现应用操作 `inspect`（inspect）。
+     */
     public function inspect(int $uid, string $platform, string $submitted): array
     {
         global $config;
@@ -163,6 +178,10 @@ class PostInspector
         );
     }
 
+    /**
+     * EN: Implements the application operation `inspectFacebook` (inspect Facebook).
+     * 中文：实现应用操作 `inspectFacebook`（inspect Facebook）。
+     */
     private function inspectFacebook(int $uid, string $submitted): array
     {
         $eid = PlatformUrl::externalId('facebook', $submitted);
@@ -277,6 +296,10 @@ class PostInspector
         );
     }
 
+    /**
+     * EN: Checks or validates the condition represented by `validateAndFinish` (validate And Finish).
+     * 中文：检查或校验 `validateAndFinish`（validate And Finish）所表示的条件。
+     */
     private function validateAndFinish(
         int $uid,
         string $platform,
@@ -406,6 +429,10 @@ class PostInspector
         ];
     }
 
+    /**
+     * EN: Implements the application operation `meta` (meta).
+     * 中文：实现应用操作 `meta`（meta）。
+     */
     private function meta(string $html): array
     {
         $r = [
@@ -507,6 +534,10 @@ class PostInspector
         return $r;
     }
 
+    /**
+     * EN: Implements the application operation `craigslist` (craigslist).
+     * 中文：实现应用操作 `craigslist`（craigslist）。
+     */
     private function craigslist(string $html): array
     {
         $r = [];
@@ -551,6 +582,10 @@ class PostInspector
         return $r;
     }
 
+    /**
+     * EN: Implements the application operation `embeddedDate` (embedded Date).
+     * 中文：实现应用操作 `embeddedDate`（embedded Date）。
+     */
     private function embeddedDate(string $p, string $html): ?string
     {
         $keys = $p === 'offerup'
@@ -586,6 +621,10 @@ class PostInspector
         return null;
     }
 
+    /**
+     * EN: Implements the application operation `relativeDate` (relative Date).
+     * 中文：实现应用操作 `relativeDate`（relative Date）。
+     */
     private function relativeDate(string $html): ?string
     {
         $t = strip_tags(html_entity_decode(
@@ -610,6 +649,10 @@ class PostInspector
         return null;
     }
 
+    /**
+     * EN: Implements the application operation `date` (date).
+     * 中文：实现应用操作 `date`（date）。
+     */
     private function date(string $raw, string $tz): ?DateTime
     {
         if ($raw === '') {
@@ -632,6 +675,10 @@ class PostInspector
         }
     }
 
+    /**
+     * EN: Implements the application operation `fail` (fail).
+     * 中文：实现应用操作 `fail`（fail）。
+     */
     private function fail(
         int $uid,
         string $p,

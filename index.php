@@ -1,4 +1,11 @@
 <?php
+/**
+ * File / 文件：index.php
+ * EN: Application HTTP entry/endpoint source.
+ * 中文：该文件是应用 HTTP 入口或端点。
+ * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
+ * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ */
 $config = require __DIR__ . '/config/bootstrap.php';
 
 use App\Core\Router;

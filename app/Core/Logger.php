@@ -1,4 +1,11 @@
 <?php
+/**
+ * File / 文件：app/Core/Logger.php
+ * EN: Core runtime/infrastructure component used across the application.
+ * 中文：该文件是应用全局复用的核心运行时或基础设施组件。
+ * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
+ * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ */
 namespace App\Core;
 
 use Throwable;
@@ -31,6 +38,10 @@ final class Logger
     private static string $requestId = '';
     private static array $userContext = [];
 
+    /**
+     * EN: Implements the application operation `init` (init).
+     * 中文：实现应用操作 `init`（init）。
+     */
     public static function init(array $config): void
     {
         if (self::$initialized) {
@@ -54,6 +65,10 @@ final class Logger
      * Attach authenticated user identity to later records in this request.
      * Do not store the session token or any credential here.
      */
+    /**
+     * EN: Updates application state for `setUserContext` (set User Context).
+     * 中文：更新 `setUserContext`（set User Context）对应的应用状态。
+     */
     public static function setUserContext(?array $user): void
     {
         if (!$user) {
@@ -68,6 +83,10 @@ final class Logger
         ], static fn($value) => $value !== null && $value !== '');
     }
 
+    /**
+     * EN: Implements the application operation `requestId` (request Id).
+     * 中文：实现应用操作 `requestId`（request Id）。
+     */
     public static function requestId(): string
     {
         if (self::$requestId === '') {
@@ -77,6 +96,10 @@ final class Logger
         return self::$requestId;
     }
 
+    /**
+     * EN: Implements the application operation `currentLogFile` (current Log File).
+     * 中文：实现应用操作 `currentLogFile`（current Log File）。
+     */
     public static function currentLogFile(): string
     {
         return rtrim(self::logDirectory(), DIRECTORY_SEPARATOR)
@@ -84,26 +107,46 @@ final class Logger
             . 'app-' . date('Y-m-d') . '.log';
     }
 
+    /**
+     * EN: Implements the application operation `debug` (debug).
+     * 中文：实现应用操作 `debug`（debug）。
+     */
     public static function debug(string $message, array $context = [], string $channel = 'app'): void
     {
         self::log('debug', $message, $context, $channel);
     }
 
+    /**
+     * EN: Implements the application operation `info` (info).
+     * 中文：实现应用操作 `info`（info）。
+     */
     public static function info(string $message, array $context = [], string $channel = 'app'): void
     {
         self::log('info', $message, $context, $channel);
     }
 
+    /**
+     * EN: Implements the application operation `warning` (warning).
+     * 中文：实现应用操作 `warning`（warning）。
+     */
     public static function warning(string $message, array $context = [], string $channel = 'app'): void
     {
         self::log('warning', $message, $context, $channel);
     }
 
+    /**
+     * EN: Implements the application operation `error` (error).
+     * 中文：实现应用操作 `error`（error）。
+     */
     public static function error(string $message, array $context = [], string $channel = 'app'): void
     {
         self::log('error', $message, $context, $channel);
     }
 
+    /**
+     * EN: Implements the application operation `critical` (critical).
+     * 中文：实现应用操作 `critical`（critical）。
+     */
     public static function critical(string $message, array $context = [], string $channel = 'app'): void
     {
         self::log('critical', $message, $context, $channel);
@@ -111,6 +154,10 @@ final class Logger
 
     /**
      * Record an exception with type, origin and a bounded stack trace.
+     */
+    /**
+     * EN: Implements the application operation `exception` (exception).
+     * 中文：实现应用操作 `exception`（exception）。
      */
     public static function exception(
         Throwable $e,
@@ -138,6 +185,10 @@ final class Logger
      * Record a non-success HTTP response. Query strings are deliberately not
      * logged because handoff URLs and provider callbacks can contain secrets.
      */
+    /**
+     * EN: Implements the application operation `httpStatus` (http Status).
+     * 中文：实现应用操作 `httpStatus`（http Status）。
+     */
     public static function httpStatus(int $status, array $context = []): void
     {
         if ($status < 400) {
@@ -153,6 +204,10 @@ final class Logger
         );
     }
 
+    /**
+     * EN: Implements the application operation `log` (log).
+     * 中文：实现应用操作 `log`（log）。
+     */
     public static function log(
         string $level,
         string $message,
@@ -213,6 +268,10 @@ final class Logger
         }
     }
 
+    /**
+     * EN: Implements the application operation `installPhpErrorHandler` (install Php Error Handler).
+     * 中文：实现应用操作 `installPhpErrorHandler`（install Php Error Handler）。
+     */
     private static function installPhpErrorHandler(): void
     {
         set_error_handler(static function (
@@ -247,6 +306,10 @@ final class Logger
         });
     }
 
+    /**
+     * EN: Implements the application operation `installShutdownHandler` (install Shutdown Handler).
+     * 中文：实现应用操作 `installShutdownHandler`（install Shutdown Handler）。
+     */
     private static function installShutdownHandler(): void
     {
         register_shutdown_function(static function (): void {
@@ -280,6 +343,10 @@ final class Logger
         });
     }
 
+    /**
+     * EN: Implements the application operation `requestContext` (request Context).
+     * 中文：实现应用操作 `requestContext`（request Context）。
+     */
     private static function requestContext(): array
     {
         if (PHP_SAPI === 'cli') {
@@ -311,6 +378,10 @@ final class Logger
         ];
     }
 
+    /**
+     * EN: Implements the application operation `sanitize` (sanitize).
+     * 中文：实现应用操作 `sanitize`（sanitize）。
+     */
     private static function sanitize($value, ?string $key = null, int $depth = 0)
     {
         if ($depth > 6) {
@@ -349,6 +420,10 @@ final class Logger
         return $value;
     }
 
+    /**
+     * EN: Implements the application operation `sensitiveKey` (sensitive Key).
+     * 中文：实现应用操作 `sensitiveKey`（sensitive Key）。
+     */
     private static function sensitiveKey(string $key): bool
     {
         return (bool)preg_match(
@@ -357,6 +432,10 @@ final class Logger
         );
     }
 
+    /**
+     * EN: Implements the application operation `redactString` (redact String).
+     * 中文：实现应用操作 `redactString`（redact String）。
+     */
     private static function redactString(string $value): string
     {
         $value = preg_replace(
@@ -382,6 +461,10 @@ final class Logger
         return $value;
     }
 
+    /**
+     * EN: Implements the application operation `boundedTrace` (bounded Trace).
+     * 中文：实现应用操作 `boundedTrace`（bounded Trace）。
+     */
     private static function boundedTrace(Throwable $e): array
     {
         $trace = [];
@@ -397,6 +480,10 @@ final class Logger
         return $trace;
     }
 
+    /**
+     * EN: Creates or persists the `writeLine` operation (write Line).
+     * 中文：创建或持久化 `writeLine`（write Line）操作。
+     */
     private static function writeLine(string $line): bool
     {
         $dir = self::logDirectory();
@@ -427,6 +514,10 @@ final class Logger
      * Rotation is best-effort: if rename fails, logging continues to the active
      * file rather than losing the original application error.
      */
+    /**
+     * EN: Implements the application operation `rotateIfNeeded` (rotate If Needed).
+     * 中文：实现应用操作 `rotateIfNeeded`（rotate If Needed）。
+     */
     private static function rotateIfNeeded(string $file, int $incomingBytes): void
     {
         $maxBytes = max(
@@ -450,6 +541,10 @@ final class Logger
         @rename($file, $archive);
     }
 
+    /**
+     * EN: Implements the application operation `logDirectory` (log Directory).
+     * 中文：实现应用操作 `logDirectory`（log Directory）。
+     */
     private static function logDirectory(): string
     {
         $configured = trim((string)(self::$config['logging']['path'] ?? ''));
@@ -463,6 +558,10 @@ final class Logger
         return dirname(__DIR__, 2) . '/storage/logs';
     }
 
+    /**
+     * EN: Checks or validates the condition represented by `shouldLog` (should Log).
+     * 中文：检查或校验 `shouldLog`（should Log）所表示的条件。
+     */
     private static function shouldLog(string $level): bool
     {
         $minimum = strtolower((string)(self::$config['logging']['level'] ?? 'warning'));
@@ -473,6 +572,10 @@ final class Logger
         return self::LEVEL_WEIGHT[$level] >= self::LEVEL_WEIGHT[$minimum];
     }
 
+    /**
+     * EN: Implements the application operation `maybePruneOldLogs` (maybe Prune Old Logs).
+     * 中文：实现应用操作 `maybePruneOldLogs`（maybe Prune Old Logs）。
+     */
     private static function maybePruneOldLogs(): void
     {
         $days = max(1, (int)(self::$config['logging']['retention_days'] ?? 30));
@@ -494,6 +597,10 @@ final class Logger
         }
     }
 
+    /**
+     * EN: Builds, formats, or transforms data for `makeRequestId` (make Request Id).
+     * 中文：为 `makeRequestId`（make Request Id）构建、格式化或转换数据。
+     */
     private static function makeRequestId(): string
     {
         try {
@@ -503,6 +610,10 @@ final class Logger
         }
     }
 
+    /**
+     * EN: Implements the application operation `phpSeverityName` (php Severity Name).
+     * 中文：实现应用操作 `phpSeverityName`（php Severity Name）。
+     */
     private static function phpSeverityName(int $severity): string
     {
         $map = [

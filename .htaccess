@@ -1,3 +1,7 @@
+# File / 文件：.htaccess
+# EN: Project-owned source/configuration file.
+# 中文：该文件是本项目自有的源码或配置文件。
+# Maintenance / 维护：Preserve validation, safety, and diagnostics when editing. / 修改时保留校验、安全与诊断。
 Options -Indexes
 RewriteEngine On
 

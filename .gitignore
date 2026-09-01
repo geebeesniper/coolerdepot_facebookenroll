@@ -1,3 +1,7 @@
+# File / 文件：.gitignore
+# EN: Repository ignore policy for secrets, runtime data, archives, and local editor files.
+# 中文：仓库忽略策略，用于排除密钥、运行时数据、压缩包及本地编辑器文件。
+# Maintenance / 维护：Never weaken exclusions for .env, logs, uploads, or release archives. / 不得弱化 .env、日志、上传文件或发布包的排除规则。
 .env
 .env.*
 *.log

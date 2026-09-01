@@ -1,3 +1,10 @@
+/**
+ * File / 文件：public/assets/app.js
+ * EN: Primary browser interaction controller for shared Admin/Sales UI behavior.
+ * 中文：该文件负责 Admin/Sales 共用界面的主要浏览器交互。
+ * Maintenance / 维护：Feature ownership and error paths should stay explicit and centrally diagnosable.
+ * 维护要求：功能归属与错误路径必须清晰，并可进入中央诊断。
+ */
 $(function(){
 
 const appLanguageDictionary={
@@ -35,11 +42,19 @@ const appLanguageDictionary={
     }
 };
 
+/**
+ * EN: Implements the application operation `currentAppLanguage` (current App Language).
+ * 中文：实现应用操作 `currentAppLanguage`（current App Language）。
+ */
 function currentAppLanguage(){
     const lang=localStorage.getItem('cdsp-admin-language')||'en';
     return appLanguageDictionary[lang]?lang:'en';
 }
 
+/**
+ * EN: Updates application state for `applyGlobalMenuLanguage` (apply Global Menu Language).
+ * 中文：更新 `applyGlobalMenuLanguage`（apply Global Menu Language）对应的应用状态。
+ */
 function applyGlobalMenuLanguage(){
     const lang=currentAppLanguage();
     const dict=appLanguageDictionary[lang];
@@ -82,11 +97,73 @@ $('#appLanguageSwitch').on(
     }
 );
 
+/*
+ * EN: Mobile navigation controller. The compact header stays one line tall;
+ * the route list opens only when the hamburger is explicitly toggled.
+ * 中文：手机导航控制器。紧凑顶栏保持单行，只有用户点击汉堡按钮时才展开路由菜单。
+ */
+/**
+ * EN: Updates application state for `setMobileNavigationOpen` (set Mobile Navigation Open).
+ * 中文：更新 `setMobileNavigationOpen`（set Mobile Navigation Open）对应的应用状态。
+ */
+function setMobileNavigationOpen(open){
+    const $nav=$('.topbar .nav');
+    const $toggle=$('#mobileNavToggle');
+    const shouldOpen=Boolean(open);
+
+    if(shouldOpen){
+        $('#adminInfoPanel').addClass('hidden');
+        $('#adminInfoToggle').attr('aria-expanded','false');
+    }
+
+    $nav.toggleClass('mobile-open',shouldOpen);
+    $toggle.attr('aria-expanded',shouldOpen?'true':'false');
+    $toggle.attr('aria-label',shouldOpen?'Close navigation menu':'Open navigation menu');
+}
+
+$('#mobileNavToggle').on('click',function(event){
+    event.preventDefault();
+    event.stopPropagation();
+    setMobileNavigationOpen(!$('.topbar .nav').hasClass('mobile-open'));
+});
+
+$('#appPrimaryNav').on('click','a,button',function(){
+    if(window.matchMedia('(max-width:1050px)').matches){
+        setMobileNavigationOpen(false);
+    }
+});
+
+$(document).on('click.cdspMobileNav',function(event){
+    if(!window.matchMedia('(max-width:1050px)').matches){
+        return;
+    }
+    if($(event.target).closest('.topbar .nav').length===0){
+        setMobileNavigationOpen(false);
+    }
+});
+
+$(document).on('keydown.cdspMobileNav',function(event){
+    if(event.key==='Escape'){
+        setMobileNavigationOpen(false);
+    }
+});
+
+$(window).on('resize.cdspMobileNav',function(){
+    if(!window.matchMedia('(max-width:1050px)').matches){
+        setMobileNavigationOpen(false);
+    }
+});
+
     $('#adminInfoToggle').on('click',function(event){
         event.preventDefault();
         event.stopPropagation();
         const $panel=$('#adminInfoPanel');
         const opening=$panel.hasClass('hidden');
+
+        if(opening && window.matchMedia('(max-width:1050px)').matches){
+            setMobileNavigationOpen(false);
+        }
+
         $panel.toggleClass('hidden',!opening);
         $(this).attr('aria-expanded',opening?'true':'false');
     });
@@ -101,10 +178,18 @@ $('#appLanguageSwitch').on(
     let activeDeleteRequestRow=null;
     let deleteRequestPostXhr=null;
 
+    /**
+     * EN: Implements the application operation `infoEscapeHtml` (info Escape Html).
+     * 中文：实现应用操作 `infoEscapeHtml`（info Escape Html）。
+     */
     function infoEscapeHtml(value){
         return $('<div>').text(value==null?'':String(value)).html();
     }
 
+    /**
+     * EN: Updates application state for `updateAdminInfoCount` (update Admin Info Count).
+     * 中文：更新 `updateAdminInfoCount`（update Admin Info Count）对应的应用状态。
+     */
     function updateAdminInfoCount(){
         const count=$('#adminInfoList .admin-info-item').length;
         $('#adminInfoPendingCount').text(count+' pending');
@@ -115,6 +200,10 @@ $('#appLanguageSwitch').on(
         }
     }
 
+    /**
+     * EN: Implements the application operation `closeDeleteRequestPostModal` (close Delete Request Post Modal).
+     * 中文：实现应用操作 `closeDeleteRequestPostModal`（close Delete Request Post Modal）。
+     */
     function closeDeleteRequestPostModal(){
         if(deleteRequestPostXhr&&deleteRequestPostXhr.readyState!==4){
             deleteRequestPostXhr.abort();
@@ -133,6 +222,10 @@ $('#appLanguageSwitch').on(
         $('#adminDeleteRequestApprove,#adminDeleteRequestReject').prop('disabled',false);
     }
 
+    /**
+     * EN: Removes or cleans data/state for `deleteRequestPhotoHtml` (delete Request Photo Html).
+     * 中文：删除或清理 `deleteRequestPhotoHtml`（delete Request Photo Html）相关的数据或状态。
+     */
     function deleteRequestPhotoHtml(url){
         const safe=String(url||'');
         if(!safe)return '';
@@ -141,6 +234,10 @@ $('#appLanguageSwitch').on(
             +'</a>';
     }
 
+    /**
+     * EN: Implements the application operation `openDeleteRequestPostModal` (open Delete Request Post Modal).
+     * 中文：实现应用操作 `openDeleteRequestPostModal`（open Delete Request Post Modal）。
+     */
     function openDeleteRequestPostModal($row){
         const requestId=parseInt($row.attr('data-info-request-id')||'0',10)||0;
         const postId=parseInt($row.attr('data-info-post-id')||'0',10)||0;
@@ -208,6 +305,10 @@ $('#appLanguageSwitch').on(
         closeDeleteRequestPostModal();
     });
 
+    /**
+     * EN: Creates or persists the `submitDeleteRequestAction` operation (submit Delete Request Action).
+     * 中文：创建或持久化 `submitDeleteRequestAction`（submit Delete Request Action）操作。
+     */
     function submitDeleteRequestAction(action){
         if(!activeDeleteRequestId)return;
         const $approve=$('#adminDeleteRequestApprove');
@@ -264,6 +365,10 @@ $('#appLanguageSwitch').on(
         $('#adminInfoToggle').attr('aria-expanded','false');
     });
 
+    /**
+     * EN: Implements the application operation `detectPlatform` (detect Platform).
+     * 中文：实现应用操作 `detectPlatform`（detect Platform）。
+     */
     function detectPlatform(url){
         try{
             const u = new URL((url || '').trim());
@@ -276,6 +381,10 @@ $('#appLanguageSwitch').on(
         return '';
     }
 
+    /**
+     * EN: Builds, formats, or transforms data for `normalizePostUrl` (normalize Post Url).
+     * 中文：为 `normalizePostUrl`（normalize Post Url）构建、格式化或转换数据。
+     */
     function normalizePostUrl(url, platform){
         const raw = (url || '').trim();
 
@@ -303,6 +412,10 @@ $('#appLanguageSwitch').on(
         return raw;
     }
 
+    /**
+     * EN: Implements the application operation `platformLabel` (platform Label).
+     * 中文：实现应用操作 `platformLabel`（platform Label）。
+     */
     function platformLabel(platform){
         if(platform === 'facebook') return 'Facebook';
         if(platform === 'instagram') return 'Instagram';
@@ -311,6 +424,10 @@ $('#appLanguageSwitch').on(
         return '';
     }
 
+    /**
+     * EN: Updates application state for `updateDetectedPlatform` (update Detected Platform).
+     * 中文：更新 `updateDetectedPlatform`（update Detected Platform）对应的应用状态。
+     */
     function updateDetectedPlatform(){
         const originalUrl = $('#postUrl').val() || '';
         const platform = detectPlatform(originalUrl);
@@ -695,11 +812,19 @@ const salesI18n={
     }
 };
 
+/**
+ * EN: Implements the application operation `salesLanguage` (sales Language).
+ * 中文：实现应用操作 `salesLanguage`（sales Language）。
+ */
 function salesLanguage(){
     const lang=currentAppLanguage();
     return salesI18n[lang]?lang:'en';
 }
 
+/**
+ * EN: Implements the application operation `salesTr` (sales Tr).
+ * 中文：实现应用操作 `salesTr`（sales Tr）。
+ */
 function salesTr(key,vars){
     const lang=salesLanguage();
     const dict=salesI18n[lang]||salesI18n.en;
@@ -715,6 +840,10 @@ function salesTr(key,vars){
     return value;
 }
 
+/**
+ * EN: Updates application state for `applySalesLanguage` (apply Sales Language).
+ * 中文：更新 `applySalesLanguage`（apply Sales Language）对应的应用状态。
+ */
 function applySalesLanguage(){
     $('[data-sales-i18n]').each(function(){
         const key=String($(this).attr('data-sales-i18n')||'');
@@ -775,6 +904,10 @@ $(document).on('cdsp:language-changed',function(){
 
 applySalesLanguage();
 
+/**
+ * EN: Implements the application operation `salesTodayValue` (sales Today Value).
+ * 中文：实现应用操作 `salesTodayValue`（sales Today Value）。
+ */
 function salesTodayValue(){
     return String(
         $('#salesPortalDashboard').attr('data-today')
@@ -782,6 +915,10 @@ function salesTodayValue(){
     );
 }
 
+/**
+ * EN: Updates application state for `updateSalesBackToday` (update Sales Back Today).
+ * 中文：更新 `updateSalesBackToday`（update Sales Back Today）对应的应用状态。
+ */
 function updateSalesBackToday(range){
     const $back=$('#salesBackToday');
     const $to=$('#salesRangeTo');
@@ -820,6 +957,10 @@ function updateSalesBackToday(range){
     );
 }
 
+/**
+ * EN: Implements the application operation `salesIsoDate` (sales Iso Date).
+ * 中文：实现应用操作 `salesIsoDate`（sales Iso Date）。
+ */
 function salesIsoDate(date){
     const year=date.getFullYear();
     const month=String(
@@ -832,6 +973,10 @@ function salesIsoDate(date){
     return year+'-'+month+'-'+day;
 }
 
+/**
+ * EN: Implements the application operation `salesParseIsoDate` (sales Parse Iso Date).
+ * 中文：实现应用操作 `salesParseIsoDate`（sales Parse Iso Date）。
+ */
 function salesParseIsoDate(value){
     const match=String(value||'').match(
         /^(\d{4})-(\d{2})-(\d{2})$/
@@ -853,6 +998,10 @@ function salesParseIsoDate(value){
         :date;
 }
 
+/**
+ * EN: Implements the application operation `salesPresetRange` (sales Preset Range).
+ * 中文：实现应用操作 `salesPresetRange`（sales Preset Range）。
+ */
 function salesPresetRange(period,anchorValue){
     const todayValue=salesTodayValue();
     const today=salesParseIsoDate(todayValue);
@@ -938,6 +1087,10 @@ function salesPresetRange(period,anchorValue){
         to:salesIsoDate(to)
     };
 }
+/**
+ * EN: Updates application state for `setSalesRangePeriod` (set Sales Range Period).
+ * 中文：更新 `setSalesRangePeriod`（set Sales Range Period）对应的应用状态。
+ */
 function setSalesRangePeriod(period){
     salesRangePeriod=String(
         period||'custom'
@@ -989,6 +1142,10 @@ function setSalesRangePeriod(period){
         );
 }
 
+/**
+ * EN: Implements the application operation `detectSalesRangePeriod` (detect Sales Range Period).
+ * 中文：实现应用操作 `detectSalesRangePeriod`（detect Sales Range Period）。
+ */
 function detectSalesRangePeriod(from,to){
     const toDate=salesParseIsoDate(to);
 
@@ -1040,6 +1197,10 @@ function detectSalesRangePeriod(from,to){
     return 'custom';
 }
 
+/**
+ * EN: Updates application state for `syncSalesRangeConstraints` (sync Sales Range Constraints).
+ * 中文：更新 `syncSalesRangeConstraints`（sync Sales Range Constraints）对应的应用状态。
+ */
 function syncSalesRangeConstraints(changed){
     const $from=$('#salesRangeFrom');
     const $to=$('#salesRangeTo');
@@ -1114,6 +1275,10 @@ let salesChartHoverDay=null;
 let salesChartHoverPoint=null;
 let salesRangeVisualTimer=null;
 
+/**
+ * EN: Removes or cleans data/state for `clearSalesRangeVisualState` (clear Sales Range Visual State).
+ * 中文：删除或清理 `clearSalesRangeVisualState`（clear Sales Range Visual State）相关的数据或状态。
+ */
 function clearSalesRangeVisualState(){
     if(salesRangeVisualTimer){
         window.clearTimeout(
@@ -1162,6 +1327,10 @@ function clearSalesRangeVisualState(){
         );
 }
 
+/**
+ * EN: Implements the application operation `startSalesRangeVisualState` (start Sales Range Visual State).
+ * 中文：实现应用操作 `startSalesRangeVisualState`（start Sales Range Visual State）。
+ */
 function startSalesRangeVisualState(reason){
     clearSalesRangeVisualState();
 
@@ -1242,6 +1411,10 @@ if($salesChartTooltip.length&&!$salesChartTooltip.parent().is('body')){
  * to the same Sales chart.
  */
 
+/**
+ * EN: Builds, formats, or transforms data for `parseSalesChartInitialData` (parse Sales Chart Initial Data).
+ * 中文：为 `parseSalesChartInitialData`（parse Sales Chart Initial Data）构建、格式化或转换数据。
+ */
 function parseSalesChartInitialData(){
     const node=document.getElementById('salesChartInitialData');
 
@@ -1265,6 +1438,10 @@ function parseSalesChartInitialData(){
     }
 }
 
+/**
+ * EN: Implements the application operation `salesPostStatusLabel` (sales Post Status Label).
+ * 中文：实现应用操作 `salesPostStatusLabel`（sales Post Status Label）。
+ */
 function salesPostStatusLabel(status){
     if(status==='good'){
         return salesTr('good');
@@ -1277,6 +1454,10 @@ function salesPostStatusLabel(status){
     return salesTr('unreviewed');
 }
 
+/**
+ * EN: Implements the application operation `salesDateRange` (sales Date Range).
+ * 中文：实现应用操作 `salesDateRange`（sales Date Range）。
+ */
 function salesDateRange(from,to){
     const dates=[];
     const start=new Date(from+'T12:00:00');
@@ -1307,6 +1488,10 @@ function salesDateRange(from,to){
     return dates;
 }
 
+/**
+ * EN: Implements the application operation `salesShortDate` (sales Short Date).
+ * 中文：实现应用操作 `salesShortDate`（sales Short Date）。
+ */
 function salesShortDate(value){
     const d=new Date(value+'T12:00:00');
 
@@ -1329,6 +1514,10 @@ function salesShortDate(value){
     );
 }
 
+/**
+ * EN: Implements the application operation `mergeSalesChartRowsFromDom` (merge Sales Chart Rows From Dom).
+ * 中文：实现应用操作 `mergeSalesChartRowsFromDom`（merge Sales Chart Rows From Dom）。
+ */
 function mergeSalesChartRowsFromDom(){
     const replacements={};
 
@@ -1401,6 +1590,10 @@ function mergeSalesChartRowsFromDom(){
     );
 }
 
+/**
+ * EN: Implements the application operation `aggregateSalesChartDate` (aggregate Sales Chart Date).
+ * 中文：实现应用操作 `aggregateSalesChartDate`（aggregate Sales Chart Date）。
+ */
 function aggregateSalesChartDate(date,platform){
     const result={
         date:date,
@@ -1436,6 +1629,10 @@ function aggregateSalesChartDate(date,platform){
     return result;
 }
 
+/**
+ * EN: Builds, formats, or transforms data for `buildSalesChartTooltipHtml` (build Sales Chart Tooltip Html).
+ * 中文：为 `buildSalesChartTooltipHtml`（build Sales Chart Tooltip Html）构建、格式化或转换数据。
+ */
 function buildSalesChartTooltipHtml(data){
     const missing=Math.max(
         0,
@@ -1471,6 +1668,10 @@ function buildSalesChartTooltipHtml(data){
     );
 }
 
+/**
+ * EN: Implements the application operation `salesChartTickStep` (sales Chart Tick Step).
+ * 中文：实现应用操作 `salesChartTickStep`（sales Chart Tick Step）。
+ */
 function salesChartTickStep(maxValue){
     maxValue=Math.max(
         1,
@@ -1523,6 +1724,10 @@ function salesChartTickStep(maxValue){
     return nice*magnitude;
 }
 
+/**
+ * EN: Builds, formats, or transforms data for `renderSalesChartYAxis` (render Sales Chart YAxis).
+ * 中文：为 `renderSalesChartYAxis`（render Sales Chart YAxis）构建、格式化或转换数据。
+ */
 function renderSalesChartYAxis(
     cap,
     target,
@@ -1637,6 +1842,10 @@ function renderSalesChartYAxis(
     }
 }
 
+/**
+ * EN: Builds, formats, or transforms data for `renderSalesChart` (render Sales Chart).
+ * 中文：为 `renderSalesChart`（render Sales Chart）构建、格式化或转换数据。
+ */
 function renderSalesChart(options){
     // The isolated controller owns current rows, range and animation.
     if(typeof window.renderSalesChart==='function'){
@@ -2008,6 +2217,10 @@ function renderSalesChart(options){
         );
 }
 
+/**
+ * EN: Implements the application operation `salesChartEventPoint` (sales Chart Event Point).
+ * 中文：实现应用操作 `salesChartEventPoint`（sales Chart Event Point）。
+ */
 function salesChartEventPoint(event){
     const raw=event&&event.originalEvent
         ?event.originalEvent
@@ -2028,6 +2241,10 @@ function salesChartEventPoint(event){
     return null;
 }
 
+/**
+ * EN: Implements the application operation `positionSalesChartTooltip` (position Sales Chart Tooltip).
+ * 中文：实现应用操作 `positionSalesChartTooltip`（position Sales Chart Tooltip）。
+ */
 function positionSalesChartTooltip($day,event,mode){
     if(!$day||!$day.length||!$salesChartTooltip.length){
         return;
@@ -2089,6 +2306,10 @@ function positionSalesChartTooltip($day,event,mode){
     tooltip.style.top=Math.round(top)+'px';
 }
 
+/**
+ * EN: Implements the application operation `showSalesChartTooltip` (show Sales Chart Tooltip).
+ * 中文：实现应用操作 `showSalesChartTooltip`（show Sales Chart Tooltip）。
+ */
 function showSalesChartTooltip($day,event,mode){
     if(!$day||!$day.length||!$salesChartTooltip.length){
         return;
@@ -2116,6 +2337,10 @@ function showSalesChartTooltip($day,event,mode){
     );
 }
 
+/**
+ * EN: Implements the application operation `moveSalesChartTooltipWithPointer` (move Sales Chart Tooltip With Pointer).
+ * 中文：实现应用操作 `moveSalesChartTooltipWithPointer`（move Sales Chart Tooltip With Pointer）。
+ */
 function moveSalesChartTooltipWithPointer($day,event){
     if(
         !$day
@@ -2133,6 +2358,10 @@ function moveSalesChartTooltipWithPointer($day,event){
     );
 }
 
+/**
+ * EN: Checks or validates the condition represented by `cancelSalesChartHoverTimer` (cancel Sales Chart Hover Timer).
+ * 中文：检查或校验 `cancelSalesChartHoverTimer`（cancel Sales Chart Hover Timer）所表示的条件。
+ */
 function cancelSalesChartHoverTimer(){
     if(salesChartHoverTimer){
         window.clearTimeout(salesChartHoverTimer);
@@ -2143,12 +2372,20 @@ function cancelSalesChartHoverTimer(){
     salesChartHoverPoint=null;
 }
 
+/**
+ * EN: Implements the application operation `hideSalesChartTooltip` (hide Sales Chart Tooltip).
+ * 中文：实现应用操作 `hideSalesChartTooltip`（hide Sales Chart Tooltip）。
+ */
 function hideSalesChartTooltip(){
     cancelSalesChartHoverTimer();
     $salesChartTooltip.addClass('hidden');
     salesTouchChartDay=null;
 }
 
+/**
+ * EN: Updates application state for `updateSalesDayStatusCounts` (update Sales Day Status Counts).
+ * 中文：更新 `updateSalesDayStatusCounts`（update Sales Day Status Counts）对应的应用状态。
+ */
 function updateSalesDayStatusCounts($section){
     const $all=$section.find('.sales-self-post-card');
     const $platformCards=$all.filter(function(){
@@ -2192,6 +2429,10 @@ function updateSalesDayStatusCounts($section){
     return counts;
 }
 
+/**
+ * EN: Implements the application operation `salesPrefersReducedMotion` (sales Prefers Reduced Motion).
+ * 中文：实现应用操作 `salesPrefersReducedMotion`（sales Prefers Reduced Motion）。
+ */
 function salesPrefersReducedMotion(){
     return Boolean(
         window.matchMedia
@@ -2201,6 +2442,10 @@ function salesPrefersReducedMotion(){
     );
 }
 
+/**
+ * EN: Implements the application operation `animateSalesContentIn` (animate Sales Content In).
+ * 中文：实现应用操作 `animateSalesContentIn`（animate Sales Content In）。
+ */
 function animateSalesContentIn(){
     const $stage=$('#salesDailyStage');
     const $chartBody=$(
@@ -2257,6 +2502,10 @@ function animateSalesContentIn(){
     );
 }
 
+/**
+ * EN: Updates application state for `applySalesDayFilter` (apply Sales Day Filter).
+ * 中文：更新 `applySalesDayFilter`（apply Sales Day Filter）对应的应用状态。
+ */
 function applySalesDayFilter($section,filter,animate){
     const $cards=$section.find(
         '.sales-self-post-card'
@@ -2558,6 +2807,10 @@ function applySalesDayFilter($section,filter,animate){
     );
 }
 
+/**
+ * EN: Updates application state for `applySalesPlatformFilterToCards` (apply Sales Platform Filter To Cards).
+ * 中文：更新 `applySalesPlatformFilterToCards`（apply Sales Platform Filter To Cards）对应的应用状态。
+ */
 function applySalesPlatformFilterToCards(animate){
     $('.sales-day-section').each(function(){
         const $section=$(this);
@@ -2572,6 +2825,10 @@ function applySalesPlatformFilterToCards(animate){
     });
 }
 
+/**
+ * EN: Builds, formats, or transforms data for `renderSalesRangeData` (render Sales Range Data).
+ * 中文：为 `renderSalesRangeData`（render Sales Range Data）构建、格式化或转换数据。
+ */
 function renderSalesRangeData(data,range,period,channel,reason){
     const $wrap=$('#dailyPosts');
     const $empty=$('#dailyPostsEmpty');
@@ -2742,6 +2999,10 @@ function renderSalesRangeData(data,range,period,channel,reason){
     animateSalesContentIn();
 }
 
+/**
+ * EN: Retrieves or loads data for `loadSalesRange` (load Sales Range).
+ * 中文：读取或加载 `loadSalesRange`（load Sales Range）所需的数据。
+ */
 function loadSalesRange(range,period,channel,reason){
     if(!range){
         return;
@@ -2889,6 +3150,10 @@ function loadSalesRange(range,period,channel,reason){
     });
 }
 
+/**
+ * EN: Implements the application operation `showSalesOverlay` (show Sales Overlay).
+ * 中文：实现应用操作 `showSalesOverlay`（show Sales Overlay）。
+ */
 function showSalesOverlay($overlay,onShown){
     if(!$overlay||!$overlay.length){return;}
     $overlay.stop(true,true).removeClass('hidden').attr('aria-hidden','false');
@@ -2902,6 +3167,10 @@ function showSalesOverlay($overlay,onShown){
     });
 }
 
+/**
+ * EN: Implements the application operation `hideSalesOverlay` (hide Sales Overlay).
+ * 中文：实现应用操作 `hideSalesOverlay`（hide Sales Overlay）。
+ */
 function hideSalesOverlay($overlay,onHidden){
     if(!$overlay||!$overlay.length){return;}
     const finish=function(){
@@ -2915,6 +3184,10 @@ function hideSalesOverlay($overlay,onHidden){
     $overlay.stop(true,true).fadeOut(120,finish);
 }
 
+/**
+ * EN: Implements the application operation `openSalesSubmitModal` (open Sales Submit Modal).
+ * 中文：实现应用操作 `openSalesSubmitModal`（open Sales Submit Modal）。
+ */
 function openSalesSubmitModal(){
     if(!$salesSubmitModal.length){return false;}
     $('body').addClass('sales-submit-modal-open');
@@ -2925,6 +3198,10 @@ function openSalesSubmitModal(){
     return true;
 }
 
+/**
+ * EN: Implements the application operation `closeSalesSubmitModal` (close Sales Submit Modal).
+ * 中文：实现应用操作 `closeSalesSubmitModal`（close Sales Submit Modal）。
+ */
 function closeSalesSubmitModal(){
     if(!$salesSubmitModal.length){return;}
     hideSalesOverlay($salesSubmitModal,function(){
@@ -2932,6 +3209,10 @@ function closeSalesSubmitModal(){
     });
 }
 
+/**
+ * EN: Implements the application operation `openSalesPostDetail` (open Sales Post Detail).
+ * 中文：实现应用操作 `openSalesPostDetail`（open Sales Post Detail）。
+ */
 function openSalesPostDetail($card){
     if(!$card||!$card.length){
         return;
@@ -3045,6 +3326,10 @@ function openSalesPostDetail($card){
     });
 }
 
+/**
+ * EN: Implements the application operation `closeSalesPostDetail` (close Sales Post Detail).
+ * 中文：实现应用操作 `closeSalesPostDetail`（close Sales Post Detail）。
+ */
 function closeSalesPostDetail(){
     hideSalesOverlay($salesPostDetailModal,function(){
         $('body').removeClass('sales-detail-open');
@@ -3052,6 +3337,10 @@ function closeSalesPostDetail(){
     });
 }
 
+/**
+ * EN: Implements the application operation `openSalesImageLightbox` (open Sales Image Lightbox).
+ * 中文：实现应用操作 `openSalesImageLightbox`（open Sales Image Lightbox）。
+ */
 function openSalesImageLightbox(){
     const src=String(
         $('#salesPostDetailImage').attr('src')||''
@@ -3067,6 +3356,10 @@ function openSalesImageLightbox(){
     showSalesOverlay($salesImageLightbox);
 }
 
+/**
+ * EN: Implements the application operation `closeSalesImageLightbox` (close Sales Image Lightbox).
+ * 中文：实现应用操作 `closeSalesImageLightbox`（close Sales Image Lightbox）。
+ */
 function closeSalesImageLightbox(){
     hideSalesOverlay($salesImageLightbox);
 }
@@ -3570,6 +3863,10 @@ $salesImageLightbox.on(
  * resets it. This avoids delegated mouseenter edge cases that could leave the
  * tooltip permanently hidden after chart re-renders.
  */
+/**
+ * EN: Implements the application operation `salesChartDayFromPointerTarget` (sales Chart Day From Pointer Target).
+ * 中文：实现应用操作 `salesChartDayFromPointerTarget`（sales Chart Day From Pointer Target）。
+ */
 function salesChartDayFromPointerTarget(target){
     if(!target||!target.closest){
         return null;
@@ -3578,6 +3875,10 @@ function salesChartDayFromPointerTarget(target){
     return target.closest('.sales-chart-day');
 }
 
+/**
+ * EN: Implements the application operation `salesChartDayOwnedByPortal` (sales Chart Day Owned By Portal).
+ * 中文：实现应用操作 `salesChartDayOwnedByPortal`（sales Chart Day Owned By Portal）。
+ */
 function salesChartDayOwnedByPortal(day){
     return !!(
         day
@@ -3586,6 +3887,10 @@ function salesChartDayOwnedByPortal(day){
     );
 }
 
+/**
+ * EN: Implements the application operation `startSalesChartMouseHover` (start Sales Chart Mouse Hover).
+ * 中文：实现应用操作 `startSalesChartMouseHover`（start Sales Chart Mouse Hover）。
+ */
 function startSalesChartMouseHover(day,event){
     cancelSalesChartHoverTimer();
     salesTouchChartDay=null;
@@ -3904,6 +4209,10 @@ applySalesPlatformFilterToCards();
         setTimeout(updateDetectedPlatform, 0);
     });
 
+/**
+ * EN: Updates application state for `setSalesSubmitMessage` (set Sales Submit Message).
+ * 中文：更新 `setSalesSubmitMessage`（set Sales Submit Message）对应的应用状态。
+ */
 function setSalesSubmitMessage(message,type){
     const $message=$('#salesSubmitMessage');
 
@@ -3926,6 +4235,10 @@ function setSalesSubmitMessage(message,type){
 }
 
 
+/**
+ * EN: Updates application state for `setInspectionStep` (set Inspection Step).
+ * 中文：更新 `setInspectionStep`（set Inspection Step）对应的应用状态。
+ */
 function setInspectionStep(step,state,label){
     const $step=$('#inspectionProgress [data-inspection-step="'+step+'"]');
     if(!$step.length)return;
@@ -4224,6 +4537,10 @@ $('#salesVerifiedSaveForm').on('submit',function(event){
 
     const savedView=localStorage.getItem('cdsp-sales-post-view')||'grid';
 
+    /**
+     * EN: Updates application state for `setPostView` (set Post View).
+     * 中文：更新 `setPostView`（set Post View）对应的应用状态。
+     */
     function setPostView(v){
         $('[data-view]').removeClass('active');
         $('[data-view="'+v+'"]').addClass('active');
@@ -4243,6 +4560,10 @@ $('#salesVerifiedSaveForm').on('submit',function(event){
     updateDetectedPlatform();
 
 
+    /**
+     * EN: Retrieves or loads data for `loadMoreDailyPosts` (load More Daily Posts).
+     * 中文：读取或加载 `loadMoreDailyPosts`（load More Daily Posts）所需的数据。
+     */
     function loadMoreDailyPosts(){
         const $wrap = $('#dailyPosts');
         const $btn = $('#loadMoreDailyPosts');
@@ -4312,21 +4633,37 @@ $('#salesVerifiedSaveForm').on('submit',function(event){
 
 
 
+/**
+ * EN: Updates application state for `syncHtmlNote` (sync Html Note).
+ * 中文：更新 `syncHtmlNote`（sync Html Note）对应的应用状态。
+ */
 function syncHtmlNote($root){
     const $editor=$root.find('[data-html-editor]');
     const $source=$root.find('[data-html-source]');
     if(!$editor.hasClass('hidden')){$source.val($editor.html());}
 }
 
+/**
+ * EN: Builds, formats, or transforms data for `normalizeEditorBlock` (normalize Editor Block).
+ * 中文：为 `normalizeEditorBlock`（normalize Editor Block）构建、格式化或转换数据。
+ */
 function normalizeEditorBlock(value){
     value=String(value||'p').toLowerCase();
     return ['p','h3','h4','blockquote'].includes(value)?value:'p';
 }
 
+/**
+ * EN: Implements the application operation `escapeCodeHtml` (escape Code Html).
+ * 中文：实现应用操作 `escapeCodeHtml`（escape Code Html）。
+ */
 function escapeCodeHtml(value){
     return String(value||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
+/**
+ * EN: Implements the application operation `highlightHtmlSource` (highlight Html Source).
+ * 中文：实现应用操作 `highlightHtmlSource`（highlight Html Source）。
+ */
 function highlightHtmlSource(source){
     return escapeCodeHtml(source)
         .replace(/(&lt;!--[\s\S]*?--&gt;)/g,'<span class="code-comment">$1</span>')
@@ -4335,6 +4672,10 @@ function highlightHtmlSource(source){
         });
 }
 
+/**
+ * EN: Implements the application operation `lineNumberText` (line Number Text).
+ * 中文：实现应用操作 `lineNumberText`（line Number Text）。
+ */
 function lineNumberText(source){
     const count=Math.max(1,String(source||'').split('\n').length);
     return Array.from({length:count},(_,i)=>String(i+1)).join('\n');
@@ -4344,6 +4685,10 @@ $('[data-html-note]').each(function(){
     const $root=$(this),$editor=$root.find('[data-html-editor]'),$source=$root.find('[data-html-source]'),$toolbar=$root.find('[data-html-toolbar]'),$tabs=$root.find('[data-note-mode]'),$format=$root.find('[data-note-format]'),$status=$root.find('[data-note-status]'),$cursor=$root.find('[data-note-cursor]'),$linkbar=$root.find('[data-note-linkbar]'),$linkInput=$root.find('[data-note-link-input]'),$linkNewTab=$root.find('[data-note-link-newtab]'),$imagePanel=$root.find('[data-note-image-panel]'),$imageUrl=$root.find('[data-note-image-url]'),$listingPhoto=$root.find('[data-note-listing-photo]'),$imageFile=$root.find('[data-note-image-file]'),$imageMessage=$root.find('[data-note-image-message]'),$codeEditor=$root.find('[data-code-editor]'),$codeHighlight=$root.find('[data-code-highlight]'),$codeGutter=$root.find('[data-code-gutter]');
     let mode='visual',savedRange=null;
 
+    /**
+     * EN: Builds, formats, or transforms data for `renderSource` (render Source).
+     * 中文：为 `renderSource`（render Source）构建、格式化或转换数据。
+     */
     function renderSource(){
         const value=String($source.val()||'');
         $codeHighlight.html(highlightHtmlSource(value)+'\n');
@@ -4352,23 +4697,39 @@ $('[data-html-note]').each(function(){
         if(el){$codeHighlight.scrollTop(el.scrollTop);$codeHighlight.scrollLeft(el.scrollLeft);$codeGutter.scrollTop(el.scrollTop);}
     }
 
+    /**
+     * EN: Implements the application operation `cursorStatus` (cursor Status).
+     * 中文：实现应用操作 `cursorStatus`（cursor Status）。
+     */
     function cursorStatus(){
         const el=$source.get(0);if(!el||mode!=='html')return;
         const before=el.value.slice(0,el.selectionStart),lines=before.split('\n');
         $cursor.text('Ln '+lines.length+', Col '+(lines[lines.length-1].length+1));
     }
 
+    /**
+     * EN: Implements the application operation `rememberSelection` (remember Selection).
+     * 中文：实现应用操作 `rememberSelection`（remember Selection）。
+     */
     function rememberSelection(){
         const selection=window.getSelection();if(!selection||!selection.rangeCount)return;
         const range=selection.getRangeAt(0),node=range.commonAncestorContainer,editorNode=$editor.get(0);
         if(editorNode&&(node===editorNode||$.contains(editorNode,node.nodeType===1?node:node.parentNode))){savedRange=range.cloneRange();}
     }
 
+    /**
+     * EN: Implements the application operation `restoreSelection` (restore Selection).
+     * 中文：实现应用操作 `restoreSelection`（restore Selection）。
+     */
     function restoreSelection(){
         if(!savedRange){$editor.trigger('focus');return;}
         const selection=window.getSelection();if(selection){selection.removeAllRanges();selection.addRange(savedRange);}
     }
 
+    /**
+     * EN: Updates application state for `setMode` (set Mode).
+     * 中文：更新 `setMode`（set Mode）对应的应用状态。
+     */
     function setMode(next){
         mode=next==='html'?'html':'visual';
         $tabs.each(function(){const active=$(this).data('note-mode')===mode;$(this).toggleClass('active',active).attr('aria-selected',active?'true':'false');});
@@ -4380,8 +4741,16 @@ $('[data-html-note]').each(function(){
         }
     }
 
+    /**
+     * EN: Implements the application operation `command` (command).
+     * 中文：实现应用操作 `command`（command）。
+     */
     function command(name,value){restoreSelection();$editor.trigger('focus');document.execCommand(name,false,value||null);rememberSelection();$source.val($editor.html());}
 
+    /**
+     * EN: Creates or persists the `insertHtmlAtCursor` operation (insert Html At Cursor).
+     * 中文：创建或持久化 `insertHtmlAtCursor`（insert Html At Cursor）操作。
+     */
     function insertHtmlAtCursor(html){
         if(mode==='html'){
             const el=$source.get(0),start=el.selectionStart,end=el.selectionEnd;
@@ -4390,8 +4759,16 @@ $('[data-html-note]').each(function(){
         restoreSelection();$editor.trigger('focus');document.execCommand('insertHTML',false,html);$source.val($editor.html());rememberSelection();
     }
 
+    /**
+     * EN: Implements the application operation `safeImageHtml` (safe Image Html).
+     * 中文：实现应用操作 `safeImageHtml`（safe Image Html）。
+     */
     function safeImageHtml(url){return '<p><img src="'+String(url).replace(/"/g,'&quot;')+'" alt=""></p>';}
 
+    /**
+     * EN: Implements the application operation `openImagePanel` (open Image Panel).
+     * 中文：实现应用操作 `openImagePanel`（open Image Panel）。
+     */
     function openImagePanel(){
         rememberSelection();$linkbar.addClass('hidden');$imagePanel.removeClass('hidden');$imageMessage.removeClass('error').text('');
         const photos=window.cdspReviewListingPhotos||[];$listingPhoto.toggleClass('hidden',!photos.length);
@@ -4456,12 +4833,20 @@ $('[data-html-note]').each(function(){
         let request = null;
         let lastSignature = '';
 
+        /**
+         * EN: Implements the application operation `esc` (esc).
+         * 中文：实现应用操作 `esc`（esc）。
+         */
         function esc(value){
             return $('<div>').text(
                 value == null || value === '' ? '—' : String(value)
             ).html();
         }
 
+        /**
+         * EN: Implements the application operation `safeStatus` (safe Status).
+         * 中文：实现应用操作 `safeStatus`（safe Status）。
+         */
         function safeStatus(value){
             const status = String(value || '').toLowerCase();
             return ['starting','running','ready','failed'].includes(status)
@@ -4469,6 +4854,10 @@ $('[data-html-note]').each(function(){
                 : 'starting';
         }
 
+        /**
+         * EN: Implements the application operation `statusLabel` (status Label).
+         * 中文：实现应用操作 `statusLabel`（status Label）。
+         */
         function statusLabel(status){
             if(status === 'ready') return 'Ready';
             if(status === 'failed') return 'Failed';
@@ -4476,6 +4865,10 @@ $('[data-html-note]').each(function(){
             return 'Starting';
         }
 
+        /**
+         * EN: Builds, formats, or transforms data for `renderJobs` (render Jobs).
+         * 中文：为 `renderJobs`（render Jobs）构建、格式化或转换数据。
+         */
         function renderJobs(jobs){
             jobs = Array.isArray(jobs) ? jobs : [];
 
@@ -4523,6 +4916,10 @@ $('[data-html-note]').each(function(){
             $body.html(html);
         }
 
+        /**
+         * EN: Updates application state for `setLiveState` (set Live State).
+         * 中文：更新 `setLiveState`（set Live State）对应的应用状态。
+         */
         function setLiveState(state){
             $live
                 .removeClass('is-live is-paused is-error')
@@ -4537,6 +4934,10 @@ $('[data-html-note]').each(function(){
             }
         }
 
+        /**
+         * EN: Updates application state for `refreshProviderJobs` (refresh Provider Jobs).
+         * 中文：更新 `refreshProviderJobs`（refresh Provider Jobs）对应的应用状态。
+         */
         function refreshProviderJobs(){
             if(document.hidden){
                 setLiveState('is-paused');
@@ -4566,6 +4967,10 @@ $('[data-html-note]').each(function(){
             });
         }
 
+        /**
+         * EN: Implements the application operation `startProviderJobsPolling` (start Provider Jobs Polling).
+         * 中文：实现应用操作 `startProviderJobsPolling`（start Provider Jobs Polling）。
+         */
         function startProviderJobsPolling(){
             if(timer){
                 clearInterval(timer);
@@ -4621,6 +5026,10 @@ $('[data-html-note]').each(function(){
             }
         };
 
+        /**
+         * EN: Removes or cleans data/state for `clearProviderFieldError` (clear Provider Field Error).
+         * 中文：删除或清理 `clearProviderFieldError`（clear Provider Field Error）相关的数据或状态。
+         */
         function clearProviderFieldError(target){
             const $field = typeof target === 'string'
                 ? $form.find('[name="'+target+'"]:enabled').first()
@@ -4636,6 +5045,10 @@ $('[data-html-note]').each(function(){
             $wrap.children('.provider-field-error').remove();
         }
 
+        /**
+         * EN: Removes or cleans data/state for `clearAllProviderFieldErrors` (clear All Provider Field Errors).
+         * 中文：删除或清理 `clearAllProviderFieldErrors`（clear All Provider Field Errors）相关的数据或状态。
+         */
         function clearAllProviderFieldErrors(){
             $form
                 .find('.provider-field-has-error')
@@ -4646,6 +5059,10 @@ $('[data-html-note]').each(function(){
             $form.find('[aria-invalid="true"]').removeAttr('aria-invalid');
         }
 
+        /**
+         * EN: Implements the application operation `showProviderFieldError` (show Provider Field Error).
+         * 中文：实现应用操作 `showProviderFieldError`（show Provider Field Error）。
+         */
         function showProviderFieldError(field, message){
             const $field = $form.find('[name="'+field+'"]:enabled').first();
 
@@ -4682,6 +5099,10 @@ $('[data-html-note]').each(function(){
             return true;
         }
 
+        /**
+         * EN: Checks or validates the condition represented by `validateProviderTestUrl` (validate Provider Test Url).
+         * 中文：检查或校验 `validateProviderTestUrl`（validate Provider Test Url）所表示的条件。
+         */
         function validateProviderTestUrl(){
             const value = String($('#providerTestUrl').val() || '').trim();
             const match = value.match(
@@ -4700,6 +5121,10 @@ $('[data-html-note]').each(function(){
             return true;
         }
 
+        /**
+         * EN: Implements the application operation `pageNotice` (page Notice).
+         * 中文：实现应用操作 `pageNotice`（page Notice）。
+         */
         function pageNotice(message, ok){
             const $n = $('#providerPageNotice');
             $n
@@ -4708,6 +5133,10 @@ $('[data-html-note]').each(function(){
                 .text(message);
         }
 
+        /**
+         * EN: Implements the application operation `invalidateProviderTest` (invalidate Provider Test).
+         * 中文：实现应用操作 `invalidateProviderTest`（invalidate Provider Test）。
+         */
         function invalidateProviderTest(){
             $('#providerTestTicket').val('');
             $('#providerAddButton').prop('disabled', true);
@@ -4717,6 +5146,10 @@ $('[data-html-note]').each(function(){
                 .empty();
         }
 
+        /**
+         * EN: Updates application state for `syncProviderType` (sync Provider Type).
+         * 中文：更新 `syncProviderType`（sync Provider Type）对应的应用状态。
+         */
         function syncProviderType(){
             const type = $('#providerType').val();
             const d = defaults[type] || defaults.generic_json;
@@ -4995,12 +5428,20 @@ $('[data-html-note]').each(function(){
             });
         });
 
+        /**
+         * EN: Updates application state for `refreshPriorityNumbers` (refresh Priority Numbers).
+         * 中文：更新 `refreshPriorityNumbers`（refresh Priority Numbers）对应的应用状态。
+         */
         function refreshPriorityNumbers(){
             $('#providerSortable .provider-card').each(function(index){
                 $(this).find('[data-provider-priority]').text(index + 1);
             });
         }
 
+        /**
+         * EN: Creates or persists the `saveProviderOrder` operation (save Provider Order).
+         * 中文：创建或持久化 `saveProviderOrder`（save Provider Order）操作。
+         */
         function saveProviderOrder(){
             const ids = $('#providerSortable .provider-card').map(function(){
                 return $(this).data('provider-id');
@@ -5455,6 +5896,10 @@ if(!dashboardI18n[dashboardLanguage]){
     dashboardLanguage='en';
 }
 
+/**
+ * EN: Implements the application operation `dashboardLocale` (dashboard Locale).
+ * 中文：实现应用操作 `dashboardLocale`（dashboard Locale）。
+ */
 function dashboardLocale(){
     if(dashboardLanguage==='zh-CN')return 'zh-CN';
     if(dashboardLanguage==='zh-TW')return 'zh-TW';
@@ -5462,6 +5907,10 @@ function dashboardLocale(){
     return 'en-US';
 }
 
+/**
+ * EN: Implements the application operation `tr` (tr).
+ * 中文：实现应用操作 `tr`（tr）。
+ */
 function tr(key,vars){
     const dict=dashboardI18n[dashboardLanguage]||dashboardI18n.en;
     let value=String(dict[key]??dashboardI18n.en[key]??key);
@@ -5476,6 +5925,10 @@ function tr(key,vars){
     return value;
 }
 
+/**
+ * EN: Implements the application operation `translatedPeriodName` (translated Period Name).
+ * 中文：实现应用操作 `translatedPeriodName`（translated Period Name）。
+ */
 function translatedPeriodName(period){
     if(period==='week')return tr('weekly');
     if(period==='month')return tr('monthly');
@@ -5483,6 +5936,10 @@ function translatedPeriodName(period){
     return tr('daily');
 }
 
+/**
+ * EN: Implements the application operation `translateSalesCard` (translate Sales Card).
+ * 中文：实现应用操作 `translateSalesCard`（translate Sales Card）。
+ */
 function translateSalesCard($card){
     const days=parseInt(
         $card.find('[data-period-days]').text(),
@@ -5505,12 +5962,20 @@ function translateSalesCard($card){
     $card.find('[data-card-view-posts-label]').text(tr('viewPosts'));
 }
 
+/**
+ * EN: Implements the application operation `translateTopNav` (translate Top Nav).
+ * 中文：实现应用操作 `translateTopNav`（translate Top Nav）。
+ */
 function translateTopNav(){
     // Header/footer are universal layout partials. Keep one menu translator
     // authoritative so Dashboard cannot rename the shared Dashboard link.
     applyGlobalMenuLanguage();
 }
 
+/**
+ * EN: Updates application state for `applyDashboardLanguage` (apply Dashboard Language).
+ * 中文：更新 `applyDashboardLanguage`（apply Dashboard Language）对应的应用状态。
+ */
 function applyDashboardLanguage(){
     const adminName=String(
         $('#dashboardGreeting').attr('data-admin-name')
@@ -5706,6 +6171,10 @@ function applyDashboardLanguage(){
      */
     let adminRangeStickyFrame = 0;
 
+    /**
+     * EN: Updates application state for `syncAdminStickyRangeControls` (sync Admin Sticky Range Controls).
+     * 中文：更新 `syncAdminStickyRangeControls`（sync Admin Sticky Range Controls）对应的应用状态。
+     */
     function syncAdminStickyRangeControls(){
         if(!$adminStickyRange.length){
             return;
@@ -5736,6 +6205,10 @@ function applyDashboardLanguage(){
         );
     }
 
+    /**
+     * EN: Updates application state for `syncAdminRangeStickyState` (sync Admin Range Sticky State).
+     * 中文：更新 `syncAdminRangeStickyState`（sync Admin Range Sticky State）对应的应用状态。
+     */
     function syncAdminRangeStickyState(){
         if(!$adminRangeBar.length||!$adminRangeAnchor.length||!$adminStickyRange.length){
             return;
@@ -5758,6 +6231,10 @@ function applyDashboardLanguage(){
         }
     }
 
+    /**
+     * EN: Implements the application operation `requestAdminRangeStickySync` (request Admin Range Sticky Sync).
+     * 中文：实现应用操作 `requestAdminRangeStickySync`（request Admin Range Sticky Sync）。
+     */
     function requestAdminRangeStickySync(){
         if(adminRangeStickyFrame){
             return;
@@ -5837,12 +6314,20 @@ function applyDashboardLanguage(){
     const $contentPhotos = $('#dashboardContentPhotos');
     const $getContent = $('#dashboardGetContent');
 
+    /**
+     * EN: Implements the application operation `escapeHtml` (escape Html).
+     * 中文：实现应用操作 `escapeHtml`（escape Html）。
+     */
     function escapeHtml(value){
         return $('<div>').text(
             value == null ? '' : String(value)
         ).html();
     }
 
+/**
+ * EN: Implements the application operation `platformLogoHtml` (platform Logo Html).
+ * 中文：实现应用操作 `platformLogoHtml`（platform Logo Html）。
+ */
 function platformLogoHtml(platform){
     const key = String(platform || '').toLowerCase();
 
@@ -5888,6 +6373,10 @@ function platformLogoHtml(platform){
     );
 }
 
+    /**
+     * EN: Implements the application operation `adminSalesActivityAggregate` (admin Sales Activity Aggregate).
+     * 中文：实现应用操作 `adminSalesActivityAggregate`（admin Sales Activity Aggregate）。
+     */
     function adminSalesActivityAggregate(data,date,channel){
         const result={
             date:date,
@@ -5919,6 +6408,10 @@ function platformLogoHtml(platform){
         return result;
     }
 
+    /**
+     * EN: Builds, formats, or transforms data for `renderAdminSalesChartAxis` (render Admin Sales Chart Axis).
+     * 中文：为 `renderAdminSalesChartAxis`（render Admin Sales Chart Axis）构建、格式化或转换数据。
+     */
     function renderAdminSalesChartAxis(cap,target,plotHeight){
         const step=salesChartTickStep(cap);
         const values=[];
@@ -5948,6 +6441,10 @@ function platformLogoHtml(platform){
         $('#adminSalesChartGridLines').html(grid);
     }
 
+    /**
+     * EN: Builds, formats, or transforms data for `renderAdminSalesActivity` (render Admin Sales Activity).
+     * 中文：为 `renderAdminSalesActivity`（render Admin Sales Activity）构建、格式化或转换数据。
+     */
     function renderAdminSalesActivity(data){
         if(!$adminSalesActivity.length||!data){
             return;
@@ -6075,10 +6572,18 @@ function platformLogoHtml(platform){
             .removeClass('hidden');
     }
 
+    /**
+     * EN: Implements the application operation `periodName` (period Name).
+     * 中文：实现应用操作 `periodName`（period Name）。
+     */
     function periodName(period){
         return translatedPeriodName(period);
     }
 
+    /**
+     * EN: Updates application state for `setTargetMessage` (set Target Message).
+     * 中文：更新 `setTargetMessage`（set Target Message）对应的应用状态。
+     */
     function setTargetMessage($card, message, error){
         $card
             .find('[data-target-message]')
@@ -6086,6 +6591,10 @@ function platformLogoHtml(platform){
             .text(message || '');
     }
 
+    /**
+     * EN: Implements the application operation `animateNumber` (animate Number).
+     * 中文：实现应用操作 `animateNumber`（animate Number）。
+     */
     function animateNumber($element, from, to){
         from = parseInt(from, 10) || 0;
         to = parseInt(to, 10) || 0;
@@ -6098,6 +6607,10 @@ function platformLogoHtml(platform){
         const start = performance.now();
         const duration = 300;
 
+        /**
+         * EN: Implements the application operation `frame` (frame).
+         * 中文：实现应用操作 `frame`（frame）。
+         */
         function frame(now){
             const raw = Math.min(1, (now - start) / duration);
             const eased = 1 - Math.pow(1 - raw, 3);
@@ -6113,6 +6626,10 @@ function platformLogoHtml(platform){
         requestAnimationFrame(frame);
     }
 
+    /**
+     * EN: Updates application state for `updateHistory` (update History).
+     * 中文：更新 `updateHistory`（update History）对应的应用状态。
+     */
     function updateHistory(){
         if(!window.history || !window.history.replaceState){
             return;
@@ -6137,6 +6654,10 @@ function platformLogoHtml(platform){
         window.history.replaceState({},'',url.toString());
     }
 
+    /**
+     * EN: Updates application state for `updateBackToday` (update Back Today).
+     * 中文：更新 `updateBackToday`（update Back Today）对应的应用状态。
+     */
     function updateBackToday(){
         const pickerMax=String(
             $('#dashboardToInput').attr('max')
@@ -6160,6 +6681,10 @@ function platformLogoHtml(platform){
         }
     }
 
+    /**
+     * EN: Updates application state for `syncAdminRangeInputs` (sync Admin Range Inputs).
+     * 中文：更新 `syncAdminRangeInputs`（sync Admin Range Inputs）对应的应用状态。
+     */
     function syncAdminRangeInputs(){
         const $from=$('#dashboardFromInput');
         const $to=$('#dashboardToInput');
@@ -6184,6 +6709,10 @@ function platformLogoHtml(platform){
         }
     }
 
+    /**
+     * EN: Implements the application operation `adminAjaxRangeData` (admin Ajax Range Data).
+     * 中文：实现应用操作 `adminAjaxRangeData`（admin Ajax Range Data）。
+     */
     function adminAjaxRangeData(extra){
         const data=Object.assign({},extra||{});
         data.preset=currentPreset;
@@ -6198,6 +6727,10 @@ function platformLogoHtml(platform){
         return data;
     }
 
+    /**
+     * EN: Updates application state for `updatePeriodButtons` (update Period Buttons).
+     * 中文：更新 `updatePeriodButtons`（update Period Buttons）对应的应用状态。
+     */
     function updatePeriodButtons(preset){
         currentPreset=String(preset||'custom');
         $('#dashboardPeriodSwitch [data-admin-preset]').each(function(){
@@ -6212,6 +6745,10 @@ function platformLogoHtml(platform){
         }
     }
 
+    /**
+     * EN: Implements the application operation `adminPresetRange` (admin Preset Range).
+     * 中文：实现应用操作 `adminPresetRange`（admin Preset Range）。
+     */
     function adminPresetRange(preset,anchorValue){
         const parse=function(value){
             const m=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -6244,6 +6781,10 @@ function platformLogoHtml(platform){
         return {from:iso(fromDate),to:iso(toDate)};
     }
 
+/**
+ * EN: Updates application state for `updateReviewProgressSegments` (update Review Progress Segments).
+ * 中文：更新 `updateReviewProgressSegments`（update Review Progress Segments）对应的应用状态。
+ */
 function updateReviewProgressSegments(
     $card,
     postCount,
@@ -6281,6 +6822,10 @@ function updateReviewProgressSegments(
     );
 }
 
+/**
+ * EN: Updates application state for `syncExpandedSalesCardFromTiles` (sync Expanded Sales Card From Tiles).
+ * 中文：更新 `syncExpandedSalesCardFromTiles`（sync Expanded Sales Card From Tiles）对应的应用状态。
+ */
 function syncExpandedSalesCardFromTiles(){
     if(!expandedSalesId){
         return;
@@ -6333,6 +6878,10 @@ function syncExpandedSalesCardFromTiles(){
     );
 }
 
+    /**
+     * EN: Updates application state for `updateCard` (update Card).
+     * 中文：更新 `updateCard`（update Card）对应的应用状态。
+     */
     function updateCard($card, row, days, period){
         const oldCount = parseInt(
             $card.attr('data-post-count'),
@@ -6426,6 +6975,10 @@ function syncExpandedSalesCardFromTiles(){
         }, 650);
     }
 
+    /**
+     * EN: Implements the application operation `closeExpandedPosts` (close Expanded Posts).
+     * 中文：实现应用操作 `closeExpandedPosts`（close Expanded Posts）。
+     */
     function closeExpandedPosts(){
         expandedSalesId = 0;
 
@@ -6455,6 +7008,10 @@ function syncExpandedSalesCardFromTiles(){
         }
     }
 
+/**
+ * EN: Implements the application operation `postDateGroupLabel` (post Date Group Label).
+ * 中文：实现应用操作 `postDateGroupLabel`（post Date Group Label）。
+ */
 function postDateGroupLabel(value){
     const raw=String(value||'').trim();
     const match=raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -6480,6 +7037,10 @@ function postDateGroupLabel(value){
     );
 }
 
+/**
+ * EN: Implements the application operation `postDateTimeLabel` (post Date Time Label).
+ * 中文：实现应用操作 `postDateTimeLabel`（post Date Time Label）。
+ */
 function postDateTimeLabel(value){
     const raw=String(value||'').trim();
     const match=raw.match(
@@ -6509,6 +7070,10 @@ function postDateTimeLabel(value){
     ).replace(',',' ·');
 }
 
+/**
+ * EN: Implements the application operation `postThumbnailHtml` (post Thumbnail Html).
+ * 中文：实现应用操作 `postThumbnailHtml`（post Thumbnail Html）。
+ */
 function postThumbnailHtml(post){
     const url=String(post.thumbnail_url||'').trim();
 
@@ -6529,6 +7094,10 @@ function postThumbnailHtml(post){
     );
 }
 
+/**
+ * EN: Implements the application operation `periodReviewDateLabel` (period Review Date Label).
+ * 中文：实现应用操作 `periodReviewDateLabel`（period Review Date Label）。
+ */
 function periodReviewDateLabel(review){
     if(!review){
         return '';
@@ -6555,6 +7124,10 @@ function periodReviewDateLabel(review){
     return String(review.period_label||'');
 }
 
+/**
+ * EN: Updates application state for `setHtmlNoteValue` (set Html Note Value).
+ * 中文：更新 `setHtmlNoteValue`（set Html Note Value）对应的应用状态。
+ */
 function setHtmlNoteValue($root,html){
     if(!$root||!$root.length){
         return;
@@ -6575,11 +7148,19 @@ function setHtmlNoteValue($root,html){
         .trigger('click');
 }
 
+/**
+ * EN: Implements the application operation `salesRatingStars` (sales Rating Stars).
+ * 中文：实现应用操作 `salesRatingStars`（sales Rating Stars）。
+ */
 function salesRatingStars(rating){
     rating=parseInt(rating,10)||0;
     return Array.from({length:5},function(_,index){return index<rating?'★':'☆';}).join('');
 }
 
+/**
+ * EN: Updates application state for `setSalesPeriodRating` (set Sales Period Rating).
+ * 中文：更新 `setSalesPeriodRating`（set Sales Period Rating）对应的应用状态。
+ */
 function setSalesPeriodRating(rating){
     rating=parseInt(rating,10)||0;
     $periodReviewRating.val(rating>=1&&rating<=5?rating:'');
@@ -6592,6 +7173,10 @@ function setSalesPeriodRating(rating){
     $('#salesPeriodReviewRatingField').removeClass('has-error');
 }
 
+/**
+ * EN: Builds, formats, or transforms data for `renderPersonReviewAttachments` (render Person Review Attachments).
+ * 中文：为 `renderPersonReviewAttachments`（render Person Review Attachments）构建、格式化或转换数据。
+ */
 function renderPersonReviewAttachments(items,readOnly){
     items=(Array.isArray(items)?items:[]).filter(function(item){
         // v0.1.86 briefly used attachment tombstones for Person Reviews.
@@ -6622,10 +7207,18 @@ function renderPersonReviewAttachments(items,readOnly){
     +'</div>';
 }
 
+/**
+ * EN: Builds, formats, or transforms data for `renderCurrentPersonReviewAttachments` (render Current Person Review Attachments).
+ * 中文：为 `renderCurrentPersonReviewAttachments`（render Current Person Review Attachments）构建、格式化或转换数据。
+ */
 function renderCurrentPersonReviewAttachments(items){
     $periodReviewAttachments.html(renderPersonReviewAttachments(items,false));
 }
 
+/**
+ * EN: Updates application state for `updatePersonReviewFileSelection` (update Person Review File Selection).
+ * 中文：更新 `updatePersonReviewFileSelection`（update Person Review File Selection）对应的应用状态。
+ */
 function updatePersonReviewFileSelection(){
     const input=$periodReviewImages.get(0);
     const files=input?Array.from(input.files||[]):[];
@@ -6634,6 +7227,10 @@ function updatePersonReviewFileSelection(){
     );
 }
 
+/**
+ * EN: Implements the application operation `resetSalesReviewHistoryDeleteArm` (reset Sales Review History Delete Arm).
+ * 中文：实现应用操作 `resetSalesReviewHistoryDeleteArm`（reset Sales Review History Delete Arm）。
+ */
 function resetSalesReviewHistoryDeleteArm(){
     armedSalesReviewHistoryDeleteId=0;
     if(armedSalesReviewHistoryDeleteTimer){
@@ -6646,6 +7243,10 @@ function resetSalesReviewHistoryDeleteArm(){
         .attr('aria-label','Mark review as deleted');
 }
 
+/**
+ * EN: Updates application state for `updateSalesReviewHistoryMeta` (update Sales Review History Meta).
+ * 中文：更新 `updateSalesReviewHistoryMeta`（update Sales Review History Meta）对应的应用状态。
+ */
 function updateSalesReviewHistoryMeta(items){
     items=Array.isArray(items)?items:[];
     const deletedCount=items.filter(function(item){return Boolean(item.deleted);}).length;
@@ -6663,6 +7264,10 @@ function updateSalesReviewHistoryMeta(items){
     );
 }
 
+/**
+ * EN: Builds, formats, or transforms data for `renderSalesReviewHistory` (render Sales Review History).
+ * 中文：为 `renderSalesReviewHistory`（render Sales Review History）构建、格式化或转换数据。
+ */
 function renderSalesReviewHistory(items){
     items=Array.isArray(items)?items:[];
     updateSalesReviewHistoryMeta(items);
@@ -6835,6 +7440,10 @@ $periodReviewHistory.on('click','[data-person-review-history-delete]',function()
     });
 });
 
+/**
+ * EN: Builds, formats, or transforms data for `renderSalesPeriodReview` (render Sales Period Review).
+ * 中文：为 `renderSalesPeriodReview`（render Sales Period Review）构建、格式化或转换数据。
+ */
 function renderSalesPeriodReview(review){
     currentSalesPeriodReview=review||null;
 
@@ -6895,6 +7504,10 @@ function renderSalesPeriodReview(review){
     $expandedReview.removeClass('hidden');
 }
 
+/**
+ * EN: Implements the application operation `openSalesPeriodReviewEditor` (open Sales Period Review Editor).
+ * 中文：实现应用操作 `openSalesPeriodReviewEditor`（open Sales Period Review Editor）。
+ */
 function openSalesPeriodReviewEditor(){
     const review=currentSalesPeriodReview;
 
@@ -6964,6 +7577,10 @@ function openSalesPeriodReviewEditor(){
         .attr('aria-hidden','false');
 }
 
+/**
+ * EN: Implements the application operation `closeSalesPeriodReviewEditor` (close Sales Period Review Editor).
+ * 中文：实现应用操作 `closeSalesPeriodReviewEditor`（close Sales Period Review Editor）。
+ */
 function closeSalesPeriodReviewEditor(){
     $periodReviewModal
         .addClass('hidden')
@@ -6974,6 +7591,10 @@ function closeSalesPeriodReviewEditor(){
         .text('');
 }
 
+/**
+ * EN: Builds, formats, or transforms data for `renderPostGrid` (render Post Grid).
+ * 中文：为 `renderPostGrid`（render Post Grid）构建、格式化或转换数据。
+ */
 function renderPostGrid(data){
     const allPosts=Array.isArray(data.posts)
         ?data.posts
@@ -7150,6 +7771,10 @@ function renderPostGrid(data){
 
     $expandedList.html(html);
 }
+    /**
+     * EN: Implements the application operation `openExpandedPosts` (open Expanded Posts).
+     * 中文：实现应用操作 `openExpandedPosts`（open Expanded Posts）。
+     */
     function openExpandedPosts($card){
         const salesId = parseInt(
             $card.attr('data-sales-id'),
@@ -7251,6 +7876,10 @@ function renderPostGrid(data){
         });
     }
 
+    /**
+     * EN: Updates application state for `applyProgress` (apply Progress).
+     * 中文：更新 `applyProgress`（apply Progress）对应的应用状态。
+     */
     function applyProgress(data){
         currentPeriod=data.period||'day';
         currentPreset=String(data.preset||currentPreset||(currentPeriod==='day'?'single':'custom'));
@@ -7327,6 +7956,10 @@ function renderPostGrid(data){
         });
     }
 
+    /**
+     * EN: Retrieves or loads data for `loadProgress` (load Progress).
+     * 中文：读取或加载 `loadProgress`（load Progress）所需的数据。
+     */
     function loadProgress(options){
         options=options||{};
         const initial=!!options.initial;
@@ -7378,6 +8011,10 @@ function renderPostGrid(data){
         return periodRequest;
     }
 
+    /**
+     * EN: Implements the application operation `reloadCurrentProgress` (reload Current Progress).
+     * 中文：实现应用操作 `reloadCurrentProgress`（reload Current Progress）。
+     */
     function reloadCurrentProgress(options){
         options=Object.assign({},options||{});
         options.preset=currentPreset;
@@ -7460,6 +8097,10 @@ $('#appLanguageSwitch').on(
         }
     );
 
+    /**
+     * EN: Updates application state for `applyAdminRangeChange` (apply Admin Range Change).
+     * 中文：更新 `applyAdminRangeChange`（apply Admin Range Change）对应的应用状态。
+     */
     function applyAdminRangeChange(changed){
         const $from=$('#dashboardFromInput');
         const $to=$('#dashboardToInput');
@@ -7800,6 +8441,10 @@ $periodReviewForm.on('submit',function(event){
     });
 });
 
+    /**
+     * EN: Updates application state for `setModalEditorHtml` (set Modal Editor Html).
+     * 中文：更新 `setModalEditorHtml`（set Modal Editor Html）对应的应用状态。
+     */
     function setModalEditorHtml(html){
         const $note = $modal.find('[data-html-note]').first();
         const $editor = $note.find('[data-html-editor]');
@@ -7819,6 +8464,10 @@ $periodReviewForm.on('submit',function(event){
             .trigger('click');
     }
 
+/**
+ * EN: Builds, formats, or transforms data for `renderContentPreview` (render Content Preview).
+ * 中文：为 `renderContentPreview`（render Content Preview）构建、格式化或转换数据。
+ */
 function renderContentPreview(content){
     content=content||{};
     $contentProvider.text(content.provider||'Saved post');
@@ -7858,11 +8507,19 @@ function renderContentPreview(content){
     ).removeClass('hidden');
 }
 
+    /**
+     * EN: Implements the application operation `openListingImage` (open Listing Image).
+     * 中文：实现应用操作 `openListingImage`（open Listing Image）。
+     */
     function openListingImage(url){
         if(!url)return;
         $('#listingImageLarge').attr('src',url);
         $('#listingImageLightbox').removeClass('hidden').attr('aria-hidden','false');
     }
+    /**
+     * EN: Implements the application operation `closeListingImage` (close Listing Image).
+     * 中文：实现应用操作 `closeListingImage`（close Listing Image）。
+     */
     function closeListingImage(){
         $('#listingImageLightbox').addClass('hidden').attr('aria-hidden','true');
         $('#listingImageLarge').attr('src','');
@@ -7944,6 +8601,10 @@ function renderContentPreview(content){
     });
 
 
+/**
+ * EN: Implements the application operation `closeCommentDeletePopover` (close Comment Delete Popover).
+ * 中文：实现应用操作 `closeCommentDeletePopover`（close Comment Delete Popover）。
+ */
 function closeCommentDeletePopover(){
     deleteCommentId=0;
     deleteAnchorButton=null;
@@ -7959,6 +8620,10 @@ function closeCommentDeletePopover(){
         .text('Mark Deleted');
 }
 
+/**
+ * EN: Implements the application operation `positionCommentDeletePopover` (position Comment Delete Popover).
+ * 中文：实现应用操作 `positionCommentDeletePopover`（position Comment Delete Popover）。
+ */
 function positionCommentDeletePopover(){
     if(!deleteAnchorButton||$deletePopover.hasClass('hidden')){
         return;
@@ -8010,6 +8675,10 @@ function positionCommentDeletePopover(){
         .css({left:Math.round(left)+'px',top:Math.round(top)+'px'});
 }
 
+/**
+ * EN: Implements the application operation `openCommentDeletePopover` (open Comment Delete Popover).
+ * 中文：实现应用操作 `openCommentDeletePopover`（open Comment Delete Popover）。
+ */
 function openCommentDeletePopover(button,commentId){
     deleteCommentId=parseInt(commentId,10)||0;
     deleteAnchorButton=button||null;
@@ -8026,6 +8695,10 @@ function openCommentDeletePopover(button,commentId){
     });
 }
 
+/**
+ * EN: Implements the application operation `commentDateLabel` (comment Date Label).
+ * 中文：实现应用操作 `commentDateLabel`（comment Date Label）。
+ */
 function commentDateLabel(value){
     const raw=String(value||'');
 
@@ -8049,6 +8722,10 @@ function commentDateLabel(value){
     });
 }
 
+/**
+ * EN: Builds, formats, or transforms data for `renderCommentAttachments` (render Comment Attachments).
+ * 中文：为 `renderCommentAttachments`（render Comment Attachments）构建、格式化或转换数据。
+ */
 function renderCommentAttachments(items){
     items=Array.isArray(items)?items:[];
 
@@ -8131,6 +8808,10 @@ function renderCommentAttachments(items){
         +'</div>';
 }
 
+/**
+ * EN: Updates application state for `updateCommentFileSelection` (update Comment File Selection).
+ * 中文：更新 `updateCommentFileSelection`（update Comment File Selection）对应的应用状态。
+ */
 function updateCommentFileSelection(){
     const input=$commentImages.get(0);
     const files=input?Array.from(input.files||[]):[];
@@ -8139,6 +8820,10 @@ function updateCommentFileSelection(){
     );
 }
 
+/**
+ * EN: Builds, formats, or transforms data for `renderComments` (render Comments).
+ * 中文：为 `renderComments`（render Comments）构建、格式化或转换数据。
+ */
 function renderComments(items,reviewItems){
     currentComments=Array.isArray(items)
         ?items.slice()
@@ -8416,6 +9101,10 @@ $historyDeletedSwitch.on('click',function(){
     );
 });
 
+/**
+ * EN: Retrieves or loads data for `getCommentEditorHtml` (get Comment Editor Html).
+ * 中文：读取或加载 `getCommentEditorHtml`（get Comment Editor Html）所需的数据。
+ */
 function getCommentEditorHtml(){
     const $note=$modal.find('[data-html-note]').first();
 
@@ -8430,6 +9119,10 @@ function getCommentEditorHtml(){
     );
 }
 
+/**
+ * EN: Removes or cleans data/state for `clearCommentComposer` (clear Comment Composer).
+ * 中文：删除或清理 `clearCommentComposer`（clear Comment Composer）相关的数据或状态。
+ */
 function clearCommentComposer(){
     editingCommentId=0;
     setModalEditorHtml('');
@@ -8444,6 +9137,10 @@ function clearCommentComposer(){
         .text('');
 }
 
+/**
+ * EN: Implements the application operation `startCommentEdit` (start Comment Edit).
+ * 中文：实现应用操作 `startCommentEdit`（start Comment Edit）。
+ */
 function startCommentEdit(commentId){
     const comment=currentComments.find(function(item){
         return parseInt(item.id,10)===parseInt(commentId,10);
@@ -8479,6 +9176,10 @@ function startCommentEdit(commentId){
     }
 }
 
+/**
+ * EN: Builds, formats, or transforms data for `renderAttachments` (render Attachments).
+ * 中文：为 `renderAttachments`（render Attachments）构建、格式化或转换数据。
+ */
 function renderAttachments(items){
     currentLegacyAttachments=Array.isArray(items)
         ?items.slice()
@@ -8546,6 +9247,10 @@ function renderAttachments(items){
     $modalAttachments.removeClass('hidden');
 }
 
+/**
+ * EN: Updates application state for `syncDecisionVisualState` (sync Decision Visual State).
+ * 中文：更新 `syncDecisionVisualState`（sync Decision Visual State）对应的应用状态。
+ */
 function syncDecisionVisualState(decision){
     const normalized=['good','bad'].includes(
         String(decision||'')
@@ -8569,6 +9274,10 @@ function syncDecisionVisualState(decision){
     }
 }
 
+    /**
+     * EN: Implements the application operation `resetReviewModal` (reset Review Modal).
+     * 中文：实现应用操作 `resetReviewModal`（reset Review Modal）。
+     */
     function resetReviewModal(){
         $modalMessage
             .removeClass('error warning')
@@ -8633,6 +9342,10 @@ function syncDecisionVisualState(decision){
         setModalEditorHtml('');
     }
 
+    /**
+     * EN: Implements the application operation `closeReviewModal` (close Review Modal).
+     * 中文：实现应用操作 `closeReviewModal`（close Review Modal）。
+     */
     function closeReviewModal(){
         if(reviewRequest && reviewRequest.readyState !== 4){
             reviewRequest.abort();
@@ -8644,6 +9357,10 @@ function syncDecisionVisualState(decision){
         resetReviewModal();
     }
 
+    /**
+     * EN: Implements the application operation `openReviewModal` (open Review Modal).
+     * 中文：实现应用操作 `openReviewModal`（open Review Modal）。
+     */
     function openReviewModal(postId){
         postId = parseInt(postId, 10) || 0;
 
@@ -8853,6 +9570,10 @@ function syncDecisionVisualState(decision){
 
 
 
+/**
+ * EN: Implements the application operation `showDecisionError` (show Decision Error).
+ * 中文：实现应用操作 `showDecisionError`（show Decision Error）。
+ */
 function showDecisionError(message){
     const $decisionBlock=$modalForm.find(
         '.review-decision-modern'
@@ -8897,6 +9618,10 @@ function showDecisionError(message){
     }
 }
 
+    /**
+     * EN: Updates application state for `markReviewDirty` (mark Review Dirty).
+     * 中文：更新 `markReviewDirty`（mark Review Dirty）对应的应用状态。
+     */
     function markReviewDirty(){
         $reviewSaveState
             .addClass('hidden')
@@ -9018,6 +9743,10 @@ $commentList.on('click','[data-comment-image]',function(){
     openListingImage(String($(this).data('comment-image')||''));
 });
 
+/**
+ * EN: Removes or cleans data/state for `deleteAttachment` (delete Attachment).
+ * 中文：删除或清理 `deleteAttachment`（delete Attachment）相关的数据或状态。
+ */
 function deleteAttachment(attachmentId,$source){
     attachmentId=parseInt(attachmentId,10)||0;
 
@@ -9417,6 +10146,10 @@ $modalForm.on('submit', function(event){
         });
     });
 
+    /**
+     * EN: Implements the application operation `redrawAfterDailyTargetSave` (redraw After Daily Target Save).
+     * 中文：实现应用操作 `redrawAfterDailyTargetSave`（redraw After Daily Target Save）。
+     */
     function redrawAfterDailyTargetSave($card, dailyTarget){
         const count = parseInt(
             $card.attr('data-post-count'),
@@ -9471,6 +10204,10 @@ const $salesSettingsModal=$('#salesPersonSettingsModal');
 const $salesSettingsInput=$('#salesPersonDailyTarget');
 const $salesSettingsMessage=$('#salesPersonSettingsMessage');
 
+/**
+ * EN: Implements the application operation `closeSalesPersonSettings` (close Sales Person Settings).
+ * 中文：实现应用操作 `closeSalesPersonSettings`（close Sales Person Settings）。
+ */
 function closeSalesPersonSettings(){
     $salesSettingsModal
         .addClass('hidden')
@@ -9697,6 +10434,10 @@ $('#salesPersonSettingsSave').on('click',function(){
         );
     });
 
+    /**
+     * EN: Implements the application operation `showRefreshNotice` (show Refresh Notice).
+     * 中文：实现应用操作 `showRefreshNotice`（show Refresh Notice）。
+     */
     function showRefreshNotice(data){
         if(noticeShown){
             return;
@@ -9724,6 +10465,10 @@ $('#salesPersonSettingsSave').on('click',function(){
         $notice.removeClass('hidden');
     }
 
+    /**
+     * EN: Checks or validates the condition represented by `checkDashboardActivity` (check Dashboard Activity).
+     * 中文：检查或校验 `checkDashboardActivity`（check Dashboard Activity）所表示的条件。
+     */
     function checkDashboardActivity(){
         if(document.hidden || noticeShown){
             return;
@@ -9797,6 +10542,10 @@ $('#salesPersonSettingsSave').on('click',function(){
 let adminPostDeleteArmed=false;
 let adminPostDeleteTimer=null;
 
+/**
+ * EN: Implements the application operation `resetAdminPostDelete` (reset Admin Post Delete).
+ * 中文：实现应用操作 `resetAdminPostDelete`（reset Admin Post Delete）。
+ */
 function resetAdminPostDelete(){
     adminPostDeleteArmed=false;
     clearTimeout(adminPostDeleteTimer);
@@ -9848,6 +10597,10 @@ $('#dashboardPostDelete').on('click',function(){
     });
 });
 
+/**
+ * EN: Implements the application operation `websiteReferenceRow` (website Reference Row).
+ * 中文：实现应用操作 `websiteReferenceRow`（website Reference Row）。
+ */
 function websiteReferenceRow(row){
     const title=escapeHtml(String(row.title||''));
     const description=escapeHtml(String(row.description||''));
@@ -9864,6 +10617,10 @@ function websiteReferenceRow(row){
         +'</tr>';
 }
 
+/**
+ * EN: Updates application state for `setWebsiteReferenceMessage` (set Website Reference Message).
+ * 中文：更新 `setWebsiteReferenceMessage`（set Website Reference Message）对应的应用状态。
+ */
 function setWebsiteReferenceMessage(message,type){
     const $box=$('#websiteReferenceMessage');
     if(!$box.length)return;
@@ -9871,6 +10628,10 @@ function setWebsiteReferenceMessage(message,type){
     $box.removeClass('hidden ok error').addClass(type==='ok'?'ok':'error').text(message);
 }
 
+/**
+ * EN: Retrieves or loads data for `loadWebsiteReferences` (load Website References).
+ * 中文：读取或加载 `loadWebsiteReferences`（load Website References）所需的数据。
+ */
 function loadWebsiteReferences(){
     const $library=$('#website-comparison');
     if(!$library.length)return;
@@ -9967,15 +10728,27 @@ $(document).on('click','.website-reference-delete',function(){
     let activeRequest=null;
     let refreshSeq=0;
 
+    /**
+     * EN: Builds, formats, or transforms data for `parseIso` (parse Iso).
+     * 中文：为 `parseIso`（parse Iso）构建、格式化或转换数据。
+     */
     function parseIso(value){
         const m=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
         if(!m)return null;
         const d=new Date(+m[1],+m[2]-1,+m[3],12,0,0);
         return Number.isNaN(d.getTime())?null:d;
     }
+    /**
+     * EN: Checks or validates the condition represented by `iso` (iso).
+     * 中文：检查或校验 `iso`（iso）所表示的条件。
+     */
     function iso(d){
         return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
     }
+    /**
+     * EN: Implements the application operation `rangeFor` (range For).
+     * 中文：实现应用操作 `rangeFor`（range For）。
+     */
     function rangeFor(preset,anchorValue){
         let anchor=parseIso(anchorValue)||parseIso(today);
         const todayDate=parseIso(today);
@@ -9994,6 +10767,10 @@ $(document).on('click','.website-reference-delete',function(){
         }
         return {from:iso(fromDate),to:iso(toDate)};
     }
+    /**
+     * EN: Implements the application operation `selectPreset` (select Preset).
+     * 中文：实现应用操作 `selectPreset`（select Preset）。
+     */
     function selectPreset(preset){
         $period.val(preset);
         $('#reportPeriodSwitch [data-report-period]').each(function(){
@@ -10001,6 +10778,10 @@ $(document).on('click','.website-reference-delete',function(){
             $(this).toggleClass('active',active).attr('aria-pressed',active?'true':'false');
         });
     }
+    /**
+     * EN: Updates application state for `sync` (sync).
+     * 中文：更新 `sync`（sync）对应的应用状态。
+     */
     function sync(changed){
         let from=String($from.val()||'');
         let to=String($to.val()||'');
@@ -10014,12 +10795,24 @@ $(document).on('click','.website-reference-delete',function(){
         $to.attr('min',from).attr('max',today);
         return true;
     }
+    /**
+     * EN: Retrieves or loads data for `queryString` (query String).
+     * 中文：读取或加载 `queryString`（query String）所需的数据。
+     */
     function queryString(){
         return $form.serialize();
     }
+    /**
+     * EN: Updates application state for `setLoading` (set Loading).
+     * 中文：更新 `setLoading`（set Loading）对应的应用状态。
+     */
     function setLoading(loading){
         $('#reportResultPanel').toggleClass('report-loading',loading).attr('aria-busy',loading?'true':'false');
     }
+    /**
+     * EN: Updates application state for `refreshReport` (refresh Report).
+     * 中文：更新 `refreshReport`（refresh Report）对应的应用状态。
+     */
     function refreshReport(pushUrl){
         if(!sync(''))return;
         if(refreshTimer){window.clearTimeout(refreshTimer);refreshTimer=null;}
@@ -10074,6 +10867,10 @@ $(document).on('click','.website-reference-delete',function(){
             setLoading(false);
         });
     }
+    /**
+     * EN: Implements the application operation `scheduleRefresh` (schedule Refresh).
+     * 中文：实现应用操作 `scheduleRefresh`（schedule Refresh）。
+     */
     function scheduleRefresh(delay){
         if(refreshTimer)window.clearTimeout(refreshTimer);
         refreshTimer=window.setTimeout(function(){refreshReport(true);},typeof delay==='number'?delay:180);

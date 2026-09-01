@@ -1,2 +1,6 @@
+# File / 文件：storage/.htaccess
+# EN: Denies direct HTTP access to runtime logs/uploads that must only be served through authorized application routes.
+# 中文：禁止直接通过 HTTP 访问运行时日志/上传文件，这些内容只能通过应用授权路由提供。
+# Maintenance / 维护：Keep runtime storage private even when the project directory is web-accessible. / 即使项目目录可被 Web 访问，也必须保持运行时存储私有。
 Options -Indexes
 Require all denied

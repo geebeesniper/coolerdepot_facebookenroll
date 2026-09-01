@@ -1563,13 +1563,24 @@ Upload `sales-posts-v0.1.74-chart-pointer-tooltip.zip` to `/opt/coolerdepot/www/
 - Adds active log size rotation (`LOG_MAX_BYTES`, 25 MiB default) in addition to daily files and retention cleanup.
 - No database migration is required. VERSION/footer source is 0.1.99.
 
+## v0.2.00 — Responsive layout consolidation
 
-## v0.2.00
+- Adds `public/assets/responsive.css` as the single final owner of viewport-specific layout.
+- Fixes the 861–1120px Sales/Admin activity-header overflow caused by the historical `min-width:861px` override.
+- Keeps the four-language switch at a fixed 230px width on every breakpoint so language changes never resize the header.
+- Reflows Sales/Admin period + date controls deliberately on tablet/phone instead of relying on accidental flex wrapping.
+- Rebuilds the narrow Admin sticky range into preset/date rows without horizontal page scrolling.
+- Normalizes Reports, Settings, tables, cards, and review/submit/detail modals for 860/680/480px breakpoints.
+- No database migration and no business-logic changes.
 
-- Added one final canonical responsive contract for tablet and phone breakpoints.
-- Desktop-only fixed widths no longer fight narrow-screen layouts.
-- Header/navigation, language switch, Admin/Sales range controls, charts, reports,
-  settings, website-library tools, provider forms, cards and key modals now collapse
-  predictably at 1024/860/640/480px.
-- The detached Admin sticky range strip is disabled below 860px so it cannot cover
-  mobile content; the normal range controls remain visible in document flow.
+
+## v0.2.01 — Compact responsive navigation + bilingual source contract
+
+- Uses a one-row hamburger header at 1050px and below instead of allowing desktop navigation to collapse into a vertical list.
+- Uses fixed compact language labels `EN / 简 / 繁 / ES` on compact headers; desktop keeps full language names.
+- Keeps notification and hamburger controls visible without document-level horizontal overflow; the menu closes on selection, outside click, Escape, or return to desktop width.
+- Fixes the legacy `Back to today` 100% flex-basis rule that could create a 1px horizontal overflow at 390/480px.
+- Adds English/Chinese file headers across project-owned PHP/JS/CSS/SQL/Shell/Apache/integration/config sources and bilingual purpose comments for every named PHP/JS function/method covered by the source contract.
+- Adds `scripts/audit_bilingual_comments.php`; release packaging and ZIP validation both enforce the bilingual-comment contract.
+- Adds `docs/BILINGUAL_COMMENTS.md` and `docs/RESPONSIVE_CONTRACT.md`.
+- No database migration and no intentional business-logic change.

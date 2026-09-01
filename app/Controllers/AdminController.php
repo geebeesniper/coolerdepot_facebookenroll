@@ -1,10 +1,21 @@
 <?php
+/**
+ * File / 文件：app/Controllers/AdminController.php
+ * EN: HTTP controller for request validation, orchestration, and responses.
+ * 中文：该文件负责 HTTP 请求校验、业务编排与响应。
+ * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
+ * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ */
 namespace App\Controllers;
 
 use App\Services\HtmlNoteSanitizer;
 use App\Services\PostInspector;
 use App\Core\Controller;use App\Core\Auth;use App\Core\Csrf;use App\Core\Database;use App\Models\Post;use App\Models\User;use App\Services\UploadService;
 class AdminController extends Controller{
+    /**
+     * EN: Implements the application operation `dashboard` (dashboard).
+     * 中文：实现应用操作 `dashboard`（dashboard）。
+     */
     public function dashboard():void{
         $admin=Auth::requireRole('admin');
         [
@@ -87,6 +98,10 @@ class AdminController extends Controller{
         );
     }
 
+    /**
+     * EN: Implements the application operation `dashboardProgress` (dashboard Progress).
+     * 中文：实现应用操作 `dashboardProgress`（dashboard Progress）。
+     */
     public function dashboardProgress():void{
         Auth::requireRole('admin');
 
@@ -133,6 +148,10 @@ class AdminController extends Controller{
         ]);
     }
 
+    /**
+     * EN: Implements the application operation `dashboardSalesPosts` (dashboard Sales Posts).
+     * 中文：实现应用操作 `dashboardSalesPosts`（dashboard Sales Posts）。
+     */
     public function dashboardSalesPosts():void{
         Auth::requireRole('admin');
 
@@ -241,6 +260,10 @@ class AdminController extends Controller{
         ]);
     }
 
+    /**
+     * EN: Implements the application operation `dashboardSaveSalesReview` (dashboard Save Sales Review).
+     * 中文：实现应用操作 `dashboardSaveSalesReview`（dashboard Save Sales Review）。
+     */
     public function dashboardSaveSalesReview():void{
         $admin=Auth::requireRole('admin');
 
@@ -447,6 +470,10 @@ class AdminController extends Controller{
         ]);
     }
 
+    /**
+     * EN: Implements the application operation `dashboardDeleteSalesReviewHistory` (dashboard Delete Sales Review History).
+     * 中文：实现应用操作 `dashboardDeleteSalesReviewHistory`（dashboard Delete Sales Review History）。
+     */
     public function dashboardDeleteSalesReviewHistory():void{
         $admin=Auth::requireRole('admin');
         $this->verifyAjaxCsrf();
@@ -533,6 +560,10 @@ class AdminController extends Controller{
         ]);
     }
 
+    /**
+     * EN: Implements the application operation `dashboardPostReview` (dashboard Post Review).
+     * 中文：实现应用操作 `dashboardPostReview`（dashboard Post Review）。
+     */
     public function dashboardPostReview():void{
         Auth::requireRole('admin');
 
@@ -659,6 +690,10 @@ class AdminController extends Controller{
         ]);
     }
 
+    /**
+     * EN: Implements the application operation `dashboardGetContent` (dashboard Get Content).
+     * 中文：实现应用操作 `dashboardGetContent`（dashboard Get Content）。
+     */
     public function dashboardGetContent():void{
         $admin=Auth::requireRole('admin');
 
@@ -744,6 +779,10 @@ class AdminController extends Controller{
         }
     }
 
+/**
+ * EN: Implements the application operation `dashboardAddComment` (dashboard Add Comment).
+ * 中文：实现应用操作 `dashboardAddComment`（dashboard Add Comment）。
+ */
 public function dashboardAddComment():void{
     $admin=Auth::requireRole('admin');
 
@@ -801,6 +840,10 @@ public function dashboardAddComment():void{
     ]);
 }
 
+/**
+ * EN: Implements the application operation `dashboardUpdateComment` (dashboard Update Comment).
+ * 中文：实现应用操作 `dashboardUpdateComment`（dashboard Update Comment）。
+ */
 public function dashboardUpdateComment():void{
     $admin=Auth::requireRole('admin');
 
@@ -907,6 +950,10 @@ public function dashboardUpdateComment():void{
     ]);
 }
 
+/**
+ * EN: Implements the application operation `dashboardDeleteComment` (dashboard Delete Comment).
+ * 中文：实现应用操作 `dashboardDeleteComment`（dashboard Delete Comment）。
+ */
 public function dashboardDeleteComment():void{
     $admin=Auth::requireRole('admin');
     $this->verifyAjaxCsrf();
@@ -947,6 +994,10 @@ public function dashboardDeleteComment():void{
     ]);
 }
 
+/**
+ * EN: Implements the application operation `dashboardDeleteAttachment` (dashboard Delete Attachment).
+ * 中文：实现应用操作 `dashboardDeleteAttachment`（dashboard Delete Attachment）。
+ */
 public function dashboardDeleteAttachment():void{
     $admin=Auth::requireRole('admin');
     $this->verifyAjaxCsrf();
@@ -1030,6 +1081,10 @@ public function dashboardDeleteAttachment():void{
     ]);
 }
 
+    /**
+     * EN: Implements the application operation `dashboardEditorImage` (dashboard Editor Image).
+     * 中文：实现应用操作 `dashboardEditorImage`（dashboard Editor Image）。
+     */
     public function dashboardEditorImage():void{
         $admin=Auth::requireRole('admin');
         if($this->requestExceedsPostMaxSize()){
@@ -1059,6 +1114,10 @@ public function dashboardDeleteAttachment():void{
         }
     }
 
+    /**
+     * EN: Creates or persists the `saveSalesTarget` operation (save Sales Target).
+     * 中文：创建或持久化 `saveSalesTarget`（save Sales Target）操作。
+     */
     public function saveSalesTarget():void{
         $admin=Auth::requireRole('admin');
         Csrf::verify($_POST['_csrf']??null);
@@ -1101,6 +1160,10 @@ public function dashboardDeleteAttachment():void{
         ]);
     }
 
+    /**
+     * EN: Implements the application operation `dashboardUpdates` (dashboard Updates).
+     * 中文：实现应用操作 `dashboardUpdates`（dashboard Updates）。
+     */
     public function dashboardUpdates():void{
         Auth::requireRole('admin');
 
@@ -1134,6 +1197,10 @@ public function dashboardDeleteAttachment():void{
         ]);
     }
 
+    /**
+     * EN: Updates application state for `marketplaceContentPreview` (marketplace Content Preview).
+     * 中文：更新 `marketplaceContentPreview`（marketplace Content Preview）对应的应用状态。
+     */
     private function marketplaceContentPreview(array $item):array{
         $raw=is_array($item['raw']??null)
             ? $item['raw']
@@ -1180,6 +1247,10 @@ public function dashboardDeleteAttachment():void{
         ];
     }
 
+    /**
+     * EN: Implements the application operation `firstScalar` (first Scalar).
+     * 中文：实现应用操作 `firstScalar`（first Scalar）。
+     */
     private function firstScalar(array $values):?string{
         foreach($values as $value){
             if(is_string($value)||is_numeric($value)){
@@ -1195,6 +1266,10 @@ public function dashboardDeleteAttachment():void{
     }
 
 
+/**
+ * EN: Implements the application operation `extractMarketplacePhotos` (extract Marketplace Photos).
+ * 中文：实现应用操作 `extractMarketplacePhotos`（extract Marketplace Photos）。
+ */
 private function extractMarketplacePhotos(array $raw):array{
     $urls=[];
 
@@ -1267,6 +1342,10 @@ private function extractMarketplacePhotos(array $raw):array{
     return array_slice($urls,0,8);
 }
 
+/**
+ * EN: Implements the application operation `dashboardSalesReviewData` (dashboard Sales Review Data).
+ * 中文：实现应用操作 `dashboardSalesReviewData`（dashboard Sales Review Data）。
+ */
 private function dashboardSalesReviewData(
     int $salesUserId,
     string $period,
@@ -1334,6 +1413,10 @@ private function dashboardSalesReviewData(
 }
 
 
+    /**
+     * EN: Implements the application operation `dashboardSalesReviewHistory` (dashboard Sales Review History).
+     * 中文：实现应用操作 `dashboardSalesReviewHistory`（dashboard Sales Review History）。
+     */
     private function dashboardSalesReviewHistory(
         int $salesUserId,
         string $period,
@@ -1368,6 +1451,10 @@ private function dashboardSalesReviewData(
         return $rows;
     }
 
+    /**
+     * EN: Implements the application operation `salesReviewHistoryAttachments` (sales Review History Attachments).
+     * 中文：实现应用操作 `salesReviewHistoryAttachments`（sales Review History Attachments）。
+     */
     private function salesReviewHistoryAttachments(int $historyId):array{
         $q=Database::connection()->prepare(
             "SELECT
@@ -1385,6 +1472,10 @@ private function dashboardSalesReviewData(
         return $this->formatAttachments($q->fetchAll());
     }
 
+    /**
+     * EN: Implements the application operation `dashboardRequestContext` (dashboard Request Context).
+     * 中文：实现应用操作 `dashboardRequestContext`（dashboard Request Context）。
+     */
     private function dashboardRequestContext(array $source):array{
         $rawFrom=trim((string)($source['from']??''));
         $rawTo=trim((string)($source['to']??''));
@@ -1469,6 +1560,10 @@ private function dashboardSalesReviewData(
         ];
     }
 
+    /**
+     * EN: Implements the application operation `dashboardDetectPreset` (dashboard Detect Preset).
+     * 中文：实现应用操作 `dashboardDetectPreset`（dashboard Detect Preset）。
+     */
     private function dashboardDetectPreset(string $from,string $to):string{
         if($from===$to){return 'single';}
 
@@ -1485,6 +1580,10 @@ private function dashboardSalesReviewData(
         return 'custom';
     }
 
+    /**
+     * EN: Implements the application operation `rollingPresetRange` (rolling Preset Range).
+     * 中文：实现应用操作 `rollingPresetRange`（rolling Preset Range）。
+     */
     private function rollingPresetRange(string $preset,string $to):array{
         $today=date('Y-m-d');
         $to=$this->validDashboardDate($to);
@@ -1518,6 +1617,10 @@ private function dashboardSalesReviewData(
         return [$fromValue,$anchor->format('Y-m-d')];
     }
 
+    /**
+     * EN: Implements the application operation `validDashboardDate` (valid Dashboard Date).
+     * 中文：实现应用操作 `validDashboardDate`（valid Dashboard Date）。
+     */
     private function validDashboardDate(string $date):string{
         $today=date('Y-m-d');
 
@@ -1530,12 +1633,20 @@ private function dashboardSalesReviewData(
             : $date;
     }
 
+    /**
+     * EN: Implements the application operation `validDashboardPeriod` (valid Dashboard Period).
+     * 中文：实现应用操作 `validDashboardPeriod`（valid Dashboard Period）。
+     */
     private function validDashboardPeriod(string $period):string{
         return in_array($period,['day','week','month'],true)
             ? $period
             : 'day';
     }
 
+    /**
+     * EN: Implements the application operation `dashboardPeriodInfo` (dashboard Period Info).
+     * 中文：实现应用操作 `dashboardPeriodInfo`（dashboard Period Info）。
+     */
     private function dashboardPeriodInfo(
         string $date,
         string $period
@@ -1621,6 +1732,10 @@ private function dashboardSalesReviewData(
         ];
     }
 
+    /**
+     * EN: Builds, formats, or transforms data for `formatProgressRows` (format Progress Rows).
+     * 中文：为 `formatProgressRows`（format Progress Rows）构建、格式化或转换数据。
+     */
     private function formatProgressRows(
         array $rows,
         array $periodInfo
@@ -1672,6 +1787,10 @@ private function dashboardSalesReviewData(
         return $rows;
     }
 
+    /**
+     * EN: Implements the application operation `postReview` (post Review).
+     * 中文：实现应用操作 `postReview`（post Review）。
+     */
     public function postReview():void{
         $admin=Auth::requireRole('admin');$post=Post::find((int)($_GET['id']??0));if(!$post){
             \App\Core\Logger::httpStatus(404,['event'=>'admin_post_review_not_found','post_id'=>(int)($_GET['id']??0)]);
@@ -1680,6 +1799,10 @@ private function dashboardSalesReviewData(
         $s=Database::connection()->prepare("SELECT * FROM cdsp_post_reviews WHERE post_id=? LIMIT 1");$s->execute([$post['id']]);$review=$s->fetch()?:null;
         $attachments=$review?$this->attachments('post_review',(int)$review['id']):[];$this->render('admin/post_review',compact('admin','post','review','attachments'));
     }
+/**
+ * EN: Creates or persists the `savePostReview` operation (save Post Review).
+ * 中文：创建或持久化 `savePostReview`（save Post Review）操作。
+ */
 public function savePostReview():void{
     $admin=Auth::requireRole('admin');
     $isAjax=$this->isAjaxRequest();
@@ -1869,6 +1992,10 @@ public function savePostReview():void{
     $this->redirect('/admin/post?id='.$pid);
 }
 
+    /**
+     * EN: Implements the application operation `dailyReview` (daily Review).
+     * 中文：实现应用操作 `dailyReview`（daily Review）。
+     */
     public function dailyReview():void{
         Auth::requireRole('admin');
         $sid=(int)($_GET['sales_id']??0);
@@ -1880,6 +2007,10 @@ public function savePostReview():void{
         }
         $this->redirect('/admin?date='.rawurlencode($date).'&period=day&sales_id='.$sid.'&review=1');
     }
+/**
+ * EN: Creates or persists the `saveDailyReview` operation (save Daily Review).
+ * 中文：创建或持久化 `saveDailyReview`（save Daily Review）操作。
+ */
 public function saveDailyReview():void{
     Auth::requireRole('admin');
     Csrf::verify($_POST['_csrf']??null);
@@ -1901,6 +2032,10 @@ public function saveDailyReview():void{
     );
 }
 
+    /**
+     * EN: Implements the application operation `reports` (reports).
+     * 中文：实现应用操作 `reports`（reports）。
+     */
     public function reports():void{
         $admin=Auth::requireRole('admin');
         $sales=User::allSales();
@@ -1924,6 +2059,10 @@ public function saveDailyReview():void{
         );
     }
 
+    /**
+     * EN: Implements the application operation `reportsDownload` (reports Download).
+     * 中文：实现应用操作 `reportsDownload`（reports Download）。
+     */
     public function reportsDownload():void{
         Auth::requireRole('admin');
         $context=$this->managementReportContext($_GET);
@@ -1981,6 +2120,10 @@ public function saveDailyReview():void{
         exit;
     }
 
+    /**
+     * EN: Implements the application operation `managementReportContext` (management Report Context).
+     * 中文：实现应用操作 `managementReportContext`（management Report Context）。
+     */
     private function managementReportContext(array $source):array{
         $today=date('Y-m-d');
         $preset=strtolower(trim((string)($source['period']??'week')));
@@ -2012,6 +2155,10 @@ public function saveDailyReview():void{
         ];
     }
 
+    /**
+     * EN: Implements the application operation `managementReportRows` (management Report Rows).
+     * 中文：实现应用操作 `managementReportRows`（management Report Rows）。
+     */
     private function managementReportRows(
         string $from,
         string $to,
@@ -2141,6 +2288,10 @@ public function saveDailyReview():void{
         return $rows;
     }
 
+/**
+ * EN: Creates or persists the `savePeriodReview` operation (save Period Review).
+ * 中文：创建或持久化 `savePeriodReview`（save Period Review）操作。
+ */
 public function savePeriodReview():void{
     Auth::requireRole('admin');
     Csrf::verify($_POST['_csrf']??null);
@@ -2169,6 +2320,10 @@ public function savePeriodReview():void{
     );
 }
 
+    /**
+     * EN: Handles the workflow/event for `handleDeleteRequest` (handle Delete Request).
+     * 中文：处理 `handleDeleteRequest`（handle Delete Request）对应的流程或事件。
+     */
     public function handleDeleteRequest():void{
         $admin=Auth::requireRole('admin');
         $isAjax=$this->isAjaxRequest();
@@ -2240,6 +2395,10 @@ public function savePeriodReview():void{
         $this->redirect('/admin');
     }
 
+    /**
+     * EN: Removes or cleans data/state for `deletePost` (delete Post).
+     * 中文：删除或清理 `deletePost`（delete Post）相关的数据或状态。
+     */
     public function deletePost():void{
         Auth::requireRole('admin');
         $this->verifyAjaxCsrf();
@@ -2258,11 +2417,19 @@ public function savePeriodReview():void{
             $this->json(['ok'=>false,'message'=>'Post could not be deleted.'],500);
         }
     }
+    /**
+     * EN: Checks or validates the condition represented by `isAjaxRequest` (is Ajax Request).
+     * 中文：检查或校验 `isAjaxRequest`（is Ajax Request）所表示的条件。
+     */
     private function isAjaxRequest():bool{
         return strtolower((string)($_SERVER['HTTP_X_REQUESTED_WITH']??''))==='xmlhttprequest'
             || str_contains(strtolower((string)($_SERVER['HTTP_ACCEPT']??'')),'application/json');
     }
 
+    /**
+     * EN: Checks or validates the condition represented by `verifyAjaxCsrf` (verify Ajax Csrf).
+     * 中文：检查或校验 `verifyAjaxCsrf`（verify Ajax Csrf）所表示的条件。
+     */
     private function verifyAjaxCsrf():void{
         $token=(string)($_POST['_csrf']??'');$sessionToken=(string)($_SESSION['_csrf']??'');
         if($token===''||$sessionToken===''||!hash_equals($sessionToken,$token)){
@@ -2270,17 +2437,29 @@ public function savePeriodReview():void{
         }
     }
 
+    /**
+     * EN: Implements the application operation `requestExceedsPostMaxSize` (request Exceeds Post Max Size).
+     * 中文：实现应用操作 `requestExceedsPostMaxSize`（request Exceeds Post Max Size）。
+     */
     private function requestExceedsPostMaxSize():bool{
         $contentLength=(int)($_SERVER['CONTENT_LENGTH']??0);if($contentLength<1)return false;
         $max=$this->iniBytes((string)ini_get('post_max_size'));
         return $max>0&&$contentLength>$max;
     }
 
+    /**
+     * EN: Implements the application operation `iniBytes` (ini Bytes).
+     * 中文：实现应用操作 `iniBytes`（ini Bytes）。
+     */
     private function iniBytes(string $value):int{
         $value=trim($value);if($value==='')return 0;$unit=strtolower(substr($value,-1));$number=(float)$value;
         return match($unit){'g'=>(int)round($number*1024*1024*1024),'m'=>(int)round($number*1024*1024),'k'=>(int)round($number*1024),default=>(int)$number};
     }
 
+/**
+ * EN: Implements the application operation `postReviewHistory` (post Review History).
+ * 中文：实现应用操作 `postReviewHistory`（post Review History）。
+ */
 private function postReviewHistory(int $postId):array{
     $s=Database::connection()->prepare(
         "SELECT
@@ -2308,6 +2487,10 @@ private function postReviewHistory(int $postId):array{
     return $rows;
 }
 
+/**
+ * EN: Implements the application operation `postReviewHistoryEvent` (post Review History Event).
+ * 中文：实现应用操作 `postReviewHistoryEvent`（post Review History Event）。
+ */
 private function postReviewHistoryEvent(int $historyId):?array{
     if($historyId<1){
         return null;
@@ -2336,6 +2519,10 @@ private function postReviewHistoryEvent(int $historyId):?array{
         : null;
 }
 
+/**
+ * EN: Builds, formats, or transforms data for `formatPostReviewHistoryEvent` (format Post Review History Event).
+ * 中文：为 `formatPostReviewHistoryEvent`（format Post Review History Event）构建、格式化或转换数据。
+ */
 private function formatPostReviewHistoryEvent(array $row):array{
     return [
         'id'=>(int)$row['id'],
@@ -2349,6 +2536,10 @@ private function formatPostReviewHistoryEvent(array $row):array{
     ];
 }
 
+/**
+ * EN: Implements the application operation `postReviewComments` (post Review Comments).
+ * 中文：实现应用操作 `postReviewComments`（post Review Comments）。
+ */
 private function postReviewComments(int $postId):array{
     $s=Database::connection()->prepare(
         "SELECT
@@ -2386,6 +2577,10 @@ private function postReviewComments(int $postId):array{
     return $rows;
 }
 
+/**
+ * EN: Implements the application operation `postReviewComment` (post Review Comment).
+ * 中文：实现应用操作 `postReviewComment`（post Review Comment）。
+ */
 private function postReviewComment(
     int $commentId,
     bool $includeDeleted=false
@@ -2428,6 +2623,10 @@ private function postReviewComment(
         : null;
 }
 
+/**
+ * EN: Builds, formats, or transforms data for `formatPostReviewComment` (format Post Review Comment).
+ * 中文：为 `formatPostReviewComment`（format Post Review Comment）构建、格式化或转换数据。
+ */
 private function formatPostReviewComment(array $row):array{
     $created=(string)$row['created_at'];
     $updated=(string)$row['updated_at'];
@@ -2477,6 +2676,10 @@ private function formatPostReviewComment(array $row):array{
     ];
 }
 
+/**
+ * EN: Implements the application operation `commentHasContent` (comment Has Content).
+ * 中文：实现应用操作 `commentHasContent`（comment Has Content）。
+ */
 private function commentHasContent(string $html):bool{
     if(trim(strip_tags($html))!==''){
         return true;
@@ -2485,6 +2688,10 @@ private function commentHasContent(string $html):bool{
     return stripos($html,'<img')!==false;
 }
 
+/**
+ * EN: Checks or validates the condition represented by `hasUploadedFiles` (has Uploaded Files).
+ * 中文：检查或校验 `hasUploadedFiles`（has Uploaded Files）所表示的条件。
+ */
 private function hasUploadedFiles(string $field):bool{
     if(empty($_FILES[$field])) return false;
     $errors=$_FILES[$field]['error']??UPLOAD_ERR_NO_FILE;
@@ -2495,6 +2702,10 @@ private function hasUploadedFiles(string $field):bool{
     return false;
 }
 
+/**
+ * EN: Builds, formats, or transforms data for `formatAttachment` (format Attachment).
+ * 中文：为 `formatAttachment`（format Attachment）构建、格式化或转换数据。
+ */
 private function formatAttachment(array $attachment):array{
     return [
         'id'=>(int)$attachment['id'],
@@ -2514,6 +2725,10 @@ private function formatAttachment(array $attachment):array{
     ];
 }
 
+/**
+ * EN: Builds, formats, or transforms data for `formatAttachments` (format Attachments).
+ * 中文：为 `formatAttachments`（format Attachments）构建、格式化或转换数据。
+ */
 private function formatAttachments(array $items):array{
     $result=[];
 
@@ -2524,6 +2739,10 @@ private function formatAttachments(array $items):array{
     return $result;
 }
 
+/**
+ * EN: Implements the application operation `attachmentById` (attachment By Id).
+ * 中文：实现应用操作 `attachmentById`（attachment By Id）。
+ */
 private function attachmentById(int $id):?array{
     $s=Database::connection()->prepare(
         "SELECT
@@ -2545,6 +2764,10 @@ private function attachmentById(int $id):?array{
     return $row ?: null;
 }
 
+/**
+ * EN: Implements the application operation `attachments` (attachments).
+ * 中文：实现应用操作 `attachments`（attachments）。
+ */
 private function attachments(
     string $type,
     int $id,

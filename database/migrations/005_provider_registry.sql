@@ -1,3 +1,7 @@
+-- File / 文件：database/migrations/005_provider_registry.sql
+-- EN: Database migration for a versioned schema/data change.
+-- 中文：该文件用于版本化数据库结构或数据迁移。
+-- Maintenance / 维护：Keep migrations deterministic and safe to re-check before deployment. / 迁移必须可预测，部署前可安全复核。
 CREATE TABLE IF NOT EXISTS cdsp_provider_profiles (
  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
  source_key VARCHAR(100) NULL,

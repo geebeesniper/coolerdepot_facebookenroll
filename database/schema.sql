@@ -1,3 +1,7 @@
+-- File / 文件：database/schema.sql
+-- EN: Database schema or database-support source.
+-- 中文：该文件提供数据库结构或数据库辅助定义。
+-- Maintenance / 维护：Keep migrations deterministic and safe to re-check before deployment. / 迁移必须可预测，部署前可安全复核。
 -- CoolerDepot Sales Post Tracker
 -- Table prefix: cdsp_
 

@@ -1,8 +1,19 @@
 <?php
+/**
+ * File / 文件：app/Core/Controller.php
+ * EN: Core runtime/infrastructure component used across the application.
+ * 中文：该文件是应用全局复用的核心运行时或基础设施组件。
+ * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
+ * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ */
 namespace App\Core;
 
 class Controller
 {
+    /**
+     * EN: Builds, formats, or transforms data for `render` (render).
+     * 中文：为 `render`（render）构建、格式化或转换数据。
+     */
     protected function render(string $view, array $data = []): void
     {
         global $config;
@@ -12,6 +23,10 @@ class Controller
         require dirname(__DIR__) . '/Views/layout/footer.php';
     }
 
+    /**
+     * EN: Implements the application operation `redirect` (redirect).
+     * 中文：实现应用操作 `redirect`（redirect）。
+     */
     protected function redirect(string $path, int $status = 302): void
     {
         global $config;
@@ -29,6 +44,10 @@ class Controller
      * Emit a JSON response and centrally record every non-success application
      * response. This catches handled failures that would otherwise disappear
      * because the controller converted an exception into user-facing JSON.
+     */
+    /**
+     * EN: Implements the application operation `json` (json).
+     * 中文：实现应用操作 `json`（json）。
      */
     protected function json(array $data, int $status = 200): void
     {
@@ -63,6 +82,10 @@ class Controller
         exit;
     }
 
+    /**
+     * EN: Builds, formats, or transforms data for `renderPartial` (render Partial).
+     * 中文：为 `renderPartial`（render Partial）构建、格式化或转换数据。
+     */
     protected function renderPartial(string $view, array $data = []): void
     {
         global $config;

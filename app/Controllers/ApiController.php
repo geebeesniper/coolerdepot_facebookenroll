@@ -1,4 +1,11 @@
 <?php
+/**
+ * File / 文件：app/Controllers/ApiController.php
+ * EN: HTTP controller for request validation, orchestration, and responses.
+ * 中文：该文件负责 HTTP 请求校验、业务编排与响应。
+ * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
+ * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ */
 namespace App\Controllers;
 
 use App\Core\Controller;
@@ -12,6 +19,10 @@ use App\Services\PlatformUrl;
 
 class ApiController extends Controller
 {
+    /**
+     * EN: Implements the application operation `inspectPreflight` (inspect Preflight).
+     * 中文：实现应用操作 `inspectPreflight`（inspect Preflight）。
+     */
     public function inspectPreflight(): void
     {
         $u = Auth::requireRole('sales');
@@ -51,6 +62,10 @@ class ApiController extends Controller
         ]);
     }
 
+    /**
+     * EN: Implements the application operation `inspect` (inspect).
+     * 中文：实现应用操作 `inspect`（inspect）。
+     */
     public function inspect(): void
     {
         $u = Auth::requireRole('sales');
@@ -116,6 +131,10 @@ class ApiController extends Controller
      *
      * The endpoint is same-origin/CSRF-protected and session-rate-limited
      * so a browser error cannot be turned into an unbounded log flood.
+     */
+    /**
+     * EN: Implements the application operation `clientLog` (client Log).
+     * 中文：实现应用操作 `clientLog`（client Log）。
      */
     public function clientLog(): void
     {
@@ -185,6 +204,10 @@ class ApiController extends Controller
      * Strip query strings/fragments from browser-supplied diagnostic URLs.
      * Client-side cleaning is helpful but cannot be trusted as the security
      * boundary because /api/client-log is still a normal HTTP endpoint.
+     */
+    /**
+     * EN: Implements the application operation `diagnosticUrl` (diagnostic Url).
+     * 中文：实现应用操作 `diagnosticUrl`（diagnostic Url）。
      */
     private function diagnosticUrl(string $value): string
     {

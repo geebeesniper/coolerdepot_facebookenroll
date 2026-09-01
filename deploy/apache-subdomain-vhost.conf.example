@@ -1,3 +1,7 @@
+# File / 文件：deploy/apache-subdomain-vhost.conf.example
+# EN: Example Apache virtual-host configuration for the Sales Post Tracker subdomain.
+# 中文：Sales Post Tracker 子域名的 Apache VirtualHost 配置示例。
+# Maintenance / 维护：Replace the example hostname and confirm PHP-FPM routing before production use. / 上线前替换示例域名并确认 PHP-FPM 路由。
 # Replace salesposts.YOURDOMAIN.com with the real subdomain.
 <VirtualHost *:80>
  ServerName salesposts.YOURDOMAIN.com

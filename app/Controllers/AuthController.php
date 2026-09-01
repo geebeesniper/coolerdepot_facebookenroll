@@ -1,4 +1,11 @@
 <?php
+/**
+ * File / 文件：app/Controllers/AuthController.php
+ * EN: HTTP controller for request validation, orchestration, and responses.
+ * 中文：该文件负责 HTTP 请求校验、业务编排与响应。
+ * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
+ * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ */
 namespace App\Controllers;
 
 use App\Core\Auth;
@@ -16,6 +23,10 @@ use App\Models\User;
  */
 class AuthController
 {
+    /**
+     * EN: Implements the application operation `home` (home).
+     * 中文：实现应用操作 `home`（home）。
+     */
     public function home(): void
     {
         $user = Auth::user();
@@ -34,6 +45,10 @@ class AuthController
         exit;
     }
 
+    /**
+     * EN: Implements the application operation `login` (login).
+     * 中文：实现应用操作 `login`（login）。
+     */
     public function login(): void
     {
         global $config;
@@ -51,6 +66,10 @@ class AuthController
         $this->renderView('auth/login', ['error' => null]);
     }
 
+    /**
+     * EN: Implements the application operation `authenticate` (authenticate).
+     * 中文：实现应用操作 `authenticate`（authenticate）。
+     */
     public function authenticate(): void
     {
         global $config;
@@ -107,6 +126,10 @@ class AuthController
         exit;
     }
 
+    /**
+     * EN: Implements the application operation `logout` (logout).
+     * 中文：实现应用操作 `logout`（logout）。
+     */
     public function logout(): void
     {
         Csrf::verify($_POST['_csrf'] ?? null);
@@ -117,6 +140,10 @@ class AuthController
         exit;
     }
 
+    /**
+     * EN: Builds, formats, or transforms data for `renderView` (render View).
+     * 中文：为 `renderView`（render View）构建、格式化或转换数据。
+     */
     private function renderView(string $view, array $data = []): void
     {
         global $config;

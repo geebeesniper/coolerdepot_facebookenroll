@@ -1,8 +1,19 @@
 <?php
+/**
+ * File / 文件：app/Services/SecretCrypto.php
+ * EN: Application service for reusable business or integration logic.
+ * 中文：该文件负责可复用的业务逻辑或外部集成服务。
+ * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
+ * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ */
 namespace App\Services;
 
 class SecretCrypto
 {
+    /**
+     * EN: Implements the application operation `key` (key).
+     * 中文：实现应用操作 `key`（key）。
+     */
     private static function key(): string
     {
         global $config;
@@ -18,6 +29,10 @@ class SecretCrypto
         return hash('sha256', 'cdsp-settings-v1|' . $secret, true);
     }
 
+    /**
+     * EN: Implements the application operation `encrypt` (encrypt).
+     * 中文：实现应用操作 `encrypt`（encrypt）。
+     */
     public static function encrypt(string $plaintext): string
     {
         if ($plaintext === '') {
@@ -44,6 +59,10 @@ class SecretCrypto
         return base64_encode("CDSP1" . $iv . $tag . $ciphertext);
     }
 
+    /**
+     * EN: Implements the application operation `decrypt` (decrypt).
+     * 中文：实现应用操作 `decrypt`（decrypt）。
+     */
     public static function decrypt(string $encoded): string
     {
         if ($encoded === '') {

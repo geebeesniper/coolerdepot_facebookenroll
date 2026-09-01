@@ -1,8 +1,19 @@
 <?php
+/**
+ * File / 文件：app/Services/PlatformUrl.php
+ * EN: Application service for reusable business or integration logic.
+ * 中文：该文件负责可复用的业务逻辑或外部集成服务。
+ * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
+ * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ */
 namespace App\Services;
 
 class PlatformUrl
 {
+    /**
+     * EN: Implements the application operation `platformFor` (platform For).
+     * 中文：实现应用操作 `platformFor`（platform For）。
+     */
     public static function platformFor(string $url): ?string
     {
         $url = trim(html_entity_decode($url, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
@@ -39,6 +50,10 @@ class PlatformUrl
         return null;
     }
 
+    /**
+     * EN: Builds, formats, or transforms data for `normalize` (normalize).
+     * 中文：为 `normalize`（normalize）构建、格式化或转换数据。
+     */
     public static function normalize(string $url, ?string $expected = null): ?string
     {
         $url = trim(html_entity_decode($url, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
@@ -88,11 +103,19 @@ class PlatformUrl
         return null;
     }
 
+    /**
+     * EN: Checks or validates the condition represented by `allowed` (allowed).
+     * 中文：检查或校验 `allowed`（allowed）所表示的条件。
+     */
     public static function allowed(string $url, ?string $expected = null): bool
     {
         return self::normalize($url, $expected) !== null;
     }
 
+    /**
+     * EN: Checks or validates the condition represented by `allowedStrict` (allowed Strict).
+     * 中文：检查或校验 `allowedStrict`（allowed Strict）所表示的条件。
+     */
     private static function allowedStrict(string $url, ?string $expected = null): bool
     {
         if (!filter_var($url, FILTER_VALIDATE_URL)) {
@@ -116,6 +139,10 @@ class PlatformUrl
         return $platform && (!$expected || $platform === $expected);
     }
 
+    /**
+     * EN: Implements the application operation `platformForStrict` (platform For Strict).
+     * 中文：实现应用操作 `platformForStrict`（platform For Strict）。
+     */
     private static function platformForStrict(string $url): ?string
     {
         $host = strtolower((string)parse_url($url, PHP_URL_HOST));
@@ -136,6 +163,10 @@ class PlatformUrl
         return null;
     }
 
+    /**
+     * EN: Implements the application operation `externalId` (external Id).
+     * 中文：实现应用操作 `externalId`（external Id）。
+     */
     public static function externalId(string $platform, string $url, string $html = ''): ?string
     {
         $mappings = [

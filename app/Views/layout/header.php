@@ -1,4 +1,11 @@
 <?php
+/**
+ * File / 文件：app/Views/layout/header.php
+ * EN: Server-rendered view for this screen or partial.
+ * 中文：该文件负责此页面或局部组件的服务端渲染。
+ * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
+ * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ */
 use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\Util;
@@ -40,6 +47,12 @@ if ($u && ($u['role'] ?? '') === 'admin') {
         rel="stylesheet"
         href="<?= Util::e($base) ?>/public/assets/app.css?v=<?= rawurlencode($config['app']['version']) ?>"
     >
+    <!-- EN: Canonical breakpoint layer; responsive ownership stays out of the historical app.css chain.
+         中文：统一断点层；响应式规则独立于历史 app.css 覆盖链，避免窄屏多套规则互相冲突。 -->
+    <link
+        rel="stylesheet"
+        href="<?= Util::e($base) ?>/public/assets/responsive.css?v=<?= rawurlencode($config['app']['version']) ?>"
+    >
     <script src="<?= Util::e($base) ?>/public/assets/diagnostics.js?v=<?= rawurlencode($config['app']['version']) ?>"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 </head>
@@ -58,6 +71,8 @@ if ($u && ($u['role'] ?? '') === 'admin') {
                 <?= Util::e($u['display_name'] ?: $u['username']) ?>
             </b>
 
+            <!-- EN: Full language names are shown on desktop; compact EN/简/繁/ES labels are shown on narrow screens.
+                 中文：桌面显示完整语言名；窄屏显示 EN/简/繁/ES 固定缩写。 -->
             <div
                 class="app-language-switch"
                 id="appLanguageSwitch"
@@ -70,7 +85,8 @@ if ($u && ($u['role'] ?? '') === 'admin') {
                     aria-pressed="true"
                     title="English"
                 >
-                    English
+                    <span class="language-label-full">English</span>
+                    <span class="language-label-short" aria-hidden="true">EN</span>
                 </button>
                 <button
                     type="button"
@@ -79,7 +95,8 @@ if ($u && ($u['role'] ?? '') === 'admin') {
                     aria-pressed="false"
                     title="简体中文"
                 >
-                    简体中文
+                    <span class="language-label-full">简体中文</span>
+                    <span class="language-label-short" aria-hidden="true">简</span>
                 </button>
                 <button
                     type="button"
@@ -88,7 +105,8 @@ if ($u && ($u['role'] ?? '') === 'admin') {
                     aria-pressed="false"
                     title="繁體中文"
                 >
-                    繁體中文
+                    <span class="language-label-full">繁體中文</span>
+                    <span class="language-label-short" aria-hidden="true">繁</span>
                 </button>
                 <button
                     type="button"
@@ -97,7 +115,8 @@ if ($u && ($u['role'] ?? '') === 'admin') {
                     aria-pressed="false"
                     title="Español"
                 >
-                    Español
+                    <span class="language-label-full">Español</span>
+                    <span class="language-label-short" aria-hidden="true">ES</span>
                 </button>
             </div>
 
@@ -166,14 +185,37 @@ if ($u && ($u['role'] ?? '') === 'admin') {
                 </div>
             <?php endif; ?>
 
+            <!-- EN: Narrow screens use one hamburger button; route links live in the expandable panel below.
+                 中文：窄屏只显示一个汉堡菜单按钮；路由链接放在下方可展开菜单中。 -->
+            <button
+                type="button"
+                class="mobile-nav-toggle"
+                id="mobileNavToggle"
+                aria-expanded="false"
+                aria-controls="appPrimaryNav"
+                aria-label="Open navigation menu"
+                title="Menu"
+            >
+                <span class="mobile-nav-toggle-bars" aria-hidden="true">
+                    <i></i><i></i><i></i>
+                </span>
+            </button>
+
+            <div class="app-nav-menu" id="appPrimaryNav">
+                <b class="mobile-nav-user">
+                    <?= Util::e($u['display_name'] ?: $u['username']) ?>
+                </b>
+
             <?php if ($u['role'] === 'sales'): ?>
                 <a
+                    class="app-nav-link"
                     href="<?= Util::e($base) ?>/sales"
                     data-nav-i18n="dashboard"
                 >
                     Dashboard
                 </a>
                 <a
+                    class="app-nav-link"
                     href="<?= Util::e($base) ?>/sales/submit"
                     data-nav-i18n="submit"
                     data-open-sales-submit
@@ -182,18 +224,21 @@ if ($u && ($u['role'] ?? '') === 'admin') {
                 </a>
             <?php else: ?>
                 <a
+                    class="app-nav-link"
                     href="<?= Util::e($base) ?>/admin"
                     data-nav-i18n="dashboard"
                 >
                     Dashboard
                 </a>
                 <a
+                    class="app-nav-link"
                     href="<?= Util::e($base) ?>/admin/reports"
                     data-nav-i18n="reports"
                 >
                     Reports
                 </a>
                 <a
+                    class="app-nav-link"
                     href="<?= Util::e($base) ?>/admin/settings"
                     data-nav-i18n="settings"
                 >
@@ -201,7 +246,7 @@ if ($u && ($u['role'] ?? '') === 'admin') {
                 </a>
             <?php endif; ?>
 
-            <form method="post" action="<?= Util::e($base) ?>/logout">
+            <form class="app-nav-signout" method="post" action="<?= Util::e($base) ?>/logout">
                 <input
                     type="hidden"
                     name="_csrf"
@@ -209,6 +254,7 @@ if ($u && ($u['role'] ?? '') === 'admin') {
                 >
                 <button data-nav-i18n="signOut">Sign out</button>
             </form>
+            </div>
         </div>
     <?php endif; ?>
 </header>

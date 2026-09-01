@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# File / 文件：scripts/validate_release.sh
+# EN: Operations/deployment/diagnostics script owned by this project.
+# 中文：该文件是本项目自有的运维、部署或诊断脚本。
+# Maintenance / 维护：Preserve validation, safety, and diagnostics when editing. / 修改时保留校验、安全与诊断。
 set -euo pipefail
 
 ARCHIVE="${1:?Usage: validate_release.sh <release.zip> [expected-version]}"
@@ -24,6 +28,8 @@ required=(
   "sales-posts/index.php"
   "sales-posts/app/Core/Logger.php"
   "sales-posts/public/assets/diagnostics.js"
+  "sales-posts/public/assets/responsive.css"
+  "sales-posts/scripts/audit_bilingual_comments.php"
   "sales-posts/storage/logs/.gitkeep"
 )
 
@@ -83,6 +89,13 @@ if [[ -n "$EXPECTED_VERSION" && "$archive_version" != "$EXPECTED_VERSION" ]]; th
   echo "Release VERSION mismatch: expected $EXPECTED_VERSION, got $archive_version" >&2
   exit 1
 fi
+
+# EN: Re-run the bilingual comment audit against the exact files inside the ZIP.
+# 中文：针对 ZIP 内的实际文件再次执行双语注释审计，防止打包阶段漏文件或错版本。
+VERIFY_TMP="$(mktemp -d)"
+trap 'rm -rf "$VERIFY_TMP"' EXIT
+unzip -q "$ARCHIVE" -d "$VERIFY_TMP"
+php "$VERIFY_TMP/sales-posts/scripts/audit_bilingual_comments.php"
 
 printf 'Release validation OK: %s (%d entries, version %s)\n' \
   "$ARCHIVE" "${#ENTRIES[@]}" "$archive_version"

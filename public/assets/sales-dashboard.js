@@ -1,6 +1,17 @@
+/**
+ * File / 文件：public/assets/sales-dashboard.js
+ * EN: Sales Dashboard browser controller, including chart and dashboard interactions.
+ * 中文：该文件负责 Sales Dashboard 的浏览器交互，包括图表与页面行为。
+ * Maintenance / 维护：Feature ownership and error paths should stay explicit and centrally diagnosable.
+ * 维护要求：功能归属与错误路径必须清晰，并可进入中央诊断。
+ */
 (function(){
     'use strict';
 
+    /**
+     * EN: Retrieves or loads data for `ready` (ready).
+     * 中文：读取或加载 `ready`（ready）所需的数据。
+     */
     function ready(fn){
         // Match app.js's ready queue so legacy handlers are bound before
         // this controller detaches them, even with deferred script loading.
@@ -222,6 +233,10 @@
         const plotHeight=
             chartHeight-xAxisHeight;
 
+        /**
+         * EN: Implements the application operation `escapeHtml` (escape Html).
+         * 中文：实现应用操作 `escapeHtml`（escape Html）。
+         */
         function escapeHtml(value){
             return String(value??'')
                 .replace(/&/g,'&amp;')
@@ -231,6 +246,10 @@
                 .replace(/'/g,'&#039;');
         }
 
+        /**
+         * EN: Builds, formats, or transforms data for `parseIso` (parse Iso).
+         * 中文：为 `parseIso`（parse Iso）构建、格式化或转换数据。
+         */
         function parseIso(value){
             if(
                 !/^\d{4}-\d{2}-\d{2}$/
@@ -250,6 +269,10 @@
                 :date;
         }
 
+        /**
+         * EN: Checks or validates the condition represented by `iso` (iso).
+         * 中文：检查或校验 `iso`（iso）所表示的条件。
+         */
         function iso(date){
             const y=date.getFullYear();
             const m=String(
@@ -262,6 +285,10 @@
             return y+'-'+m+'-'+d;
         }
 
+        /**
+         * EN: Implements the application operation `dateRange` (date Range).
+         * 中文：实现应用操作 `dateRange`（date Range）。
+         */
         function dateRange(from,to){
             const start=parseIso(from);
             const end=parseIso(to);
@@ -290,6 +317,10 @@
             return dates;
         }
 
+        /**
+         * EN: Implements the application operation `shortDate` (short Date).
+         * 中文：实现应用操作 `shortDate`（short Date）。
+         */
         function shortDate(value){
             const date=parseIso(value);
 
@@ -304,6 +335,10 @@
             );
         }
 
+        /**
+         * EN: Builds, formats, or transforms data for `normalizeRange` (normalize Range).
+         * 中文：为 `normalizeRange`（normalize Range）构建、格式化或转换数据。
+         */
         function normalizeRange(changed){
             let from=String(
                 fromInput.value||''
@@ -380,6 +415,10 @@
             };
         }
 
+        /**
+         * EN: Implements the application operation `presetRange` (preset Range).
+         * 中文：实现应用操作 `presetRange`（preset Range）。
+         */
         function presetRange(
             period,
             anchorValue
@@ -467,6 +506,10 @@
             };
         }
 
+        /**
+         * EN: Implements the application operation `titleForPeriod` (title For Period).
+         * 中文：实现应用操作 `titleForPeriod`（title For Period）。
+         */
         function titleForPeriod(){
             if(state.period==='single'){
                 return '1-Day Post Progress';
@@ -486,6 +529,10 @@
             return 'Custom Range Progress';
         }
 
+        /**
+         * EN: Updates application state for `setPeriod` (set Period).
+         * 中文：更新 `setPeriod`（set Period）对应的应用状态。
+         */
         function setPeriod(period){
             state.period=String(
                 period||'custom'
@@ -536,6 +583,10 @@
             }
         }
 
+        /**
+         * EN: Updates application state for `setChannel` (set Channel).
+         * 中文：更新 `setChannel`（set Channel）对应的应用状态。
+         */
         function setChannel(channel){
             state.channel=String(
                 channel||'all'
@@ -575,6 +626,10 @@
             }
         }
 
+        /**
+         * EN: Updates application state for `updateBackToday` (update Back Today).
+         * 中文：更新 `updateBackToday`（update Back Today）对应的应用状态。
+         */
         function updateBackToday(){
             if(!backToday){
                 return;
@@ -600,6 +655,10 @@
             );
         }
 
+        /**
+         * EN: Implements the application operation `aggregate` (aggregate).
+         * 中文：实现应用操作 `aggregate`（aggregate）。
+         */
         function aggregate(date){
             const result={
                 post_count:0,
@@ -646,6 +705,10 @@
             return result;
         }
 
+        /**
+         * EN: Implements the application operation `tickStep` (tick Step).
+         * 中文：实现应用操作 `tickStep`（tick Step）。
+         */
         function tickStep(maxValue){
             const rough=
                 Math.max(
@@ -697,6 +760,10 @@
             return 10*magnitude;
         }
 
+        /**
+         * EN: Builds, formats, or transforms data for `renderAxis` (render Axis).
+         * 中文：为 `renderAxis`（render Axis）构建、格式化或转换数据。
+         */
         function renderAxis(cap,target){
             const step=
                 tickStep(cap);
@@ -800,6 +867,10 @@
 
         let chartRenderKey='';
 
+        /**
+         * EN: Builds, formats, or transforms data for `renderChart` (render Chart).
+         * 中文：为 `renderChart`（render Chart）构建、格式化或转换数据。
+         */
         function renderChart(options){
             const animate=!options||options.animate!==false;
             state.from=String(
@@ -1106,12 +1177,20 @@
         window.renderSalesChart=
             renderChart;
 
+        /**
+         * EN: Implements the application operation `rangeStatusLabel` (range Status Label).
+         * 中文：实现应用操作 `rangeStatusLabel`（range Status Label）。
+         */
         function rangeStatusLabel(filter){
             const key={all:'allPosts',good:'good',bad:'issues',unreviewed:'unreviewed'}[filter]||'allPosts';
             if(window.cdspSalesLanguage){return window.cdspSalesLanguage.translate(key);}
             return {all:'All',good:'Good',bad:'Bad',unreviewed:'Unreviewed'}[filter]||'All';
         }
 
+        /**
+         * EN: Updates application state for `applyRangePostFilter` (apply Range Post Filter).
+         * 中文：更新 `applyRangePostFilter`（apply Range Post Filter）对应的应用状态。
+         */
         function applyRangePostFilter(){
             const section=document.getElementById('salesRangePostSection');
             if(!section){return;}
@@ -1162,6 +1241,10 @@
                 .on('cdsp:language-changed.cdspPostFilter',applyRangePostFilter);
         }
 
+        /**
+         * EN: Updates application state for `setLoading` (set Loading).
+         * 中文：更新 `setLoading`（set Loading）对应的应用状态。
+         */
         function setLoading(active,reason){
             if(
                 state.loadingTimer
@@ -1217,6 +1300,10 @@
             }
         }
 
+        /**
+         * EN: Updates application state for `setError` (set Error).
+         * 中文：更新 `setError`（set Error）对应的应用状态。
+         */
         function setError(message){
             if(!rangeStatus){
                 return;
@@ -1231,6 +1318,10 @@
             );
         }
 
+        /**
+         * EN: Updates application state for `updateUrl` (update Url).
+         * 中文：更新 `updateUrl`（update Url）对应的应用状态。
+         */
         function updateUrl(){
             const url=new URL(
                 window.location.href
@@ -1269,6 +1360,10 @@
             );
         }
 
+        /**
+         * EN: Updates application state for `applyServerData` (apply Server Data).
+         * 中文：更新 `applyServerData`（apply Server Data）对应的应用状态。
+         */
         function applyServerData(
             data,
             reason
@@ -1547,6 +1642,10 @@
             }
         }
 
+        /**
+         * EN: Implements the application operation `customInputPreview` (custom Input Preview).
+         * 中文：实现应用操作 `customInputPreview`（custom Input Preview）。
+         */
         function customInputPreview(
             changed
         ){
@@ -1574,6 +1673,10 @@
 
         let dateFetchTimer=null;
 
+        /**
+         * EN: Implements the application operation `scheduleDateFetch` (schedule Date Fetch).
+         * 中文：实现应用操作 `scheduleDateFetch`（schedule Date Fetch）。
+         */
         function scheduleDateFetch(
             changed
         ){
@@ -2114,6 +2217,10 @@
             let hoverPoint=null;
             let touchDay=null;
 
+            /**
+             * EN: Removes or cleans data/state for `clearHoverTimer` (clear Hover Timer).
+             * 中文：删除或清理 `clearHoverTimer`（clear Hover Timer）相关的数据或状态。
+             */
             function clearHoverTimer(){
                 if(hoverTimer){
                     window.clearTimeout(hoverTimer);
@@ -2121,6 +2228,10 @@
                 }
             }
 
+            /**
+             * EN: Implements the application operation `hidePointerTooltip` (hide Pointer Tooltip).
+             * 中文：实现应用操作 `hidePointerTooltip`（hide Pointer Tooltip）。
+             */
             function hidePointerTooltip(){
                 clearHoverTimer();
                 if(typeof followFrame!=='undefined'&&followFrame){
@@ -2137,6 +2248,10 @@
                 tooltip.classList.add('hidden');
             }
 
+            /**
+             * EN: Builds, formats, or transforms data for `renderPointerTooltip` (render Pointer Tooltip).
+             * 中文：为 `renderPointerTooltip`（render Pointer Tooltip）构建、格式化或转换数据。
+             */
             function renderPointerTooltip(day,target){
                 const total=
                     parseInt(
@@ -2244,6 +2359,10 @@
                 tooltip.classList.remove('hidden');
             }
 
+            /**
+             * EN: Implements the application operation `positionPointerTooltip` (position Pointer Tooltip).
+             * 中文：实现应用操作 `positionPointerTooltip`（position Pointer Tooltip）。
+             */
             function positionPointerTooltip(day,event,followPointer){
                 if(!day){
                     return;
@@ -2305,6 +2424,10 @@
                 tooltip.style.top=Math.round(top)+'px';
             }
 
+            /**
+             * EN: Implements the application operation `chartDayFromTarget` (chart Day From Target).
+             * 中文：实现应用操作 `chartDayFromTarget`（chart Day From Target）。
+             */
             function chartDayFromTarget(target){
                 if(!target||!target.closest){
                     return null;
@@ -2315,6 +2438,10 @@
                     :null;
             }
 
+            /**
+             * EN: Implements the application operation `startMouseHover` (start Mouse Hover).
+             * 中文：实现应用操作 `startMouseHover`（start Mouse Hover）。
+             */
             function startMouseHover(day,event){
                 clearHoverTimer();
                 touchDay=null;
@@ -2379,6 +2506,10 @@
             let followFrame=0;
             let followEvent=null;
 
+            /**
+             * EN: Implements the application operation `schedulePointerFollow` (schedule Pointer Follow).
+             * 中文：实现应用操作 `schedulePointerFollow`（schedule Pointer Follow）。
+             */
             function schedulePointerFollow(event){
                 if(
                     !hoverDay

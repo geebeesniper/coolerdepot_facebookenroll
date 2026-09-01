@@ -1,4 +1,11 @@
 <?php
+/**
+ * File / 文件：app/Controllers/AdminSettingsController.php
+ * EN: HTTP controller for request validation, orchestration, and responses.
+ * 中文：该文件负责 HTTP 请求校验、业务编排与响应。
+ * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
+ * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ */
 namespace App\Controllers;
 
 use App\Core\Auth;
@@ -17,6 +24,10 @@ class AdminSettingsController extends Controller
 {
     private const TEST_TTL = 600;
 
+    /**
+     * EN: Implements the application operation `index` (index).
+     * 中文：实现应用操作 `index`（index）。
+     */
     public function index(): void
     {
         $admin = Auth::requireRole('admin');
@@ -65,6 +76,10 @@ class AdminSettingsController extends Controller
         ));
     }
 
+    /**
+     * EN: Implements the application operation `providerJobs` (provider Jobs).
+     * 中文：实现应用操作 `providerJobs`（provider Jobs）。
+     */
     public function providerJobs(): void
     {
         Auth::requireRole('admin');
@@ -116,6 +131,10 @@ class AdminSettingsController extends Controller
         ]);
     }
 
+    /**
+     * EN: Implements the application operation `importWebsiteCatalog` (import Website Catalog).
+     * 中文：实现应用操作 `importWebsiteCatalog`（import Website Catalog）。
+     */
     public function importWebsiteCatalog(): void
     {
         Auth::requireRole('admin');
@@ -144,6 +163,10 @@ class AdminSettingsController extends Controller
         $this->redirect('/admin/settings#website-comparison');
     }
 
+    /**
+     * EN: Implements the application operation `testProvider` (test Provider).
+     * 中文：实现应用操作 `testProvider`（test Provider）。
+     */
     public function testProvider(): void
     {
         $admin = Auth::requireRole('admin');
@@ -287,6 +310,10 @@ class AdminSettingsController extends Controller
         }
     }
 
+    /**
+     * EN: Creates or persists the `addProvider` operation (add Provider).
+     * 中文：创建或持久化 `addProvider`（add Provider）操作。
+     */
     public function addProvider(): void
     {
         $admin = Auth::requireRole('admin');
@@ -333,6 +360,10 @@ class AdminSettingsController extends Controller
         }
     }
 
+    /**
+     * EN: Implements the application operation `reorderProviders` (reorder Providers).
+     * 中文：实现应用操作 `reorderProviders`（reorder Providers）。
+     */
     public function reorderProviders(): void
     {
         $admin = Auth::requireRole('admin');
@@ -361,6 +392,10 @@ class AdminSettingsController extends Controller
         }
     }
 
+    /**
+     * EN: Implements the application operation `toggleProvider` (toggle Provider).
+     * 中文：实现应用操作 `toggleProvider`（toggle Provider）。
+     */
     public function toggleProvider(): void
     {
         $admin = Auth::requireRole('admin');
@@ -386,6 +421,10 @@ class AdminSettingsController extends Controller
         }
     }
 
+    /**
+     * EN: Removes or cleans data/state for `deleteProvider` (delete Provider).
+     * 中文：删除或清理 `deleteProvider`（delete Provider）相关的数据或状态。
+     */
     public function deleteProvider(): void
     {
         Auth::requireRole('admin');
@@ -411,6 +450,10 @@ class AdminSettingsController extends Controller
     }
 
     // Old v0.1.11 endpoints stay harmless for bookmarks/forms during rollout.
+    /**
+     * EN: Creates or persists the `save` operation (save).
+     * 中文：创建或持久化 `save`（save）操作。
+     */
     public function save(): void
     {
         Auth::requireRole('admin');
@@ -419,6 +462,10 @@ class AdminSettingsController extends Controller
         $this->redirect('/admin/settings');
     }
 
+    /**
+     * EN: Implements the application operation `test` (test).
+     * 中文：实现应用操作 `test`（test）。
+     */
     public function test(): void
     {
         Auth::requireRole('admin');
@@ -427,6 +474,10 @@ class AdminSettingsController extends Controller
         $this->redirect('/admin/settings');
     }
 
+    /**
+     * EN: Creates or persists the `saveBrand` operation (save Brand).
+     * 中文：创建或持久化 `saveBrand`（save Brand）操作。
+     */
     public function saveBrand(): void
     {
         $admin=Auth::requireRole('admin');
@@ -441,6 +492,10 @@ class AdminSettingsController extends Controller
         $this->redirect('/admin/settings#application-settings');
     }
 
+    /**
+     * EN: Creates or persists the `saveWebsiteSource` operation (save Website Source).
+     * 中文：创建或持久化 `saveWebsiteSource`（save Website Source）操作。
+     */
     public function saveWebsiteSource(): void
     {
         $admin=Auth::requireRole('admin');
@@ -456,6 +511,10 @@ class AdminSettingsController extends Controller
         $this->redirect('/admin/settings#website-comparison');
     }
 
+    /**
+     * EN: Implements the application operation `scanWebsite` (scan Website).
+     * 中文：实现应用操作 `scanWebsite`（scan Website）。
+     */
     public function scanWebsite(): void
     {
         Auth::requireRole('admin');
@@ -484,6 +543,10 @@ class AdminSettingsController extends Controller
         $this->redirect('/admin/settings#website-comparison');
     }
 
+    /**
+     * EN: Creates or persists the `addWebsiteReference` operation (add Website Reference).
+     * 中文：创建或持久化 `addWebsiteReference`（add Website Reference）操作。
+     */
     public function addWebsiteReference(): void
     {
         Auth::requireRole('admin');
@@ -506,6 +569,10 @@ class AdminSettingsController extends Controller
         $this->redirect('/admin/settings#website-comparison');
     }
 
+    /**
+     * EN: Implements the application operation `websiteReferences` (website References).
+     * 中文：实现应用操作 `websiteReferences`（website References）。
+     */
     public function websiteReferences(): void
     {
         Auth::requireRole('admin');
@@ -519,6 +586,10 @@ class AdminSettingsController extends Controller
         }
     }
 
+    /**
+     * EN: Removes or cleans data/state for `deleteWebsiteReference` (delete Website Reference).
+     * 中文：删除或清理 `deleteWebsiteReference`（delete Website Reference）相关的数据或状态。
+     */
     public function deleteWebsiteReference(): void
     {
         Auth::requireRole('admin');
@@ -535,6 +606,10 @@ class AdminSettingsController extends Controller
         }
     }
 
+    /**
+     * EN: Implements the application operation `websiteCatalogSample` (website Catalog Sample).
+     * 中文：实现应用操作 `websiteCatalogSample`（website Catalog Sample）。
+     */
     public function websiteCatalogSample(): void
     {
         Auth::requireRole('admin');
@@ -546,6 +621,10 @@ class AdminSettingsController extends Controller
         exit;
     }
 
+    /**
+     * EN: Implements the application operation `pruneTickets` (prune Tickets).
+     * 中文：实现应用操作 `pruneTickets`（prune Tickets）。
+     */
     private function pruneTickets(): void
     {
         $tickets = $_SESSION['provider_test_tickets'] ?? [];

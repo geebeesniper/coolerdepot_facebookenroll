@@ -1,4 +1,11 @@
 <?php
+/**
+ * File / 文件：app/Services/ApifyMarketplaceProvider.php
+ * EN: Application service for reusable business or integration logic.
+ * 中文：该文件负责可复用的业务逻辑或外部集成服务。
+ * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
+ * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ */
 namespace App\Services;
 
 use App\Models\FetchJob;
@@ -9,6 +16,10 @@ class ApifyMarketplaceProvider
     private const ENDPOINT =
         'https://api.apify.com/v2/actors/apify~facebook-marketplace-scraper/run-sync-get-dataset-items';
 
+    /**
+     * EN: Implements the application operation `configured` (configured).
+     * 中文：实现应用操作 `configured`（configured）。
+     */
     public function configured(): bool
     {
         try {
@@ -25,6 +36,10 @@ class ApifyMarketplaceProvider
         }
     }
 
+    /**
+     * EN: Retrieves or loads data for `fetch` (fetch).
+     * 中文：读取或加载 `fetch`（fetch）所需的数据。
+     */
     public function fetch(string $url, int $requestedByUserId): array
     {
         if (!$this->configured()) {
@@ -157,6 +172,10 @@ class ApifyMarketplaceProvider
         }
     }
 
+    /**
+     * EN: Implements the application operation `request` (request).
+     * 中文：实现应用操作 `request`（request）。
+     */
     private function request(array $payload, string $token, int $timeout): array
     {
         // Token is deliberately sent in Authorization header rather than URL.
@@ -206,6 +225,10 @@ class ApifyMarketplaceProvider
         ];
     }
 
+    /**
+     * EN: Retrieves or loads data for `findListing` (find Listing).
+     * 中文：读取或加载 `findListing`（find Listing）所需的数据。
+     */
     private function findListing($data, ?string $expectedId): ?array
     {
         if (!is_array($data)) {
@@ -242,6 +265,10 @@ class ApifyMarketplaceProvider
         return null;
     }
 
+    /**
+     * EN: Builds, formats, or transforms data for `normalize` (normalize).
+     * 中文：为 `normalize`（normalize）构建、格式化或转换数据。
+     */
     private function normalize(
         array $record,
         string $submittedUrl,
@@ -300,6 +327,10 @@ class ApifyMarketplaceProvider
         ];
     }
 
+    /**
+     * EN: Implements the application operation `message` (message).
+     * 中文：实现应用操作 `message`（message）。
+     */
     private function message($json, string $raw): string
     {
         if (is_array($json)) {

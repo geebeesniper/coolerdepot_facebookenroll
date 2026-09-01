@@ -1,4 +1,11 @@
 <?php
+/**
+ * File / 文件：app/Services/GenericJsonMarketplaceProvider.php
+ * EN: Application service for reusable business or integration logic.
+ * 中文：该文件负责可复用的业务逻辑或外部集成服务。
+ * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
+ * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ */
 namespace App\Services;
 
 use App\Models\FetchJob;
@@ -7,11 +14,19 @@ class GenericJsonMarketplaceProvider
 {
     private array $profile;
 
+    /**
+     * EN: `__construct` initializes this object and its required dependencies/state.
+     * 中文：`__construct` 用于初始化当前对象及其所需依赖与状态。
+     */
     public function __construct(array $profile)
     {
         $this->profile = $profile;
     }
 
+    /**
+     * EN: Retrieves or loads data for `fetch` (fetch).
+     * 中文：读取或加载 `fetch`（fetch）所需的数据。
+     */
     public function fetch(string $url, int $userId, bool $bypassCache = false): array
     {
         $url = PlatformUrl::normalize($url, 'facebook');
@@ -80,6 +95,10 @@ class GenericJsonMarketplaceProvider
         }
     }
 
+    /**
+     * EN: Implements the application operation `request` (request).
+     * 中文：实现应用操作 `request`（request）。
+     */
     private function request(string $endpoint, string $listingUrl, array $config): array
     {
         $method = strtoupper((string)($config['request_method'] ?? 'GET'));
@@ -148,6 +167,10 @@ class GenericJsonMarketplaceProvider
         return ['status' => $status, 'body' => (string)$raw];
     }
 
+    /**
+     * EN: Builds, formats, or transforms data for `normalize` (normalize).
+     * 中文：为 `normalize`（normalize）构建、格式化或转换数据。
+     */
     private function normalize(array $data, string $submittedUrl, array $config): array
     {
         $id = trim((string)$this->path($data, (string)$config['id_path']));
@@ -181,6 +204,10 @@ class GenericJsonMarketplaceProvider
         ];
     }
 
+    /**
+     * EN: Implements the application operation `path` (path).
+     * 中文：实现应用操作 `path`（path）。
+     */
     private function path(array $data, string $path)
     {
         $path = trim($path);
@@ -205,12 +232,20 @@ class GenericJsonMarketplaceProvider
         return is_scalar($value) ? $value : null;
     }
 
+    /**
+     * EN: Implements the application operation `providerKey` (provider Key).
+     * 中文：实现应用操作 `providerKey`（provider Key）。
+     */
     private function providerKey(): string
     {
         $id = (int)($this->profile['id'] ?? 0);
         return $id > 0 ? 'profile_' . $id : 'test_generic';
     }
 
+    /**
+     * EN: Implements the application operation `complete` (complete).
+     * 中文：实现应用操作 `complete`（complete）。
+     */
     private function complete(array $item): bool
     {
         return trim((string)($item['external_post_id'] ?? '')) !== ''

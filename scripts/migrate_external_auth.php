@@ -1,6 +1,21 @@
 <?php
+/**
+ * File / 文件：scripts/migrate_external_auth.php
+ * EN: Operations/deployment/diagnostics script owned by this project.
+ * 中文：该文件是本项目自有的运维、部署或诊断脚本。
+ * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
+ * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ */
 $config=require dirname(__DIR__).'/config/bootstrap.php';use App\Core\Database;$pdo=Database::connection();$db=$config['db']['name'];
+/**
+ * EN: Implements the application operation `col` (col).
+ * 中文：实现应用操作 `col`（col）。
+ */
 function col(PDO$p,string$db,string$t,string$c):bool{$s=$p->prepare("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=? AND TABLE_NAME=? AND COLUMN_NAME=?");$s->execute([$db,$t,$c]);return(int)$s->fetchColumn()>0;}
+/**
+ * EN: Implements the application operation `idx` (idx).
+ * 中文：实现应用操作 `idx`（idx）。
+ */
 function idx(PDO$p,string$db,string$t,string$i):bool{$s=$p->prepare("SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=? AND TABLE_NAME=? AND INDEX_NAME=?");$s->execute([$db,$t,$i]);return(int)$s->fetchColumn()>0;}
 if(!col($pdo,$db,'cdsp_users','external_user_id'))$pdo->exec("ALTER TABLE cdsp_users ADD COLUMN external_user_id VARCHAR(191) NULL AFTER sales_id");
 $pdo->exec("ALTER TABLE cdsp_users MODIFY COLUMN password_hash VARCHAR(255) NULL");

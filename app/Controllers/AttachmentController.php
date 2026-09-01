@@ -1,4 +1,11 @@
 <?php
+/**
+ * File / 文件：app/Controllers/AttachmentController.php
+ * EN: HTTP controller for request validation, orchestration, and responses.
+ * 中文：该文件负责 HTTP 请求校验、业务编排与响应。
+ * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
+ * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ */
 namespace App\Controllers;
 
 use App\Core\Auth;
@@ -8,6 +15,10 @@ use App\Core\Logger;
 
 class AttachmentController extends Controller
 {
+    /**
+     * EN: Handles the workflow/event for `show` (show).
+     * 中文：处理 `show`（show）对应的流程或事件。
+     */
     public function show(): void
     {
         Auth::requireLogin();

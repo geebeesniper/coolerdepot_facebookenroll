@@ -1,10 +1,21 @@
 <?php
+/**
+ * File / 文件：app/Services/UploadService.php
+ * EN: Application service for reusable business or integration logic.
+ * 中文：该文件负责可复用的业务逻辑或外部集成服务。
+ * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
+ * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ */
 namespace App\Services;
 
 use App\Core\Database;
 
 class UploadService
 {
+    /**
+     * EN: Creates or persists the `save` operation (save).
+     * 中文：创建或持久化 `save`（save）操作。
+     */
     public function save(
         string $type,
         int $entityId,
@@ -87,6 +98,10 @@ class UploadService
         return $saved;
     }
 
+    /**
+     * EN: Creates or persists the `uploadErrorMessage` operation (upload Error Message).
+     * 中文：创建或持久化 `uploadErrorMessage`（upload Error Message）操作。
+     */
     private function uploadErrorMessage(int $error): string
     {
         return match ($error) {

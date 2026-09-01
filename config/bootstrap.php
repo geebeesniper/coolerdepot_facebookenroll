@@ -1,4 +1,11 @@
 <?php
+/**
+ * File / 文件：config/bootstrap.php
+ * EN: Application configuration source.
+ * 中文：该文件提供应用配置。
+ * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
+ * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ */
 $config = require __DIR__ . '/config.php';
 
 date_default_timezone_set($config['app']['timezone']);

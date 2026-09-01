@@ -1,5 +1,11 @@
 <?php
-
+/**
+ * File / 文件：scripts/migrate_v0_1_35.php
+ * EN: Operations/deployment/diagnostics script owned by this project.
+ * 中文：该文件是本项目自有的运维、部署或诊断脚本。
+ * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
+ * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ */
 $config = require dirname(__DIR__) . '/config/bootstrap.php';
 
 use App\Core\Database;
@@ -42,6 +48,10 @@ $backfilled = $pdo->exec(
      WHERE decision IN ('good','bad')"
 );
 
+/**
+ * EN: Implements the application operation `columnExists` (column Exists).
+ * 中文：实现应用操作 `columnExists`（column Exists）。
+ */
 function columnExists(PDO $pdo, string $table, string $column): bool
 {
     $s = $pdo->prepare(
@@ -56,6 +66,10 @@ function columnExists(PDO $pdo, string $table, string $column): bool
     return (int)$s->fetchColumn() > 0;
 }
 
+/**
+ * EN: Implements the application operation `indexExists` (index Exists).
+ * 中文：实现应用操作 `indexExists`（index Exists）。
+ */
 function indexExists(PDO $pdo, string $table, string $index): bool
 {
     $s = $pdo->prepare(
@@ -70,6 +84,10 @@ function indexExists(PDO $pdo, string $table, string $index): bool
     return (int)$s->fetchColumn() > 0;
 }
 
+/**
+ * EN: Implements the application operation `fkExists` (fk Exists).
+ * 中文：实现应用操作 `fkExists`（fk Exists）。
+ */
 function fkExists(PDO $pdo, string $table, string $constraint): bool
 {
     $s = $pdo->prepare(

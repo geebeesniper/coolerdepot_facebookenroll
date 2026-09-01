@@ -1,5 +1,11 @@
 <?php
-
+/**
+ * File / 文件：http-status.php
+ * EN: Application HTTP entry/endpoint source.
+ * 中文：该文件是应用 HTTP 入口或端点。
+ * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
+ * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ */
 $config = require __DIR__ . '/config/config.php';
 require_once __DIR__ . '/app/Core/Logger.php';
 \App\Core\Logger::init($config);
@@ -34,6 +40,10 @@ header('Cache-Control: no-store');
 $base = rtrim((string)($config['app']['base_path'] ?? '/sales-posts'), '/');
 $version = (string)($config['app']['version'] ?? 'dev');
 
+/**
+ * EN: Implements the application operation `e` (e).
+ * 中文：实现应用操作 `e`（e）。
+ */
 function e(string $value): string
 {
     return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');

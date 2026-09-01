@@ -1,4 +1,11 @@
 <?php
+/**
+ * File / 文件：tests/duplicate_comparison.php
+ * EN: Regression or validation test owned by this project.
+ * 中文：该文件是本项目自有的回归或验证测试。
+ * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
+ * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ */
 // Run with PHP CLI + PDO SQLite + mbstring; GD adds perceptual-image tests.
 // Uses an isolated in-memory database; never reads production DB credentials.
 if(PHP_SAPI!=='cli'){http_response_code(404);exit;}
@@ -22,7 +29,15 @@ $pdo->exec('CREATE TABLE cdsp_post_image_fingerprints(id INTEGER PRIMARY KEY,pos
 $pdo->exec('CREATE TABLE cdsp_website_references(id INTEGER PRIMARY KEY,page_url TEXT,title TEXT,title_hash TEXT,image_url TEXT,sha256 TEXT,dhash TEXT)');
 $pdo->exec('CREATE TABLE cdsp_post_reviews(post_id INTEGER,decision TEXT)');
 $count=0;
+/**
+ * EN: Checks or validates the condition represented by `check` (check).
+ * 中文：检查或校验 `check`（check）所表示的条件。
+ */
 function check($condition,string $label):void{global $count;if(!$condition){throw new RuntimeException('FAIL: '.$label);}echo 'PASS '.$label."\n";$count++;}
+/**
+ * EN: Implements the application operation `blocked` (blocked).
+ * 中文：实现应用操作 `blocked`（blocked）。
+ */
 function blocked(callable $fn,string $message):void{try{$fn();}catch(DomainException $e){check(str_contains($e->getMessage(),$message),'save-time '.$message);return;}throw new RuntimeException('Expected block: '.$message);}
 $insert=$pdo->prepare('INSERT INTO cdsp_sales_posts(sales_user_id,platform,canonical_url,canonical_url_hash,external_post_id,title,normalized_title_hash,description_hash,published_at,published_date,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)');
 $insert->execute([11,'facebook','https://www.facebook.com/marketplace/item/101',Util::urlHash('https://www.facebook.com/marketplace/item/101'),'101','NSF 2HP exhaust fan',Util::hashText('NSF 2HP exhaust fan'),Util::hashText('description one'),'2026-08-27 19:01:00','2026-08-27','2026-08-31 12:00:00']);

@@ -1,10 +1,21 @@
 <?php
+/**
+ * File / 文件：app/Services/FacebookMarketplaceProviderChain.php
+ * EN: Application service for reusable business or integration logic.
+ * 中文：该文件负责可复用的业务逻辑或外部集成服务。
+ * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
+ * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ */
 namespace App\Services;
 
 use App\Models\ProviderProfile;
 
 class FacebookMarketplaceProviderChain
 {
+    /**
+     * EN: Retrieves or loads data for `fetch` (fetch).
+     * 中文：读取或加载 `fetch`（fetch）所需的数据。
+     */
     public function fetch(string $url, int $requestedByUserId, bool $bypassCache = false, bool $requirePhoto = false): array
     {
         if (ProviderProfile::registryEnabled()) {
@@ -16,6 +27,10 @@ class FacebookMarketplaceProviderChain
     }
 
 
+/**
+ * EN: Retrieves or loads data for `fetchRegistry` (fetch Registry).
+ * 中文：读取或加载 `fetchRegistry`（fetch Registry）所需的数据。
+ */
 private function fetchRegistry(
     string $url,
     int $userId,
@@ -105,6 +120,10 @@ private function fetchRegistry(
 }
 
 
+/**
+ * EN: Retrieves or loads data for `fetchLegacy` (fetch Legacy).
+ * 中文：读取或加载 `fetchLegacy`（fetch Legacy）所需的数据。
+ */
 private function fetchLegacy(
     string $url,
     int $userId,
@@ -171,6 +190,10 @@ private function fetchLegacy(
 }
 
 
+/**
+ * EN: Checks or validates the condition represented by `hasPhoto` (has Photo).
+ * 中文：检查或校验 `hasPhoto`（has Photo）所表示的条件。
+ */
 private function hasPhoto(array $item): bool
 {
     $raw = is_array($item['raw'] ?? null)
@@ -199,6 +222,10 @@ private function hasPhoto(array $item): bool
     return false;
 }
 
+/**
+ * EN: Implements the application operation `containsHttpsImage` (contains Https Image).
+ * 中文：实现应用操作 `containsHttpsImage`（contains Https Image）。
+ */
 private function containsHttpsImage($value): bool
 {
     if (is_string($value)) {
@@ -235,6 +262,10 @@ private function containsHttpsImage($value): bool
     return false;
 }
 
+    /**
+     * EN: Implements the application operation `complete` (complete).
+     * 中文：实现应用操作 `complete`（complete）。
+     */
     private function complete(array $item): bool
     {
         return trim((string)($item['external_post_id'] ?? '')) !== ''

@@ -1,4 +1,11 @@
 <?php
+/**
+ * File / 文件：app/Core/Database.php
+ * EN: Core runtime/infrastructure component used across the application.
+ * 中文：该文件是应用全局复用的核心运行时或基础设施组件。
+ * Maintenance / 维护：Keep security, logging, and responsive behavior explicit when modifying this file.
+ * 维护要求：修改本文件时应明确保留安全、日志与响应式行为。
+ */
 namespace App\Core;
 
 use PDO;
@@ -13,6 +20,10 @@ class Database
      *
      * Connection failures are logged before rethrowing. The logger's file sink
      * does not depend on MySQL, so database outages remain diagnosable.
+     */
+    /**
+     * EN: Implements the application operation `connection` (connection).
+     * 中文：实现应用操作 `connection`（connection）。
      */
     public static function connection(): PDO
     {
