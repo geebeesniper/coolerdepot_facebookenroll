@@ -55,62 +55,55 @@ class PostInspector
 
         if ($platform === 'facebook') {
             // Force a live provider request and bypass the normal provider cache.
-            return (new FacebookMarketplaceProviderChain())->fetch(
+            $item = (new FacebookMarketplaceProviderChain())->fetch(
                 $url,
                 $actorUserId,
                 true,
                 true
             );
+            $account = MarketplaceAccount::safeFromProviderResult('facebook', $item, ['operation' => 'refresh_existing_content']);
+            if ($account !== null) {
+                $item['platform_account'] = $account;
+            }
+            return $item;
         }
 
-        $f = (new SafeFetcher())->fetch($url, $platform);
-        $html = (string)($f['html'] ?? '');
-        $meta = $this->meta($html);
-
-        if ($platform === 'craigslist') {
-            $meta = array_merge(
-                $meta,
-                array_filter(
-                    $this->craigslist($html),
-                    static fn($value) => $value !== null && $value !== ''
-                )
-            );
+        try {
+            $fetch = (new SafeFetcher())->fetch($url, $platform);
+            return $this->normalizeDirectMarketplacePage($platform, $url, $fetch);
+        } catch (\Throwable $error) {
+            if (
+                in_array($platform, ['craigslist', 'offerup'], true)
+                && $this->remoteHttpStatus($error) === 403
+            ) {
+                try {
+                    $provider = (new BlockedMarketplaceProviderChain())->fetch(
+                        $platform,
+                        $url,
+                        $actorUserId,
+                        true
+                    );
+                    return $this->normalizeBlockedProviderResult($platform, $url, $provider);
+                } catch (\Throwable $providerError) {
+                    \App\Core\Logger::exception(
+                        $providerError,
+                        'post-inspector',
+                        [
+                            'event' => 'Admin refresh blocked-marketplace provider fallback failed',
+                            'platform' => $platform,
+                            'source_url' => $url,
+                        ],
+                        'warning'
+                    );
+                    throw new \DomainException(
+                        ucfirst($platform)
+                        . ' blocked the server request (HTTP 403), and automatic provider fallback failed: '
+                        . $providerError->getMessage()
+                    );
+                }
+            }
+            throw $error;
         }
-
-        if (empty($meta['published_at'])) {
-            $meta['published_at'] = $this->embeddedDate($platform, $html)
-                ?: $this->relativeDate($html);
-        }
-
-        $canonical = trim((string)($meta['canonical_url'] ?? ''));
-        if ($canonical === '' || !PlatformUrl::allowed($canonical, $platform)) {
-            $canonical = trim((string)($f['resolved_url'] ?? $url));
-        }
-
-        $images = array_values(array_filter(
-            array_map('trim', (array)($meta['images'] ?? [])),
-            static fn($value) => $value !== ''
-        ));
-        $raw = $meta;
-        $raw['photos'] = array_map(
-            static fn(string $imageUrl): array => ['url' => $imageUrl],
-            $images
-        );
-
-        return [
-            'provider' => 'direct_fetch',
-            'provider_name' => ucfirst($platform) . ' live page',
-            'title' => trim((string)($meta['title'] ?? '')),
-            'description' => trim((string)($meta['description'] ?? '')),
-            'published_raw' => trim((string)($meta['published_at'] ?? '')),
-            'canonical_url' => $canonical,
-            'external_post_id' => PlatformUrl::externalId(
-                $platform,
-                $canonical,
-                $html
-            ),
-            'raw' => $raw,
-        ];
     }
 
     /**
@@ -146,53 +139,383 @@ class PostInspector
         }
 
         try {
-            $f = (new SafeFetcher())->fetch($submitted, $platform);
-        } catch (\Throwable $e) {
-            return $this->fail(
-                $uid,
-                $platform,
-                $submitted,
-                'FETCH_FAILED',
-                $e->getMessage()
-            );
+            $fetch = (new SafeFetcher())->fetch($submitted, $platform);
+            $listing = $this->normalizeDirectMarketplacePage($platform, $submitted, $fetch);
+        } catch (\Throwable $error) {
+            // EN: Both Craigslist and OfferUp can return HTTP 403 to datacenter IPs.
+            // Try the Provider Registry automatically before asking Sales for manual data.
+            // 中文：Craigslist 与 OfferUp 都可能对数据中心 IP 返回 HTTP 403。
+            // 在要求 Sales 手动填写之前，先自动尝试 Provider Registry 回退链。
+            if (
+                in_array($platform, ['craigslist', 'offerup'], true)
+                && $this->remoteHttpStatus($error) === 403
+            ) {
+                try {
+                    $provider = (new BlockedMarketplaceProviderChain())->fetch(
+                        $platform,
+                        $submitted,
+                        $uid
+                    );
+                    $listing = $this->normalizeBlockedProviderResult(
+                        $platform,
+                        $submitted,
+                        $provider
+                    );
+                } catch (\Throwable $providerError) {
+                    \App\Core\Logger::exception(
+                        $providerError,
+                        'post-inspector',
+                        [
+                            'event' => 'Blocked marketplace provider fallback failed',
+                            'platform' => $platform,
+                            'submitted_url' => $submitted,
+                        ],
+                        'warning'
+                    );
+                    return $this->blockedMarketplaceManualRequired(
+                        $uid,
+                        $platform,
+                        $submitted,
+                        403,
+                        $error->getMessage(),
+                        $providerError->getMessage()
+                    );
+                }
+            } else {
+                return $this->fail(
+                    $uid,
+                    $platform,
+                    $submitted,
+                    'FETCH_FAILED',
+                    $error->getMessage()
+                );
+            }
         }
-
-        $html = $f['html'];
-        $meta = $this->meta($html);
-
-        if ($platform === 'craigslist') {
-            $meta = array_merge(
-                $meta,
-                array_filter($this->craigslist($html), fn($v) => $v !== null && $v !== '')
-            );
-        }
-
-        if (!$meta['published_at']) {
-            $meta['published_at'] = $this->embeddedDate($platform, $html)
-                ?: $this->relativeDate($html);
-        }
-
-        $canonical = $meta['canonical_url'] ?: $f['resolved_url'];
-
-        if (!PlatformUrl::allowed($canonical, $platform)) {
-            $canonical = $f['resolved_url'];
-        }
-
-        $eid = PlatformUrl::externalId($platform, $canonical, $html);
-        $title = trim((string)($meta['title'] ?? ''));
-        $desc = trim((string)($meta['description'] ?? ''));
 
         return $this->validateAndFinish(
             $uid,
             $platform,
             $submitted,
-            $f['resolved_url'],
+            (string)($listing['resolved_url'] ?? $submitted),
+            (string)($listing['canonical_url'] ?? $submitted),
+            ($listing['external_post_id'] ?? null) ?: null,
+            trim((string)($listing['title'] ?? '')),
+            trim((string)($listing['description'] ?? '')),
+            trim((string)($listing['published_raw'] ?? '')),
+            is_array($listing['raw'] ?? null) ? $listing['raw'] : []
+        );
+    }
+
+    /**
+     * EN: Normalize a successfully fetched Craigslist or OfferUp HTML page.
+     * 中文：标准化成功直接抓取的 Craigslist 或 OfferUp HTML 页面。
+     *
+     * @param string $platform Marketplace platform. / Marketplace 平台。
+     * @param string $submitted Original submitted URL. / 原始提交 URL。
+     * @param array $fetch SafeFetcher response. / SafeFetcher 返回结果。
+     *
+     * @return array Common listing metadata. / 统一帖子元数据。
+     */
+    private function normalizeDirectMarketplacePage(
+        string $platform,
+        string $submitted,
+        array $fetch
+    ): array {
+        $html = (string)($fetch['html'] ?? '');
+        $meta = $this->meta($html);
+
+        // EN: Marketplace-specific extraction catches Craigslist imgList/gallery
+        // URLs and OfferUp JSON-LD/__NEXT_DATA__/serialized image URLs that are
+        // not always exposed through og:image.
+        // 中文：Marketplace 专用解析补充 Craigslist imgList/gallery，以及
+        // OfferUp JSON-LD/__NEXT_DATA__/序列化状态中的图片 URL，避免只依赖 og:image。
+        // EN: Verification keeps only the first listing image across every Marketplace platform.
+        // 中文：所有 Marketplace 验证统一只保留第一张帖子图片，其余图片不参与验证。
+        $meta['images'] = array_slice(array_values(array_unique(array_merge(
+            (array)($meta['images'] ?? []),
+            MarketplaceImageExtractor::fromHtml($platform, $html)
+        ))), 0, 1);
+
+        if ($platform === 'craigslist') {
+            $meta = array_merge(
+                $meta,
+                array_filter(
+                    $this->craigslist($html),
+                    static fn($value) => $value !== null && $value !== ''
+                )
+            );
+        }
+        if (empty($meta['published_at'])) {
+            $meta['published_at'] = $this->embeddedDate($platform, $html)
+                ?: $this->relativeDate($html);
+        }
+
+        $resolved = trim((string)($fetch['resolved_url'] ?? $submitted));
+        $canonical = trim((string)($meta['canonical_url'] ?? ''));
+        if ($canonical === '' || !PlatformUrl::allowed($canonical, $platform)) {
+            $canonical = $resolved;
+        }
+        if (!PlatformUrl::allowed($canonical, $platform)) {
+            $canonical = $submitted;
+        }
+
+        $images = array_values(array_filter(
+            array_map('trim', (array)($meta['images'] ?? [])),
+            static fn($value) => $value !== ''
+        ));
+        $raw = $meta;
+        $raw['photos'] = array_map(
+            static fn(string $imageUrl): array => ['url' => $imageUrl],
+            $images
+        );
+        $raw['verification_source'] = 'direct_fetch';
+
+        return [
+            'provider' => 'direct_fetch',
+            'provider_name' => ucfirst($platform) . ' live page',
+            'resolved_url' => $resolved,
+            'canonical_url' => $canonical,
+            'external_post_id' => PlatformUrl::externalId($platform, $canonical, $html),
+            'title' => trim((string)($meta['title'] ?? '')),
+            'description' => trim((string)($meta['description'] ?? '')),
+            'published_raw' => trim((string)($meta['published_at'] ?? '')),
+            'raw' => $raw,
+        ];
+    }
+
+    /**
+     * EN: Normalize Bright Data Web Unlocker or Apify data returned after a direct HTTP 403.
+     * 中文：标准化直接请求 HTTP 403 后由 Bright Data Web Unlocker 或 Apify 返回的数据。
+     *
+     * @param string $platform Marketplace platform. / Marketplace 平台。
+     * @param string $submitted Original submitted URL. / 原始提交 URL。
+     * @param array $provider Provider fallback response. / Provider 回退结果。
+     *
+     * @return array Common listing metadata. / 统一帖子元数据。
+     */
+    private function normalizeBlockedProviderResult(
+        string $platform,
+        string $submitted,
+        array $provider
+    ): array {
+        $providerName = trim((string)(
+            $provider['_provider_profile_name']
+            ?? $provider['provider_name']
+            ?? $provider['provider']
+            ?? 'Provider fallback'
+        ));
+
+        if (trim((string)($provider['html'] ?? '')) !== '') {
+            $listing = $this->normalizeDirectMarketplacePage(
+                $platform,
+                $submitted,
+                [
+                    'html' => (string)$provider['html'],
+                    'resolved_url' => (string)($provider['resolved_url'] ?? $submitted),
+                ]
+            );
+            $listing['provider'] = (string)($provider['provider'] ?? 'provider_html');
+            $listing['provider_name'] = $providerName;
+            $listing['raw']['provider_fallback'] = [
+                'provider' => $listing['provider'],
+                'provider_name' => $providerName,
+                'profile_id' => $provider['_provider_profile_id'] ?? null,
+                'reason' => 'direct_http_403',
+                'used' => true,
+            ];
+            return $listing;
+        }
+
+        $resolved = trim((string)($provider['resolved_url'] ?? $submitted));
+        $canonical = trim((string)($provider['canonical_url'] ?? $resolved));
+        if (!PlatformUrl::allowed($canonical, $platform)) {
+            $canonical = PlatformUrl::normalize($submitted, $platform) ?: $submitted;
+        }
+
+        $raw = is_array($provider['raw'] ?? null) ? $provider['raw'] : [];
+        $providerImages = array_slice(array_values(array_unique(array_merge(
+            ImageFingerprint::urls($provider),
+            ImageFingerprint::urls($raw)
+        ))), 0, 1);
+        if ($providerImages) {
+            $raw['photos'] = [
+                ['url' => $providerImages[0]],
+            ];
+        } else {
+            $raw['photos'] = [];
+        }
+        $raw['images'] = $providerImages;
+        $raw['provider_fallback'] = [
+            'provider' => (string)($provider['provider'] ?? 'provider_structured'),
+            'provider_name' => $providerName,
+            'profile_id' => $provider['_provider_profile_id'] ?? null,
+            'reason' => 'direct_http_403',
+            'used' => true,
+        ];
+        $platformAccount = MarketplaceAccount::safeFromProviderResult($platform, $provider, ['operation' => 'blocked_provider_fallback']);
+        if ($platformAccount !== null) {
+            $raw['platform_account'] = $platformAccount;
+        }
+
+        $externalId = trim((string)($provider['external_post_id'] ?? ''));
+        if ($externalId === '') {
+            $externalId = (string)(PlatformUrl::externalId($platform, $canonical) ?? '');
+        }
+
+        return [
+            'provider' => (string)($provider['provider'] ?? 'provider_structured'),
+            'provider_name' => $providerName,
+            'resolved_url' => $resolved,
+            'canonical_url' => $canonical,
+            'external_post_id' => $externalId !== '' ? $externalId : null,
+            'title' => trim((string)($provider['title'] ?? '')),
+            'description' => trim((string)($provider['description'] ?? '')),
+            'published_raw' => trim((string)($provider['published_raw'] ?? '')),
+            'platform_account' => $platformAccount,
+            'raw' => $raw,
+        ];
+    }
+
+    /**
+     * EN: Finalize Craigslist or OfferUp manual details after direct HTTP 403 and automatic provider fallback failure.
+     * 中文：Craigslist 或 OfferUp 直接 HTTP 403 且自动 Provider 回退失败后，使用 Sales 手动信息完成检查。
+     *
+     * @param int $uid External user identifier. / 外部用户 ID。
+     * @param array $source Existing manual-required Inspection. / 现有待手动确认 Inspection。
+     * @param string $title Listing title. / 帖子标题。
+     * @param string $description Optional description. / 可选描述。
+     * @param string $publishedDate Published date. / 发布日期。
+     *
+     * @return array Structured inspection result. / 结构化 Inspection 结果。
+     */
+    public function finalizeMarketplaceManual(
+        int $uid,
+        array $source,
+        string $title,
+        string $description,
+        string $publishedDate
+    ): array {
+        $platform = strtolower(trim((string)($source['platform'] ?? '')));
+        $label = $platform === 'offerup' ? 'OfferUp' : 'Craigslist';
+        $expectedFailure = $platform === 'offerup'
+            ? 'OFFERUP_REMOTE_BLOCKED'
+            : 'CRAIGSLIST_REMOTE_BLOCKED';
+
+        if (
+            (int)($source['sales_user_id'] ?? 0) !== $uid
+            || !in_array($platform, ['craigslist', 'offerup'], true)
+            || (string)($source['verification_status'] ?? '') !== 'manual_pending'
+            || (string)($source['failure_code'] ?? '') !== $expectedFailure
+        ) {
+            throw new \DomainException(
+                'This manual marketplace verification request is no longer valid. Check the post again.'
+            );
+        }
+
+        $title = trim($title);
+        $description = trim($description);
+        $publishedDate = trim($publishedDate);
+        if ($title === '') {
+            throw new \DomainException('Enter the ' . $label . ' listing title.');
+        }
+        if (mb_strlen($title) > 500) {
+            throw new \DomainException('The ' . $label . ' listing title is too long.');
+        }
+        if ($publishedDate === '') {
+            throw new \DomainException('Enter the ' . $label . ' published date.');
+        }
+
+        $submitted = trim((string)($source['submitted_url'] ?? ''));
+        $resolved = trim((string)($source['resolved_url'] ?? '')) ?: $submitted;
+        $canonical = trim((string)($source['canonical_url'] ?? '')) ?: $submitted;
+        if (!PlatformUrl::allowed($canonical, $platform)) {
+            $canonical = $submitted;
+        }
+
+        $eid = trim((string)($source['external_post_id'] ?? ''));
+        if ($eid === '') {
+            $eid = (string)(PlatformUrl::externalId($platform, $canonical) ?? '');
+        }
+
+        $sourceMeta = json_decode((string)($source['raw_meta_json'] ?? '{}'), true);
+        if (!is_array($sourceMeta)) {
+            $sourceMeta = [];
+        }
+        $meta = array_merge($sourceMeta, [
+            'title' => $title,
+            'description' => $description,
+            'published_at' => $publishedDate,
+            'manual_verification_required' => true,
+            'manual_verification' => [
+                'platform' => $platform,
+                'reason' => 'direct_http_403_provider_fallback_failed',
+                'confirmed_by_sales_user_id' => $uid,
+                'confirmed_at' => date('Y-m-d H:i:s'),
+            ],
+        ]);
+
+        $result = $this->validateAndFinish(
+            $uid,
+            $platform,
+            $submitted,
+            $resolved,
             $canonical,
-            $eid,
+            $eid !== '' ? $eid : null,
             $title,
-            $desc,
-            (string)($meta['published_at'] ?? ''),
+            $description,
+            $publishedDate,
             $meta
+        );
+        if (($result['verification_status'] ?? '') !== 'verified') {
+            return $result;
+        }
+
+        $result['verification_status'] = 'manual_pending';
+        $result['failure_code'] = null;
+        $result['failure_message'] = null;
+        $result['raw_meta']['manual_verification_required'] = true;
+        $result['raw_meta']['manual_verification']['status'] = 'pending_admin_review';
+
+        \App\Core\Logger::info(
+            $label . ' manual verification completed and is pending Admin review.',
+            [
+                'event' => 'marketplace_manual_verification_completed',
+                'platform' => $platform,
+                'sales_user_id' => $uid,
+                'submitted_url' => $submitted,
+                'external_post_id' => $eid !== '' ? $eid : null,
+                'published_date' => $result['published_date'] ?? null,
+            ],
+            'post-inspector'
+        );
+        return $result;
+    }
+
+    /**
+     * EN: Backward-compatible V0.2.13 Craigslist wrapper.
+     * 中文：V0.2.13 Craigslist 手动验证兼容包装方法。
+     *
+     * @param int $uid External user identifier. / 外部用户 ID。
+     * @param array $source Existing manual-required Inspection. / 现有待手动确认 Inspection。
+     * @param string $title Listing title. / 帖子标题。
+     * @param string $description Optional description. / 可选描述。
+     * @param string $publishedDate Published date. / 发布日期。
+     *
+     * @return array Structured inspection result. / 结构化 Inspection 结果。
+     */
+    public function finalizeCraigslistManual(
+        int $uid,
+        array $source,
+        string $title,
+        string $description,
+        string $publishedDate
+    ): array {
+        return $this->finalizeMarketplaceManual(
+            $uid,
+            $source,
+            $title,
+            $description,
+            $publishedDate
         );
     }
 
@@ -270,6 +593,8 @@ class PostInspector
         $desc = trim((string)($item['description'] ?? ''));
         $publishedRaw = trim((string)($item['published_raw'] ?? ''));
 
+        $platformAccount = MarketplaceAccount::safeFromProviderResult('facebook', $item, ['operation' => 'verify_listing']);
+
         $raw = [
             'provider' => (string)($item['provider'] ?? 'unknown'),
             'provider_job_id' => $item['provider_job_id'] ?? null,
@@ -285,8 +610,11 @@ class PostInspector
                 ?? $item['provider_name']
                 ?? null,
             'provider_record' => $item['raw'] ?? [],
-            'images' => ImageFingerprint::urls($item),
+            'images' => array_slice(ImageFingerprint::urls($item), 0, 1),
         ];
+        if ($platformAccount !== null) {
+            $raw['platform_account'] = $platformAccount;
+        }
 
         if ($publishedRaw === '') {
             return $this->fail(
@@ -429,7 +757,16 @@ class PostInspector
         }
 
         try {
-            $report = DuplicateIndex::inspect($platform, $title, $meta);
+            $platformAccount = is_array($meta['platform_account'] ?? null)
+                ? $meta['platform_account']
+                : null;
+            $report = DuplicateIndex::inspect(
+                $uid,
+                $platform,
+                $title,
+                $meta,
+                $platformAccount
+            );
         } catch (\Throwable $e) {
             \App\Core\Logger::exception($e, 'post-inspector', ['event' => 'Duplicate comparison failed'], 'error');
             return $this->fail($uid, $platform, $submitted, 'COMPARISON_UNAVAILABLE',
@@ -731,6 +1068,120 @@ class PostInspector
         } catch (\Throwable $e) {
             return null;
         }
+    }
+
+    /**
+     * EN: Create a manual-required result only after direct HTTP 403 and automatic provider fallback both fail.
+     * 中文：仅当直接请求 HTTP 403 且自动 Provider 回退均失败后，创建需要 Sales 手动确认的结果。
+     *
+     * @param int $uid External user identifier. / 外部用户 ID。
+     * @param string $platform Marketplace platform. / Marketplace 平台。
+     * @param string $submitted Submitted listing URL. / 提交的帖子 URL。
+     * @param int $httpStatus Direct HTTP status. / 直接请求 HTTP 状态码。
+     * @param string $remoteMessage Direct fetch error. / 直接抓取错误。
+     * @param string $providerMessage Provider fallback error. / Provider 回退错误。
+     *
+     * @return array Structured manual-pending result. / 结构化待手动确认结果。
+     */
+    private function blockedMarketplaceManualRequired(
+        int $uid,
+        string $platform,
+        string $submitted,
+        int $httpStatus,
+        string $remoteMessage,
+        string $providerMessage = ''
+    ): array {
+        $platform = strtolower(trim($platform));
+        $label = $platform === 'offerup' ? 'OfferUp' : 'Craigslist';
+        $failureCode = $platform === 'offerup'
+            ? 'OFFERUP_REMOTE_BLOCKED'
+            : 'CRAIGSLIST_REMOTE_BLOCKED';
+        $eid = PlatformUrl::externalId($platform, $submitted);
+        $message = $label . ' blocked direct server verification (HTTP 403), '
+            . 'and automatic provider fallback was unavailable. '
+            . 'Confirm the listing title and published date to continue for Admin review.';
+
+        \App\Core\Logger::warning(
+            $label . ' verification requires manual confirmation after provider fallback.',
+            [
+                'event' => 'marketplace_manual_verification_required',
+                'platform' => $platform,
+                'sales_user_id' => $uid,
+                'submitted_url' => $submitted,
+                'external_post_id' => $eid,
+                'remote_http_status' => $httpStatus,
+                'remote_error' => $remoteMessage,
+                'provider_fallback_error' => $providerMessage,
+            ],
+            'post-inspector'
+        );
+
+        return [
+            'sales_user_id' => $uid,
+            'platform' => $platform,
+            'submitted_url' => $submitted,
+            'resolved_url' => $submitted,
+            'canonical_url' => $submitted,
+            'external_post_id' => $eid,
+            'title' => null,
+            'description' => null,
+            'published_at' => null,
+            'published_date' => null,
+            'fetched_at' => date('Y-m-d H:i:s'),
+            'verification_status' => 'manual_pending',
+            'failure_code' => $failureCode,
+            'failure_message' => $message,
+            'raw_meta' => [
+                'manual_verification_required' => true,
+                'remote_http_status' => $httpStatus,
+                'remote_error' => $remoteMessage,
+                'provider_fallback_error' => $providerMessage,
+                'verification_source' => $platform . '_direct_then_provider_fallback',
+            ],
+        ];
+    }
+
+    /**
+     * EN: Backward-compatible Craigslist helper retained for V0.2.13 contracts.
+     * 中文：保留 V0.2.13 Craigslist 兼容辅助方法。
+     *
+     * @param int $uid External user identifier. / 外部用户 ID。
+     * @param string $submitted Submitted Craigslist URL. / Craigslist URL。
+     * @param int $httpStatus HTTP status. / HTTP 状态码。
+     * @param string $remoteMessage Remote error. / 远程错误。
+     *
+     * @return array Structured manual-pending result. / 结构化待手动确认结果。
+     */
+    private function craigslistManualRequired(
+        int $uid,
+        string $submitted,
+        int $httpStatus,
+        string $remoteMessage
+    ): array {
+        return $this->blockedMarketplaceManualRequired(
+            $uid,
+            'craigslist',
+            $submitted,
+            $httpStatus,
+            $remoteMessage
+        );
+    }
+
+    /**
+     * EN: Extract an HTTP status code from a SafeFetcher exception message.
+     * 中文：从 SafeFetcher 异常信息中提取 HTTP 状态码。
+     *
+     * @param \Throwable $error Fetch exception. / 抓取异常。
+     *
+     * @return ?int HTTP status when present, otherwise null. / 存在时返回 HTTP 状态码，否则返回 null。
+     */
+    private function remoteHttpStatus(\Throwable $error): ?int
+    {
+        if (preg_match('/\\bHTTP\\s+(\\d{3})\\b/i', $error->getMessage(), $match)) {
+            return (int)$match[1];
+        }
+
+        return null;
     }
 
     /**

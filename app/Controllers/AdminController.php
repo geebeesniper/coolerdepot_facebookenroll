@@ -10,7 +10,8 @@ namespace App\Controllers;
 
 use App\Services\HtmlNoteSanitizer;
 use App\Services\PostInspector;
-use App\Core\Controller;use App\Core\Auth;use App\Core\Csrf;use App\Core\Database;use App\Models\Post;use App\Models\User;use App\Services\UploadService;
+use App\Services\MarketplaceAccount;
+use App\Core\Controller;use App\Core\Auth;use App\Core\Csrf;use App\Core\Database;use App\Models\Post;use App\Models\User;use App\Models\Location;use App\Services\UploadService;
 /**
  * EN: HTTP controller for admin requests, responses, and server-side authorization.
  * 中文：负责 admin 请求、响应及服务器端权限控制的 HTTP Controller。
@@ -33,6 +34,8 @@ class AdminController extends Controller{
 
         $salesFilter=(int)($_GET['sales_id']??0);
         $sales=User::allSales();
+        $locations=Location::allWithSalesCounts();
+        $unassignedSalesCount=Location::unassignedSalesCount();
         $validSalesIds=array_map(
             static fn(array $row): int => (int)$row['id'],
             $sales
@@ -95,6 +98,8 @@ class AdminController extends Controller{
                 'periodInfo',
                 'posts',
                 'sales',
+                'locations',
+                'unassignedSalesCount',
                 'salesFilter',
                 'selectedSalesName',
                 'salesProgress',
@@ -645,9 +650,13 @@ class AdminController extends Controller{
                 'sales_name'=>(string)$post['display_name'],
                 'sales_id'=>(string)$post['sales_id'],
                 'platform'=>ucfirst((string)$post['platform']),
+                'verification_status'=>(string)($post['verification_status']??'verified'),
                 'published_at'=>(string)$post['published_at'],
                 'published_date'=>(string)$post['published_date'],
                 'external_post_id'=>(string)$post['external_post_id'],
+                'platform_account_id'=>(string)($post['platform_account_id']??''),
+                'platform_account_name'=>(string)($post['platform_account_name']??''),
+                'platform_account_url'=>(string)($post['platform_account_url']??''),
                 'canonical_url'=>(string)$post['canonical_url'],
             ],
 'review'=>[
@@ -767,6 +776,13 @@ class AdminController extends Controller{
                 );
             }
 
+            $platformAccount=is_array($item['platform_account']??null)
+                ? $item['platform_account']
+                : MarketplaceAccount::safeFromProviderResult($platform,$item,['operation'=>'admin_refresh_content']);
+            if($platformAccount!==null){
+                $item['platform_account']=$platformAccount;
+            }
+
             $content=$this->marketplaceContentPreview($item);
             $firstImage=$content['photos'][0]??null;
 
@@ -774,12 +790,14 @@ class AdminController extends Controller{
                 $postId,
                 $title,
                 $description,
-                is_string($firstImage) ? $firstImage : null
+                is_string($firstImage) ? $firstImage : null,
+                $platformAccount
             );
 
             $this->json([
                 'ok'=>true,
                 'post_id'=>$postId,
+                'verification_status'=>'verified',
                 'content'=>$content,
                 'message'=>empty($content['photos'])
                     ? 'Content fetched, but no configured provider returned an image.'
@@ -1187,12 +1205,40 @@ public function dashboardDeleteAttachment():void{
             ],404);
         }
 
-        User::setDailyPostTarget($salesUserId,$target);
+        $locationId=array_key_exists('location_id',$_POST)
+            ? (int)$_POST['location_id']
+            : (int)($salesUser['location_id']??0);
+        $locationId=$locationId > 0 ? $locationId : null;
+
+        if ($locationId !== null) {
+            $location=Location::find($locationId);
+            if (!$location || !(int)($location['active']??0)) {
+                $this->json([
+                    'ok'=>false,
+                    'field'=>'location_id',
+                    'message'=>'Selected location is not available.',
+                ],422);
+            }
+        }
+
+        User::setSalesSettings($salesUserId,$target,$locationId);
+        $updated=User::find($salesUserId) ?: $salesUser;
+        $locationCounts=Location::allWithSalesCounts();
 
         $this->json([
             'ok'=>true,
             'target'=>$target,
-            'message'=>'Daily target saved.',
+            'location_id'=>(int)($updated['location_id']??0),
+            'location_name'=>(string)($updated['location_name']??''),
+            'location_counts'=>array_map(
+                static fn(array $row): array => [
+                    'id'=>(int)$row['id'],
+                    'count'=>(int)$row['sales_count'],
+                ],
+                $locationCounts
+            ),
+            'unassigned_count'=>Location::unassignedSalesCount(),
+            'message'=>'Sales settings saved.',
         ]);
     }
 
@@ -1275,6 +1321,10 @@ public function dashboardDeleteAttachment():void{
 
         $photos=$this->extractMarketplacePhotos($raw);
 
+        $platformAccount=is_array($item['platform_account']??null)
+            ? $item['platform_account']
+            : null;
+
         return [
             'provider'=>$provider!=='' ? $provider : 'Provider',
             'title'=>trim((string)($item['title']??'')),
@@ -1283,6 +1333,7 @@ public function dashboardDeleteAttachment():void{
             'price'=>$price,
             'location'=>$location,
             'photos'=>$photos,
+            'platform_account'=>$platformAccount,
             'fetched_at'=>date('Y-m-d H:i:s'),
             'fallback_used'=>!empty($item['_fallback_used']),
             'fallback_reason'=>$item['_fallback_reason']??null,
