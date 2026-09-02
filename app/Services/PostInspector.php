@@ -323,6 +323,18 @@ class PostInspector
                 'reason' => 'direct_http_403',
                 'used' => true,
             ];
+            // The provider may return an HTML body plus structured seller/user
+            // fields beside that body. Preserve that API account metadata so the
+            // final duplicate check uses platform + external account scope.
+            $platformAccount = MarketplaceAccount::safeFromProviderResult(
+                $platform,
+                $provider,
+                ['operation' => 'blocked_provider_html_fallback']
+            );
+            if ($platformAccount !== null) {
+                $listing['platform_account'] = $platformAccount;
+                $listing['raw']['platform_account'] = $platformAccount;
+            }
             return $listing;
         }
 
@@ -736,7 +748,11 @@ class PostInspector
             );
         }
 
-        if ($dup = Post::duplicate($uid, $platform, $canonical, $eid, $title, $desc)) {
+        $platformAccount = is_array($meta['platform_account'] ?? null)
+            ? $meta['platform_account']
+            : null;
+
+        if ($dup = Post::duplicate($uid, $platform, $canonical, $eid, $title, $desc, $platformAccount)) {
             return $this->fail(
                 $uid,
                 $platform,
@@ -757,9 +773,6 @@ class PostInspector
         }
 
         try {
-            $platformAccount = is_array($meta['platform_account'] ?? null)
-                ? $meta['platform_account']
-                : null;
             $report = DuplicateIndex::inspect(
                 $uid,
                 $platform,

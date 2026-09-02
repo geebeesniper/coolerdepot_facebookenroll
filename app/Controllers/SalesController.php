@@ -247,7 +247,7 @@ private function salesPresetRange(
         $isAjax=strtolower((string)($_SERVER['HTTP_X_REQUESTED_WITH']??''))==='xmlhttprequest';
         Csrf::verify($_POST['_csrf']??null);
         $token=trim((string)($_POST['inspection_token']??''));
-        $inspection=Inspection::verified($token,(int)$u['id']);
+        $inspection=Inspection::savable($token,(int)$u['id']);
         if(!$inspection){
             if($isAjax){$this->json(['ok'=>false,'message'=>'Verification expired or invalid. Check the post again.'],422);}
             $_SESSION['flash_error']='Verification expired or invalid. Check the post again.';
@@ -261,7 +261,7 @@ private function salesPresetRange(
             $locked=(int)$lock->fetchColumn()===1;
             if(!$locked){throw new \DomainException('Another post is being saved. Please try again.');}
             $pdo->beginTransaction();
-            $inspection=Inspection::verified($token,(int)$u['id'],true);
+            $inspection=Inspection::savable($token,(int)$u['id'],true);
             if(!$inspection){throw new \DomainException('Verification expired or was already saved. Check the post again.');}
             $postId=Post::create($inspection);
             Inspection::consume((int)$inspection['id']);
@@ -277,18 +277,49 @@ private function salesPresetRange(
             if($e instanceof \DomainException){
                 $error=$e->getMessage();
                 if(isset($inspection) && is_array($inspection)){
+                    // V0.2.77: save-time error reconstruction must use the same
+                    // marketplace account scope as Verify and Post::create(). Omitting
+                    // the provider account here could incorrectly report a different
+                    // account's title as the duplicate after a save-time exception.
+                    $rawMeta=json_decode((string)($inspection['raw_meta_json']??'{}'),true)?:[];
+                    $platformAccount=is_array($rawMeta['platform_account']??null)
+                        ? $rawMeta['platform_account']
+                        : null;
                     $dup=Post::duplicate(
                         (int)$inspection['sales_user_id'],
                         (string)$inspection['platform'],
                         $inspection['canonical_url']??null,
                         $inspection['external_post_id']??null,
                         $inspection['title']??null,
-                        $inspection['description']??null
+                        $inspection['description']??null,
+                        $platformAccount
                     );
                     if($dup){
                         $duplicateUrl=$dup['canonical_url']??null;
                         $duplicateTitle=$dup['title']??null;
                         $duplicateKind=$dup['kind']??null;
+                    } else {
+                        // EN: A website/exact-image duplicate can appear between Verify and Save.
+                        // Re-run the exact comparison so the AJAX error can still return the
+                        // concrete duplicate URL instead of only a generic message.
+                        // 中文：Verify 与 Save 之间也可能新增官网/完全相同图片重复项。
+                        // 重新执行精确查重，以便 AJAX 错误仍返回实际重复 URL，而不是只有通用提示。
+                        $assets=$rawMeta['duplicate_report']['assets']??[];
+                        if(is_array($assets)){
+                            $report=\App\Services\DuplicateIndex::compare(
+                                (int)$inspection['sales_user_id'],
+                                (string)$inspection['platform'],
+                                (string)($inspection['title']??''),
+                                $assets,
+                                $platformAccount
+                            );
+                            $match=$report['matches'][0]??null;
+                            if(is_array($match)){
+                                $duplicateUrl=$match['url']??null;
+                                $duplicateTitle=$match['title']??null;
+                                $duplicateKind=$match['kind']??null;
+                            }
+                        }
                     }
                 }
             }
@@ -313,7 +344,9 @@ private function salesPresetRange(
             $_SESSION['flash_error']=$error;$this->redirect('/sales/submit');
         }
         $dashboardPath='/sales?period=single&to='.rawurlencode($inspection['published_date']);
-        $savedMessage='Post saved to '.$inspection['published_date'].'.';
+        $savedMessage=(string)($inspection['verification_status']??'')==='manual_pending'
+            ? 'Post saved for Admin verification on '.$inspection['published_date'].'.'
+            : 'Post saved to '.$inspection['published_date'].'.';
         if($isAjax){
             $this->json([
                 'ok'=>true,

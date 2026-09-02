@@ -53,11 +53,13 @@ class DuplicateIndex
      *
      * @throws \RuntimeException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
-    public static function inspect(string $platform,string $title,array $meta): array
+    public static function inspect(int $salesUserId,string $platform,string $title,array $meta,?array $platformAccount=null): array
     {
         if(!self::ready()){throw new \RuntimeException('Run the v0.1.70 duplicate-comparison migration before submitting posts.');}
-        $assets=[];$warnings=[];$urls=ImageFingerprint::urls($meta);$started=microtime(true);
-        foreach(array_slice($urls,0,8) as $url){
+        // EN: Verification intentionally uses only the first listing image.
+        // 中文：帖子验证明确只使用第一张 Listing 图片，其余图片不参与查重。
+        $assets=[];$warnings=[];$urls=array_slice(ImageFingerprint::urls($meta),0,1);$started=microtime(true);
+        foreach($urls as $url){
             if(microtime(true)-$started>20){$warnings[]='Image comparison time limit reached; some photos were not checked.';break;}
             try{$assets[]=ImageFingerprint::fromUrl($url);}catch(\Throwable $e){
                 \App\Core\Logger::exception($e, 'duplicate-index', ['event' => 'Image comparison failed'], 'warning');
@@ -65,9 +67,7 @@ class DuplicateIndex
             }
         }
         if(!$urls){$warnings[]='No listing image was returned; image comparison could not be completed.';}
-        if(count($urls)>8){$warnings[]='Only the first 8 listing images were checked.';}
-        if($assets&&!function_exists('imagecreatefromstring')){$warnings[]='PHP GD is unavailable; only identical image files were compared.';}
-        $report=self::compare($platform,$title,$assets);
+        $report=self::compare($salesUserId,$platform,$title,$assets,$platformAccount);
         $report['warnings']=array_values(array_unique(array_merge($warnings,$report['warnings'])));
         $report['assets']=$assets;
         return $report;
@@ -83,59 +83,102 @@ class DuplicateIndex
      *
      * @return array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
-    public static function compare(string $platform,string $title,array $assets): array
+    public static function compare(int $salesUserId,string $platform,string $title,array $assets,?array $platformAccount=null): array
     {
         $pdo=Database::connection();$warnings=[];$matches=[];$blocked=null;
-        foreach($assets as $asset){
-            $q=$pdo->prepare('SELECT p.id,p.sales_user_id,p.title,p.canonical_url FROM cdsp_post_image_fingerprints f JOIN cdsp_sales_posts p ON p.id=f.post_id WHERE LOWER(p.platform)=? AND p.deleted_at IS NULL AND f.sha256=? LIMIT 1');
-            $q->execute([strtolower($platform),$asset['sha256']]);
-            if($row=$q->fetch()){
-                $blocked='This image already exists on '.$platform.' in an existing saved post ('.$row['title'].').';
-                $matches[]=['kind'=>'same_platform_image','post_id'=>(int)$row['id'],'url'=>$row['canonical_url']];break;
+        $platformScope=strtolower(trim($platform));
+        $hasStableAccount=MarketplaceAccount::hasStableIdentity($platformAccount);
+        $accountLabel=MarketplaceAccount::label($platformAccount);
+
+        // V0.2.72 adds a second marketplace duplicate scope when the provider
+        // API actually identifies the external posting account. This scope is
+        // platform + external account (across internal Sales users), because two
+        // Sales users posting through the same marketplace account are still
+        // reusing content on that same public account.
+        if($hasStableAccount && trim($title)!==''){
+            $row=self::findMarketplaceAccountTitle($platformScope,$title,$platformAccount);
+            if($row){
+                $blocked='Duplicate — this '.$platform.' account'.($accountLabel!==''?' ('.$accountLabel.')':'').' already used this exact title.';
+                $matches[]=[
+                    'kind'=>'same_account_title',
+                    'post_id'=>(int)$row['id'],
+                    'url'=>$row['canonical_url'],
+                    'title'=>$row['title'],
+                    'platform'=>$platformScope,
+                    'platform_account_name'=>$row['platform_account_name']??null,
+                    'platform_account_id'=>$row['platform_account_id']??null,
+                ];
             }
         }
-        // Perceptual hashes are similarity evidence only, never proof of identity.
-        $hashes=array_column($assets,'dhash');$hashes=array_filter($hashes);
-        if($hashes){
-            $q=$pdo->prepare('SELECT f.dhash,p.id,p.canonical_url FROM cdsp_post_image_fingerprints f JOIN cdsp_sales_posts p ON p.id=f.post_id WHERE LOWER(p.platform)=? AND p.deleted_at IS NULL AND f.dhash IS NOT NULL');
-            $q->execute([strtolower($platform)]);
-            while($row=$q->fetch()){
-                foreach($hashes as $hash){
-                    if(ImageFingerprint::distance($hash,$row['dhash'])<=5){
-                        $warnings[]='Possible similar image in an existing '.$platform.' post. Review the image before saving.';
-                        $matches[]=['kind'=>'similar_platform_image','post_id'=>(int)$row['id'],'url'=>$row['canonical_url']];
-                        break 2;
-                    }
+
+        foreach($assets as $asset){
+            if(!$blocked && $hasStableAccount){
+                // V0.2.77: a stable provider/API account owns marketplace image
+                // duplicate scope. Account equality is centralized and matches stable
+                // account ID OR normalized profile URL. Different public accounts
+                // never fall through to the legacy Sales/platform image rule.
+                $row=self::findMarketplaceAccountImage($platformScope,(string)$asset['sha256'],$platformAccount);
+                if($row){
+                    $blocked='Duplicate — this '.$platform.' account'.($accountLabel!==''?' ('.$accountLabel.')':'').' already used this exact image.';
+                    $matches[]=[
+                        'kind'=>'same_account_image',
+                        'post_id'=>(int)$row['id'],
+                        'url'=>$row['canonical_url'],
+                        'title'=>$row['title'],
+                        'platform'=>$platformScope,
+                        'platform_account_name'=>$row['platform_account_name']??null,
+                        'platform_account_id'=>$row['platform_account_id']??null,
+                    ];
+                }
+            } elseif(!$blocked) {
+                // No stable account was returned by the API. Preserve the legacy
+                // fallback scope: current Sales user + current marketplace platform.
+                $row=self::findOwnPlatformExactImage($pdo,$salesUserId,$platformScope,(string)$asset['sha256']);
+                if($row){
+                    $blocked='Image duplicate — you already used this exact image on '.$platform.' ('.$row['title'].').';
+                    $matches[]=['kind'=>'same_platform_image','post_id'=>(int)$row['id'],'url'=>$row['canonical_url'],'title'=>$row['title'],'platform'=>$platformScope];
                 }
             }
+            if($blocked){break;}
         }
-        $q=$pdo->prepare("SELECT COUNT(*) FROM cdsp_sales_posts p WHERE LOWER(p.platform)=? AND p.deleted_at IS NULL AND NOT EXISTS (SELECT 1 FROM cdsp_post_image_fingerprints f WHERE f.post_id=p.id)");
-        $q->execute([strtolower($platform)]);$unindexed=(int)$q->fetchColumn();
-        if($unindexed){$warnings[]=$unindexed.' existing '.$platform.' posts have no image fingerprint; historical image comparison is incomplete.';}
+        // EN: Similar/perceptual-image matches are intentionally ignored.
+        // Only an identical SHA-256 image file is considered a duplicate.
+        // 中文：不再使用感知哈希/相似图片阻止或警告；只有 SHA-256 完全一致才算图片重复。
+        $unindexed=0;
+        if($hasStableAccount){
+            $unindexed=self::countUnindexedForAccount($pdo,$platformScope,$platformAccount);
+            if($unindexed){
+                $warnings[]=$unindexed.' existing '.$platform.' posts from this account have no image fingerprint; account image comparison is incomplete.';
+            }
+        } else {
+            $q=$pdo->prepare("SELECT COUNT(*) FROM cdsp_sales_posts p WHERE p.sales_user_id=? AND LOWER(p.platform)=? AND p.deleted_at IS NULL AND NOT EXISTS (SELECT 1 FROM cdsp_post_image_fingerprints f WHERE f.post_id=p.id)");
+            $q->execute([$salesUserId,$platformScope]);
+            $unindexed=(int)$q->fetchColumn();
+            if($unindexed){$warnings[]=$unindexed.' existing '.$platform.' posts have no image fingerprint; historical image comparison is incomplete.';}
+        }
         $website=(int)$pdo->query('SELECT COUNT(*) FROM cdsp_website_references')->fetchColumn();
         if(!$website){$warnings[]='Website comparison is not configured: import the company website product CSV in Settings.';}
         else{
-            $q=$pdo->prepare('SELECT page_url,title FROM cdsp_website_references WHERE title_hash=? LIMIT 1');
-            $q->execute([Util::hashText($title)]);
-            if($row=$q->fetch()){
-                $warnings[]='The title also appears on the company website: '.$row['title'].'.';
-                $matches[]=['kind'=>'website_title','url'=>$row['page_url']];
-            }
-            foreach($assets as $asset){
-                $q=$pdo->prepare('SELECT page_url,title FROM cdsp_website_references WHERE sha256=? LIMIT 1');$q->execute([$asset['sha256']]);
+            // EN: Company website title comparison is literal. An exact title is a hard duplicate.
+            // 中文：公司官网标题使用完全一致比较；标题完全相同则直接判重复。
+            if(!$blocked){
+                $q=$pdo->prepare('SELECT page_url,title FROM cdsp_website_references WHERE BINARY title=BINARY ? LIMIT 1');
+                $q->execute([$title]);
                 if($row=$q->fetch()){
-                    $warnings[]='An identical image appears on the company website: '.$row['title'].'.';
-                    $matches[]=['kind'=>'website_image','url'=>$row['page_url']];break;
+                    $blocked='This exact title already exists on the company website ('.$row['title'].').';
+                    $matches[]=['kind'=>'website_exact_title','url'=>$row['page_url'],'title'=>$row['title'],'platform'=>'website'];
                 }
             }
-            if($hashes){
-                $q=$pdo->query('SELECT page_url,title,dhash FROM cdsp_website_references WHERE dhash IS NOT NULL');
-                while($row=$q->fetch()){
-                    foreach($hashes as $hash){
-                        if(ImageFingerprint::distance($hash,$row['dhash'])<=5){
-                            $warnings[]='A similar image appears on the company website: '.$row['title'].'.';
-                            $matches[]=['kind'=>'similar_website_image','url'=>$row['page_url']];break 2;
-                        }
+            // EN: Website image comparison is exact SHA-256 only. Similar dHash images are ignored.
+            // 中文：官网图片只比较 SHA-256 完全一致；相似 dHash 图片不提示、不阻止。
+            if(!$blocked){
+                foreach($assets as $asset){
+                    $q=$pdo->prepare('SELECT page_url,title FROM cdsp_website_references WHERE sha256=? LIMIT 1');
+                    $q->execute([$asset['sha256']]);
+                    if($row=$q->fetch()){
+                        $blocked='This exact image already exists on the company website ('.$row['title'].').';
+                        $matches[]=['kind'=>'website_exact_image','url'=>$row['page_url'],'title'=>$row['title'],'platform'=>'website'];
+                        break;
                     }
                 }
             }
@@ -143,6 +186,121 @@ class DuplicateIndex
             if($pending){$warnings[]=$pending.' website images still need indexing; website image comparison is incomplete.';}
         }
         return ['blocked'=>$blocked,'warnings'=>$warnings,'matches'=>$matches,'website_count'=>$website,'unindexed_posts'=>$unindexed];
+    }
+
+
+    /**
+     * Find an exact marketplace title only when the saved Post belongs to the
+     * same stable external platform account. Account equality is centralized in
+     * MarketplaceAccount and matches stable ID OR normalized profile URL.
+     */
+    public static function findMarketplaceAccountTitle(
+        string $platform,
+        string $title,
+        ?array $platformAccount
+    ): ?array {
+        $platform=strtolower(trim($platform));
+        $title=trim($title);
+        if($platform==='' || $title==='' || !MarketplaceAccount::hasStableIdentity($platformAccount)){
+            return null;
+        }
+        $q=Database::connection()->prepare(
+            'SELECT id,title,canonical_url,platform_account_id,platform_account_name,platform_account_url,platform_account_key_hash
+             FROM cdsp_sales_posts
+             WHERE LOWER(platform)=?
+               AND BINARY title=BINARY ?
+               AND deleted_at IS NULL
+             ORDER BY id DESC'
+        );
+        $q->execute([$platform,$title]);
+        while($row=$q->fetch()){
+            if(MarketplaceAccount::sameStoredAccount($platformAccount,$row)){
+                return $row;
+            }
+        }
+        return null;
+    }
+
+    /** Find an exact first image only on the same stable external account. */
+    public static function findMarketplaceAccountImage(
+        string $platform,
+        string $sha256,
+        ?array $platformAccount
+    ): ?array {
+        $platform=strtolower(trim($platform));
+        $sha256=strtolower(trim($sha256));
+        if($platform==='' || !preg_match('/^[a-f0-9]{64}$/',$sha256)
+            || !MarketplaceAccount::hasStableIdentity($platformAccount)){
+            return null;
+        }
+        $q=Database::connection()->prepare(
+            'SELECT p.id,p.title,p.canonical_url,p.platform_account_id,p.platform_account_name,
+                    p.platform_account_url,p.platform_account_key_hash
+             FROM cdsp_post_image_fingerprints f
+             JOIN cdsp_sales_posts p ON p.id=f.post_id
+             WHERE LOWER(p.platform)=?
+               AND p.deleted_at IS NULL
+               AND f.sha256=?
+             ORDER BY p.id DESC'
+        );
+        $q->execute([$platform,$sha256]);
+        while($row=$q->fetch()){
+            if(MarketplaceAccount::sameStoredAccount($platformAccount,$row)){
+                return $row;
+            }
+        }
+        return null;
+    }
+
+    /** Count unindexed posts only inside the same stable external account scope. */
+    private static function countUnindexedForAccount(
+        \PDO $pdo,
+        string $platform,
+        ?array $platformAccount
+    ): int {
+        if(!MarketplaceAccount::hasStableIdentity($platformAccount)){
+            return 0;
+        }
+        $q=$pdo->prepare(
+            'SELECT p.platform_account_id,p.platform_account_url,p.platform_account_key_hash
+             FROM cdsp_sales_posts p
+             WHERE LOWER(p.platform)=?
+               AND p.deleted_at IS NULL
+               AND NOT EXISTS (
+                   SELECT 1 FROM cdsp_post_image_fingerprints f WHERE f.post_id=p.id
+               )'
+        );
+        $q->execute([strtolower(trim($platform))]);
+        $count=0;
+        while($row=$q->fetch()){
+            if(MarketplaceAccount::sameStoredAccount($platformAccount,$row)){
+                $count++;
+            }
+        }
+        return $count;
+    }
+
+    /**
+     * Find an exact first-image fingerprint only inside one Sales user's own
+     * marketplace-platform history. This helper deliberately contains both
+     * scope keys in the SQL so future refactors cannot silently broaden image
+     * duplicate checks across Sales users or marketplace platforms.
+     */
+    private static function findOwnPlatformExactImage(\PDO $pdo,int $salesUserId,string $platform,string $sha256): ?array
+    {
+        if($salesUserId<=0 || $platform==='' || $sha256===''){return null;}
+        $q=$pdo->prepare(
+            'SELECT p.id,p.sales_user_id,p.title,p.canonical_url
+             FROM cdsp_post_image_fingerprints f
+             JOIN cdsp_sales_posts p ON p.id=f.post_id
+             WHERE p.sales_user_id=?
+               AND LOWER(p.platform)=?
+               AND p.deleted_at IS NULL
+               AND f.sha256=?
+             LIMIT 1'
+        );
+        $q->execute([$salesUserId,$platform,$sha256]);
+        return $q->fetch()?:null;
     }
 
     /**
@@ -159,6 +317,19 @@ class DuplicateIndex
         if(!$assets){return;}
         $q=Database::connection()->prepare('INSERT INTO cdsp_post_image_fingerprints(post_id,image_url,image_url_hash,sha256,dhash,checked_at) VALUES(?,?,?,?,?,NOW()) ON DUPLICATE KEY UPDATE sha256=VALUES(sha256),dhash=VALUES(dhash),checked_at=NOW()');
         foreach($assets as $a){$q->execute([$postId,$a['url'],hash('sha256',$a['url']),$a['sha256'],$a['dhash']??null]);}
+    }
+
+    /**
+     * Replace the saved Post image index after Admin Refresh Content. Old image
+     * fingerprints must never survive after the Post's first image changes, or
+     * future duplicate checks can report a false match against stale content.
+     */
+    public static function replacePostFingerprints(int $postId,array $assets): void
+    {
+        $pdo=Database::connection();
+        $delete=$pdo->prepare('DELETE FROM cdsp_post_image_fingerprints WHERE post_id=?');
+        $delete->execute([$postId]);
+        self::storePost($postId,$assets);
     }
 
     /**

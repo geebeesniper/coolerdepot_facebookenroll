@@ -27,42 +27,75 @@ class Post {
      *
      * @return ?array Structured result data produced by this operation. / 本操作生成的结构化结果数据。
      */
-    public static function duplicate(int $uid,string $platform,?string $url,?string $eid,?string $title,?string $desc):?array{
+    public static function duplicate(int $uid,string $platform,?string $url,?string $eid,?string $title,?string $desc,?array $platformAccount=null):?array{
         $pdo=Database::connection();
-        $checks=[];
-        if($url)$checks[]=[
-            "SELECT id,title,canonical_url,platform FROM cdsp_sales_posts WHERE canonical_url_hash=? AND deleted_at IS NULL LIMIT 1",
-            [Util::urlHash($url)],
-            "This URL has already been submitted.",
-            'url'
-        ];
-        if($eid)$checks[]=[
-            "SELECT id,title,canonical_url,platform FROM cdsp_sales_posts WHERE platform=? AND external_post_id=? AND deleted_at IS NULL LIMIT 1",
-            [$platform,$eid],
-            "This platform post ID already exists.",
-            'external_id'
-        ];
-        // Title blocking is intentionally literal. Different case, spacing or punctuation
-        // is not treated as the same title. Only an exact byte-for-byte title on the
-        // same platform blocks the save.
-        if($title!==null && $title!=='')$checks[]=[
-            "SELECT id,title,canonical_url,platform FROM cdsp_sales_posts WHERE platform=? AND BINARY title=BINARY ? AND deleted_at IS NULL LIMIT 1",
-            [$platform,$title],
-            "This exact title already exists on this platform.",
-            'exact_title'
-        ];
-        if($desc && Util::normalizeText($desc)!=='')$checks[]=[
-            "SELECT id,title,canonical_url,platform FROM cdsp_sales_posts WHERE sales_user_id=? AND platform=? AND description_hash=? AND deleted_at IS NULL LIMIT 1",
-            [$uid,$platform,Util::hashText($desc)],
-            "You already used exactly the same description on this platform.",
-            'description'
-        ];
-        foreach($checks as [$sql,$args,$msg,$kind]){
-            $s=$pdo->prepare($sql);$s->execute($args);
+        $platform=strtolower(trim($platform));
+        $hasStableAccount=\App\Services\MarketplaceAccount::hasStableIdentity($platformAccount);
+
+        // V0.2.71 restores hard listing-identity checks before title/image
+        // comparison. V0.2.54 intentionally allows a different Sales user to
+        // save the same listing, so every marketplace identity check remains
+        // scoped to this Sales user + this platform. Description is not a key.
+        if($eid!==null && trim($eid)!==''){
+            $s=$pdo->prepare(
+                "SELECT id,title,canonical_url,platform FROM cdsp_sales_posts
+                 WHERE platform=? AND external_post_id=? AND sales_user_id=?
+                   AND deleted_at IS NULL LIMIT 1"
+            );
+            $s->execute([$platform,trim($eid),$uid]);
             if($r=$s->fetch()){
-                $r['reason']=$msg;
-                $r['kind']=$kind;
-                return$r;
+                $r['reason']='This '.$platform.' Post ID has already been submitted by you.';
+                $r['kind']='external_id';
+                return $r;
+            }
+        }
+
+        if($url!==null && trim($url)!==''){
+            $url=trim($url);
+            $s=$pdo->prepare(
+                "SELECT id,title,canonical_url,platform FROM cdsp_sales_posts
+                 WHERE sales_user_id=? AND platform=? AND canonical_url_hash=?
+                   AND deleted_at IS NULL LIMIT 1"
+            );
+            $s->execute([$uid,$platform,Util::urlHash($url)]);
+            if($r=$s->fetch()){
+                $r['reason']='This '.$platform.' URL has already been submitted by you.';
+                $r['kind']='url';
+                return $r;
+            }
+        }
+
+        if($title!==null && $title!==''){
+            if($hasStableAccount){
+                // V0.2.77: every marketplace title check with a stable provider/API
+                // account goes through the same account-equivalence helper. The helper
+                // matches stable ID OR normalized profile URL, so changing provider
+                // response shape cannot silently broaden the check back to Sales scope.
+                $r=\App\Services\DuplicateIndex::findMarketplaceAccountTitle(
+                    $platform,
+                    $title,
+                    $platformAccount
+                );
+                if($r){
+                    $label=\App\Services\MarketplaceAccount::label($platformAccount);
+                    $r['reason']='This '.$platform.' account'.($label!==''?' ('.$label.')':'').' already used this exact title.';
+                    $r['kind']='same_account_title';
+                    return $r;
+                }
+            } else {
+                // Provider did not return a stable external account identity. Fall back
+                // to the pre-account rule: this Sales user + this platform.
+                $s=$pdo->prepare(
+                    "SELECT id,title,canonical_url,platform FROM cdsp_sales_posts
+                     WHERE sales_user_id=? AND platform=? AND BINARY title=BINARY ?
+                       AND deleted_at IS NULL LIMIT 1"
+                );
+                $s->execute([$uid,$platform,$title]);
+                if($r=$s->fetch()){
+                    $r['reason']='You already used this exact title on '.$platform.'.';
+                    $r['kind']='exact_title';
+                    return $r;
+                }
             }
         }
         return null;
@@ -82,18 +115,42 @@ class Post {
         // Never trust a preflight result at save time. All callers must serialize
         // same-platform saves and own the surrounding transaction.
         if(!Database::connection()->inTransaction()){throw new \LogicException('Post creation requires a transaction.');}
-        if($duplicate=self::duplicate((int)$i['sales_user_id'],$i['platform'],$i['canonical_url'],$i['external_post_id'],$i['title'],$i['description'])){
+        $meta=json_decode($i['raw_meta_json']??'{}',true)?:[];
+        $platformAccount=is_array($meta['platform_account']??null)
+            ? $meta['platform_account']
+            : null;
+        if($duplicate=self::duplicate((int)$i['sales_user_id'],$i['platform'],$i['canonical_url'],$i['external_post_id'],$i['title'],$i['description'],$platformAccount)){
             throw new \DomainException($duplicate['reason']);
         }
-        $meta=json_decode($i['raw_meta_json']??'{}',true)?:[];
         if(($meta['duplicate_report']['version']??0)!==1){throw new \DomainException('Check this post again to run the updated image comparison.');}
         $assets=$meta['duplicate_report']['assets']??[];
-        $report=\App\Services\DuplicateIndex::compare($i['platform'],$i['title'],$assets);
+        // EN: Keep the first extracted listing image even when the remote CDN
+        // blocks server-side fingerprint download. Display/persistence must not
+        // depend on the duplicate-fingerprint request succeeding.
+        // 中文：即使远端 CDN 阻止服务器下载图片指纹，也保留解析到的第一张帖子图片；
+        // 图片显示/保存不能依赖 Duplicate Fingerprint 下载成功。
+        $listingImageUrls=\App\Services\ImageFingerprint::urls($meta);
+        $fetchedImageUrl=$listingImageUrls[0]??($assets[0]['url']??null);
+        $report=\App\Services\DuplicateIndex::compare((int)$i['sales_user_id'],$i['platform'],$i['title'],$assets,$platformAccount);
         if($report['blocked']){throw new \DomainException($report['blocked']);}
+        $verificationStatus=(string)($i['verification_status']??'verified');
+        if(!in_array($verificationStatus,['verified','manual_pending'],true)){
+            throw new \DomainException('This inspection is not ready to be saved.');
+        }
+        $accountId=trim((string)($platformAccount['id']??''));
+        $accountName=trim((string)($platformAccount['name']??''));
+        $accountUrl=trim((string)($platformAccount['url']??''));
+        $accountHash=strtolower(trim((string)($platformAccount['key_hash']??'')));
+        if(!preg_match('/^[a-f0-9]{64}$/',$accountHash)){$accountHash='';}
+
         $s=Database::connection()->prepare("INSERT INTO cdsp_sales_posts
-        (sales_user_id,platform,submitted_url,resolved_url,canonical_url,canonical_url_hash,external_post_id,title,normalized_title_hash,description,description_hash,published_at,published_date,fetched_at,fetched_image_url,verification_status,admin_review_status,created_at,updated_at)
-        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'verified',NULL,NOW(),NOW())");
-        $s->execute([$i['sales_user_id'],$i['platform'],$i['submitted_url'],$i['resolved_url'],$i['canonical_url'],Util::urlHash($i['canonical_url']),$i['external_post_id']?:null,$i['title'],Util::hashText($i['title']),$i['description'],Util::hashText($i['description']),$i['published_at'],$i['published_date'],$i['fetched_at'],$assets[0]['url']??null]);
+        (sales_user_id,platform,submitted_url,resolved_url,canonical_url,canonical_url_hash,external_post_id,platform_account_id,platform_account_name,platform_account_url,platform_account_key_hash,title,normalized_title_hash,description,description_hash,published_at,published_date,fetched_at,fetched_image_url,verification_status,admin_review_status,created_at,updated_at)
+        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NULL,NOW(),NOW())");
+        $s->execute([
+            $i['sales_user_id'],$i['platform'],$i['submitted_url'],$i['resolved_url'],$i['canonical_url'],Util::urlHash($i['canonical_url']),$i['external_post_id']?:null,
+            $accountId!==''?$accountId:null,$accountName!==''?$accountName:null,$accountUrl!==''?$accountUrl:null,$accountHash!==''?$accountHash:null,
+            $i['title'],Util::hashText($i['title']),$i['description'],Util::hashText($i['description']),$i['published_at'],$i['published_date'],$i['fetched_at'],$fetchedImageUrl,$verificationStatus
+        ]);
         $id=(int)Database::connection()->lastInsertId();
         \App\Services\DuplicateIndex::storePost($id,$assets);
         return $id;
@@ -272,6 +329,8 @@ class Post {
                 u.id AS sales_user_id,
                 u.sales_id,
                 u.display_name,
+                u.location_id,
+                COALESCE(l.name,'') AS location_name,
                 COALESCE(NULLIF(u.daily_post_target,0),10) AS daily_target,
                 COUNT(p.id) AS post_count,
                 COALESCE(
@@ -293,6 +352,9 @@ class Post {
                     0
                 ) AS bad_count
              FROM cdsp_users u
+             LEFT JOIN cdsp_locations l
+               ON l.id=u.location_id
+              AND l.active=1
              LEFT JOIN cdsp_sales_posts p
                ON p.sales_user_id=u.id
               AND p.deleted_at IS NULL
@@ -314,6 +376,8 @@ class Post {
                 u.id,
                 u.sales_id,
                 u.display_name,
+                u.location_id,
+                l.name,
                 u.daily_post_target
              ORDER BY u.display_name"
         );
@@ -450,8 +514,15 @@ class Post {
         int $postId,
         string $title,
         string $description,
-        ?string $imageUrl = null
+        ?string $imageUrl = null,
+        ?array $platformAccount = null
     ): void {
+        $accountId=trim((string)($platformAccount['id']??''));
+        $accountName=trim((string)($platformAccount['name']??''));
+        $accountUrl=trim((string)($platformAccount['url']??''));
+        $accountHash=strtolower(trim((string)($platformAccount['key_hash']??'')));
+        if(!preg_match('/^[a-f0-9]{64}$/',$accountHash)){$accountHash='';}
+
         $s = Database::connection()->prepare(
             "UPDATE cdsp_sales_posts
              SET title=?,
@@ -460,6 +531,10 @@ class Post {
                  description_hash=?,
                  fetched_at=NOW(),
                  fetched_image_url=?,
+                 platform_account_id=COALESCE(?,platform_account_id),
+                 platform_account_name=COALESCE(?,platform_account_name),
+                 platform_account_url=COALESCE(?,platform_account_url),
+                 platform_account_key_hash=COALESCE(?,platform_account_key_hash),
                  verification_status='verified',
                  updated_at=NOW()
              WHERE id=?
@@ -474,6 +549,10 @@ class Post {
             $imageUrl !== null && trim($imageUrl) !== ''
                 ? trim($imageUrl)
                 : null,
+            $accountId!==''?$accountId:null,
+            $accountName!==''?$accountName:null,
+            $accountUrl!==''?$accountUrl:null,
+            $accountHash!==''?$accountHash:null,
             $postId,
         ]);
     }

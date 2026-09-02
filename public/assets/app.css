@@ -15239,3 +15239,65 @@ body.provider-sort-active *{
         padding:0;
     }
 }
+
+/* v0.2.75: keep Sales Post Details side-by-side on desktop.
+   Image stays on the left and post information stays on the right.
+   Only narrow screens collapse back to the vertical mobile layout. */
+@media (min-width:721px){
+    .sales-post-detail-modal{
+        width:min(1040px,calc(100vw - 36px));
+    }
+    .sales-post-detail-scroll{
+        display:grid;
+        grid-template-columns:minmax(280px,42%) minmax(0,1fr);
+        align-items:start;
+        overflow:auto;
+    }
+    .sales-post-detail-image-button,
+    .sales-post-detail-no-image{
+        grid-column:1;
+        grid-row:1;
+        min-width:0;
+        align-self:start;
+        border-right:1px solid #e2e8f0;
+        border-bottom:0;
+    }
+    .sales-post-detail-image-button{
+        position:sticky;
+        top:0;
+        max-height:calc(100vh - 190px);
+    }
+    .sales-post-detail-image-button img{
+        width:100%;
+        height:auto;
+        max-height:calc(100vh - 190px);
+        object-fit:contain;
+    }
+    .sales-post-detail-no-image{
+        min-height:360px;
+    }
+    .sales-post-detail-content{
+        grid-column:2;
+        grid-row:1;
+        min-width:0;
+        padding:16px 18px 20px;
+        overflow-wrap:anywhere;
+    }
+}
+@media (max-width:720px){
+    .sales-post-detail-scroll{
+        display:block;
+    }
+    .sales-post-detail-image-button,
+    .sales-post-detail-no-image{
+        position:relative;
+        top:auto;
+        border-right:0;
+        border-bottom:1px solid #e2e8f0;
+    }
+    .sales-post-detail-image-button img{
+        width:100%;
+        height:auto;
+        max-height:360px;
+    }
+}

@@ -114,6 +114,87 @@ class MarketplaceAccount
         return null;
     }
 
+    /**
+     * Return true only when API/provider metadata contains a stable account key.
+     * A display name by itself is intentionally not treated as identity.
+     */
+    public static function hasStableIdentity(?array $account): bool
+    {
+        if (!is_array($account)) {
+            return false;
+        }
+        $id = self::clean(isset($account['id']) ? (string)$account['id'] : null, 191);
+        if ($id !== null) {
+            return true;
+        }
+        $url = self::cleanUrl(isset($account['url']) ? (string)$account['url'] : null);
+        if ($url !== null) {
+            return true;
+        }
+        $hash = strtolower(trim((string)($account['key_hash'] ?? '')));
+        return preg_match('/^[a-f0-9]{64}$/', $hash) === 1;
+    }
+
+    /**
+     * Compare current provider/API account metadata with one saved Post row.
+     * Identity matches by stable account ID OR normalized profile URL, with the
+     * historical key hash as a final compatibility path. This avoids false
+     * negatives when one provider response contains both ID+URL while another
+     * response for the same public account contains only one of them.
+     */
+    public static function sameStoredAccount(?array $account, array $stored): bool
+    {
+        if (!self::hasStableIdentity($account)) {
+            return false;
+        }
+
+        $currentId = self::clean(isset($account['id']) ? (string)$account['id'] : null, 191);
+        $storedId = self::clean(isset($stored['platform_account_id']) ? (string)$stored['platform_account_id'] : null, 191);
+        if ($currentId !== null && $storedId !== null) {
+            // When both sides expose the strongest identity, disagreement is final.
+            return self::lower($currentId) === self::lower($storedId);
+        }
+
+        $currentUrl = self::normalizedAccountUrl(isset($account['url']) ? (string)$account['url'] : null);
+        $storedUrl = self::normalizedAccountUrl(isset($stored['platform_account_url']) ? (string)$stored['platform_account_url'] : null);
+        if ($currentUrl !== null && $storedUrl !== null) {
+            // Likewise, two explicit profile URLs that normalize differently must
+            // not be overruled by a legacy key hash generated with older URL rules.
+            return $currentUrl === $storedUrl;
+        }
+
+        // Compatibility only when there is no directly comparable ID or URL pair.
+        $currentHash = strtolower(trim((string)($account['key_hash'] ?? '')));
+        $storedHash = strtolower(trim((string)($stored['platform_account_key_hash'] ?? '')));
+        return preg_match('/^[a-f0-9]{64}$/', $currentHash) === 1
+            && preg_match('/^[a-f0-9]{64}$/', $storedHash) === 1
+            && hash_equals($currentHash, $storedHash);
+    }
+
+    /** Human-readable account label; never used as an identity key. */
+    public static function label(?array $account): string
+    {
+        if (!is_array($account)) {
+            return '';
+        }
+        foreach (['name','id'] as $key) {
+            $value = trim((string)($account[$key] ?? ''));
+            if ($value !== '') {
+                return self::substr($value, 120);
+            }
+        }
+        return '';
+    }
+
+    private static function normalizedAccountUrl(?string $url): ?string
+    {
+        $clean = self::cleanUrl($url);
+        if ($clean === null) {
+            return null;
+        }
+        return self::normalizeProfileUrl($clean);
+    }
+
     /** @param array<int,mixed> $out */
     private static function collectCandidates(
         $value,
@@ -275,9 +356,36 @@ class MarketplaceAccount
         if (!is_array($parts)) {
             return self::lower(rtrim($url, '/'));
         }
-        $scheme = strtolower((string)($parts['scheme'] ?? 'https'));
+
+        // Profile identity must survive tracking cleanup. In particular Facebook
+        // commonly uses /profile.php?id=ACCOUNT_ID; dropping the whole query would
+        // collapse every such account to the same URL and create false duplicates.
         $host = strtolower((string)($parts['host'] ?? ''));
+        if (str_starts_with($host, 'www.')) {
+            $host = substr($host, 4);
+        }
         $path = rtrim((string)($parts['path'] ?? ''), '/');
-        return $scheme . '://' . $host . $path;
+        if ($path === '') {
+            $path = '/';
+        }
+
+        $stableQuery=[];
+        if (isset($parts['query'])) {
+            parse_str((string)$parts['query'],$query);
+            foreach (['id','user_id','profile_id','seller_id'] as $key) {
+                if (!isset($query[$key]) || !is_scalar($query[$key])) {
+                    continue;
+                }
+                $value=trim((string)$query[$key]);
+                if ($value!=='') {
+                    $stableQuery[$key]=$value;
+                }
+            }
+        }
+        ksort($stableQuery);
+        $queryText=$stableQuery ? ('?'.http_build_query($stableQuery,'','&',PHP_QUERY_RFC3986)) : '';
+
+        // Treat http/https variants as the same public profile identity.
+        return 'https://' . $host . $path . $queryText;
     }
 }

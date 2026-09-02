@@ -785,23 +785,53 @@ class AdminController extends Controller{
 
             $content=$this->marketplaceContentPreview($item);
             $firstImage=$content['photos'][0]??null;
+            $imageUrl=is_string($firstImage) ? trim($firstImage) : '';
+            $refreshedAssets=[];
+            $imageIndexWarning=null;
+            if($imageUrl!==''){
+                try{
+                    $refreshedAssets[]=\App\Services\ImageFingerprint::fromUrl($imageUrl);
+                }catch(\Throwable $imageError){
+                    // Refresh Content itself remains usable even when the remote CDN
+                    // refuses the fingerprint download. The old fingerprint is still
+                    // removed below so stale image data cannot create false duplicates.
+                    \App\Core\Logger::exception(
+                        $imageError,
+                        'post-content',
+                        ['event'=>'Admin refreshed image could not be fingerprinted','post_id'=>$postId],
+                        'warning'
+                    );
+                    $imageIndexWarning='Content fetched, but the refreshed image could not be indexed for duplicate checking.';
+                }
+            }
 
-            Post::updateFetchedContent(
-                $postId,
-                $title,
-                $description,
-                is_string($firstImage) ? $firstImage : null,
-                $platformAccount
-            );
+            $pdo=Database::connection();
+            $ownsTransaction=!$pdo->inTransaction();
+            if($ownsTransaction){$pdo->beginTransaction();}
+            try{
+                Post::updateFetchedContent(
+                    $postId,
+                    $title,
+                    $description,
+                    $imageUrl!=='' ? $imageUrl : null,
+                    $platformAccount
+                );
+                \App\Services\DuplicateIndex::replacePostFingerprints($postId,$refreshedAssets);
+                if($ownsTransaction){$pdo->commit();}
+            }catch(\Throwable $updateError){
+                if($ownsTransaction&&$pdo->inTransaction()){$pdo->rollBack();}
+                throw $updateError;
+            }
 
             $this->json([
                 'ok'=>true,
                 'post_id'=>$postId,
                 'verification_status'=>'verified',
                 'content'=>$content,
+                'image_indexed'=>!empty($refreshedAssets),
                 'message'=>empty($content['photos'])
                     ? 'Content fetched, but no configured provider returned an image.'
-                    : 'Content and first image fetched successfully.',
+                    : ($imageIndexWarning ?? 'Content and first image fetched successfully.'),
             ]);
         }catch(\Throwable $e){
             \App\Core\Logger::exception(
