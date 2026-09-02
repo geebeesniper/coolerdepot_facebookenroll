@@ -7,6 +7,20 @@
  */
 $(function(){
 
+/**
+ * EN: Escape a value before inserting it into HTML assembled by the shared Sales/Admin browser controller.
+ * 中文：在 Sales/Admin 共用浏览器控制器拼接 HTML 前，对值进行转义。
+ *
+ * @param {string|number|null|undefined|*} value Value that will be rendered as text. / 将作为文本渲染的值。
+ *
+ * @returns {string} HTML-escaped text. / 已进行 HTML 转义的文本。
+ */
+function escapeHtml(value){
+    return $('<div>').text(
+        value == null ? '' : String(value)
+    ).html();
+}
+
 const appLanguageDictionary={
     en:{
         dashboard:'Dashboard',
@@ -14,7 +28,38 @@ const appLanguageDictionary={
         admin:'Admin',
         reports:'Reports',
         settings:'Settings',
-        signOut:'Sign out'
+        help:'Help',
+        signOut:'Sign out',
+        verificationControl:'Verification Control',
+        postVerificationLocks:'Post Verification Locks',
+        verificationLocksHelp:'One Sales user can run only one Marketplace verification at a time. Use Unlock only when a Sales verification is stuck.',
+        verificationLocksActive:'{count} active',
+        verificationLocksReadError:'Verification locks could not be read',
+        verificationLocksEmpty:'No Sales verification is currently locked.',
+        started:'Started',
+        unlock:'Unlock',
+        verificationUnlockWarning:'Unlock removes the verification gate so the Sales user can try again. It does not forcibly terminate a provider request already executing.',
+        sales:'Sales',
+        salesOrganization:'Sales Organization',
+        locations:'Locations',
+        locationsLower:'locations',
+        locationsHelp:'Create locations here, then assign one from each Sales card Settings button on the Admin dashboard.',
+        locationName:'Location name',
+        addLocation:'Add Location',
+        editLocation:'Edit',
+        saveLocation:'Save',
+        cancel:'Cancel',
+        deleteLocation:'Delete',
+        noLocations:'No locations yet. Add the first location above.',
+        salesUnassignedLocation:'Sales currently have no location assigned.',
+        locationAdded:'Location added.',
+        locationUpdated:'Location updated.',
+        locationDeleted:'Location deleted.',
+        locationDuplicate:'That location already exists.',
+        locationInvalid:'Enter a location name from 1 to 120 characters.',
+        locationInUse:'Deleting a location moves assigned Sales to Unassigned.',
+        locationMissing:'Location was not found.',
+        locationError:'Location could not be saved.'
     },
     'zh-CN':{
         dashboard:'主页',
@@ -22,7 +67,38 @@ const appLanguageDictionary={
         admin:'管理',
         reports:'报表',
         settings:'设置',
-        signOut:'退出'
+        help:'帮助',
+        signOut:'退出',
+        verificationControl:'验证控制',
+        postVerificationLocks:'Post 验证锁',
+        verificationLocksHelp:'每个 Sales 同时只允许执行一个 Marketplace 验证。仅在 Sales 验证卡住时使用“解锁”。',
+        verificationLocksActive:'{count} 个活动锁',
+        verificationLocksReadError:'无法读取验证锁',
+        verificationLocksEmpty:'当前没有 Sales 验证被锁定。',
+        started:'开始时间',
+        unlock:'解锁',
+        verificationUnlockWarning:'解锁后该 Sales 可以重新验证，但不会强制终止已经在执行中的 Provider 请求。',
+        sales:'销售',
+        salesOrganization:'销售组织',
+        locations:'地点',
+        locationsLower:'个地点',
+        locationsHelp:'先在这里建立地点，再从 Admin Dashboard 每个 Sales Card 的设置中分配地点。',
+        locationName:'地点名称',
+        addLocation:'添加地点',
+        editLocation:'修改',
+        saveLocation:'保存',
+        cancel:'取消',
+        deleteLocation:'删除',
+        noLocations:'还没有地点，请先在上方添加。',
+        salesUnassignedLocation:'名销售目前还没有分配地点。',
+        locationAdded:'地点已添加。',
+        locationUpdated:'地点已修改。',
+        locationDeleted:'地点已删除。',
+        locationDuplicate:'这个地点已经存在。',
+        locationInvalid:'地点名称必须为 1–120 个字符。',
+        locationInUse:'删除地点时，已分配的 Sales 会自动移到未分配。',
+        locationMissing:'没有找到这个地点。',
+        locationError:'无法保存地点。'
     },
     'zh-TW':{
         dashboard:'主頁',
@@ -30,7 +106,38 @@ const appLanguageDictionary={
         admin:'管理',
         reports:'報表',
         settings:'設定',
-        signOut:'登出'
+        help:'幫助',
+        signOut:'登出',
+        verificationControl:'驗證控制',
+        postVerificationLocks:'Post 驗證鎖',
+        verificationLocksHelp:'每個 Sales 同時只允許執行一個 Marketplace 驗證。僅在 Sales 驗證卡住時使用「解鎖」。',
+        verificationLocksActive:'{count} 個活動鎖',
+        verificationLocksReadError:'無法讀取驗證鎖',
+        verificationLocksEmpty:'目前沒有 Sales 驗證被鎖定。',
+        started:'開始時間',
+        unlock:'解鎖',
+        verificationUnlockWarning:'解鎖後該 Sales 可以重新驗證，但不會強制終止已經在執行中的 Provider 請求。',
+        sales:'銷售',
+        salesOrganization:'銷售組織',
+        locations:'地點',
+        locationsLower:'個地點',
+        locationsHelp:'先在這裡建立地點，再從 Admin Dashboard 每個 Sales Card 的設定中分配地點。',
+        locationName:'地點名稱',
+        addLocation:'新增地點',
+        editLocation:'修改',
+        saveLocation:'儲存',
+        cancel:'取消',
+        deleteLocation:'刪除',
+        noLocations:'目前沒有地點，請先在上方新增。',
+        salesUnassignedLocation:'名銷售目前尚未分配地點。',
+        locationAdded:'地點已新增。',
+        locationUpdated:'地點已修改。',
+        locationDeleted:'地點已刪除。',
+        locationDuplicate:'這個地點已存在。',
+        locationInvalid:'地點名稱必須為 1–120 個字元。',
+        locationInUse:'刪除地點時，已分配的 Sales 會自動移到未分配。',
+        locationMissing:'找不到這個地點。',
+        locationError:'無法儲存地點。'
     },
     es:{
         dashboard:'Panel',
@@ -38,7 +145,38 @@ const appLanguageDictionary={
         admin:'Admin',
         reports:'Informes',
         settings:'Configuración',
-        signOut:'Salir'
+        help:'Ayuda',
+        signOut:'Salir',
+        verificationControl:'Control de verificación',
+        postVerificationLocks:'Bloqueos de verificación de publicaciones',
+        verificationLocksHelp:'Cada usuario de ventas solo puede ejecutar una verificación de Marketplace a la vez. Usa Desbloquear solo si una verificación quedó atascada.',
+        verificationLocksActive:'{count} activos',
+        verificationLocksReadError:'No se pudieron leer los bloqueos de verificación',
+        verificationLocksEmpty:'No hay verificaciones de ventas bloqueadas actualmente.',
+        started:'Iniciado',
+        unlock:'Desbloquear',
+        verificationUnlockWarning:'Desbloquear elimina la barrera de verificación para que el usuario pueda intentarlo de nuevo. No finaliza a la fuerza una solicitud del proveedor que ya esté ejecutándose.',
+        sales:'Ventas',
+        salesOrganization:'Organización de ventas',
+        locations:'Ubicaciones',
+        locationsLower:'ubicaciones',
+        locationsHelp:'Crea ubicaciones aquí y asígnalas desde Configuración en cada tarjeta de ventas del panel Admin.',
+        locationName:'Nombre de ubicación',
+        addLocation:'Añadir ubicación',
+        editLocation:'Editar',
+        saveLocation:'Guardar',
+        cancel:'Cancelar',
+        deleteLocation:'Eliminar',
+        noLocations:'Aún no hay ubicaciones. Añade la primera arriba.',
+        salesUnassignedLocation:'vendedores no tienen ubicación asignada.',
+        locationAdded:'Ubicación añadida.',
+        locationUpdated:'Ubicación actualizada.',
+        locationDeleted:'Ubicación eliminada.',
+        locationDuplicate:'Esa ubicación ya existe.',
+        locationInvalid:'El nombre debe tener entre 1 y 120 caracteres.',
+        locationInUse:'Al eliminar una ubicación, los vendedores asignados pasan a Sin asignar.',
+        locationMissing:'No se encontró la ubicación.',
+        locationError:'No se pudo guardar la ubicación.'
     }
 };
 
@@ -68,6 +206,21 @@ function applyGlobalMenuLanguage(){
 
         if(dict[key]){
             $(this).text(dict[key]);
+        }
+    });
+
+    $('[data-app-i18n]').each(function(){
+        const key=String($(this).data('app-i18n')||'');
+        if(dict[key]){
+            $(this).text(dict[key]);
+        }
+    });
+
+    $('[data-app-i18n-count]').each(function(){
+        const key=String($(this).data('app-i18n-count')||'');
+        const count=String($(this).data('i18n-count')??'0');
+        if(dict[key]){
+            $(this).text(String(dict[key]).replace('{count}',count));
         }
     });
 
@@ -280,6 +433,7 @@ $(window).on('resize.cdspMobileNav',function(){
         $('#adminDeleteRequestLoading').removeClass('hidden').text('Loading post…');
         $('#adminDeleteRequestStatus').removeClass('error ok').text('');
         $('#adminDeleteRequestReason').text(String($row.attr('data-info-reason')||'—'));
+        renderMarketplaceAccount($('#adminDeleteRequestAccountFact'),$('#adminDeleteRequestAccount'),null);
         $deleteRequestModal.removeClass('hidden').attr('aria-hidden','false');
         $('body').addClass('admin-delete-request-modal-open');
 
@@ -300,6 +454,11 @@ $(window).on('resize.cdspMobileNav',function(){
             $('#adminDeleteRequestPlatform').text(post.platform||'—');
             $('#adminDeleteRequestPublished').text(post.published_at||post.published_date||'—');
             $('#adminDeleteRequestPostId').text(post.external_post_id||post.id||'—');
+            renderMarketplaceAccount(
+                $('#adminDeleteRequestAccountFact'),
+                $('#adminDeleteRequestAccount'),
+                {id:post.platform_account_id||'',name:post.platform_account_name||'',url:post.platform_account_url||''}
+            );
             $('#adminDeleteRequestPostTitle').text(content.title||'Untitled post');
             $('#adminDeleteRequestDescription').text(content.description||'No description saved.');
             const photos=Array.isArray(content.photos)?content.photos:[];
@@ -465,6 +624,22 @@ $(window).on('resize.cdspMobileNav',function(){
         return '';
     }
 
+    // EN: The Submit modal can be closed while /api/inspect keeps running on the
+    // server. Keep a page-level busy flag so reopening the modal cannot re-enable
+    // Check Post before the server-side process lock has been released.
+    // 中文：用户可以在 /api/inspect 仍在服务器运行时关闭 Submit 弹窗。这里保留页面级
+    // busy 状态，确保重新打开弹窗时不会在服务器进程锁释放前重新启用 Check Post。
+    const SALES_INSPECTION_BUSY_KEY='cdsp-sales-inspection-busy';
+    let salesInspectionBusy=false;
+    let salesInspectionRequest=null;
+    let salesInspectionStatusTimer=null;
+
+    try{
+        salesInspectionBusy=sessionStorage.getItem(SALES_INSPECTION_BUSY_KEY)==='1';
+    }catch(error){
+        salesInspectionBusy=false;
+    }
+
     /**
      * EN: Update the update detected platform behavior used by the application UI.
      * 中文：更新application UI 使用的“update detected platform”行为。
@@ -482,7 +657,7 @@ $(window).on('resize.cdspMobileNav',function(){
         }
 
         $('#detectedPlatformValue').val(platform);
-        $('#inspectButton').prop('disabled', !platform);
+        $('#inspectButton').prop('disabled', salesInspectionBusy || !platform);
 
         $label
             .removeClass('facebook offerup craigslist empty-platform')
@@ -531,6 +706,10 @@ const salesI18n={
         from:'From',
         to:'To',
         backToday:'Back to today',
+        calendar:'Calendar',
+        calendarReviewed:'Reviewed',
+        calendarLoading:'Loading calendar…',
+        calendarStatus:'{unreviewed} unreviewed · {reviewed} reviewed',
         apply:'Apply',
         submitPost:'Submit Post',
         posts:'Posts',
@@ -569,6 +748,7 @@ const salesI18n={
         unsupportedUrl:'Unsupported URL',
         checkPost:'Check Post',
         checking:'Checking…',
+        verificationInProgress:'A verification is already running. Wait for the current check to finish.',
         detectingPlatform:'Detecting platform…',
         checkingDuplicates:'Checking duplicates…',
         fetchingPost:'Fetching verified post information…',
@@ -584,8 +764,21 @@ const salesI18n={
         useSupported:'Use Facebook Marketplace, OfferUp, or Craigslist.',
         publishedLabel:'Published',
         postId:'Post ID',
+        platformAccount:'Account',
         originalUrl:'Original URL',
         saveVerified:'Save Verified Post',
+        saveForAdminReview:'Save for Admin Review',
+        limited:'LIMITED',
+        manualVerificationTitle:'Manual marketplace verification',
+        manualVerificationHelp:'Direct verification and automatic provider fallback were unavailable. Confirm the listing details below; Admin will review this post.',
+        manualTitleLabel:'Listing title',
+        manualDateLabel:'Published date',
+        manualDescriptionLabel:'Description (optional)',
+        continueManualVerification:'Continue Manual Verification',
+        manualChecking:'Checking manual details…',
+        manualAccepted:'Manual details accepted. Save this post for Admin verification.',
+        manualTitleRequired:'Enter the marketplace listing title.',
+        manualDateRequired:'Enter the marketplace published date.',
         reasonPlaceholder:'Why should this post be removed?'
     },
     'zh-CN':{
@@ -625,6 +818,14 @@ const salesI18n={
         from:'开始',
         to:'结束',
         backToday:'返回今天',
+        calendar:'日曆',
+        calendarReviewed:'已審核',
+        calendarLoading:'正在載入日曆…',
+        calendarStatus:'{unreviewed} 未審核 · {reviewed} 已審核',
+        calendar:'日历',
+        calendarReviewed:'已审核',
+        calendarLoading:'正在加载日历…',
+        calendarStatus:'{unreviewed} 未审核 · {reviewed} 已审核',
         apply:'应用',
         submitPost:'提交帖子',
         posts:'帖子',
@@ -662,6 +863,7 @@ const salesI18n={
         unsupportedUrl:'不支持的链接',
         checkPost:'检查帖子',
         checking:'检查中…',
+        verificationInProgress:'已有一个帖子正在验证，请等待当前验证完成后再检查下一个帖子。',
         detectingPlatform:'正在识别平台…',
         checkingDuplicates:'正在检查重复…',
         fetchingPost:'正在获取已验证的帖子信息…',
@@ -677,8 +879,21 @@ const salesI18n={
         useSupported:'请使用 Facebook Marketplace、OfferUp 或 Craigslist。',
         publishedLabel:'发布',
         postId:'帖子 ID',
+        platformAccount:'平台账号',
         originalUrl:'原始 URL',
         saveVerified:'保存已验证帖子',
+        saveForAdminReview:'保存并交管理员审核',
+        limited:'受限验证',
+        manualVerificationTitle:'Marketplace 手动验证',
+        manualVerificationHelp:'直接验证和自动 Provider 回退均不可用。请确认下面的帖子信息，保存后由管理员审核。',
+        manualTitleLabel:'帖子标题',
+        manualDateLabel:'发布日期',
+        manualDescriptionLabel:'描述（可选）',
+        continueManualVerification:'继续手动验证',
+        manualChecking:'正在检查手动信息…',
+        manualAccepted:'手动信息已通过检查。请保存并交管理员审核。',
+        manualTitleRequired:'请输入 Marketplace 帖子标题。',
+        manualDateRequired:'请输入 Marketplace 发布日期。',
         reasonPlaceholder:'为什么要删除这个帖子？'
     },
     'zh-TW':{
@@ -747,6 +962,7 @@ const salesI18n={
         unsupportedUrl:'不支援的連結',
         checkPost:'檢查貼文',
         checking:'檢查中…',
+        verificationInProgress:'已有一個帖子正在驗證，請等待目前驗證完成後再檢查下一個帖子。',
         detectingPlatform:'正在辨識平台…',
         checkingDuplicates:'正在檢查重複…',
         fetchingPost:'正在取得已驗證的貼文資訊…',
@@ -762,8 +978,21 @@ const salesI18n={
         useSupported:'請使用 Facebook Marketplace、OfferUp 或 Craigslist。',
         publishedLabel:'發布',
         postId:'貼文 ID',
+        platformAccount:'平台帳號',
         originalUrl:'原始 URL',
         saveVerified:'儲存已驗證貼文',
+        saveForAdminReview:'儲存並交管理員審核',
+        limited:'受限驗證',
+        manualVerificationTitle:'Marketplace 手動驗證',
+        manualVerificationHelp:'直接驗證與自動 Provider 回退均不可用。請確認下方貼文資訊，儲存後由管理員審核。',
+        manualTitleLabel:'貼文標題',
+        manualDateLabel:'發布日期',
+        manualDescriptionLabel:'描述（可選）',
+        continueManualVerification:'繼續手動驗證',
+        manualChecking:'正在檢查手動資訊…',
+        manualAccepted:'手動資訊已通過檢查。請儲存並交管理員審核。',
+        manualTitleRequired:'請輸入 Marketplace 貼文標題。',
+        manualDateRequired:'請輸入 Marketplace 發布日期。',
         reasonPlaceholder:'為什麼要刪除這篇貼文？'
     },
     es:{
@@ -796,6 +1025,10 @@ const salesI18n={
         from:'Desde',
         to:'Hasta',
         backToday:'Volver a hoy',
+        calendar:'Calendario',
+        calendarReviewed:'Revisado',
+        calendarLoading:'Cargando calendario…',
+        calendarStatus:'{unreviewed} sin revisar · {reviewed} revisado',
         apply:'Aplicar',
         submitPost:'Enviar publicación',
         posts:'Publicaciones',
@@ -834,6 +1067,7 @@ const salesI18n={
         unsupportedUrl:'URL no compatible',
         checkPost:'Comprobar publicación',
         checking:'Comprobando…',
+        verificationInProgress:'Ya hay una verificación en curso. Espere a que termine antes de comprobar otra publicación.',
         detectingPlatform:'Detectando plataforma…',
         checkingDuplicates:'Comprobando duplicados…',
         fetchingPost:'Obteniendo información verificada…',
@@ -849,8 +1083,21 @@ const salesI18n={
         useSupported:'Usa Facebook Marketplace, OfferUp o Craigslist.',
         publishedLabel:'Publicado',
         postId:'ID de publicación',
+        platformAccount:'Cuenta',
         originalUrl:'URL original',
         saveVerified:'Guardar publicación verificada',
+        saveForAdminReview:'Guardar para revisión del administrador',
+        limited:'VERIFICACIÓN LIMITADA',
+        manualVerificationTitle:'Verificación manual del marketplace',
+        manualVerificationHelp:'La verificación directa y el proveedor automático no estuvieron disponibles. Confirma los datos; el administrador revisará la publicación.',
+        manualTitleLabel:'Título del anuncio',
+        manualDateLabel:'Fecha de publicación',
+        manualDescriptionLabel:'Descripción (opcional)',
+        continueManualVerification:'Continuar verificación manual',
+        manualChecking:'Comprobando datos manuales…',
+        manualAccepted:'Datos manuales aceptados. Guarda la publicación para revisión del administrador.',
+        manualTitleRequired:'Introduce el título del anuncio del marketplace.',
+        manualDateRequired:'Introduce la fecha de publicación del marketplace.',
         reasonPlaceholder:'¿Por qué se debe eliminar esta publicación?'
     }
 };
@@ -3394,6 +3641,7 @@ function openSalesSubmitModal(){
     showSalesOverlay($salesSubmitModal,function(){
         $('#postUrl').trigger('focus');
         updateDetectedPlatform();
+        syncSalesInspectionProcessState(true);
     });
     return true;
 }
@@ -3406,6 +3654,13 @@ function openSalesSubmitModal(){
  */
 function closeSalesSubmitModal(){
     if(!$salesSubmitModal.length){return;}
+
+    // EN: Closing the modal is only a visual action. Never abort an active
+    // verification request; the server process lock stays authoritative until
+    // the request finishes. Reopening the modal will query that lock again.
+    // 中文：关闭弹窗只影响界面，不取消正在运行的验证请求。服务器进程锁会一直保持到
+    // 请求结束；再次打开弹窗时会重新查询服务器锁状态。
+    stopSalesInspectionStatusTimer();
     hideSalesOverlay($salesSubmitModal,function(){
         $('body').removeClass('sales-submit-modal-open');
     });
@@ -3455,6 +3710,11 @@ function openSalesPostDetail($card){
     const externalId=String(
         $card.attr('data-sales-post-external-id')||''
     );
+    const platformAccount={
+        id:String($card.attr('data-sales-post-account-id')||''),
+        name:String($card.attr('data-sales-post-account-name')||''),
+        url:String($card.attr('data-sales-post-account-url')||'')
+    };
 
     $('#salesPostDetailPlatform').text(
         platformLabel(platform)
@@ -3480,6 +3740,11 @@ function openSalesPostDetail($card){
     );
     $('#salesPostDetailExternalId').text(
         externalId||'—'
+    );
+    renderMarketplaceAccount(
+        $('#salesPostDetailAccountFact'),
+        $('#salesPostDetailAccount'),
+        platformAccount
     );
     $('#salesPostDeleteRequestId').val(postId);
     $('#salesPostDeleteRequestForm').addClass('hidden');
@@ -4434,6 +4699,11 @@ applySalesPlatformFilterToCards();
         setTimeout(updateDetectedPlatform, 0);
     });
 
+    if($('#inspectForm').length){
+        setSalesInspectionBusyState(salesInspectionBusy,false);
+        syncSalesInspectionProcessState(false);
+    }
+
 /**
  * EN: Update the set sales submit message behavior used by the application UI.
  * 中文：更新application UI 使用的“set sales submit message”行为。
@@ -4445,6 +4715,7 @@ applySalesPlatformFilterToCards();
  */
 function setSalesSubmitMessage(message,type){
     const $message=$('#salesSubmitMessage');
+    $message.removeClass('duplicate-compact');
 
     if(!$message.length){
         return;
@@ -4453,15 +4724,227 @@ function setSalesSubmitMessage(message,type){
     if(!message){
         $message
             .addClass('hidden')
-            .removeClass('ok error')
+            .removeClass('ok error warning')
             .text('');
         return;
     }
 
+    const messageClass=type==='ok'
+        ?'ok'
+        :(type==='warning'?'warning':'error');
+
     $message
-        .removeClass('hidden ok error')
-        .addClass(type==='ok'?'ok':'error')
+        .removeClass('hidden ok error warning')
+        .addClass(messageClass)
         .text(message);
+}
+
+/**
+ * EN: Show the exact duplicate URL returned by the server.
+ * 中文：显示服务器返回的实际重复记录 URL。
+ *
+ * @param {string|*} url Duplicate source URL. / 重复来源 URL。
+ * @param {string|*} kind Duplicate reason kind used to label the matched link accurately. / 用于准确标注命中链接的重复类型。
+ * @returns {void} No value is returned. / 无返回值。
+ */
+function setSalesDuplicateSource(url,kind){
+    const $source=$('#salesDuplicateSource');
+    const raw=String(url||'').trim();
+    if(!raw){
+        $source.addClass('hidden').attr('href','#').text('');
+        return;
+    }
+    const duplicateKind=String(kind||'').trim();
+    const duplicateLabel={
+        exact_title:'Title duplicate',
+        external_id:'Post ID duplicate',
+        url:'URL duplicate',
+        image:'Image duplicate',
+        exact_image:'Image duplicate',
+        same_platform_image:'Image duplicate',
+        same_account_title:'Account title duplicate',
+        same_account_image:'Account image duplicate',
+        website_exact_image:'Website image duplicate',
+        website_exact_title:'Website title duplicate'
+    }[duplicateKind]||'Duplicate match';
+    try{
+        const parsed=new URL(raw);
+        if(parsed.protocol!=='https:'&&parsed.protocol!=='http:')throw new Error('Unsupported protocol');
+        $source
+            .attr({href:parsed.href,title:parsed.href})
+            .removeClass('hidden')
+            .text(duplicateLabel+' — open matching post ↗');
+    }catch(error){
+        $source.addClass('hidden').attr('href','#').text('');
+    }
+}
+
+/**
+ * EN: Make duplicate notices compact so the matched URL remains the focus.
+ * 中文：重复提示使用紧凑字号，让具体命中的 URL 更醒目。
+ *
+ * @returns {void} No value is returned. / 无返回值。
+ */
+function markSalesDuplicateMessageCompact(){
+    $('#salesSubmitMessage').addClass('duplicate-compact');
+    $('#verificationBanner').addClass('duplicate-compact');
+}
+
+/**
+ * Render provider/API marketplace account metadata only when it exists.
+ * Missing account data is normal and must never be treated as an empty account.
+ */
+function renderMarketplaceAccount($fact,$value,account){
+    if(!$fact||!$fact.length||!$value||!$value.length){return;}
+    const data=account&&typeof account==='object'?account:{};
+    const name=String(data.name||'').trim();
+    const id=String(data.id||'').trim();
+    const url=String(data.url||'').trim();
+    const label=name||id;
+    if(!label){
+        $value.empty().text('—');
+        $fact.addClass('hidden');
+        return;
+    }
+    $value.empty();
+    if(url){
+        try{
+            const parsed=new URL(url);
+            if(parsed.protocol==='http:'||parsed.protocol==='https:'){
+                $('<a>')
+                    .attr({href:parsed.href,target:'_blank',rel:'noopener noreferrer',title:parsed.href})
+                    .text(label)
+                    .appendTo($value);
+            }else{
+                $value.text(label);
+            }
+        }catch(error){$value.text(label);}
+    }else{
+        $value.text(label);
+    }
+    $fact.removeClass('hidden');
+}
+
+
+/**
+ * EN: Apply the local UI state for a running Marketplace verification.
+ * 中文：应用 Marketplace 验证运行期间的本地 UI 状态。
+ *
+ * @param {boolean} busy Whether verification is currently active. / 当前是否正在验证。
+ * @param {boolean} showMessage Whether to show the in-progress notice. / 是否显示处理中提示。
+ * @returns {void} No value is returned. / 无返回值。
+ */
+function setSalesInspectionBusyState(busy,showMessage){
+    salesInspectionBusy=Boolean(busy);
+
+    try{
+        if(salesInspectionBusy){
+            sessionStorage.setItem(SALES_INSPECTION_BUSY_KEY,'1');
+        }else{
+            sessionStorage.removeItem(SALES_INSPECTION_BUSY_KEY);
+        }
+    }catch(error){/* Session storage is only a UI hint; server lock remains authoritative. */}
+
+    const platform=detectPlatform($('#postUrl').val()||'');
+    $('#inspectButton')
+        .prop('disabled',salesInspectionBusy||!platform)
+        .text(salesInspectionBusy?salesTr('checking'):salesTr('checkPost'));
+    $('#postUrl')
+        .prop('readonly',salesInspectionBusy)
+        .attr('aria-busy',salesInspectionBusy?'true':'false');
+
+    if(salesInspectionBusy&&showMessage){
+        setSalesSubmitMessage(salesTr('verificationInProgress'),'warning');
+    }
+}
+
+/**
+ * EN: Stop polling the server-side inspection process lock.
+ * 中文：停止轮询服务器端 Inspection 进程锁。
+ *
+ * @returns {void} No value is returned. / 无返回值。
+ */
+function stopSalesInspectionStatusTimer(){
+    if(salesInspectionStatusTimer){
+        window.clearTimeout(salesInspectionStatusTimer);
+        salesInspectionStatusTimer=null;
+    }
+}
+
+/**
+ * EN: Return whether the verification UI is currently visible and should poll.
+ * 中文：返回验证 UI 当前是否可见、是否需要继续轮询。
+ *
+ * @returns {boolean} True when the submit UI is visible. / Submit UI 可见时返回 true。
+ */
+function salesInspectionUiVisible(){
+    return !$salesSubmitModal.length||!$salesSubmitModal.hasClass('hidden');
+}
+
+/**
+ * EN: Schedule a short status poll while the server still owns the process lock.
+ * 中文：服务器仍持有进程锁时安排下一次短间隔状态轮询。
+ *
+ * @returns {void} No value is returned. / 无返回值。
+ */
+function scheduleSalesInspectionStatusPoll(){
+    stopSalesInspectionStatusTimer();
+    if(!salesInspectionBusy||!salesInspectionUiVisible()){return;}
+    salesInspectionStatusTimer=window.setTimeout(function(){
+        syncSalesInspectionProcessState(false);
+    },1200);
+}
+
+/**
+ * EN: Synchronize Check Post with the authoritative server-side process lock.
+ * 中文：使用服务器端权威进程锁同步 Check Post 的可点击状态。
+ *
+ * This protects modal reopen, lost AJAX responses, page reloads, and a second
+ * browser tab. A local button state is never trusted as the process lock.
+ * 该检查可覆盖重新打开弹窗、AJAX 响应丢失、页面刷新以及第二个浏览器标签页；
+ * 本地按钮状态永远不能替代服务器端进程锁。
+ *
+ * @param {boolean} showMessage Whether a busy state should show a notice. / Busy 时是否显示提示。
+ * @returns {void} No value is returned. / 无返回值。
+ */
+function syncSalesInspectionProcessState(showMessage){
+    if(!$('#inspectForm').length){return;}
+
+    $.ajax({
+        url:window.CD_BASE_PATH+'/api/inspect/status',
+        method:'GET',
+        dataType:'json',
+        cache:false,
+        timeout:5000,
+        headers:{'Accept':'application/json'}
+    })
+    .done(function(data){
+        const serverBusy=Boolean(data&&data.in_progress);
+        const localRequestBusy=Boolean(
+            salesInspectionRequest
+            &&salesInspectionRequest.readyState!==4
+        );
+
+        if(serverBusy||localRequestBusy){
+            setSalesInspectionBusyState(true,Boolean(showMessage));
+            scheduleSalesInspectionStatusPoll();
+            return;
+        }
+
+        stopSalesInspectionStatusTimer();
+        setSalesInspectionBusyState(false,false);
+        updateDetectedPlatform();
+    })
+    .fail(function(){
+        // EN: Fail closed when this page already knows a verification is active.
+        // Never unlock the button merely because the status request failed.
+        // 中文：如果当前页面已知验证正在运行，状态接口失败时保持锁定；不能因为
+        // 状态检查失败就错误地重新启用 Check Post。
+        if(salesInspectionBusy){
+            setSalesInspectionBusyState(true,Boolean(showMessage));
+            scheduleSalesInspectionStatusPoll();
+        }
+    });
 }
 
 
@@ -4478,7 +4961,7 @@ function setSalesSubmitMessage(message,type){
 function setInspectionStep(step,state,label){
     const $step=$('#inspectionProgress [data-inspection-step="'+step+'"]');
     if(!$step.length)return;
-    $step.removeClass('active done failed skipped');
+    $step.removeClass('active done failed skipped limited');
     if(state){$step.addClass(state);}
     $step.find('.inspection-step-state').text(label||'Waiting');
 }
@@ -4486,9 +4969,26 @@ function setInspectionStep(step,state,label){
 $('#inspectForm').on('submit',function(e){
     e.preventDefault();
 
+    if(salesInspectionBusy){
+        setSalesInspectionBusyState(true,true);
+        syncSalesInspectionProcessState(true);
+        return;
+    }
+
     const platform=updateDetectedPlatform();
 
     if(!platform){
+        const $p=$('#inspectionProgress');
+        $p.removeClass('hidden');
+        $p.find('div').removeClass('active done failed skipped limited');
+        $p.find('.inspection-step-state').text('Waiting');
+        setInspectionStep('platform','failed','Issue');
+        ['duplicate','fetch','date','final'].forEach(function(step){
+            setInspectionStep(step,'skipped','Skipped');
+        });
+        $('#inspectionResult').addClass('hidden');
+        $('#salesVerifiedSaveForm').addClass('hidden');
+        $('#saveButton').prop('disabled',true);
         setSalesSubmitMessage(
             salesTr('useSupported'),
             'error'
@@ -4501,10 +5001,15 @@ $('#inspectForm').on('submit',function(e){
     setSalesSubmitMessage('',null);
 
     $('#salesPostSaveComplete').addClass('hidden');
-    $('#salesDuplicateSource').addClass('hidden').attr('href','#');
+    const craigslistManualForm=$('#craigslistManualVerification').addClass('hidden').get(0);
+    if(craigslistManualForm){craigslistManualForm.reset();}
+    $('#craigslistManualInspectionToken').val('');
+    setSalesDuplicateSource('');
     $('#resultTitle').removeClass('duplicate-title');
+    $('#salesVerifiedSaveForm').addClass('hidden');
     $('#saveButton')
         .removeClass('saved')
+        .prop('disabled',true)
         .find('span')
         .text(salesTr('saveVerified'));
 
@@ -4512,54 +5017,65 @@ $('#inspectForm').on('submit',function(e){
     const $p=$('#inspectionProgress');
     const $r=$('#inspectionResult');
 
-    $b
-        .prop('disabled',true)
-        .text(salesTr('checking'));
+    setSalesInspectionBusyState(true,false);
 
     $p.removeClass('hidden');
-    $p.find('div').removeClass('active done failed skipped');
+    $p.find('div').removeClass('active done failed skipped limited');
     $p.find('.inspection-step-state').text('Waiting');
     setInspectionStep('platform','done','OK');
     setInspectionStep('duplicate','active',salesTr('checking'));
-    setInspectionStep('fetch','active',salesTr('checking'));
+    setInspectionStep('fetch',null,'Waiting');
 
     $('#inspectionEmpty').addClass('hidden');
     $('#duplicateComparisonWarnings').empty().addClass('hidden');
+    renderMarketplaceAccount($('#resultPlatformAccountFact'),$('#resultPlatformAccount'),null);
+    $('#resultImages').empty();
+    $('#resultImagesWrap').addClass('hidden');
     $r.addClass('hidden');
     $('#saveButton').prop('disabled',true);
+    $('#salesVerifiedSaveForm').addClass('hidden');
 
     const inspectPayload=$(this).serialize();
 
-    // Cheap duplicate preflight runs independently from the full provider
-    // inspection. It can finish first and update only its own status row.
-    $.post(
+    // EN: Platform detection and initial duplicate checking are hard prerequisites.
+    // The expensive remote/provider verification is never started unless both pass.
+    // 中文：平台识别与初次查重是硬前置条件；任一失败都不会启动后续远程/Provider 验证。
+    const preflightRequest=$.post(
         window.CD_BASE_PATH+'/api/inspect/preflight',
         inspectPayload
-    )
+    );
+    salesInspectionRequest=preflightRequest;
+
+    preflightRequest
     .done(function(preflight){
-        if(preflight&&preflight.ok){
-            if($('#inspectionProgress [data-inspection-step="duplicate"]').hasClass('active')){
-                setInspectionStep('duplicate','done','OK');
+        if(!(preflight&&preflight.ok)){
+            setInspectionStep('duplicate','failed','Issue');
+            ['fetch','date','final'].forEach(function(step){
+                setInspectionStep(step,'skipped','Skipped');
+            });
+            $('#inspectionResult').addClass('hidden');
+            $('#salesVerifiedSaveForm').addClass('hidden');
+            $('#saveButton').prop('disabled',true);
+            if(preflight&&preflight.duplicate_url){
+                setSalesDuplicateSource(preflight.duplicate_url,preflight.duplicate_kind);
             }
+            setSalesSubmitMessage(
+                (preflight&&preflight.message)||'Duplicate check failed. Verification was not started.',
+                'error'
+            );
+            if(preflight&&preflight.duplicate_url){
+                markSalesDuplicateMessageCompact();
+            }
+            salesInspectionRequest=null;
+            setSalesInspectionBusyState(false,false);
+            updateDetectedPlatform();
             return;
         }
-        if($('#inspectionProgress [data-inspection-step="duplicate"]').hasClass('active')){
-            setInspectionStep('duplicate','failed','Issue');
-        }
-        if(preflight&&preflight.duplicate_url){
-            $('#salesDuplicateSource')
-                .attr('href',preflight.duplicate_url)
-                .removeClass('hidden')
-                .text('Duplicate exists — open original post ↗');
-        }
-    })
-    .fail(function(){
-        if($('#inspectionProgress [data-inspection-step="duplicate"]').hasClass('active')){
-            setInspectionStep('duplicate','failed','Issue');
-        }
-    });
 
-    $.post(
+        setInspectionStep('duplicate','done','OK');
+        setInspectionStep('fetch','active',salesTr('checking'));
+
+    salesInspectionRequest=$.post(
         window.CD_BASE_PATH+'/api/inspect',
         inspectPayload
     )
@@ -4573,7 +5089,7 @@ $('#inspectForm').on('submit',function(e){
                 const link=new URL(match.url);
                 if(link.protocol!=='https:')return;
                 $('<a>').attr({href:link.href,target:'_blank',rel:'noopener noreferrer'})
-                    .text(link.hostname+' — '+match.kind.replace(/_/g,' ')).appendTo($warnings);
+                    .text('Duplicate: '+link.href).appendTo($warnings);
             }catch(error){/* Ignore malformed source URLs. */}
         });
         $warnings.toggleClass('hidden',!$warnings.children().length);
@@ -4582,22 +5098,41 @@ $('#inspectForm').on('submit',function(e){
         );
         $('#resultTitle')
             .text(d.title||d.duplicate_title||'—')
-            .toggleClass('duplicate-title',d.failure_code==='DUPLICATE'&&d.duplicate_kind==='exact_title');
+            .toggleClass('duplicate-title',d.failure_code==='DUPLICATE'&&['exact_title','same_account_title'].includes(String(d.duplicate_kind||'')));
         if(d.duplicate_url){
-            $('#salesDuplicateSource')
-                .attr('href',d.duplicate_url)
-                .removeClass('hidden')
-                .text('Duplicate exists — open original post ↗');
+            setSalesDuplicateSource(d.duplicate_url,d.duplicate_kind);
         }else{
-            $('#salesDuplicateSource').addClass('hidden').attr('href','#');
+            setSalesDuplicateSource('');
         }
         $('#resultDate').text(d.published_at||'—');
         $('#resultExternalId').text(
             d.external_post_id||'—'
         );
+        renderMarketplaceAccount(
+            $('#resultPlatformAccountFact'),
+            $('#resultPlatformAccount'),
+            d.platform_account
+        );
         $('#resultDescription').text(
             d.description||'—'
         );
+
+        const resultImages=Array.isArray(d.images)?d.images:[];
+        const $resultImages=$('#resultImages').empty();
+        resultImages.slice(0,1).forEach(function(imageUrl,index){
+            try{
+                const parsed=new URL(String(imageUrl||''));
+                if(parsed.protocol!=='https:')return;
+                $('<a>')
+                    .attr({href:parsed.href,target:'_blank',rel:'noopener noreferrer'})
+                    .append(
+                        $('<img>')
+                            .attr({src:parsed.href,loading:'lazy',alt:'Listing image '+(index+1)})
+                    )
+                    .appendTo($resultImages);
+            }catch(error){/* Ignore malformed provider image URLs. */}
+        });
+        $('#resultImagesWrap').toggleClass('hidden',!$resultImages.children().length);
 
         const u=d.canonical_url||d.resolved_url||'—';
 
@@ -4615,21 +5150,44 @@ $('#inspectForm').on('submit',function(e){
             d.inspection_token||''
         );
 
+        const manualRequired=Boolean(d.manual_required);
+        const manualPending=Boolean(d.manual_pending);
+        const rawResultMessage=manualRequired
+            ?salesTr('manualVerificationHelp')
+            :(manualPending?salesTr('manualAccepted'):(d.message||salesTr('inspectionFailed')));
+        const resultMessage=(d.failure_code==='DUPLICATE'&&['exact_title','same_account_title'].includes(String(d.duplicate_kind||'')))
+            ?'TITLE DUPLICATE — '+rawResultMessage
+            :rawResultMessage;
+
         $('#verificationBanner')
             .attr(
                 'class',
-                'banner '+(d.ok?'ok':'bad')
+                'banner '+(manualRequired||manualPending?'warning':(d.ok?'ok':'bad'))
             )
             .text(
-                d.ok
-                    ?salesTr('verified')
-                    :salesTr('blocked')
-                        +' — '
-                        +(d.message||salesTr('inspectionFailed'))
+                manualRequired||manualPending
+                    ?salesTr('limited')+' — '+resultMessage
+                    :(d.ok
+                        ?salesTr('verified')
+                        :salesTr('blocked')
+                            +' — '
+                            +(d.message||salesTr('inspectionFailed')))
             );
 
+        if(manualRequired){
+            $('#craigslistManualInspectionToken').val(d.inspection_token||'');
+            $('#craigslistManualVerification').removeClass('hidden');
+        }else if(!manualPending){
+            $('#craigslistManualVerification').addClass('hidden');
+        }
+
+        $('#saveButton')
+            .prop('disabled',!d.ok)
+            .find('span')
+            .text(manualPending?salesTr('saveForAdminReview'):salesTr('saveVerified'));
+        $('#salesVerifiedSaveForm').toggleClass('hidden',manualRequired||!d.ok);
+
         $r.removeClass('hidden');
-        $('#saveButton').prop('disabled',!d.ok);
 
         const code=String(d.failure_code||'');
         const fetchFailed=[
@@ -4639,7 +5197,11 @@ $('#inspectForm').on('submit',function(e){
             'PLATFORM_INVALID','URL_INVALID'
         ].indexOf(code)!==-1;
 
-        if(code==='DUPLICATE' && !d.title){
+        if(manualRequired){
+            setInspectionStep('fetch','limited','HTTP 403');
+            setInspectionStep('date','skipped','Manual');
+            setInspectionStep('final','skipped','Waiting');
+        }else if(code==='DUPLICATE' && !d.title){
             setInspectionStep('fetch','skipped','Skipped');
             setInspectionStep('date','skipped','Skipped');
             setInspectionStep('final','skipped','Skipped');
@@ -4663,12 +5225,21 @@ $('#inspectForm').on('submit',function(e){
         }
 
         if(code==='DUPLICATE'){
-            setInspectionStep('duplicate','failed','Issue');
+            const duplicateState=['exact_title','same_account_title'].includes(String(d.duplicate_kind||''))?'Title duplicate':'Issue';
+            setInspectionStep('duplicate','failed',duplicateState);
+            if(['exact_title','same_account_title'].includes(String(d.duplicate_kind||''))){
+                setInspectionStep('final','failed','Title duplicate');
+            }
         }else{
             setInspectionStep('duplicate','done','OK');
         }
 
-        if(!d.ok){
+        if(manualRequired||manualPending){
+            setSalesSubmitMessage(
+                resultMessage,
+                'warning'
+            );
+        }else if(!d.ok){
             setSalesSubmitMessage(
                 d.message||salesTr('inspectionFailed'),
                 'error'
@@ -4679,18 +5250,39 @@ $('#inspectForm').on('submit',function(e){
                 'ok'
             );
         }
+        if(code==='DUPLICATE'||code==='DUPLICATE_IMAGE'){
+            markSalesDuplicateMessageCompact();
+        }
     })
     .fail(function(x){
-        const message=
+        $('#salesVerifiedSaveForm').addClass('hidden');
+        $('#saveButton').prop('disabled',true);
+        const rawMessage=
             (x.responseJSON&&x.responseJSON.message)
             ||salesTr('inspectionFailed');
+        const failureCode=String(
+            (x.responseJSON&&x.responseJSON.failure_code)||''
+        );
+        const duplicateKind=String(
+            (x.responseJSON&&x.responseJSON.duplicate_kind)||''
+        );
+        const message=(failureCode==='DUPLICATE'&&duplicateKind==='exact_title')
+            ?'TITLE DUPLICATE — '+rawMessage
+            :rawMessage;
+
+        if(failureCode==='INSPECTION_IN_PROGRESS'){
+            setSalesInspectionBusyState(true,true);
+            setInspectionStep('fetch','active',salesTr('checking'));
+            setInspectionStep('date','skipped','Waiting');
+            setInspectionStep('final','skipped','Waiting');
+            scheduleSalesInspectionStatusPoll();
+            return;
+        }
 
         setSalesSubmitMessage(message,'error');
         if(x.responseJSON&&x.responseJSON.duplicate_url){
-            $('#salesDuplicateSource')
-                .attr('href',x.responseJSON.duplicate_url)
-                .removeClass('hidden')
-                .text('Duplicate exists — open original post ↗');
+            setSalesDuplicateSource(x.responseJSON.duplicate_url,x.responseJSON.duplicate_kind);
+            markSalesDuplicateMessageCompact();
         }
 
         $('#verificationBanner')
@@ -4710,12 +5302,111 @@ $('#inspectForm').on('submit',function(e){
         }
     })
     .always(function(){
-        $b
-            .prop(
-                'disabled',
-                !updateDetectedPlatform()
-            )
-            .text(salesTr('checkPost'));
+        salesInspectionRequest=null;
+        // EN: Do not blindly unlock here. The authoritative server-side lock decides
+        // whether a reopened modal may start another verification.
+        // 中文：这里不能盲目解锁；是否允许重新验证由服务器端权威锁状态决定。
+        syncSalesInspectionProcessState(false);
+    });
+    })
+    .fail(function(xhr){
+        const data=xhr.responseJSON||{};
+        setInspectionStep('duplicate','failed','Issue');
+        ['fetch','date','final'].forEach(function(step){
+            setInspectionStep(step,'skipped','Skipped');
+        });
+        $('#inspectionResult').addClass('hidden');
+        $('#salesVerifiedSaveForm').addClass('hidden');
+        $('#saveButton').prop('disabled',true);
+        setSalesSubmitMessage(
+            data.message||'Duplicate check failed. Verification was not started.',
+            'error'
+        );
+        salesInspectionRequest=null;
+        setSalesInspectionBusyState(false,false);
+        updateDetectedPlatform();
+    });
+});
+
+$('#craigslistManualVerification').on('submit',function(event){
+    event.preventDefault();
+
+    const $form=$(this);
+    const $button=$('#craigslistManualContinue');
+    const title=String($('#craigslistManualTitle').val()||'').trim();
+    const publishedDate=String($('#craigslistManualPublishedDate').val()||'').trim();
+
+    if(!title){
+        $('#craigslistManualTitle').addClass('field-error').trigger('focus');
+        setSalesSubmitMessage(salesTr('manualTitleRequired'),'error');
+        return;
+    }
+    $('#craigslistManualTitle').removeClass('field-error');
+
+    if(!publishedDate){
+        $('#craigslistManualPublishedDate').addClass('field-error').trigger('focus');
+        setSalesSubmitMessage(salesTr('manualDateRequired'),'error');
+        return;
+    }
+    $('#craigslistManualPublishedDate').removeClass('field-error');
+
+    $button.prop('disabled',true).find('span').text(salesTr('manualChecking'));
+    setSalesSubmitMessage(salesTr('manualChecking'),'warning');
+
+    $.ajax({
+        url:window.CD_BASE_PATH+'/api/inspect',
+        method:'POST',
+        dataType:'json',
+        data:$form.serialize(),
+        headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'}
+    })
+    .done(function(d){
+        $('#resultTitle').text(d.title||'—').removeClass('duplicate-title');
+        $('#resultDescription').text(d.description||'—');
+        $('#resultDate').text(d.published_at||d.published_date||'—');
+        $('#resultExternalId').text(d.external_post_id||'—');
+        renderMarketplaceAccount(
+            $('#resultPlatformAccountFact'),
+            $('#resultPlatformAccount'),
+            d.platform_account
+        );
+        const u=d.canonical_url||d.resolved_url||'—';
+        $('#resultCanonical').html(
+            u==='—'
+                ?'—'
+                :'<a target="_blank" rel="noopener" href="'+escapeHtml(u)+'">'+escapeHtml(u)+'</a>'
+        );
+
+        $('#inspectionToken').val(d.inspection_token||'');
+        $('#craigslistManualVerification').addClass('hidden');
+        $('#verificationBanner')
+            .attr('class','banner warning')
+            .text(salesTr('limited')+' — '+salesTr('manualAccepted'));
+        $('#saveButton')
+            .prop('disabled',!d.ok)
+            .find('span')
+            .text(salesTr('saveForAdminReview'));
+        $('#salesVerifiedSaveForm').toggleClass('hidden',!d.ok);
+        setInspectionStep('fetch','limited','HTTP 403');
+        setInspectionStep('date','done','Manual');
+        setInspectionStep('final','done','OK');
+        setInspectionStep('duplicate','done','OK');
+        setSalesSubmitMessage(salesTr('manualAccepted'),'warning');
+    })
+    .fail(function(xhr){
+        const d=xhr.responseJSON||{};
+        const message=d.message||salesTr('inspectionFailed');
+        setSalesSubmitMessage(message,'error');
+        if(d.duplicate_url){
+            setSalesDuplicateSource(d.duplicate_url,d.duplicate_kind);
+        }
+        if(d.failure_code==='DUPLICATE'||d.failure_code==='DUPLICATE_IMAGE'){
+            markSalesDuplicateMessageCompact();
+            setInspectionStep('final','failed','Issue');
+        }
+    })
+    .always(function(){
+        $button.prop('disabled',false).find('span').text(salesTr('continueManualVerification'));
     });
 });
 
@@ -4748,10 +5439,13 @@ $('#salesVerifiedSaveForm').on('submit',function(event){
         setSalesSubmitMessage(data.message||salesTr('postSaved'),'ok');
         $button.addClass('saved').find('span').text('Saved ✓');
         $('#inspectionToken').val('');
-        if($('#salesPortalDashboard').length){
-            window.location.reload();
-            return;
-        }
+        // EN: After a successful save, always follow the server-provided dashboard URL first.
+        // The saved listing belongs to its verified published_date, which may be outside the
+        // date range currently open on the Sales dashboard. Reloading the current range first
+        // made a successfully saved post look as if it had disappeared.
+        // 中文：保存成功后优先跳转到后端返回的 Dashboard URL。帖子应显示在其已验证的
+        // published_date 日期下；如果先刷新当前日期范围，发布日期不在当前范围内的帖子
+        // 会看起来像“保存后消失”。
         if(data.dashboard_url){
             window.location.href=data.dashboard_url;
             return;
@@ -4761,10 +5455,8 @@ $('#salesVerifiedSaveForm').on('submit',function(event){
     .fail(function(xhr){
         setSalesSubmitMessage((xhr.responseJSON&&xhr.responseJSON.message)||salesTr('inspectionFailed'),'error');
         if(xhr.responseJSON&&xhr.responseJSON.duplicate_url){
-            $('#salesDuplicateSource')
-                .attr('href',xhr.responseJSON.duplicate_url)
-                .removeClass('hidden')
-                .text('Duplicate exists — open original post ↗');
+            setSalesDuplicateSource(xhr.responseJSON.duplicate_url,xhr.responseJSON.duplicate_kind);
+            markSalesDuplicateMessageCompact();
             $('#resultTitle').toggleClass('duplicate-title',xhr.responseJSON.duplicate_kind==='exact_title');
         }
         $button.prop('disabled',false).find('span').text(salesTr('saveVerified'));
@@ -5107,12 +5799,18 @@ $('[data-html-note]').each(function(){
 
 
 
-    // v0.1.13 Live Provider Jobs
+    // v0.2.10 Paginated / filtered live Provider Jobs
     (function(){
         const $monitor = $('#providerJobsMonitor');
         const $body = $('#providerJobsBody');
         const $live = $('#providerJobsLive');
         const $liveText = $('#providerJobsLiveText');
+        const $timeFilter = $('#providerJobsTimeFilter');
+        const $prev = $('#providerJobsPrev');
+        const $next = $('#providerJobsNext');
+        const $page = $('#providerJobsPage');
+        const $pages = $('#providerJobsPages');
+        const $total = $('#providerJobsTotal');
 
         if(!$monitor.length || !$body.length){
             return;
@@ -5121,14 +5819,18 @@ $('[data-html-note]').each(function(){
         let timer = null;
         let request = null;
         let lastSignature = '';
+        let currentPage = Math.max(1, Number($monitor.attr('data-page')) || 1);
+        let totalPages = Math.max(1, Number($monitor.attr('data-pages')) || 1);
+        const perPage = Math.max(1, Number($monitor.attr('data-per-page')) || 8);
+        let currentTime = String($monitor.attr('data-time-filter') || '24h');
 
         /**
-         * EN: Perform the esc behavior used by the application UI.
-         * 中文：执行application UI 使用的“esc”行为。
+         * EN: Escape a Provider Job value before inserting it into generated table markup.
+         * 中文：将 Provider Job 值写入动态表格 HTML 前进行转义。
          *
-         * @param {string|*} value Value read, transformed, or applied by this function. / 本函数读取、转换或应用的值。
+         * @param {string|number|null|undefined} value Value rendered into the Provider Jobs table. / 要写入 Provider Jobs 表格的值。
          *
-         * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
+         * @returns {string} HTML-safe text value. / 可安全写入 HTML 的文本值。
          */
         function esc(value){
             return $('<div>').text(
@@ -5137,12 +5839,12 @@ $('[data-html-note]').each(function(){
         }
 
         /**
-         * EN: Perform the safe status behavior used by the application UI.
-         * 中文：执行application UI 使用的“safe status”行为。
+         * EN: Normalize a Provider Job status into one of the supported CSS status classes.
+         * 中文：将 Provider Job 状态标准化为受支持的 CSS 状态类。
          *
-         * @param {string|*} value Value read, transformed, or applied by this function. / 本函数读取、转换或应用的值。
+         * @param {string|*} value Raw Provider Job status. / 原始 Provider Job 状态。
          *
-         * @returns {Array} Array result produced by this UI helper. / 本 UI 辅助函数生成的数组结果。
+         * @returns {string} Safe Provider Job status class. / 安全的 Provider Job 状态类。
          */
         function safeStatus(value){
             const status = String(value || '').toLowerCase();
@@ -5152,12 +5854,12 @@ $('[data-html-note]').each(function(){
         }
 
         /**
-         * EN: Perform the status label behavior used by the application UI.
-         * 中文：执行application UI 使用的“status label”行为。
+         * EN: Convert a normalized Provider Job status into the visible label used by the table.
+         * 中文：将标准化的 Provider Job 状态转换为表格中显示的文本。
          *
-         * @param {*} status Status value used by this function. / 本函数使用的“status”参数值。
+         * @param {string} status Normalized Provider Job status. / 标准化后的 Provider Job 状态。
          *
-         * @returns {string} String result produced by this UI helper. / 本 UI 辅助函数生成的字符串结果。
+         * @returns {string} Human-readable status label. / 人类可读的状态文本。
          */
         function statusLabel(status){
             if(status === 'ready') return 'Ready';
@@ -5167,36 +5869,20 @@ $('[data-html-note]').each(function(){
         }
 
         /**
-         * EN: Render the render jobs behavior used by the application UI.
-         * 中文：渲染application UI 使用的“render jobs”行为。
+         * EN: Render one page of Provider Jobs returned by the polling endpoint.
+         * 中文：渲染轮询接口返回的一页 Provider Jobs。
          *
-         * @param {*} jobs Jobs value used by this function. / 本函数使用的“jobs”参数值。
+         * @param {Array<Object>} jobs Provider Job records for the current page. / 当前页的 Provider Job 记录。
          *
-         * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
+         * @returns {void} No value is returned. / 无返回值。
          */
         function renderJobs(jobs){
             jobs = Array.isArray(jobs) ? jobs : [];
 
-            const signature = JSON.stringify(jobs.map(function(job){
-                return [
-                    job.id,
-                    job.updated_at,
-                    job.status,
-                    job.http,
-                    job.error
-                ];
-            }));
-
-            if(signature === lastSignature){
-                return;
-            }
-
-            lastSignature = signature;
-
             if(!jobs.length){
                 $body.html(
                     '<tr class="provider-jobs-empty">'+
-                        '<td colspan="7">No provider jobs yet.</td>'+
+                        '<td colspan="7">No provider jobs in this time range.</td>'+
                     '</tr>'
                 );
                 return;
@@ -5222,10 +5908,36 @@ $('[data-html-note]').each(function(){
         }
 
         /**
-         * EN: Update the set live state behavior used by the application UI.
-         * 中文：更新application UI 使用的“set live state”行为。
+         * EN: Update Provider Jobs pagination controls from server pagination metadata.
+         * 中文：根据服务器返回的分页元数据更新 Provider Jobs 分页控件。
          *
-         * @param {Object|*} state State value used by this function. / 本函数使用的“state”参数值。
+         * @param {Object} pagination Pagination metadata returned by the Provider Jobs endpoint. / Provider Jobs 接口返回的分页元数据。
+         *
+         * @returns {void} No value is returned. / 无返回值。
+         */
+        function renderPagination(pagination){
+            pagination = pagination || {};
+            currentPage = Math.max(1, Number(pagination.page) || 1);
+            totalPages = Math.max(1, Number(pagination.pages) || 1);
+            currentTime = String(pagination.time_filter || currentTime || '24h');
+
+            $page.text(currentPage);
+            $pages.text(totalPages);
+            $total.text(Math.max(0, Number(pagination.total) || 0));
+            $prev.prop('disabled', currentPage <= 1);
+            $next.prop('disabled', currentPage >= totalPages);
+            $timeFilter.val(currentTime);
+            $monitor
+                .attr('data-page', currentPage)
+                .attr('data-pages', totalPages)
+                .attr('data-time-filter', currentTime);
+        }
+
+        /**
+         * EN: Set the Provider Jobs live indicator to live, paused, or reconnect state.
+         * 中文：将 Provider Jobs 实时状态指示器设置为 Live、Paused 或 Reconnect。
+         *
+         * @param {string} state CSS state class applied to the live indicator. / 应用于实时状态指示器的 CSS 状态类。
          *
          * @returns {void} No value is returned. / 无返回值。
          */
@@ -5244,43 +5956,80 @@ $('[data-html-note]').each(function(){
         }
 
         /**
-         * EN: Perform the refresh provider jobs behavior used by the application UI.
-         * 中文：执行application UI 使用的“refresh provider jobs”行为。
+         * EN: Request the current filtered Provider Jobs page and refresh table/pagination state.
+         * 中文：请求当前筛选条件下的 Provider Jobs 页面，并刷新表格与分页状态。
+         *
+         * @param {boolean} force Allow a manual request while viewing a non-first page. / 在非第一页时是否允许手动请求。
          *
          * @returns {void} No value is returned. / 无返回值。
          */
-        function refreshProviderJobs(){
+        function refreshProviderJobs(force){
             if(document.hidden){
                 setLiveState('is-paused');
                 return;
             }
 
-            if(request && request.readyState !== 4){
+            // Automatic polling is kept on page 1 only so older pages do not
+            // jump while new jobs are inserted at the top of the log.
+            if(!force && currentPage !== 1){
+                setLiveState('is-paused');
                 return;
+            }
+
+            if(request && request.readyState !== 4){
+                if(force){
+                    request.abort();
+                    request = null;
+                }else{
+                    return;
+                }
             }
 
             request = $.ajax({
                 url: $monitor.data('jobs-url'),
                 method: 'GET',
                 dataType: 'json',
-                cache: false
-            })
-            .done(function(d){
-                if(d && d.ok){
-                    renderJobs(d.jobs);
-                    setLiveState('is-live');
-                }else{
-                    setLiveState('is-error');
+                cache: false,
+                data: {
+                    page: currentPage,
+                    per_page: perPage,
+                    time: currentTime
                 }
             })
-            .fail(function(){
+            .done(function(d){
+                if(!d || !d.ok){
+                    setLiveState('is-error');
+                    return;
+                }
+
+                const signature = JSON.stringify({
+                    page: d.pagination && d.pagination.page,
+                    pages: d.pagination && d.pagination.pages,
+                    total: d.pagination && d.pagination.total,
+                    jobs: (d.jobs || []).map(function(job){
+                        return [job.id, job.updated_at, job.status, job.http, job.error];
+                    })
+                });
+
+                if(signature !== lastSignature){
+                    lastSignature = signature;
+                    renderJobs(d.jobs);
+                    renderPagination(d.pagination);
+                }
+
+                setLiveState(currentPage === 1 ? 'is-live' : 'is-paused');
+            })
+            .fail(function(_xhr, statusText){
+                if(statusText === 'abort'){
+                    return;
+                }
                 setLiveState('is-error');
             });
         }
 
         /**
-         * EN: Schedule or start the start provider jobs polling behavior used by the application UI.
-         * 中文：调度或启动application UI 使用的“start provider jobs polling”行为。
+         * EN: Start or restart Provider Jobs polling while preserving the selected filter/page state.
+         * 中文：在保留当前时间筛选与页码状态的同时启动或重新启动 Provider Jobs 轮询。
          *
          * @returns {void} No value is returned. / 无返回值。
          */
@@ -5289,11 +6038,42 @@ $('[data-html-note]').each(function(){
                 clearInterval(timer);
             }
 
-            refreshProviderJobs();
-            timer = setInterval(refreshProviderJobs, 2000);
+            refreshProviderJobs(true);
+            timer = setInterval(function(){
+                refreshProviderJobs(false);
+            }, 2000);
         }
 
-        window.refreshProviderJobs = refreshProviderJobs;
+        $timeFilter.on('change', function(){
+            currentTime = String($(this).val() || '24h');
+            currentPage = 1;
+            lastSignature = '';
+            refreshProviderJobs(true);
+        });
+
+        $prev.on('click', function(){
+            if(currentPage <= 1){
+                return;
+            }
+            currentPage -= 1;
+            lastSignature = '';
+            refreshProviderJobs(true);
+        });
+
+        $next.on('click', function(){
+            if(currentPage >= totalPages){
+                return;
+            }
+            currentPage += 1;
+            lastSignature = '';
+            refreshProviderJobs(true);
+        });
+
+        window.refreshProviderJobs = function(){
+            currentPage = 1;
+            lastSignature = '';
+            refreshProviderJobs(true);
+        };
 
         document.addEventListener('visibilitychange', function(){
             if(document.hidden){
@@ -5301,7 +6081,7 @@ $('[data-html-note]').each(function(){
                 return;
             }
 
-            refreshProviderJobs();
+            refreshProviderJobs(currentPage === 1);
         });
 
         startProviderJobsPolling();
@@ -5811,60 +6591,267 @@ $('[data-html-note]').each(function(){
         }
 
         let dragging = null;
+        let dragPlaceholder = null;
+        let dragOriginMarker = null;
+        let dragPointerId = null;
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let dragMoved = false;
 
-        $(document).on('dragstart', '.provider-drag', function(e){
-            dragging = $(this).closest('.provider-card').get(0);
+        /**
+         * EN: Remove temporary provider drag UI while preserving the provider card itself.
+         * 中文：移除 Provider 拖拽期间的临时 UI，同时保留 Provider 卡片本身。
+         *
+         * @returns {void} No value is returned. / 无返回值。
+         */
+        function clearProviderDragUi(){
+            $('.provider-card').removeClass(
+                'drag-over drag-over-before drag-over-after provider-pointer-dragging'
+            );
+            $('.provider-drag').attr('aria-grabbed', 'false');
 
+            if(dragPlaceholder && dragPlaceholder.parentNode){
+                dragPlaceholder.parentNode.removeChild(dragPlaceholder);
+            }
+
+            if(dragOriginMarker && dragOriginMarker.parentNode){
+                dragOriginMarker.parentNode.removeChild(dragOriginMarker);
+            }
+
+            dragPlaceholder = null;
+            dragOriginMarker = null;
+        }
+
+        /**
+         * EN: Reset inline geometry applied while a provider row follows the pointer.
+         * 中文：重置 Provider 整行跟随鼠标拖动时使用的内联几何样式。
+         *
+         * @param {HTMLElement|null} card Provider card being restored. / 要恢复的 Provider 卡片。
+         *
+         * @returns {void} No value is returned. / 无返回值。
+         */
+        function resetProviderDragGeometry(card){
+            if(!card){
+                return;
+            }
+
+            card.style.position = '';
+            card.style.left = '';
+            card.style.top = '';
+            card.style.width = '';
+            card.style.height = '';
+            card.style.zIndex = '';
+            card.style.pointerEvents = '';
+            card.style.margin = '';
+        }
+
+        /**
+         * EN: Find and move the provider drop placeholder to the pointer's current list position.
+         * 中文：根据当前鼠标位置寻找目标 Provider，并移动真实 Drop 占位块。
+         *
+         * @param {number} clientX Pointer X coordinate in the viewport. / 鼠标在视口中的 X 坐标。
+         * @param {number} clientY Pointer Y coordinate in the viewport. / 鼠标在视口中的 Y 坐标。
+         *
+         * @returns {void} No value is returned. / 无返回值。
+         */
+        function moveProviderPlaceholder(clientX, clientY){
+            if(!dragging || !dragPlaceholder){
+                return;
+            }
+
+            const sortable = document.getElementById('providerSortable');
+            if(!sortable){
+                return;
+            }
+
+            const hit = document.elementFromPoint(clientX, clientY);
+            const target = hit && hit.closest
+                ? hit.closest('#providerSortable .provider-card')
+                : null;
+
+            $('.provider-card').removeClass(
+                'drag-over drag-over-before drag-over-after'
+            );
+
+            if(target && target !== dragging){
+                const rect = target.getBoundingClientRect();
+                const before = clientY < rect.top + (rect.height / 2);
+
+                $(target)
+                    .addClass('drag-over')
+                    .toggleClass('drag-over-before', before)
+                    .toggleClass('drag-over-after', !before);
+
+                if(before){
+                    sortable.insertBefore(dragPlaceholder, target);
+                }else{
+                    sortable.insertBefore(dragPlaceholder, target.nextSibling);
+                }
+                return;
+            }
+
+            const listRect = sortable.getBoundingClientRect();
+            if(
+                clientX >= listRect.left
+                && clientX <= listRect.right
+                && clientY >= listRect.top
+                && clientY <= listRect.bottom
+            ){
+                const cards = Array.from(
+                    sortable.querySelectorAll('.provider-card')
+                ).filter(function(card){
+                    return card !== dragging;
+                });
+
+                if(!cards.length){
+                    sortable.appendChild(dragPlaceholder);
+                    return;
+                }
+
+                if(clientY < cards[0].getBoundingClientRect().top){
+                    sortable.insertBefore(dragPlaceholder, cards[0]);
+                    return;
+                }
+
+                const last = cards[cards.length - 1];
+                if(clientY > last.getBoundingClientRect().bottom){
+                    sortable.appendChild(dragPlaceholder);
+                }
+            }
+        }
+
+        /**
+         * EN: Finish pointer sorting, committing the placeholder position or restoring the original position.
+         * 中文：结束 Pointer 排序；提交占位块位置，或恢复 Provider 原始位置。
+         *
+         * @param {boolean} commit Whether the current placeholder position should be saved. / 是否保存当前占位块位置。
+         *
+         * @returns {void} No value is returned. / 无返回值。
+         */
+        function finishProviderPointerDrag(commit){
             if(!dragging){
+                clearProviderDragUi();
                 return;
             }
 
-            $(dragging).addClass('dragging');
+            const card = dragging;
 
-            if(e.originalEvent && e.originalEvent.dataTransfer){
-                e.originalEvent.dataTransfer.effectAllowed = 'move';
-                e.originalEvent.dataTransfer.setData(
-                    'text/plain',
-                    String($(dragging).data('provider-id'))
-                );
-            }
-        });
-
-        $(document).on('dragover', '.provider-card', function(e){
-            e.preventDefault();
-
-            if(!dragging || dragging === this){
-                return;
+            if(commit && dragPlaceholder && dragPlaceholder.parentNode){
+                dragPlaceholder.parentNode.insertBefore(card, dragPlaceholder);
+            }else if(dragOriginMarker && dragOriginMarker.parentNode){
+                dragOriginMarker.parentNode.insertBefore(card, dragOriginMarker);
             }
 
-            $('.provider-card').removeClass('drag-over');
-            $(this).addClass('drag-over');
-
-            const targetRect = this.getBoundingClientRect();
-            const before = e.originalEvent.clientY < targetRect.top + targetRect.height / 2;
-
-            if(before){
-                this.parentNode.insertBefore(dragging, this);
-            }else{
-                this.parentNode.insertBefore(dragging, this.nextSibling);
-            }
-
+            resetProviderDragGeometry(card);
+            clearProviderDragUi();
             refreshPriorityNumbers();
-        });
 
-        $(document).on('drop', '.provider-card', function(e){
-            e.preventDefault();
-        });
-
-        $(document).on('dragend', '.provider-drag', function(){
-            if(dragging){
-                $(dragging).removeClass('dragging');
+            if(commit && dragMoved){
+                saveProviderOrder();
             }
 
-            $('.provider-card').removeClass('drag-over');
             dragging = null;
-            refreshPriorityNumbers();
-            saveProviderOrder();
+            dragPointerId = null;
+            dragMoved = false;
+            document.body.classList.remove('provider-sort-active');
+        }
+
+        $(document).on('pointerdown', '.provider-drag', function(e){
+            if(e.pointerType === 'mouse' && e.button !== 0){
+                return;
+            }
+
+            const card = $(this).closest('.provider-card').get(0);
+            const sortable = document.getElementById('providerSortable');
+
+            if(!card || !sortable || dragging){
+                return;
+            }
+
+            e.preventDefault();
+
+            const rect = card.getBoundingClientRect();
+            dragging = card;
+            dragPointerId = e.pointerId;
+            dragStartX = e.clientX;
+            dragStartY = e.clientY;
+            dragOffsetX = e.clientX - rect.left;
+            dragOffsetY = e.clientY - rect.top;
+            dragMoved = false;
+
+            dragOriginMarker = document.createComment('provider-drag-origin');
+            sortable.insertBefore(dragOriginMarker, card);
+
+            dragPlaceholder = document.createElement('div');
+            dragPlaceholder.className = 'provider-drop-placeholder';
+            dragPlaceholder.style.height = Math.max(64, Math.round(rect.height)) + 'px';
+            sortable.insertBefore(dragPlaceholder, card);
+
+            document.body.appendChild(card);
+            card.classList.add('provider-pointer-dragging');
+            card.style.position = 'fixed';
+            card.style.left = rect.left + 'px';
+            card.style.top = rect.top + 'px';
+            card.style.width = rect.width + 'px';
+            card.style.height = rect.height + 'px';
+            card.style.margin = '0';
+            card.style.zIndex = '10000';
+            card.style.pointerEvents = 'none';
+
+            $(this).attr('aria-grabbed', 'true');
+            document.body.classList.add('provider-sort-active');
+
+            if(this.setPointerCapture){
+                try{
+                    this.setPointerCapture(e.pointerId);
+                }catch(_error){
+                    // Pointer capture is an enhancement; document handlers still work.
+                }
+            }
+        });
+
+        $(document).on('pointermove', function(e){
+            if(!dragging || e.pointerId !== dragPointerId){
+                return;
+            }
+
+            e.preventDefault();
+
+            const deltaX = Math.abs(e.clientX - dragStartX);
+            const deltaY = Math.abs(e.clientY - dragStartY);
+            if(deltaX > 3 || deltaY > 3){
+                dragMoved = true;
+            }
+
+            dragging.style.left = (e.clientX - dragOffsetX) + 'px';
+            dragging.style.top = (e.clientY - dragOffsetY) + 'px';
+            moveProviderPlaceholder(e.clientX, e.clientY);
+        });
+
+        $(document).on('pointerup', function(e){
+            if(!dragging || e.pointerId !== dragPointerId){
+                return;
+            }
+
+            e.preventDefault();
+            finishProviderPointerDrag(true);
+        });
+
+        $(document).on('pointercancel', function(e){
+            if(!dragging || e.pointerId !== dragPointerId){
+                return;
+            }
+
+            finishProviderPointerDrag(false);
+        });
+
+        $(document).on('keydown', function(e){
+            if(e.key === 'Escape' && dragging){
+                e.preventDefault();
+                finishProviderPointerDrag(false);
+            }
         });
 
         syncProviderType();
@@ -5896,6 +6883,142 @@ $('[data-html-note]').each(function(){
     const attachmentDeleteUrl = $live.data('attachment-delete-url');
     const today = String($live.data('today') || '');
     const csrf = $('#adminDashboardCsrf').val();
+
+    const $salesDirectorySearch=$('#salesCardSearch');
+    const $salesLocationFilter=$('#salesLocationFilter');
+    const $salesDirectoryEmpty=$('#salesDirectoryFilterEmpty');
+    const selectedLocationFilters=new Set();
+
+    /**
+     * EN: Normalize Sales directory text for case-insensitive search matching.
+     * 中文：标准化 Sales Directory 文本，用于不区分大小写的搜索匹配。
+     *
+     * @param {*} value Value to normalize. / 需要标准化的值。
+     * @returns {string} Normalized searchable text. / 标准化后的可搜索文本。
+     */
+    function normalizeSalesDirectoryText(value){
+        return String(value||'')
+            .trim()
+            .toLocaleLowerCase();
+    }
+
+    /**
+     * EN: Apply the Sales search text and every selected Location button to the Sales card grid.
+     * 中文：把 Sales 搜索文字以及所有已选 Location Button 同时应用到 Sales Card Grid。
+     *
+     * @returns {void} No value is returned. / 无返回值。
+     */
+    function applySalesDirectoryFilters(){
+        const query=normalizeSalesDirectoryText(
+            $salesDirectorySearch.val()
+        );
+        let visibleCount=0;
+
+        $grid.find('.sales-progress-card').each(function(){
+            const $card=$(this);
+            const locationId=String(
+                parseInt($card.attr('data-location-id'),10)||0
+            );
+            const haystack=normalizeSalesDirectoryText([
+                $card.attr('data-sales-name'),
+                $card.attr('data-sales-number')
+            ].filter(Boolean).join(' '));
+            const matchesSearch=!query||haystack.includes(query);
+            const matchesLocation=selectedLocationFilters.size===0
+                ||selectedLocationFilters.has(locationId);
+            const show=matchesSearch&&matchesLocation;
+
+            $card
+                .toggleClass('sales-directory-hidden',!show)
+                .attr('aria-hidden',show?'false':'true');
+
+            if(show){
+                visibleCount+=1;
+            }
+        });
+
+        $('#dashboardSalesCount').text(visibleCount);
+        $salesDirectoryEmpty.toggleClass('hidden',visibleCount>0);
+    }
+
+    /**
+     * EN: Synchronize multi-select Location button visual and aria-pressed state.
+     * 中文：同步多选 Location Button 的视觉状态与 aria-pressed 状态。
+     *
+     * @returns {void} No value is returned. / 无返回值。
+     */
+    function syncSalesLocationButtons(){
+        const hasSpecific=selectedLocationFilters.size>0;
+        $salesLocationFilter
+            .find('[data-location-filter="all"]')
+            .toggleClass('active',!hasSpecific)
+            .attr('aria-pressed',hasSpecific?'false':'true');
+
+        $salesLocationFilter
+            .find('[data-location-filter]')
+            .not('[data-location-filter="all"]')
+            .each(function(){
+                const key=String($(this).attr('data-location-filter'));
+                const active=selectedLocationFilters.has(key);
+                $(this)
+                    .toggleClass('active',active)
+                    .attr('aria-pressed',active?'true':'false');
+            });
+    }
+
+    /**
+     * EN: Refresh Location button Sales counts after an Admin changes a Sales assignment.
+     * 中文：Admin 修改 Sales Location 分配后，刷新每个 Location Button 后面的 Sales 人数。
+     *
+     * @param {Object|*} data Save response containing per-location counts. / 包含各 Location 人数的保存响应。
+     * @returns {void} No value is returned. / 无返回值。
+     */
+    function updateSalesLocationFilterCounts(data){
+        const counts={};
+        (Array.isArray(data&&data.location_counts)
+            ?data.location_counts
+            :[]
+        ).forEach(function(row){
+            counts[String(parseInt(row.id,10)||0)]=
+                Math.max(0,parseInt(row.count,10)||0);
+        });
+        counts['0']=Math.max(
+            0,
+            parseInt(data&&data.unassigned_count,10)||0
+        );
+
+        let total=0;
+        Object.keys(counts).forEach(function(key){
+            total+=counts[key];
+            $salesLocationFilter
+                .find('[data-location-filter="'+key+'"] [data-location-count]')
+                .text(counts[key]);
+        });
+        $salesLocationFilter
+            .find('[data-location-filter="all"] [data-location-count]')
+            .text(total);
+    }
+
+    $salesDirectorySearch.on('input',function(){
+        applySalesDirectoryFilters();
+    });
+
+    $salesLocationFilter.on('click','[data-location-filter]',function(){
+        const key=String($(this).attr('data-location-filter')||'all');
+
+        if(key==='all'){
+            selectedLocationFilters.clear();
+        }else if(selectedLocationFilters.has(key)){
+            selectedLocationFilters.delete(key);
+        }else{
+            selectedLocationFilters.add(key);
+        }
+
+        syncSalesLocationButtons();
+        applySalesDirectoryFilters();
+    });
+
+    applySalesDirectoryFilters();
 
 const dashboardI18n={
     en:{
@@ -5952,8 +7075,13 @@ const dashboardI18n={
         viewPosts:'View posts',
         noActiveSales:'No active Sales users.',
         newPosts:'New posts are available',
+        newPostBadge:'New',
         salesChanged:'Sales activity changed since this view was loaded.',
         refresh:'Refresh',
+        refreshing:'Refreshing…',
+        newPostAvailable:'1 new post available',
+        newPostsAvailable:'{count} new posts available',
+        refreshLatestProgress:'Refresh to load the latest {period} progress.',
         postList:'POST LIST',
         chronological:'chronological order',
         loading:'Loading',
@@ -5979,7 +7107,14 @@ const dashboardI18n={
         noTitle:'No title returned',
         noDescriptionReturned:'No description returned.',
         contentFetched:'Content fetched.',
-        addReviewForPeriod:'Add a management review for this Sales period.'
+        addReviewForPeriod:'Add a management review for this Sales period.',
+        salesSearch:'Sales Search',
+        salesSearchPlaceholder:'Search name or Sales ID',
+        location:'Location',
+        allLocations:'All',
+        unassigned:'Unassigned',
+        noSalesMatch:'No Sales users match this search and location filter.',
+        locationAssignmentHelp:'Used by the Admin Sales location filter.'
     },
     'zh-CN':{
         greeting:'你好，{name}',
@@ -6034,8 +7169,13 @@ const dashboardI18n={
         viewPosts:'查看帖子',
         noActiveSales:'没有启用的销售人员。',
         newPosts:'有新的帖子',
+        newPostBadge:'新帖',
         salesChanged:'自本页面加载后，销售活动已有变化。',
         refresh:'刷新',
+        refreshing:'刷新中…',
+        newPostAvailable:'有 1 个新帖子',
+        newPostsAvailable:'有 {count} 个新帖子',
+        refreshLatestProgress:'刷新以加载最新的{period}进度。',
         postList:'帖子列表',
         chronological:'按时间顺序',
         loading:'加载中',
@@ -6061,7 +7201,14 @@ const dashboardI18n={
         noTitle:'未返回标题',
         noDescriptionReturned:'未返回描述。',
         contentFetched:'内容已获取。',
-        addReviewForPeriod:'为该销售周期添加管理评语。'
+        addReviewForPeriod:'为该销售周期添加管理评语。',
+        salesSearch:'搜索 Sales',
+        salesSearchPlaceholder:'搜索姓名或 Sales ID',
+        location:'地点',
+        allLocations:'全部',
+        unassigned:'未分配',
+        noSalesMatch:'没有符合搜索和地点筛选条件的 Sales。',
+        locationAssignmentHelp:'用于 Admin Sales Dashboard 的地点筛选。'
     },
     'zh-TW':{
         greeting:'你好，{name}',
@@ -6116,8 +7263,13 @@ const dashboardI18n={
         viewPosts:'查看貼文',
         noActiveSales:'沒有啟用的銷售人員。',
         newPosts:'有新的貼文',
+        newPostBadge:'新貼文',
         salesChanged:'自本頁載入後，銷售活動已有變化。',
         refresh:'重新整理',
+        refreshing:'重新整理中…',
+        newPostAvailable:'有 1 則新貼文',
+        newPostsAvailable:'有 {count} 則新貼文',
+        refreshLatestProgress:'重新整理以載入最新的{period}進度。',
         postList:'貼文列表',
         chronological:'依時間順序',
         loading:'載入中',
@@ -6143,7 +7295,14 @@ const dashboardI18n={
         noTitle:'未回傳標題',
         noDescriptionReturned:'未回傳描述。',
         contentFetched:'內容已取得。',
-        addReviewForPeriod:'為此銷售週期新增管理評語。'
+        addReviewForPeriod:'為此銷售週期新增管理評語。',
+        salesSearch:'搜尋 Sales',
+        salesSearchPlaceholder:'搜尋姓名或 Sales ID',
+        location:'地點',
+        allLocations:'全部',
+        unassigned:'未分配',
+        noSalesMatch:'沒有符合搜尋與地點篩選條件的 Sales。',
+        locationAssignmentHelp:'用於 Admin Sales Dashboard 的地點篩選。'
     },
     es:{
         greeting:'Hola, {name}',
@@ -6198,8 +7357,13 @@ const dashboardI18n={
         viewPosts:'Ver publicaciones',
         noActiveSales:'No hay vendedores activos.',
         newPosts:'Hay nuevas publicaciones',
+        newPostBadge:'Nuevo',
         salesChanged:'La actividad de ventas cambió desde que se cargó esta vista.',
         refresh:'Actualizar',
+        refreshing:'Actualizando…',
+        newPostAvailable:'1 publicación nueva disponible',
+        newPostsAvailable:'{count} publicaciones nuevas disponibles',
+        refreshLatestProgress:'Actualiza para cargar el progreso más reciente de {period}.',
         postList:'LISTA DE PUBLICACIONES',
         chronological:'orden cronológico',
         loading:'Cargando',
@@ -6225,7 +7389,14 @@ const dashboardI18n={
         noTitle:'No se devolvió título',
         noDescriptionReturned:'No se devolvió descripción.',
         contentFetched:'Contenido obtenido.',
-        addReviewForPeriod:'Añade una revisión de gestión para este período de ventas.'
+        addReviewForPeriod:'Añade una revisión de gestión para este período de ventas.',
+        salesSearch:'Buscar ventas',
+        salesSearchPlaceholder:'Buscar nombre o ID de ventas',
+        location:'Ubicación',
+        allLocations:'Todas',
+        unassigned:'Sin asignar',
+        noSalesMatch:'Ningún vendedor coincide con la búsqueda y el filtro de ubicación.',
+        locationAssignmentHelp:'Se usa en el filtro de ubicación del panel Admin.'
     }
 };
 
@@ -6310,10 +7481,15 @@ function translateSalesCard($card){
     $card.find('[data-card-good-label]').text(tr('good'));
     $card.find('[data-card-issues-label]').text(tr('issues'));
     $card.find('[data-card-unreviewed-label]').text(tr('unreviewed'));
+    $card.find('[data-new-posts-label]').text(tr('newPostBadge'));
     $card.find('[data-card-daily-review-label]').text(tr('dailyReview'));
     $card.find('[data-card-daily-target-label]').text(tr('dailyTarget'));
     $card.find('[data-card-save-label]').text(tr('save'));
     $card.find('[data-card-view-posts-label]').text(tr('viewPosts'));
+    const locationName=String($card.attr('data-location-name')||'').trim();
+    $card.find('[data-sales-location-label]').text(
+        locationName||tr('unassigned')
+    );
 }
 
 /**
@@ -6350,6 +7526,13 @@ function applyDashboardLanguage(){
 
         if(key){
             $(this).text(tr(key));
+        }
+    });
+
+    $('[data-dashboard-i18n-placeholder]').each(function(){
+        const key=String($(this).data('dashboard-i18n-placeholder')||'');
+        if(key){
+            $(this).attr('placeholder',tr(key));
         }
     });
 
@@ -6490,6 +7673,9 @@ function applyDashboardLanguage(){
     let expandedSalesId = 0;
     let expandedRequest = null;
     let currentExpandedData = null;
+    // v0.2.73: Daily Sales Review can load its review data without opening
+    // the expanded Post Grid. Keep this state separate from normal card expansion.
+    let dailyReviewOnlyMode = false;
     let adminExpandedChannel = 'all';
     let reviewRequest = null;
     let activePostId = 0;
@@ -6675,6 +7861,7 @@ function applyDashboardLanguage(){
     const $contentDate = $('#dashboardContentDate');
     const $contentDescription = $('#dashboardContentDescription');
     const $contentFacts = $('#dashboardContentFacts');
+    const $productDetail = $('#dashboardProductDetail');
     const $contentPhotos = $('#dashboardContentPhotos');
     const $getContent = $('#dashboardGetContent');
 
@@ -7353,6 +8540,17 @@ function syncExpandedSalesCardFromTiles(){
             .attr('data-daily-target', dailyTarget)
             .toggleClass('target-met', met);
 
+        if(Object.prototype.hasOwnProperty.call(row,'location_id')){
+            const rowLocationId=Math.max(0,parseInt(row.location_id,10)||0);
+            const rowLocationName=String(row.location_name||'');
+            $card
+                .attr('data-location-id',rowLocationId)
+                .attr('data-location-name',rowLocationName);
+            $card.find('[data-sales-location-label]').text(
+                rowLocationName||tr('unassigned')
+            );
+        }
+
         animateNumber(
             $card.find('[data-progress-count]'),
             oldCount,
@@ -7378,6 +8576,17 @@ function syncExpandedSalesCardFromTiles(){
         $card.find('[data-unreviewed-count]').text(
             rowUnreviewedCount
         );
+        $card.find('[data-new-posts-count]').text(
+            rowUnreviewedCount
+        );
+        $card.find('[data-new-posts-badge]')
+            .toggleClass('hidden',rowUnreviewedCount<1)
+            .attr(
+                'title',
+                rowUnreviewedCount>0
+                    ?rowUnreviewedCount+' '+tr('unreviewed')
+                    :''
+            );
 
         const goodCount=rowGoodCount;
         const badCount=rowBadCount;
@@ -7405,7 +8614,9 @@ function syncExpandedSalesCardFromTiles(){
 
         const $dailyReview = $card.find('[data-daily-review]');
 
-        if(period==='day'){
+        // Daily Sales Review belongs only to the one-day preset. Preset is
+        // the authoritative UI state, so 3-Day never inherits this action.
+        if(currentPreset==='single'){
             $dailyReview.removeClass('hidden');
         }else{
             $dailyReview.addClass('hidden');
@@ -7428,6 +8639,7 @@ function syncExpandedSalesCardFromTiles(){
      */
     function closeExpandedPosts(){
         expandedSalesId = 0;
+        dailyReviewOnlyMode = false;
 
         $grid
             .find('.sales-progress-card.expanded')
@@ -8094,6 +9306,15 @@ function closeSalesPeriodReviewEditor(){
     $periodReviewMessage
         .removeClass('error')
         .text('');
+
+    // A review opened directly from the card must leave no fake expanded-card
+    // state behind. The next normal card click should open Posts on the first try.
+    if(dailyReviewOnlyMode){
+        dailyReviewOnlyMode=false;
+        expandedSalesId=0;
+        currentSalesPeriodReview=null;
+        currentExpandedData=null;
+    }
 }
 
 /**
@@ -8281,6 +9502,127 @@ function renderPostGrid(data){
     $expandedList.html(html);
 }
     /**
+     * EN: Place the expanded Sales post panel directly below the visual grid row
+     * that contains the selected Sales card instead of leaving the panel at the
+     * bottom of the entire Sales grid.
+     * 中文：将展开的 Sales Post 面板放到所选 Sales 卡片所在的可视行正下方，
+     * 而不是固定显示在整个 Sales Grid 的最底部。
+     *
+     * @param {*} $card Selected Sales progress card. / 当前选中的 Sales 进度卡片。
+     *
+     * @returns {void} No value is returned. / 无返回值。
+     */
+    function placeExpandedAfterCardRow($card){
+        const card=$card&&$card.get?$card.get(0):null;
+
+        if(!card||!$grid.length||!$expanded.length){
+            return;
+        }
+
+        // Detach first so a previous expanded position cannot affect Grid layout
+        // while we detect which cards are in the same visual row.
+        // 先临时移出展开面板，避免旧位置影响当前 Grid 行位置判断。
+        $expanded.addClass('hidden').detach();
+
+        const selectedTop=Math.round(
+            card.getBoundingClientRect().top
+        );
+        let rowEnd=card;
+
+        $grid.find('.sales-progress-card').each(function(){
+            const top=Math.round(
+                this.getBoundingClientRect().top
+            );
+
+            if(Math.abs(top-selectedTop)<=3){
+                rowEnd=this;
+            }
+        });
+
+        $(rowEnd).after($expanded);
+    }
+
+    /**
+     * EN: Load only the one-day Sales Review for a card. This intentionally does
+     * not expand/render the employee Post Grid, so the review button behaves as
+     * an isolated modal action.
+     * 中文：仅加载单日 Sales Review；不会展开或渲染员工 Post Grid，避免点击
+     * Daily Sales Review 时同时打开 Post 详细区域。
+     *
+     * @param {*} $card Selected Sales progress card. / 当前 Sales 进度卡片。
+     * @returns {void} No value is returned. / 无返回值。
+     */
+    function openDailyReviewOnly($card){
+        const salesId=parseInt($card.attr('data-sales-id'),10)||0;
+
+        if(!salesId){
+            return;
+        }
+
+        // Daily Review is a separate action. Any previously expanded Post Grid is
+        // closed first, but no new Post Grid is opened for this review request.
+        closeExpandedPosts();
+        dailyReviewOnlyMode=true;
+        expandedSalesId=salesId;
+        currentExpandedData=null;
+        currentSalesPeriodReview=null;
+        setTargetMessage($card,'',false);
+
+        const $button=$card.find('[data-daily-review]').first();
+        $button.prop('disabled',true).attr('aria-busy','true');
+
+        expandedRequest=$.ajax({
+            url:salesPostsUrl,
+            method:'GET',
+            dataType:'json',
+            cache:false,
+            data:adminAjaxRangeData({
+                sales_id:salesId,
+                _:Date.now()
+            })
+        })
+        .done(function(data){
+            if(
+                !dailyReviewOnlyMode
+                ||expandedSalesId!==salesId
+            ){
+                return;
+            }
+
+            if(!data||!data.ok||!data.review){
+                setTargetMessage(
+                    $card,
+                    (data&&data.message)||'Could not load Sales Review.',
+                    true
+                );
+                dailyReviewOnlyMode=false;
+                expandedSalesId=0;
+                return;
+            }
+
+            currentSalesPeriodReview=data.review;
+            openSalesPeriodReviewEditor();
+        })
+        .fail(function(xhr,status){
+            if(status==='abort'){
+                return;
+            }
+
+            const data=xhr.responseJSON||{};
+            setTargetMessage(
+                $card,
+                data.message||'Could not load Sales Review.',
+                true
+            );
+            dailyReviewOnlyMode=false;
+            expandedSalesId=0;
+        })
+        .always(function(){
+            $button.prop('disabled',false).removeAttr('aria-busy');
+        });
+    }
+
+    /**
      * EN: Open or show the open expanded posts behavior used by the application UI.
      * 中文：打开或显示application UI 使用的“open expanded posts”行为。
      *
@@ -8318,6 +9660,7 @@ function renderPostGrid(data){
             .addClass('expanded')
             .attr('aria-expanded', 'true');
 
+        placeExpandedAfterCardRow($card);
         $expanded.removeClass('hidden');
         $expandedTitle.text(
             String($card.attr('data-sales-name') || 'Sales')
@@ -8471,6 +9814,7 @@ function renderPostGrid(data){
                 );
             }
         });
+        applySalesDirectoryFilters();
     }
 
     /**
@@ -8721,15 +10065,10 @@ $('#appLanguageSwitch').on(
 
     $grid.on('click','[data-daily-review]',function(event){
         event.preventDefault();
-        event.stopPropagation();
-        const $card=$(this).closest('.sales-progress-card');
-        openReviewAfterExpand=true;
-        if(expandedSalesId===parseInt($card.attr('data-sales-id'),10)){
-            openSalesPeriodReviewEditor();
-            openReviewAfterExpand=false;
-            return;
-        }
-        openExpandedPosts($card);
+        // This button owns the click completely. Do not allow the Sales card or
+        // any other delegated click handler to treat it as a Post/Grid click.
+        event.stopImmediatePropagation();
+        openDailyReviewOnly($(this).closest('.sales-progress-card'));
     });
 
     $grid.on('click', '[data-card-toggle]', function(event){
@@ -9036,7 +10375,12 @@ function renderContentPreview(content){
     $contentFacts.html(facts.join(''));
     const photos=Array.isArray(content.photos)?content.photos.filter(Boolean):[];
     window.cdspReviewListingPhotos=photos;
-    if(!photos.length){$contentPhotos.addClass('hidden').empty();return;}
+    if(!photos.length){
+        $contentPhotos.addClass('hidden').empty();
+        $productDetail.addClass('no-photo');
+        return;
+    }
+    $productDetail.removeClass('no-photo');
     $contentPhotos.html(
         '<button type="button" class="listing-photo-thumb" data-listing-photo="'+escapeHtml(photos[0])+'" aria-label="Open listing photo">'
         +'<img loading="lazy" src="'+escapeHtml(photos[0])+'" alt="Marketplace listing">'
@@ -9105,6 +10449,13 @@ function renderContentPreview(content){
             }
 
             renderContentPreview(data.content||{});
+            if(data.content&&data.content.platform_account){
+                renderMarketplaceAccount(
+                    $('#dashboardReviewAccountFact'),
+                    $('#dashboardReviewAccount'),
+                    data.content.platform_account
+                );
+            }
 
             if(currentExpandedData&&Array.isArray(currentExpandedData.posts)){
                 currentExpandedData.posts.forEach(function(post){
@@ -9126,6 +10477,11 @@ function renderContentPreview(content){
             $modalMessage
                 .removeClass('error warning')
                 .text(data.message||'Content refreshed.');
+            if(data.verification_status==='verified'){
+                $('#dashboardReviewModalSubtitle').text(
+                    $('#dashboardReviewModalSubtitle').text().replace(' · Manual verification','')
+                );
+            }
         })
         .fail(function(xhr){
             const data=xhr.responseJSON||{};
@@ -9996,12 +11352,19 @@ function syncDecisionVisualState(decision){
             $('#dashboardReviewModalTitle').text(
                 data.post.sales_name + ' · Post Review'
             );
+            const manualVerification=data.post.verification_status==='manual_pending';
             $('#dashboardReviewModalSubtitle').text(
                 '#'
                 + data.post.sales_id
                 + ' · '
                 + data.post.platform
+                +(manualVerification?' · Manual verification':'')
             );
+            if(manualVerification){
+                $modalMessage
+                    .addClass('warning')
+                    .text('Craigslist blocked automated verification. Sales entered the title/date manually; review the original listing before marking Good.');
+            }
             $('#dashboardReviewPublished').text(
                 data.post.published_at || '—'
             );
@@ -10010,6 +11373,15 @@ function syncDecisionVisualState(decision){
             );
             $('#dashboardReviewItemId').text(
                 data.post.external_post_id || '—'
+            );
+            renderMarketplaceAccount(
+                $('#dashboardReviewAccountFact'),
+                $('#dashboardReviewAccount'),
+                {
+                    id:data.post.platform_account_id||'',
+                    name:data.post.platform_account_name||'',
+                    url:data.post.platform_account_url||''
+                }
             );
 
             if(data.post.canonical_url){
@@ -10809,6 +12181,7 @@ $modalForm.on('submit', function(event){
 let salesSettingsCard=null;
 const $salesSettingsModal=$('#salesPersonSettingsModal');
 const $salesSettingsInput=$('#salesPersonDailyTarget');
+const $salesSettingsLocation=$('#salesPersonLocation');
 const $salesSettingsMessage=$('#salesPersonSettingsMessage');
 
 /**
@@ -10851,6 +12224,9 @@ $grid.on('click','[data-sales-settings]',function(event){
     $salesSettingsInput
         .val(target)
         .removeClass('field-error');
+    $salesSettingsLocation
+        .val(String(parseInt($card.attr('data-location-id'),10)||0))
+        .removeClass('field-error');
 
     $salesSettingsMessage
         .removeClass('error ok')
@@ -10891,9 +12267,14 @@ $('#salesPersonSettingsSave').on('click',function(){
         $salesSettingsInput.val(),
         10
     )||0;
+    const locationId=Math.max(
+        0,
+        parseInt($salesSettingsLocation.val(),10)||0
+    );
     const $button=$(this);
 
     $salesSettingsInput.removeClass('field-error');
+    $salesSettingsLocation.removeClass('field-error');
     $salesSettingsMessage
         .removeClass('error ok')
         .text('');
@@ -10920,7 +12301,8 @@ $('#salesPersonSettingsSave').on('click',function(){
         data:{
             _csrf:csrf,
             sales_user_id:salesId,
-            target:target
+            target:target,
+            location_id:locationId
         }
     })
     .done(function(data){
@@ -10946,9 +12328,24 @@ $('#salesPersonSettingsSave').on('click',function(){
 
         $salesSettingsInput.val(dailyTarget);
 
+        const savedLocationId=Math.max(
+            0,
+            parseInt(data.location_id,10)||0
+        );
+        const savedLocationName=String(data.location_name||'');
+        salesSettingsCard
+            .attr('data-location-id',savedLocationId)
+            .attr('data-location-name',savedLocationName);
+        salesSettingsCard
+            .find('[data-sales-location-label]')
+            .text(savedLocationName||tr('unassigned'));
+        $salesSettingsLocation.val(String(savedLocationId));
+        updateSalesLocationFilterCounts(data);
+        applySalesDirectoryFilters();
+
         $salesSettingsMessage
             .addClass('ok')
-            .text(data.message||'Saved');
+            .text(data.message||tr('saved'));
 
         setTimeout(function(){
             closeSalesPersonSettings();
@@ -11063,16 +12460,14 @@ $('#salesPersonSettingsSave').on('click',function(){
 
         $noticeTitle.text(
             delta > 0
-                ? delta + ' new post'
-                    + (delta === 1 ? '' : 's')
-                    + ' available'
-                : 'New Sales activity is available'
+                ? tr(delta===1?'newPostAvailable':'newPostsAvailable',{count:delta})
+                : tr('salesChanged')
         );
 
         $noticeText.text(
-            'Refresh to load the latest '
-            + periodName(currentPeriod).toLowerCase()
-            + ' progress.'
+            tr('refreshLatestProgress',{
+                period:periodName(currentPeriod).toLowerCase()
+            })
         );
 
         $notice.removeClass('hidden');
@@ -11120,7 +12515,26 @@ $('#salesPersonSettingsSave').on('click',function(){
     }
 
     $('#dashboardRefreshButton').on('click',function(){
-        reloadCurrentProgress();
+        // v0.2.40: once Admin explicitly refreshes, clear the stale-activity
+        // banner immediately and prevent an older in-flight poll from putting
+        // the same banner back on screen while the fresh progress request runs.
+        if(activityRequest && activityRequest.readyState !== 4){
+            activityRequest.abort();
+        }
+        noticeShown = true;
+        $notice.addClass('hidden');
+        const $button=$(this).prop('disabled',true).text(tr('refreshing'));
+        const request=reloadCurrentProgress();
+        if(request&&typeof request.always==='function'){
+            request.always(function(){
+                noticeShown=false;
+                $button.prop('disabled',false).text(tr('refresh'));
+                checkDashboardActivity();
+            });
+        }else{
+            noticeShown=false;
+            $button.prop('disabled',false).text(tr('refresh'));
+        }
     });
 
     document.addEventListener('visibilitychange', function(){
@@ -11222,19 +12636,31 @@ $('#dashboardPostDelete').on('click',function(){
  *
  * @returns {string} String result produced by this UI helper. / 本 UI 辅助函数生成的字符串结果。
  */
-function websiteReferenceRow(row){
+function websiteReferenceRow(row,detailMode){
     const title=escapeHtml(String(row.title||''));
     const description=escapeHtml(String(row.description||''));
     const page=escapeHtml(String(row.page_url||''));
     const image=escapeHtml(String(row.image_url||''));
+    const imported=escapeHtml(String(row.imported_at||'—'));
+    const id=escapeHtml(row.id);
+    if(detailMode){
+        return '<tr data-website-reference-id="'+id+'">'
+            +'<td><strong>'+title+'</strong>'+(description?'<small class="website-source-reference-description">'+description+'</small>':'')+'</td>'
+            +'<td class="website-source-url-cell"><a href="'+page+'" target="_blank" rel="noopener noreferrer">'+page+'</a></td>'
+            +'<td>'+(image?'<a href="'+image+'" target="_blank" rel="noopener noreferrer">Open image ↗</a>':'—')+'</td>'
+            +'<td>'+(row.sha256?'SHA-256 ✓':'—')+'</td>'
+            +'<td>'+imported+'</td>'
+            +'<td><button type="button" class="tiny badbtn website-reference-delete" data-reference-id="'+id+'">Delete</button></td>'
+            +'</tr>';
+    }
     const indexed=row.sha256?'Yes':'Pending';
-    return '<tr data-website-reference-id="'+escapeHtml(row.id)+'">'
+    return '<tr data-website-reference-id="'+id+'">'
         +'<td><strong>'+title+'</strong></td>'
         +'<td class="website-reference-description">'+description+'</td>'
         +'<td><a href="'+page+'" target="_blank" rel="noopener noreferrer">Open page ↗</a></td>'
         +'<td>'+(image?'<a href="'+image+'" target="_blank" rel="noopener noreferrer">Image ↗</a>':'—')+'</td>'
         +'<td>'+indexed+'</td>'
-        +'<td><button type="button" class="tiny badbtn website-reference-delete" data-reference-id="'+escapeHtml(row.id)+'">Delete</button></td>'
+        +'<td><button type="button" class="tiny badbtn website-reference-delete" data-reference-id="'+id+'">Delete</button></td>'
         +'</tr>';
 }
 
@@ -11261,18 +12687,20 @@ function setWebsiteReferenceMessage(message,type){
  * @returns {void} No value is returned. / 无返回值。
  */
 function loadWebsiteReferences(){
-    const $library=$('#website-comparison');
+    const $library=$('#website-source-detail').length?$('#website-source-detail'):$('#website-comparison');
     if(!$library.length)return;
     const q=$('#websiteReferenceSearch').val()||'';
+    const host=String($library.data('source-host')||'');
+    const detailMode=$library.is('#website-source-detail');
     const $button=$('#websiteReferenceSearchButton');
     $button.prop('disabled',true).text('Searching…');
-    $.getJSON($library.data('search-url'),{q:q})
+    $.getJSON($library.data('search-url'),{q:q,host:host})
         .done(function(data){
             if(!data||!data.ok){setWebsiteReferenceMessage((data&&data.message)||'Search failed.','error');return;}
             const rows=Array.isArray(data.rows)?data.rows:[];
             $('#websiteReferenceRows').html(
                 rows.length
-                    ?rows.map(websiteReferenceRow).join('')
+                    ?rows.map(function(row){return websiteReferenceRow(row,detailMode);}).join('')
                     :'<tr class="website-reference-empty"><td colspan="6">No matching website references.</td></tr>'
             );
             setWebsiteReferenceMessage(rows.length+' reference'+(rows.length===1?'':'s')+' found.','ok');
@@ -11290,7 +12718,7 @@ $('#websiteReferenceSearch').on('keydown',function(event){
 
 $(document).on('click','.website-reference-delete',function(){
     const $button=$(this);
-    const $library=$('#website-comparison');
+    const $library=$('#website-source-detail').length?$('#website-source-detail'):$('#website-comparison');
     const id=parseInt($button.data('reference-id')||'0',10);
     if(!id)return;
 
@@ -11321,6 +12749,19 @@ $(document).on('click','.website-reference-delete',function(){
     });
 });
 
+
+/* v0.2.32 — source delete cascades to all indexed URLs / 删除网站同时删除关联 URL */
+$(document).on('click','.website-source-delete',function(event){
+    const $button=$(this);
+    if($button.hasClass('delete-armed')){return;}
+    event.preventDefault();
+    $('.website-source-delete').removeClass('delete-armed').text('Delete Website');
+    const count=parseInt($button.data('reference-count')||'0',10);
+    $button.addClass('delete-armed').text('Confirm Delete '+count+' URLs');
+    window.setTimeout(function(){
+        if($button.hasClass('delete-armed')){$button.removeClass('delete-armed').text('Delete Website');}
+    },7000);
+});
 
 // v0.1.91 Universal logged-in header: measure its real responsive height so
 // secondary sticky controls can sit directly below it without hard-coded heights.
@@ -11577,4 +13018,864 @@ $(document).on('click','.website-reference-delete',function(){
     sync('');
 })();
 
+/* V0.2.49 — Settings Location CRUD stays in-place with animated add/edit/delete. */
+(function(){
+    const $section=$('#sales-locations');
+    if(!$section.length)return;
+
+    const endpoints={
+        add:String($section.data('location-add-url')||''),
+        update:String($section.data('location-update-url')||''),
+        remove:String($section.data('location-delete-url')||'')
+    };
+    const csrf=String($section.data('csrf')||'');
+    const $list=$('#salesLocationList');
+    const $notice=$('#salesLocationLiveNotice');
+
+    /**
+     * EN: Read one Settings Location translation from the active global app language.
+     * 中文：从当前全局语言中读取一条 Settings Location 翻译。
+     *
+     * @param {string} key Translation key. / 翻译键。
+     * @returns {string} Localized text. / 本地化文字。
+     */
+    function locationText(key){
+        const dict=appLanguageDictionary[currentAppLanguage()]||appLanguageDictionary.en;
+        return String(dict[key]||appLanguageDictionary.en[key]||key);
+    }
+
+    /**
+     * EN: Show an inline Settings Location result without navigating or changing scroll position.
+     * 中文：以内联方式显示 Location 操作结果，不刷新页面也不改变滚动位置。
+     *
+     * @param {string} key Translation key. / 翻译键。
+     * @param {boolean} bad Whether to use error styling. / 是否使用错误样式。
+     * @returns {void}
+     */
+    function showLocationNotice(key,bad){
+        $notice
+            .stop(true,true)
+            .removeClass('hidden ok bad')
+            .addClass(bad?'bad':'ok')
+            .text(locationText(key))
+            .hide()
+            .fadeIn(140);
+    }
+
+    /**
+     * EN: Convert a server failure code to the existing Settings Location translation key.
+     * 中文：把服务端失败代码转换为现有 Settings Location 翻译键。
+     *
+     * @param {Object|*} data Response payload. / 响应数据。
+     * @returns {string} Translation key. / 翻译键。
+     */
+    function locationErrorKey(data){
+        const code=String((data&&data.code)||'error');
+        return {
+            duplicate:'locationDuplicate',
+            invalid:'locationInvalid',
+            'in-use':'locationInUse',
+            missing:'locationMissing',
+            error:'locationError'
+        }[code]||'locationError';
+    }
+
+    /**
+     * EN: Update live Location counts after CRUD without rebuilding or jumping the Settings page.
+     * 中文：CRUD 后原地更新 Location 数量，不重建或跳动 Settings 页面。
+     *
+     * @param {Object|*} data Response payload. / 响应数据。
+     * @returns {void}
+     */
+    function updateLocationSummary(data){
+        if(data&&data.locations_count!=null){
+            $('#salesLocationCount').text(String(data.locations_count));
+        }
+        if(data&&data.unassigned_sales_count!=null){
+            const count=Math.max(0,parseInt(data.unassigned_sales_count,10)||0);
+            const $row=$('#salesLocationUnassigned');
+            $row.find('[data-unassigned-count]').text(String(count));
+            $row.toggleClass('hidden',count<1);
+        }
+    }
+
+    /**
+     * EN: Build one editable Location card for a newly created row.
+     * 中文：为新建记录生成一张可修改的 Location Card。
+     *
+     * @param {Object} row Location row. / Location 记录。
+     * @returns {jQuery} Created card. / 新建的 Card。
+     */
+    function buildLocationCard(row){
+        const id=Math.max(0,parseInt(row&&row.id,10)||0);
+        const name=String((row&&row.name)||'');
+        const count=Math.max(0,parseInt(row&&row.sales_count,10)||0);
+        const updateUrl=endpoints.update||'';
+        const deleteUrl=endpoints.remove||'';
+        const html=[
+            '<article class="sales-location-card location-card-enter" data-location-card data-location-id="',id,'" data-sales-count="',count,'">',
+              '<div class="sales-location-card-main">',
+                '<div class="sales-location-card-copy">',
+                  '<strong data-location-name>',escapeHtml(name),'</strong>',
+                  '<span><b data-location-sales-count>',count,'</b> <span data-app-i18n="sales">Sales</span></span>',
+                '</div>',
+                '<div class="sales-location-card-actions">',
+                  '<button class="tiny" type="button" data-location-edit data-app-i18n="editLocation">Edit</button>',
+                  '<form method="post" class="js-location-delete-form" action="',escapeHtml(deleteUrl),'">',
+                    '<input type="hidden" name="_csrf" value="',escapeHtml(csrf),'">',
+                    '<input type="hidden" name="location_id" value="',id,'">',
+                    '<button class="tiny badbtn" type="submit" data-app-i18n="deleteLocation">Delete</button>',
+                  '</form>',
+                '</div>',
+              '</div>',
+              '<form method="post" class="sales-location-edit-form js-location-edit-form hidden" action="',escapeHtml(updateUrl),'">',
+                '<input type="hidden" name="_csrf" value="',escapeHtml(csrf),'">',
+                '<input type="hidden" name="location_id" value="',id,'">',
+                '<input class="sales-location-edit-input" type="text" name="location_name" maxlength="120" required autocomplete="off" value="',escapeHtml(name),'" aria-label="Location name">',
+                '<div class="sales-location-edit-actions">',
+                  '<button class="tiny primary" type="submit" data-app-i18n="saveLocation">Save</button>',
+                  '<button class="tiny" type="button" data-location-edit-cancel data-app-i18n="cancel">Cancel</button>',
+                '</div>',
+              '</form>',
+            '</article>'
+        ].join('');
+        const $card=$(html);
+        applyGlobalMenuLanguage();
+        return $card;
+    }
+
+    $('.js-location-add-form').on('submit',function(event){
+        event.preventDefault();
+        if(!endpoints.add)return;
+        const $form=$(this);
+        const $input=$form.find('[name="location_name"]');
+        const $button=$form.find('[type="submit"]');
+        if(!$input.val().trim()){showLocationNotice('locationInvalid',true);return;}
+
+        $button.prop('disabled',true);
+        $.ajax({
+            url:endpoints.add,
+            method:'POST',
+            data:$form.serialize()+'&ajax=1',
+            dataType:'json',
+            headers:{'X-Requested-With':'XMLHttpRequest'}
+        }).done(function(data){
+            if(!data||!data.ok){showLocationNotice(locationErrorKey(data),true);return;}
+            $('#salesLocationEmpty').stop(true,true).fadeOut(100,function(){$(this).remove();});
+            const $card=buildLocationCard(data.location||{});
+            $list.append($card);
+            applyGlobalMenuLanguage();
+            window.requestAnimationFrame(function(){
+                window.requestAnimationFrame(function(){$card.removeClass('location-card-enter');});
+            });
+            $input.val('');
+            updateLocationSummary(data);
+            showLocationNotice('locationAdded',false);
+        }).fail(function(xhr){
+            showLocationNotice(locationErrorKey(xhr.responseJSON||{}),true);
+        }).always(function(){
+            $button.prop('disabled',false);
+        });
+    });
+
+    $list.on('click','[data-location-edit]',function(){
+        const $card=$(this).closest('[data-location-card]');
+        $list.find('.js-location-edit-form:visible').not($card.find('.js-location-edit-form')).stop(true,true).slideUp(120,function(){$(this).addClass('hidden').removeAttr('style');});
+        const $form=$card.find('.js-location-edit-form');
+        $form.stop(true,true).removeClass('hidden').hide().slideDown(160,function(){
+            $(this).removeAttr('style');
+            $(this).find('[name="location_name"]').trigger('focus').select();
+        });
+    });
+
+    $list.on('click','[data-location-edit-cancel]',function(){
+        const $card=$(this).closest('[data-location-card]');
+        const currentName=String($card.find('[data-location-name]').text()||'');
+        const $form=$(this).closest('.js-location-edit-form');
+        $form.find('[name="location_name"]').val(currentName);
+        $form.stop(true,true).slideUp(140,function(){$(this).addClass('hidden').removeAttr('style');});
+    });
+
+    $list.on('submit','.js-location-edit-form',function(event){
+        event.preventDefault();
+        if(!endpoints.update)return;
+        const $form=$(this);
+        const $card=$form.closest('[data-location-card]');
+        const $button=$form.find('[type="submit"]');
+        $button.prop('disabled',true);
+        $.ajax({
+            url:endpoints.update,
+            method:'POST',
+            data:$form.serialize()+'&ajax=1',
+            dataType:'json',
+            headers:{'X-Requested-With':'XMLHttpRequest'}
+        }).done(function(data){
+            if(!data||!data.ok){showLocationNotice(locationErrorKey(data),true);return;}
+            const row=data.location||{};
+            const name=String(row.name||'');
+            $card.find('[data-location-name]').text(name);
+            $form.find('[name="location_name"]').val(name);
+            $form.stop(true,true).slideUp(130,function(){$(this).addClass('hidden').removeAttr('style');});
+            $card.removeClass('location-card-updated');
+            window.requestAnimationFrame(function(){$card.addClass('location-card-updated');});
+            window.setTimeout(function(){$card.removeClass('location-card-updated');},520);
+            updateLocationSummary(data);
+            showLocationNotice('locationUpdated',false);
+        }).fail(function(xhr){
+            showLocationNotice(locationErrorKey(xhr.responseJSON||{}),true);
+        }).always(function(){
+            $button.prop('disabled',false);
+        });
+    });
+
+    $list.on('submit','.js-location-delete-form',function(event){
+        event.preventDefault();
+        if(!endpoints.remove)return;
+        const $form=$(this);
+        const $card=$form.closest('[data-location-card]');
+        const $button=$form.find('[type="submit"]');
+        if($button.prop('disabled'))return;
+        $button.prop('disabled',true);
+        $.ajax({
+            url:endpoints.remove,
+            method:'POST',
+            data:$form.serialize()+'&ajax=1',
+            dataType:'json',
+            headers:{'X-Requested-With':'XMLHttpRequest'}
+        }).done(function(data){
+            if(!data||!data.ok){showLocationNotice(locationErrorKey(data),true);return;}
+            $card.addClass('location-card-leave');
+            window.setTimeout(function(){
+                $card.remove();
+                if(!$list.find('[data-location-card]').length){
+                    const $empty=$('<div class="sales-location-empty" id="salesLocationEmpty" data-app-i18n="noLocations"></div>');
+                    $list.append($empty);
+                    applyGlobalMenuLanguage();
+                    $empty.hide().fadeIn(140);
+                }
+            },180);
+            updateLocationSummary(data);
+            showLocationNotice('locationDeleted',false);
+        }).fail(function(xhr){
+            showLocationNotice(locationErrorKey(xhr.responseJSON||{}),true);
+            $button.prop('disabled',false);
+        });
+    });
+})();
+
 });
+
+/* v0.2.34 — persistent website scan jobs + inline product grid / 持久化网站扫描与内联产品网格 */
+(function($){
+    'use strict';
+    if(!$){return;}
+    const $manager=$('.website-source-manager,#website-source-detail').first();
+    if(!$manager.length){return;}
+
+    const endpoints={
+        search:String($manager.data('reference-search-url')||''),
+        add:String($manager.data('reference-add-url')||''),
+        delete:String($manager.data('reference-delete-url')||''),
+        start:String($manager.data('scan-start-url')||''),
+        step:String($manager.data('scan-step-url')||''),
+        status:String($manager.data('scan-status-url')||''),
+        stop:String($manager.data('scan-stop-url')||''),
+        resume:String($manager.data('scan-resume-url')||'')
+    };
+    const csrf=String($manager.data('csrf')||'');
+    const loops={};
+    const stepRequests={};
+    const watchdogGraceUntil={};
+    const runningHosts={};
+    let activeHost='';
+    let $activePanel=$();
+
+    // v0.2.39: one active website scan at a time. The backend enforces the
+    // same rule; this client state keeps every Scan/Delete control honest.
+    try{
+        const initial=JSON.parse(String($manager.attr('data-running-hosts')||'[]'));
+        if(Array.isArray(initial)){initial.forEach(function(host){host=String(host||'').toLowerCase();if(host){runningHosts[host]=true;}});}
+    }catch(e){}
+
+    function websiteForButton($button){
+        const selector=String($button.data('website-input')||'').trim();
+        if(selector){return String($(selector).val()||'').trim();}
+        return String($button.data('website-url')||$button.closest('.website-product-source').data('website-url')||'').trim();
+    }
+
+    function hostForWebsite(website){
+        try{return String((new URL(String(website||''))).hostname||'').toLowerCase();}catch(e){return '';}
+    }
+
+    function hostForButton($button){
+        const direct=String($button.data('source-host')||$button.closest('.website-product-source').data('website-source')||'').toLowerCase();
+        if(direct){return direct;}
+        return hostForWebsite(websiteForButton($button));
+    }
+
+    function runningHostList(){return Object.keys(runningHosts).filter(function(host){return !!runningHosts[host];});}
+
+    function syncGlobalScanControls(){
+        const active=runningHostList();
+        const any=active.length>0;
+        const label=active.length===1?active[0]:(active.length+' websites');
+        $('.website-product-scan-button').each(function(){
+            const $button=$(this);
+            // The top Step 1 field must stay clickable so it can first detect an
+            // already-saved host and open that card even while another scan runs.
+            if(String($button.data('website-input')||'').trim()){
+                $button.prop('disabled',false).removeAttr('data-global-scan-disabled').removeAttr('title');
+                return;
+            }
+            const host=hostForButton($button);const same=!!(host&&runningHosts[host]);
+            const block=any&&!same;
+            if(block){
+                $button.prop('disabled',true).attr('data-global-scan-disabled','1').attr('title','Currently scanning '+label+'. Pause it or wait for it to finish first.');
+            }else if($button.attr('data-global-scan-disabled')==='1'){
+                $button.prop('disabled',false).removeAttr('data-global-scan-disabled').removeAttr('title');
+            }
+        });
+        $('.website-scan-continue').each(function(){
+            const $button=$(this);const host=String($button.data('source-host')||'').toLowerCase();
+            const block=any&&!runningHosts[host];
+            if(block){$button.prop('disabled',true).attr('data-global-scan-disabled','1').attr('title','Another website is scanning.');}
+            else if($button.attr('data-global-scan-disabled')==='1'){$button.prop('disabled',false).removeAttr('data-global-scan-disabled').removeAttr('title');}
+        });
+        $('.website-source-delete').each(function(){
+            const $button=$(this);
+            if(any){$button.prop('disabled',true).attr('data-global-scan-disabled','1').attr('title','Pause the active website scan before deleting any website.');}
+            else if($button.attr('data-global-scan-disabled')==='1'){$button.prop('disabled',false).removeAttr('data-global-scan-disabled').removeAttr('title');}
+        });
+        $('.website-source-manager').toggleClass('has-active-website-scan',any);
+    }
+
+    function updateRunningHost(host,isRunning){
+        host=String(host||'').toLowerCase();if(!host){return;}
+        if(isRunning){runningHosts[host]=true;}else{delete runningHosts[host];}
+        syncGlobalScanControls();
+    }
+
+    function sourceCard(host){
+        return $('.website-product-source[data-website-source="'+cssEscape(host)+'"]').first();
+    }
+
+    function cssEscape(value){
+        if(window.CSS&&typeof window.CSS.escape==='function'){return window.CSS.escape(String(value));}
+        return String(value).replace(/(["\\])/g,'\\$1');
+    }
+
+    function revealExistingSource(host,inputSelector){
+        const $card=sourceCard(host);
+        if(!$card.length){return false;}
+        if(activeHost!==host){openInlineSource($card);}
+        if(inputSelector){$(inputSelector).val('');}
+        const node=$card.get(0);
+        if(node&&typeof node.scrollIntoView==='function'){
+            try{node.scrollIntoView({behavior:'smooth',block:'center'});}catch(e){node.scrollIntoView();}
+        }
+        showToast('Website already saved. Opened its card.',false);
+        return true;
+    }
+
+    function progressWrap(host,$button){
+        let $wrap=$();
+        if(host){
+            $wrap=sourceCard(host).find('.website-product-scan-progress-wrap').first();
+            if(!$wrap.length&&String($('#website-source-detail').data('source-host')||'')===host){$wrap=$('.website-source-detail-scan-progress').first();}
+        }
+        if(!$wrap.length&&$button&&$button.length){
+            const selector=String($button.data('progress-target')||'').trim();
+            if(selector){
+                const $progress=$(selector).first();
+                if($progress.length){
+                    $wrap=$progress.closest('.website-product-scan-progress-wrap');
+                    if(!$wrap.length){$wrap=$progress;}
+                }
+            }
+        }
+        if(!$wrap.length&&$button&&$button.length){$wrap=$button.closest('.website-source-add').find('.website-product-scan-progress-wrap').first();}
+        return $wrap;
+    }
+
+    function showToast(message,isError){
+        $('.website-scan-toast').remove();
+        const $toast=$('<div class="website-scan-toast" role="status"></div>').toggleClass('is-error',!!isError).text(message);
+        $('body').append($toast);
+        window.setTimeout(function(){$toast.fadeOut(180,function(){$toast.remove();});},4500);
+    }
+
+    function scanErrorRows(errors){
+        if(!Array.isArray(errors)||!errors.length){return '';}
+        return '<details class="website-scan-errors" open>'
+            +'<summary>'+errors.length+' recent page error'+(errors.length===1?'':'s')+' — click to review</summary>'
+            +'<div class="website-scan-error-table">'
+            +errors.map(function(row){
+                const status=row.http_status?('HTTP '+Number(row.http_status)):'Scan error';
+                return '<div class="website-scan-error-row">'
+                    +'<div class="website-scan-error-status">'+escapeHtml(status)+'</div>'
+                    +'<div class="website-scan-error-copy"><a href="'+escapeHtml(String(row.page_url||''))+'" target="_blank" rel="noopener noreferrer">'+escapeHtml(String(row.page_url||''))+'</a>'
+                    +'<strong>'+escapeHtml(String(row.explanation||row.error_message||'The page could not be scanned.'))+'</strong>'
+                    +'<small>'+escapeHtml(String(row.error_message||''))+'</small></div>'
+                +'</div>';
+            }).join('')
+            +'</div></details>';
+    }
+
+    function renderScanState(state,$button,showProgress){
+        if(!state){return;}
+        const host=String(state.source_host||'');
+        const $card=sourceCard(host);
+        const $wrap=progressWrap(host,$button);
+        const $progress=$wrap.hasClass('website-product-scan-progress')?$wrap:$wrap.find('.website-product-scan-progress').first();
+        const status=String(state.status||'');
+        const interrupted=!!state.client_interrupted;
+        updateRunningHost(host,status==='running');
+        const stats=state.library_stats||{};
+        let text='Checked '+Number(state.checked||0)+' pages';
+        text+=' · Library '+Number(stats.total||0)+' unique products';
+        text+=' · This run '+Number(state.products||0)+' product pages';
+        text+=' · '+Number(state.images_found||0)+' first images found';
+        text+=' · '+Number(state.indexed||0)+' exact fingerprints';
+        if(Number(state.skipped_existing||0)){text+=' · '+Number(state.skipped_existing||0)+' existing URLs skipped';}
+        if(Number(state.failed||0)){text+=' · '+Number(state.failed||0)+' page errors';}
+        text+=' · Queue '+Number(state.queue||0);
+        if(status==='running'&&!interrupted){text+=' · Scanning…';}
+        else if(status==='running'&&interrupted){text+=' · Scan connection interrupted. Continue Scanning is available.';}
+        else if(status==='completed'){text+=' · '+(String(state.last_error||'Scan complete.'));}
+        else if(status==='paused'){text+=' · Paused. Continue Scanning resumes from the saved queue.';}
+        else if(status==='stopped'){text+=' · Stopped. Continue Scanning resumes from the saved queue.';}
+        else if(status==='failed'){text+=' · '+(String(state.last_error||'Scan failed.'))+' Continue Scanning can retry.';}
+        if($progress.length){
+            $progress.removeClass('is-done is-error')
+                .toggleClass('is-done',status==='completed')
+                .toggleClass('is-error',status==='failed'||interrupted)
+                .text(text);
+            let $errors=$wrap.find('.website-scan-errors-hosted');
+            if(!$errors.length){$errors=$('<div class="website-scan-errors-hosted"></div>').appendTo($wrap);}
+            $errors.html(scanErrorRows(state.page_errors||[]));
+            if(showProgress!==false){$wrap.removeClass('hidden');}
+        }
+        if($card.length){
+            $card.find('[data-source-stat="products"]').text(Number(stats.total||0));
+            $card.find('[data-source-stat="images-found"]').text(Number(stats.images_found||0));
+            $card.find('[data-source-stat="indexed"]').text(Number(stats.indexed||0));
+            $card.find('[data-source-stat="checked"]').text(Number(state.checked||0));
+            $card.find('[data-source-stat="skipped-existing"]').text(Number(state.skipped_existing||0));
+            $card.find('[data-source-scan-state]').text(status==='running'&&!interrupted?'Website scanning':status==='completed'?'Scan complete':status==='paused'?'Scan paused':status==='stopped'?'Scan stopped':status==='failed'?'Scan failed':'Ready')
+                .toggleClass('is-running',status==='running'&&!interrupted).toggleClass('is-error',status==='failed'||interrupted);
+            const active=status==='running'&&!interrupted;
+            const resumable=status==='paused'||status==='stopped'||status==='failed'||interrupted;
+            $card.find('.website-product-scan-button').toggleClass('hidden',active||resumable).prop('disabled',active).text('Scan Website');
+            $card.find('.website-scan-continue').toggleClass('hidden',!(active||resumable)).prop('disabled',false)
+                .attr('data-scan-action',active?'pause':'continue').text(active?'Pause Scanning':'Continue Scanning');
+            $card.find('.website-source-delete').prop('disabled',status==='running').attr('title',status==='running'?'Pause scanning before deleting this website.':'');
+        }
+        const historyId=Number(state.history_id||0);
+        if(historyId>0){
+            const $historyRow=$('[data-website-history-id="'+historyId+'"]');
+            if($historyRow.length){
+                const statusLabel=status?status.charAt(0).toUpperCase()+status.slice(1):'—';
+                $historyRow.find('[data-history-status]').attr('class','website-history-status is-'+status).text(statusLabel);
+                $historyRow.find('[data-history-processed]').text(Number(state.checked||0));
+                $historyRow.find('[data-history-saved]').text(Number(state.products||0));
+                $historyRow.find('[data-history-failed]').text(Number(state.failed||0));
+                let historyDetail='First images found '+Number(state.images_found||0)+' · Exact fingerprints '+Number(state.indexed||0);
+                if(Number(state.skipped_existing||0)){historyDetail+=' · Existing URLs skipped '+Number(state.skipped_existing||0);}
+                if(Number(state.queue||0)){historyDetail+=' · Queue '+Number(state.queue||0);}
+                if(String(state.last_error||'').trim()){historyDetail+=' · '+String(state.last_error||'').trim();}
+                $historyRow.find('[data-history-detail]').text(historyDetail);
+            }
+        }
+        const detailHost=String($('#website-source-detail').data('source-host')||'');
+        if(detailHost===host){
+            const active=status==='running'&&!interrupted;
+            const resumable=status==='paused'||status==='stopped'||status==='failed'||interrupted;
+            $('.website-source-detail-head-actions .website-product-scan-button').toggleClass('hidden',active||resumable).prop('disabled',active);
+            $('.website-source-detail-head-actions .website-scan-continue').toggleClass('hidden',!(active||resumable)).prop('disabled',false)
+                .attr('data-scan-action',active?'pause':'continue').text(active?'Pause Scanning':'Continue Scanning');
+        }
+    }
+
+    function scanLoop(host){
+        if(!host||loops[host]){return;}
+        loops[host]=true;
+        function tick(){
+            if(!loops[host]){return;}
+            watchdogGraceUntil[host]=Date.now()+50000;
+            stepRequests[host]=$.ajax({
+                url:endpoints.step,method:'POST',dataType:'json',timeout:45000,
+                data:{_csrf:csrf,host:host},
+                headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'}
+            }).done(function(data){
+                if(!data||!data.ok||!data.state){
+                    loops[host]=false;showToast((data&&data.message)||'Website scan failed.',true);return;
+                }
+                const state=data.state;renderScanState(state,null,false);
+                if(String(state.status)==='running'){
+                    window.setTimeout(tick,state.busy?700:220);
+                    return;
+                }
+                loops[host]=false;
+                if(String(state.status)==='completed'){
+                    showToast('Scan complete: '+host,false);
+                    if(activeHost===host){loadInlineProducts(host,'');}
+                }
+            }).fail(function(xhr,textStatus){
+                loops[host]=false;
+                if(textStatus==='scan-watchdog'){return;}
+                // HTTP 502/503/504 or a timeout here means the scanner AJAX request itself
+                // was interrupted. The persisted queue is intentionally left untouched.
+                $.getJSON(endpoints.status,{host:host}).done(function(data){
+                    if(data&&data.ok&&data.state){
+                        data.state.client_interrupted=true;
+                        renderScanState(data.state,null,true);
+                    }
+                });
+                const msg=(xhr.responseJSON&&xhr.responseJSON.message)||('Scanner connection interrupted'+(xhr.status?' (HTTP '+xhr.status+')':'')+'.');
+                showToast(msg+' Use Continue Scanning; completed pages will not be lost.',true);
+            }).always(function(){
+                delete stepRequests[host];
+            });
+        }
+        tick();
+    }
+
+    function startScan($button){
+        const website=websiteForButton($button);
+        if(!website){showToast('Enter a company website first.',true);return;}
+        let parsed;
+        try{parsed=new URL(website);}catch(e){showToast('Enter a valid HTTPS website URL.',true);return;}
+        if(parsed.protocol!=='https:'){showToast('Company website scanning requires https://.',true);return;}
+        const requestedHost=String(parsed.hostname||'').toLowerCase();
+        const inputSelector=String($button.data('website-input')||'').trim();
+        // Step 1's top field is for adding a new website. If the host already has
+        // a saved card, do not start another scan from this field; reveal that
+        // card so Admin can see its current state and explicitly Scan/Continue/Pause there.
+        if(inputSelector&&revealExistingSource(requestedHost,inputSelector)){return;}
+        const active=runningHostList();
+        if(active.length&&!runningHosts[requestedHost]){
+            showToast('Another website is already scanning: '+active[0]+'. Stop it or wait for it to finish first.',true);
+            syncGlobalScanControls();return;
+        }
+        $button.prop('disabled',true).text('Starting…');
+        const $wrap=progressWrap('', $button);$wrap.removeClass('hidden');
+        const $startProgress=$wrap.hasClass('website-product-scan-progress')?$wrap:$wrap.find('.website-product-scan-progress');
+        $startProgress.removeClass('is-error is-done').text('Saving website and starting scan…');
+        $.ajax({
+            url:endpoints.start,method:'POST',dataType:'json',
+            data:{_csrf:csrf,website_url:website},
+            headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'}
+        }).done(function(data){
+            if(!data||!data.ok||!data.state){showToast((data&&data.message)||'Scan could not start.',true);return;}
+            const state=data.state;const host=String(state.source_host||'');
+            const selector=String($button.data('website-input')||'').trim();if(selector){$(selector).val('');}
+            const detailHost=String($('#website-source-detail').data('source-host')||'');
+            if(!sourceCard(host).length&&detailHost!==host){
+                // The scan job is persisted before reload. Reloading creates the saved source card,
+                // and page initialization below resumes the same job automatically.
+                window.location.reload();
+                return;
+            }
+            renderScanState(state,$button,true);scanLoop(host);
+        }).fail(function(xhr){
+            showToast((xhr.responseJSON&&xhr.responseJSON.message)||'Scan could not start.',true);
+        }).always(function(){
+            if(!$button.closest('body').length)return;
+            if($button.attr('data-global-scan-disabled')!=='1'&&$button.prop('disabled')&&!$button.text().includes('Scanning')){$button.prop('disabled',false).text('Scan Website');}
+            syncGlobalScanControls();
+        });
+    }
+
+    $(document).on('click','.website-product-scan-button',function(){startScan($(this));});
+    $(document).on('click','.website-scan-continue',function(){
+        const host=String($(this).data('source-host')||'');if(!host)return;
+        const $button=$(this);
+        const requestedAction=String($button.attr('data-scan-action')||'continue');
+        $button.prop('disabled',true).text('Checking…');
+        $.getJSON(endpoints.status,{host:host}).done(function(statusData){
+            if(!statusData||!statusData.ok||!statusData.state){
+                $button.prop('disabled',false).text('Continue Scanning');
+                showToast((statusData&&statusData.message)||'Could not read the saved scan state.',true);return;
+            }
+            const current=String(statusData.state.status||'');
+            if(current==='running'&&requestedAction!=='pause'){
+                // A previous AJAX connection may have been interrupted while the
+                // persisted job kept running. Continue reconnects the browser loop
+                // instead of accidentally turning that action into a pause.
+                statusData.state.client_interrupted=false;
+                renderScanState(statusData.state,null,true);
+                scanLoop(host);
+                return;
+            }
+            if(current==='running'){
+                // Stop scheduling new AJAX steps first. The server-side pause waits
+                // for the current short page step to commit before recording paused.
+                loops[host]=false;
+                $button.text('Pausing…');
+                $.ajax({url:endpoints.stop,method:'POST',dataType:'json',data:{_csrf:csrf,host:host},headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'}})
+                    .done(function(data){
+                        if(data&&data.ok&&data.state){
+                            renderScanState(data.state,null,true);
+                            showToast('Scanning paused. Queue and progress were saved.',false);
+                        }else{
+                            showToast((data&&data.message)||'Could not pause scanning.',true);
+                            $button.prop('disabled',false).text('Pause Scanning');
+                        }
+                    })
+                    .fail(function(xhr){
+                        showToast((xhr.responseJSON&&xhr.responseJSON.message)||'Could not pause scanning.',true);
+                        $button.prop('disabled',false).text('Pause Scanning');
+                    });
+                return;
+            }
+            $button.text('Continuing…');
+            $.ajax({url:endpoints.resume,method:'POST',dataType:'json',data:{_csrf:csrf,host:host},headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'}})
+                .done(function(data){
+                    if(data&&data.ok&&data.state){renderScanState(data.state,null,true);scanLoop(host);}
+                    else{showToast((data&&data.message)||'Could not continue scanning.',true);$button.prop('disabled',false).text('Continue Scanning');}
+                })
+                .fail(function(xhr){showToast((xhr.responseJSON&&xhr.responseJSON.message)||'Could not continue scanning.',true);$button.prop('disabled',false).text('Continue Scanning');});
+        }).fail(function(){
+            $button.prop('disabled',false).text('Continue Scanning');showToast('Could not read the saved scan state.',true);
+        });
+    });
+    $(document).on('click','.website-scan-progress-close',function(){
+        $(this).closest('.website-product-scan-progress-wrap').addClass('hidden');
+    });
+
+    function productCard(row){
+        const id=Number(row.id||0);
+        const title=escapeHtml(String(row.title||''));
+        const description=escapeHtml(String(row.description||''));
+        const page=escapeHtml(String(row.page_url||''));
+        const image=escapeHtml(String(row.image_url||''));
+        const imported=escapeHtml(String(row.imported_at||'—'));
+        const imageHtml=image
+            ?'<img src="'+image+'" alt="" loading="lazy" referrerpolicy="no-referrer">'
+            :'<span>No image</span>';
+        return '<article class="website-source-product-card" data-inline-reference-id="'+id+'">'
+            +'<div class="website-source-product-image">'+imageHtml+'</div>'
+            +'<div class="website-source-product-body"><strong>'+title+'</strong>'+(description?'<p>'+description+'</p>':'<p class="muted">No description</p>')+'</div>'
+            +'<div class="website-source-product-url-cell"><a class="website-source-product-url" href="'+page+'" target="_blank" rel="noopener noreferrer">'+page+'</a></div>'
+            +'<div class="website-source-product-image-state">'+(row.sha256?'Indexed ✓':(image?'Image found':'No image'))+'</div>'
+            +'<div class="website-source-product-date">'+imported+'</div>'
+            +'<div class="website-source-product-actions"><button type="button" class="tiny badbtn website-inline-reference-delete" data-reference-id="'+id+'">Delete</button></div>'
+            +'</article>';
+    }
+
+    function renderInlineRows(rows){
+        const $grid=$activePanel.find('.website-source-product-grid');
+        if(!$grid.length){return;}
+        $grid.html(rows.length?rows.map(productCard).join(''):'<div class="website-source-inline-empty">No matching scanned products for this website.</div>');
+        $activePanel.find('[data-inline-count]').text(rows.length);
+    }
+
+    function loadInlineProducts(host,q){
+        if(!$activePanel.length||activeHost!==host){return;}
+        const $grid=$activePanel.find('.website-source-product-grid');
+        $grid.html('<div class="website-source-inline-empty">Loading products…</div>');
+        $.getJSON(endpoints.search,{host:host,q:q||''}).done(function(data){
+            if(!data||!data.ok){$grid.html('<div class="website-source-inline-empty">'+escapeHtml((data&&data.message)||'Could not load products.')+'</div>');return;}
+            renderInlineRows(Array.isArray(data.rows)?data.rows:[]);
+        }).fail(function(xhr){
+            $grid.html('<div class="website-source-inline-empty">'+escapeHtml((xhr.responseJSON&&xhr.responseJSON.message)||'Could not load products.')+'</div>');
+        });
+    }
+
+    function rowEndCard($card){
+        const top=Math.round($card.position().top);let $last=$card;
+        $card.nextAll('.website-product-source').each(function(){
+            const $candidate=$(this);
+            if(Math.abs(Math.round($candidate.position().top)-top)>2){return false;}
+            $last=$candidate;
+        });
+        return $last;
+    }
+
+    function openInlineSource($card){
+        const host=String($card.data('website-source')||'');
+        const website=String($card.data('website-url')||'');
+        const $button=$card.find('.website-source-expand').first();
+        const $detail=$card.find('[data-website-source-detail]').first();
+        if(activeHost===host){closeInlineSource(false);return;}
+        closeInlineSource(true);
+        activeHost=host;
+        $button.attr('aria-expanded','true');
+        $card.addClass('is-expanded');
+        if($detail.length){
+            $detail.stop(true,true).removeClass('hidden').hide().slideDown(180,function(){$(this).removeAttr('style');});
+        }
+        const panelHtml='<section class="website-source-inline-panel" data-inline-host="'+escapeHtml(host)+'">'
+            +'<div class="website-source-inline-head"><div class="website-source-inline-head-copy"><strong>Scanned products</strong><span>'+escapeHtml(host)+'</span></div><button type="button" class="website-source-inline-close" aria-label="Close products">×</button></div>'
+            +'<div class="website-source-inline-toolbar"><div class="website-source-inline-search"><input type="search" class="website-inline-search" placeholder="Search title, URL or description"><button type="button" class="btn website-inline-search-button">Search</button></div><button type="button" class="btn ghost website-source-inline-add-toggle">+ Add URL</button></div>'
+            +'<form class="website-source-inline-add">'
+                +'<input type="hidden" name="_csrf" value="'+escapeHtml(csrf)+'"><input type="hidden" name="ajax" value="1"><input type="hidden" name="website_url" value="'+escapeHtml(website)+'">'
+                +'<div class="website-source-inline-add-grid"><label>Page URL<input type="url" name="page_url" required placeholder="'+escapeHtml(website)+'product/example"></label><label>Title<input type="text" name="title" maxlength="500" required></label><label class="wide">Description<textarea name="description" rows="2"></textarea></label><label class="wide">First image URL<input type="url" name="image_url"></label></div>'
+                +'<div><button type="submit" class="btn">Add URL</button></div>'
+            +'</form>'
+            +'<div class="website-source-inline-summary"><span><strong data-inline-count>0</strong> matching products</span><span>Search/add/delete applies only to '+escapeHtml(host)+'.</span></div>'
+            +'<div class="website-source-product-list-head"><span>Image</span><span>Title / Description</span><span>Page URL</span><span>Image</span><span>Indexed</span><span></span></div>'
+            +'<div class="website-source-product-grid"><div class="website-source-inline-empty">Loading products…</div></div>'
+        +'</section>';
+        $activePanel=$(panelHtml).hide();
+        rowEndCard($card).after($activePanel);
+        $activePanel.stop(true,true).slideDown(200);
+        loadInlineProducts(host,'');
+    }
+
+    function closeInlineSource(immediate){
+        const closingHost=activeHost;
+        if(closingHost){
+            const $card=sourceCard(closingHost);
+            $card.removeClass('is-expanded').find('.website-source-expand').attr('aria-expanded','false');
+            const $detail=$card.find('[data-website-source-detail]').first();
+            if($detail.length){
+                if(immediate){$detail.stop(true,true).hide().addClass('hidden').removeAttr('style');}
+                else{$detail.stop(true,true).slideUp(150,function(){$(this).addClass('hidden').removeAttr('style');});}
+            }
+        }
+        const $panel=$activePanel;
+        $activePanel=$();activeHost='';
+        if($panel.length){
+            if(immediate){$panel.stop(true,true).remove();}
+            else{$panel.stop(true,true).slideUp(160,function(){$(this).remove();});}
+        }
+    }
+
+    $(document).on('click','.website-source-expand',function(){openInlineSource($(this).closest('.website-product-source'));});
+    $(document).on('click','.website-source-inline-close',closeInlineSource);
+    $(document).on('click','.website-source-inline-add-toggle',function(){
+        $activePanel.find('.website-source-inline-add').toggleClass('is-open');
+    });
+    $(document).on('click','.website-inline-search-button',function(){
+        if(activeHost){loadInlineProducts(activeHost,String($activePanel.find('.website-inline-search').val()||''));}
+    });
+    $(document).on('keydown','.website-inline-search',function(event){
+        if(event.key==='Enter'){event.preventDefault();if(activeHost){loadInlineProducts(activeHost,String($(this).val()||''));}}
+    });
+    $(document).on('submit','.website-source-inline-add',function(event){
+        event.preventDefault();const $form=$(this);const $submit=$form.find('button[type="submit"]');
+        $submit.prop('disabled',true).text('Adding…');
+        $.ajax({url:endpoints.add,method:'POST',dataType:'json',data:$form.serialize(),headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'}})
+            .done(function(data){
+                if(!data||!data.ok){showToast((data&&data.message)||'URL could not be added.',true);return;}
+                $form.removeClass('is-open');$form.find('input[name="page_url"],input[name="title"],input[name="image_url"],textarea[name="description"]').val('');
+                showToast('Website URL added.',false);loadInlineProducts(activeHost,String($activePanel.find('.website-inline-search').val()||''));
+            }).fail(function(xhr){showToast((xhr.responseJSON&&xhr.responseJSON.message)||'URL could not be added.',true);})
+            .always(function(){$submit.prop('disabled',false).text('Add URL');});
+    });
+    $(document).on('click','.website-inline-reference-delete',function(){
+        const $button=$(this);const id=Number($button.data('reference-id')||0);if(!id)return;
+        if(!$button.hasClass('delete-armed')){
+            $button.addClass('delete-armed').text('Confirm');
+            window.setTimeout(function(){$button.removeClass('delete-armed').text('Delete');},5000);return;
+        }
+        $button.prop('disabled',true).text('Deleting…');
+        $.ajax({url:endpoints.delete,method:'POST',dataType:'json',data:{_csrf:csrf,id:id},headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'}})
+            .done(function(data){
+                if(!data||!data.ok){showToast((data&&data.message)||'Delete failed.',true);return;}
+                $activePanel.find('[data-inline-reference-id="'+id+'"]').remove();showToast('Website product deleted.',false);
+            }).fail(function(xhr){showToast((xhr.responseJSON&&xhr.responseJSON.message)||'Delete failed.',true);$button.prop('disabled',false).removeClass('delete-armed').text('Delete');});
+    });
+
+    syncGlobalScanControls();
+
+    // V0.2.39 watchdog: a scan step now processes one page at a time, so a
+    // normal step should finish well inside the browser timeout. If no DB
+    // progress is recorded for 55 seconds, expose Continue Scanning instead
+    // of leaving the UI stuck forever on "Scanning…". If a running job has
+    // no active browser loop (for example after a harmless JS interruption),
+    // resume the loop automatically from the persisted queue.
+    window.setInterval(function(){
+        runningHostList().forEach(function(host){
+            $.getJSON(endpoints.status,{host:host}).done(function(data){
+                if(!data||!data.ok||!data.state){return;}
+                const state=data.state;
+                const status=String(state.status||'');
+                if(status!=='running'){
+                    loops[host]=false;
+                    renderScanState(state,null,false);
+                    return;
+                }
+                const stale=Math.max(0,Number(state.stale_seconds||0));
+                if(stale>=55&&Date.now()>=Number(watchdogGraceUntil[host]||0)){
+                    if(stepRequests[host]&&typeof stepRequests[host].abort==='function'){
+                        try{stepRequests[host].abort('scan-watchdog');}catch(e){}
+                    }
+                    loops[host]=false;
+                    state.client_interrupted=true;
+                    renderScanState(state,null,true);
+                    showToast('Website scan paused because no progress was recorded for '+stale+' seconds. Use Continue Scanning; completed pages were saved.',true);
+                    return;
+                }
+                if(!loops[host]){
+                    renderScanState(state,null,false);
+                    scanLoop(host);
+                }
+            });
+        });
+    },12000);
+
+    // Refresh-safe resume: persisted jobs survive reload and are resumed automatically.
+    $('.website-product-source').each(function(){
+        const host=String($(this).data('website-source')||'');if(!host)return;
+        $.getJSON(endpoints.status,{host:host}).done(function(data){
+            if(!data||!data.ok||!data.state){return;}
+            renderScanState(data.state,null,String(data.state.status)==='running');
+            if(String(data.state.status)==='running'){scanLoop(host);}
+        });
+    });
+    const detailHost=String($('#website-source-detail').data('source-host')||'');
+    if(detailHost){
+        $.getJSON(endpoints.status,{host:detailHost}).done(function(data){
+            if(!data||!data.ok||!data.state){return;}
+            renderScanState(data.state,null,String(data.state.status)==='running');
+            if(String(data.state.status)==='running'){scanLoop(detailHost);}
+        });
+    }
+})(window.jQuery);
+
+/* v0.2.36 — Website Library 1/2/3 top-level accordion. */
+(function($){
+    'use strict';
+    const storageKey='cdspWebsiteToolPanel';
+    function closeWebsiteToolPanels(immediate){
+        const $panels=$('[data-website-tool-panel]:not(.hidden)');
+        $('[data-website-tool-toggle]').attr('aria-expanded','false');
+        if(immediate){
+            $panels.stop(true,true).hide().addClass('hidden').removeAttr('style');
+            return;
+        }
+        $panels.stop(true,true).slideUp(180,function(){$(this).addClass('hidden').removeAttr('style');});
+    }
+    function openWebsiteToolPanel(id,remember,immediate){
+        const $panel=$('#'+id);
+        if(!$panel.length)return;
+        const $others=$('[data-website-tool-panel]').not($panel);
+        $('[data-website-tool-toggle]').attr('aria-expanded','false');
+        if(immediate){
+            $others.stop(true,true).hide().addClass('hidden').removeAttr('style');
+            $panel.removeClass('hidden').show().removeAttr('style');
+        }else{
+            $others.filter(':not(.hidden)').stop(true,true).slideUp(160,function(){$(this).addClass('hidden').removeAttr('style');});
+            $panel.stop(true,true).removeClass('hidden').hide().slideDown(200,function(){$(this).removeAttr('style');});
+        }
+        $('[data-website-tool-toggle="'+id+'"]').attr('aria-expanded','true');
+        if(remember!==false){try{window.localStorage.setItem(storageKey,id);}catch(e){}}
+    }
+    $(document).on('click','[data-website-tool-toggle]',function(){
+        const id=String($(this).data('website-tool-toggle')||'');
+        const isOpen=$(this).attr('aria-expanded')==='true';
+        if(isOpen){closeWebsiteToolPanels(false);try{window.localStorage.removeItem(storageKey);}catch(e){}return;}
+        openWebsiteToolPanel(id,true,false);
+    });
+    $(document).on('click','[data-website-tool-close]',function(){
+        closeWebsiteToolPanels(false);
+        try{window.localStorage.removeItem(storageKey);}catch(e){}
+    });
+    $(function(){
+        if(!$('[data-website-tools]').length)return;
+        let saved='';try{saved=String(window.localStorage.getItem(storageKey)||'');}catch(e){}
+        if(saved&&$('#'+saved).length){openWebsiteToolPanel(saved,false,true);}
+    });
+})(window.jQuery);
