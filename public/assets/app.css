@@ -15301,3 +15301,70 @@ body.provider-sort-active *{
         max-height:360px;
     }
 }
+
+/* v0.2.78 — Application Settings compact control rows.
+   Labels stay above each field; input + save button stay on one row on desktop/tablet.
+   Only narrow mobile screens stack the button below the input. */
+#application-settings .application-settings-stack{
+    display:grid;
+    gap:14px;
+}
+#application-settings .application-setting-form{
+    display:grid;
+    gap:6px;
+    width:100%;
+    min-width:0;
+    margin:0;
+}
+#application-settings .application-setting-label{
+    display:block;
+    margin:0;
+    color:#172033;
+    font-size:12px;
+    line-height:1.35;
+    font-weight:700;
+}
+#application-settings .application-setting-control-row{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    align-items:stretch;
+    gap:8px;
+    width:100%;
+    min-width:0;
+}
+#application-settings .application-setting-control-row input{
+    width:100%;
+    min-width:0;
+    height:38px;
+    min-height:38px;
+    margin:0;
+    box-sizing:border-box;
+}
+#application-settings .application-setting-save{
+    width:auto !important;
+    min-width:104px;
+    height:38px;
+    min-height:38px;
+    margin:0 !important;
+    padding:0 14px;
+    align-self:stretch;
+    white-space:nowrap;
+}
+#application-settings .application-setting-help{
+    display:block;
+    margin:0;
+    color:#667085;
+    font-size:10px;
+    line-height:1.35;
+    font-weight:400;
+    text-transform:none;
+    letter-spacing:0;
+}
+@media(max-width:560px){
+    #application-settings .application-setting-control-row{
+        grid-template-columns:minmax(0,1fr);
+    }
+    #application-settings .application-setting-save{
+        width:100% !important;
+    }
+}

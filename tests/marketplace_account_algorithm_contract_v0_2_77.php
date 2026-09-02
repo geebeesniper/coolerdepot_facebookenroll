@@ -21,7 +21,7 @@ $accountCode=$read('app/Services/MarketplaceAccount.php');
 $js=$read('public/assets/app.js');
 $css=$read('public/assets/app.css');
 
-$check($version==='0.2.77','version');
+$check(version_compare($version,'0.2.77','>='),'version >= 0.2.77');
 $check(str_contains($accountCode,'public static function hasStableIdentity'),'stable account gate is centralized');
 $check(str_contains($accountCode,'public static function sameStoredAccount'),'stored account equality is centralized');
 $check(str_contains($accountCode,'normalizedAccountUrl'),'account URL is normalized before equality');
