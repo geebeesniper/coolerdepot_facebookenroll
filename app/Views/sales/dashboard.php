@@ -259,6 +259,14 @@ $chartTargetTop=
             <span class="sales-submit-plus">+</span>
             <span data-sales-i18n="submitPost">Submit Post</span>
         </button>
+
+        <a
+            class="btn sales-submit-cta sales-bulk-submit-cta"
+            href="<?= Util::e($config['app']['base_path']) ?>/sales/bulk-submit"
+        >
+            <span class="sales-submit-plus">+</span>
+            <span data-sales-i18n="bulkSubmitPost">Bulk Submit Post</span>
+        </a>
     </div>
 </div>
 

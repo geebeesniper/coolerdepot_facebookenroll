@@ -25,6 +25,7 @@ const appLanguageDictionary={
     en:{
         dashboard:'Dashboard',
         submit:'Submit',
+        bulkSubmit:'Bulk Submit',
         admin:'Admin',
         reports:'Reports',
         settings:'Settings',
@@ -64,6 +65,7 @@ const appLanguageDictionary={
     'zh-CN':{
         dashboard:'主页',
         submit:'提交',
+        bulkSubmit:'批量提交',
         admin:'管理',
         reports:'报表',
         settings:'设置',
@@ -103,6 +105,7 @@ const appLanguageDictionary={
     'zh-TW':{
         dashboard:'主頁',
         submit:'提交',
+        bulkSubmit:'批量提交',
         admin:'管理',
         reports:'報表',
         settings:'設定',
@@ -142,6 +145,7 @@ const appLanguageDictionary={
     es:{
         dashboard:'Panel',
         submit:'Enviar',
+        bulkSubmit:'Envío masivo',
         admin:'Admin',
         reports:'Informes',
         settings:'Configuración',
@@ -633,6 +637,8 @@ $(window).on('resize.cdspMobileNav',function(){
     let salesInspectionBusy=false;
     let salesInspectionRequest=null;
     let salesInspectionStatusTimer=null;
+    // v0.2.97: full verification may continue only after the two fast preflight checks pass.
+    let salesContinueAfterPreflight=false;
 
     try{
         salesInspectionBusy=sessionStorage.getItem(SALES_INSPECTION_BUSY_KEY)==='1';
@@ -658,7 +664,7 @@ $(window).on('resize.cdspMobileNav',function(){
 
         $('#detectedPlatformValue').val(platform);
         $('#inspectButton').prop('disabled', salesInspectionBusy || !platform);
-        $('#saveWaitButton').prop('disabled', salesInspectionBusy || !platform);
+        $('#saveWaitButton').prop('disabled',salesInspectionBusy||!platform||$('#salesPreflightActions').hasClass('hidden'));
 
         $label
             .removeClass('facebook offerup craigslist empty-platform')
@@ -713,6 +719,12 @@ const salesI18n={
         calendarStatus:'{unreviewed} unreviewed · {reviewed} reviewed',
         apply:'Apply',
         submitPost:'Submit Post',
+        bulkSubmitPost:'Bulk Submit Post',
+        bulkSubmitHelp:'Paste one Marketplace listing URL per line. Each valid, non-duplicate listing is saved to the background Verification Queue.',
+        preflightPassed:'First two checks passed.',
+        preflightChoice:'Save & Wait now, or continue with the full verification.',
+        continueVerification:'Continue Verification',
+        preflightPassedMessage:'Platform and hard duplicate checks passed. Choose Save & Wait or Continue Verification.',
         posts:'Posts',
         selectedRange:'Selected range',
         good:'Good',
@@ -798,7 +810,7 @@ const salesI18n={
         queueInvalid:'Invalid',
         queueNeedsAction:'Needs Action',
         queueEmptyTitle:'No verification items',
-        queueEmptyHelp:'Use Save & Wait or Bulk Submit to add listings.',
+        queueEmptyHelp:'Use Save & Wait or Bulk Submit Post to add listings.',
         queueRetry:'Retry',
         queueEdit:'Edit & Re-verify',
         queueDelete:'Delete',
@@ -855,6 +867,12 @@ const salesI18n={
         calendarStatus:'{unreviewed} 未审核 · {reviewed} 已审核',
         apply:'应用',
         submitPost:'提交帖子',
+        bulkSubmitPost:'批量提交 Post',
+        bulkSubmitHelp:'每行粘贴一个 Marketplace 帖子链接。有效且不重复的记录会进入后台 Verification Queue。',
+        preflightPassed:'前两项检查已通过。',
+        preflightChoice:'现在可以 Save & Wait，或继续完整验证。',
+        continueVerification:'继续验证',
+        preflightPassedMessage:'平台识别和硬查重已通过。请选择 Save & Wait 或继续验证。',
         posts:'帖子',
         selectedRange:'所选日期范围',
         good:'通过',
@@ -980,6 +998,12 @@ const salesI18n={
         backToday:'返回今天',
         apply:'套用',
         submitPost:'提交貼文',
+        bulkSubmitPost:'批量提交 Post',
+        bulkSubmitHelp:'每行貼上一個 Marketplace 貼文連結。有效且不重複的記錄會進入背景 Verification Queue。',
+        preflightPassed:'前兩項檢查已通過。',
+        preflightChoice:'現在可以 Save & Wait，或繼續完整驗證。',
+        continueVerification:'繼續驗證',
+        preflightPassedMessage:'平台識別和硬查重已通過。請選擇 Save & Wait 或繼續驗證。',
         posts:'貼文',
         selectedRange:'所選日期範圍',
         good:'通過',
@@ -1110,6 +1134,12 @@ const salesI18n={
         calendarStatus:'{unreviewed} sin revisar · {reviewed} revisado',
         apply:'Aplicar',
         submitPost:'Enviar publicación',
+        bulkSubmitPost:'Envío masivo de publicaciones',
+        bulkSubmitHelp:'Pega una URL de Marketplace por línea. Cada entrada válida y no duplicada se guarda en la cola de verificación en segundo plano.',
+        preflightPassed:'Las dos primeras comprobaciones pasaron.',
+        preflightChoice:'Guarda y espera ahora o continúa con la verificación completa.',
+        continueVerification:'Continuar verificación',
+        preflightPassedMessage:'La plataforma y la comprobación de duplicado duro pasaron. Elige Guardar y esperar o Continuar verificación.',
         posts:'Publicaciones',
         selectedRange:'Rango seleccionado',
         good:'Aprobado',
@@ -4955,7 +4985,7 @@ function setSalesInspectionBusyState(busy,showMessage){
     $('#inspectButton')
         .prop('disabled',salesInspectionBusy||!platform)
         .text(salesInspectionBusy?salesTr('checking'):salesTr('checkPost'));
-    $('#saveWaitButton').prop('disabled',salesInspectionBusy||!platform);
+    $('#saveWaitButton').prop('disabled',salesInspectionBusy||!platform||$('#salesPreflightActions').hasClass('hidden'));
     $('#postUrl')
         .prop('readonly',salesInspectionBusy)
         .attr('aria-busy',salesInspectionBusy?'true':'false');
@@ -5083,6 +5113,12 @@ $('#inspectForm').on('submit',function(e){
     }
 
     const platform=updateDetectedPlatform();
+    const continueImmediately=Boolean(salesContinueAfterPreflight);
+    salesContinueAfterPreflight=false;
+    if(!continueImmediately){
+        $('#salesPreflightActions').addClass('hidden');
+        $('#saveWaitButton').prop('disabled',true);
+    }
 
     if(!platform){
         const $p=$('#inspectionProgress');
@@ -5147,10 +5183,12 @@ $('#inspectForm').on('submit',function(e){
     // EN: Platform detection and initial duplicate checking are hard prerequisites.
     // The expensive remote/provider verification is never started unless both pass.
     // 中文：平台识别与初次查重是硬前置条件；任一失败都不会启动后续远程/Provider 验证。
-    const preflightRequest=$.post(
-        window.CD_BASE_PATH+'/api/inspect/preflight',
-        inspectPayload
-    );
+    const preflightRequest=continueImmediately
+        ?$.Deferred().resolve({ok:true,continued:true}).promise()
+        :$.post(
+            window.CD_BASE_PATH+'/api/inspect/preflight',
+            inspectPayload
+        );
     salesInspectionRequest=preflightRequest;
 
     preflightRequest
@@ -5180,6 +5218,24 @@ $('#inspectForm').on('submit',function(e){
         }
 
         setInspectionStep('duplicate','done','OK');
+
+        // v0.2.97: this is the intentional decision point. Save & Wait belongs
+        // after Platform + hard Duplicate preflight and BEFORE provider/fetch (step 3).
+        if(!continueImmediately){
+            salesInspectionRequest=null;
+            setSalesInspectionBusyState(false,false);
+            $('#postUrl').prop('readonly',true).attr('aria-busy','false');
+            $('#inspectButton').prop('disabled',true);
+            $('#salesPreflightActions').removeClass('hidden');
+            $('#saveWaitButton').prop('disabled',false);
+            setInspectionStep('fetch',null,'Waiting');
+            setInspectionStep('date',null,'Waiting');
+            setInspectionStep('final',null,'Waiting');
+            setSalesSubmitMessage(salesTr('preflightPassedMessage'),'ok');
+            return;
+        }
+
+        $('#salesPreflightActions').addClass('hidden');
         setInspectionStep('fetch','active',salesTr('checking'));
 
     salesInspectionRequest=$.post(
@@ -13538,6 +13594,15 @@ $(document).on('click','.website-source-delete',function(event){
         .fail(function(xhr){const msg=(xhr.responseJSON&&xhr.responseJSON.message)||'Request failed.';if($panel&&$panel.length)vqMessage($panel,msg,'error');else setSalesSubmitMessage(msg,'error');if(xhr.responseJSON&&xhr.responseJSON.duplicate_url)setSalesDuplicateSource(xhr.responseJSON.duplicate_url,xhr.responseJSON.duplicate_kind);});
     }
 
+    $('#continueVerifyButton').on('click',function(){
+        if(salesInspectionBusy)return;
+        if($('#salesPreflightActions').hasClass('hidden'))return;
+        salesContinueAfterPreflight=true;
+        $('#salesPreflightActions').addClass('hidden');
+        $('#postUrl').prop('readonly',false);
+        $('#inspectForm').trigger('submit');
+    });
+
     $('#saveWaitButton').on('click',function(){
         if(salesInspectionBusy)return;
         const url=String($('#postUrl').val()||'').trim();
@@ -13546,13 +13611,15 @@ $(document).on('click','.website-source-delete',function(event){
         setSalesSubmitMessage('Checking platform and hard duplicate…','warning');
         vqPost('/api/verification-queue/enqueue',{url:url},$(),function(resp){
             setSalesSubmitMessage(resp.message||'Saved to Verification Queue.',resp.accepted===false?'warning':'ok');
+            $('#salesPreflightActions').addClass('hidden');
+            setInspectionStep('fetch','skipped','Background');
+            setInspectionStep('date','skipped','Background');
+            setInspectionStep('final','skipped','Background');
             $('#postUrl').val('').prop('readonly',false);
             updateDetectedPlatform();
         }).always(function(){updateDetectedPlatform();$btn.text(salesTr('saveAndWait'));});
     });
 
-    $('#bulkSubmitToggle').on('click',function(){$('#salesBulkSubmitPanel').removeClass('hidden');$('#salesBulkUrls').trigger('focus');});
-    $('#bulkSubmitCancel').on('click',function(){$('#salesBulkSubmitPanel').addClass('hidden');});
     $('#bulkQueueButton').on('click',function(){
         const urls=String($('#salesBulkUrls').val()||'').trim();
         if(!urls){$('#salesBulkResult').removeClass('hidden').text('Paste at least one listing URL.');return;}
@@ -13565,7 +13632,7 @@ $(document).on('click','.website-source-delete',function(event){
             if(Number(resp.queued||0)>0)$('#salesBulkUrls').val('');
             vqLoadAll(false);
         }).fail(function(xhr){$('#salesBulkResult').removeClass('hidden').text((xhr.responseJSON&&xhr.responseJSON.message)||'Bulk Submit failed.');})
-        .always(function(){$button.prop('disabled',false).text(salesTr('addToQueue'));});
+        .always(function(){$button.prop('disabled',false).text(salesTr('bulkSubmitPost'));});
     });
 
     $(document).on('click','[data-verification-queue-panel] [data-vq-filter]',function(){

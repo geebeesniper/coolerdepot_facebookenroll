@@ -8,6 +8,7 @@ $version=trim($read('VERSION'));
 $routes=$read('index.php');
 $view=$read('app/Views/sales/_submit_form.php');
 $qview=$read('app/Views/sales/_verification_queue.php');
+$bulkview=$read('app/Views/sales/bulk_submit.php');
 $js=$read('public/assets/app.js');
 $css=$read('public/assets/app.css');
 $model=$read('app/Models/VerificationQueue.php');
@@ -17,7 +18,7 @@ $schema=$read('database/migrations/030_verification_queue.sql');
 
 $check(version_compare($version,'0.2.95','>='),'VERSION is >= 0.2.95');
 $check(strpos($routes,"/api/verification-queue/enqueue")!==false&&strpos($routes,"/api/verification-queue/bulk")!==false,'queue enqueue + bulk routes exist');
-$check(strpos($view,'id="saveWaitButton"')!==false&&strpos($view,'id="bulkSubmitToggle"')!==false,'Submit UI exposes Save & Wait + Bulk Submit');
+$check(strpos($view,'id="saveWaitButton"')!==false&&(strpos($view,'id="bulkSubmitToggle"')!==false||strpos($bulkview,'id="bulkQueueButton"')!==false),'Sales UI exposes Save & Wait + Bulk Submit');
 $check(strpos($qview,'data-vq-filter="failed"')!==false&&strpos($qview,'data-vq-filter="invalid"')!==false&&strpos($qview,'data-vq-filter="needs_action"')!==false,'clickable Failed + Invalid + Needs Action filters exist');
 $check(strpos($js,"data-vq-action','edit")!==false&&strpos($js,"data-vq-action','retry")!==false&&strpos($js,"data-vq-action','delete")!==false,'failed/duplicate edit retry delete actions are wired');
 $check(strpos($js,"queueNotCounted")!==false,'failed queue UI explicitly says it is not counted');

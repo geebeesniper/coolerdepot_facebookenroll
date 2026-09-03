@@ -32,6 +32,7 @@ $relativePath = '/' . ltrim($relativePath, '/');
 $navActive = [
     'dashboard' => false,
     'submit' => false,
+    'bulk_submit' => false,
     'reports' => false,
     'settings' => false,
     'help' => false,
@@ -40,7 +41,9 @@ if ($u) {
     if (str_starts_with($relativePath, '/help')) {
         $navActive['help'] = true;
     } elseif (($u['role'] ?? '') === 'sales') {
-        if (str_starts_with($relativePath, '/sales/submit')) {
+        if (str_starts_with($relativePath, '/sales/bulk-submit')) {
+            $navActive['bulk_submit'] = true;
+        } elseif (str_starts_with($relativePath, '/sales/submit')) {
             $navActive['submit'] = true;
         } elseif ($relativePath === '/sales' || str_starts_with($relativePath, '/sales/')) {
             $navActive['dashboard'] = true;
@@ -271,6 +274,14 @@ if ($u && ($u['role'] ?? '') === 'admin') {
                     data-open-sales-submit
                 >
                     Submit
+                </a>
+                <a
+                    class="app-nav-link<?= $navActive['bulk_submit'] ? ' active' : '' ?>"
+                    href="<?= Util::e($base) ?>/sales/bulk-submit"
+                    <?= $navActive['bulk_submit'] ? 'aria-current="page"' : '' ?>
+                    data-nav-i18n="bulkSubmit"
+                >
+                    Bulk Submit
                 </a>
             <?php else: ?>
                 <a

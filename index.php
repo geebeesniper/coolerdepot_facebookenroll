@@ -53,6 +53,7 @@ $router->options('/graphql', [GraphqlController::class, 'cors']);
 // Sales dashboard and post verification workflow.
 $router->get('/sales', [SalesController::class, 'dashboard']);
 $router->get('/sales/submit', [SalesController::class, 'submitForm']);
+$router->get('/sales/bulk-submit', [SalesController::class, 'bulkSubmitForm']);
 $router->get('/sales/daily-posts', [SalesController::class, 'dailyPostsAjax']);
 $router->post('/sales/save', [SalesController::class, 'save']);
 $router->post('/sales/delete-request', [SalesController::class, 'requestDelete']);

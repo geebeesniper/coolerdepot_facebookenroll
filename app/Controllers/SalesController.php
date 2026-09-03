@@ -234,6 +234,21 @@ private function salesPresetRange(
     }
 
     /**
+     * EN: Render the dedicated Bulk Submit Post workflow.
+     * 中文：渲染独立的 Bulk Submit Post 平级流程。
+     *
+     * @return void
+     */
+    public function bulkSubmitForm(): void
+    {
+        $u=Auth::requireRole('sales');
+
+        $this->render('sales/bulk_submit',[
+            'user'=>$u,
+        ]);
+    }
+
+    /**
      * EN: Handle the save HTTP action for sales controller and return the appropriate response.
      * 中文：处理 sales controller 的“save”HTTP 操作并返回相应响应。
      *

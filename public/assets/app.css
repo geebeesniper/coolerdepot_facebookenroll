@@ -16183,3 +16183,28 @@ button.website-history-control{
     .sales-vq-edit{grid-template-columns:1fr;}
 }
 .sales-vq-status.invalid{background:#fff7ed;color:#9a3412;}
+
+/* v0.2.97 — Save & Wait decision point after preflight + peer Bulk Submit Post workflow. */
+.sales-preflight-actions{
+    margin-top:8px;
+    padding:8px 10px;
+    border:1px solid #dbe3ee;
+    border-radius:4px;
+    background:#f8fafc;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+}
+.sales-preflight-copy{display:flex;flex-direction:column;gap:2px;min-width:0;}
+.sales-preflight-copy strong{font-size:10px;}
+.sales-preflight-copy span{font-size:9px;color:#64748b;line-height:1.35;}
+.sales-preflight-buttons{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end;}
+.sales-bulk-submit-page{margin-top:0;padding:14px;}
+.sales-bulk-submit-page textarea{min-height:220px;}
+.sales-bulk-submit-cta{text-decoration:none;}
+@media(max-width:760px){
+    .sales-preflight-actions{align-items:stretch;flex-direction:column;}
+    .sales-preflight-buttons{justify-content:stretch;}
+    .sales-preflight-buttons .btn{flex:1 1 160px;}
+}
