@@ -11,7 +11,7 @@ $check = static function (bool $ok, string $message) use (&$fail): void {
     if (!$ok) { $fail[] = $message; }
 };
 
-$check(in_array($version, ['0.2.81', '0.2.82'], true), 'VERSION must be 0.2.81 or 0.2.82 during this incremental upgrade.');
+$check(version_compare($version, '0.2.82', '>='), 'VERSION must be 0.2.82 or newer.');
 $check(strpos($js, 'function salesDirectoryFilteringActive()') !== false, 'Missing centralized Sales directory filter-active check.');
 $check(strpos($js, "salesDirectoryFilteringActive()\n            && salesDirectoryExpandedControlsReady") !== false, 'Filtering must close expanded Sales/Post details.');
 $check(strpos($js, "if(salesDirectoryFilteringActive()){\n            closeExpandedPosts();\n            return;\n        }") !== false, 'Expanded Details must not reopen while Sales Search/Location filter is active.');
