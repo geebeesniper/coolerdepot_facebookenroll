@@ -13,8 +13,17 @@ $check = static function (bool $ok, string $message) use (&$fail): void {
 
 $check(version_compare($version, '0.2.82', '>='), 'VERSION must be 0.2.82 or newer.');
 $check(strpos($js, 'function salesDirectoryFilteringActive()') !== false, 'Missing centralized Sales directory filter-active check.');
-$check(strpos($js, "salesDirectoryFilteringActive()\n            && salesDirectoryExpandedControlsReady") !== false, 'Filtering must close expanded Sales/Post details.');
-$check(strpos($js, "if(salesDirectoryFilteringActive()){\n            closeExpandedPosts();\n            return;\n        }") !== false, 'Expanded Details must not reopen while Sales Search/Location filter is active.');
+
+// V0.2.96 supersedes the original V0.2.82 list-only behavior: filtering may
+// narrow the Sales cards, but View Posts must still work for a visible card.
+$check(
+    strpos($js, "if(salesDirectoryFilteringActive()){\n            closeExpandedPosts();\n            return;\n        }") === false,
+    'Filtered Sales cards must no longer be blocked from opening View Posts.'
+);
+$check(
+    strpos($js, "if(\$card.hasClass('sales-directory-hidden')){\n            return;\n        }") !== false,
+    'Only a Sales card hidden by the active directory filter may be prevented from opening.'
+);
 $check(strpos($js, "let salesDirectoryExpandedControlsReady=false;") !== false, 'Initial dashboard filter pass must be safe before expanded controls initialize.');
 $check(strpos($css, '/* v0.2.82 — Location cards size independently while one card is being edited. */') !== false, 'Missing independent Location card sizing rule.');
 $check((bool)preg_match('/\.sales-location-list\s*\{[^}]*align-items\s*:\s*start\s*;/s', $css), 'Location grid must align cards to start instead of stretching row height.');

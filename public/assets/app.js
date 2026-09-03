@@ -7026,18 +7026,8 @@ $('[data-html-note]').each(function(){
         const query=normalizeSalesDirectoryText(
             $salesDirectorySearch.val()
         );
-
-        // v0.2.82 — Search/location filtering is a list-only state.
-        // Any previously expanded Sales/Post details must close immediately and
-        // stay closed while a directory filter is active.
-        if(
-            salesDirectoryFilteringActive()
-            && salesDirectoryExpandedControlsReady
-        ){
-            closeExpandedPosts();
-        }
-
         let visibleCount=0;
+        let visiblePostCount=0;
 
         $grid.find('.sales-progress-card').each(function(){
             const $card=$(this);
@@ -7059,11 +7049,40 @@ $('[data-html-note]').each(function(){
 
             if(show){
                 visibleCount+=1;
+                visiblePostCount+=Math.max(
+                    0,
+                    parseInt($card.attr('data-post-count'),10)||0
+                );
             }
         });
 
+        // v0.2.96 — Directory summary follows the cards that are actually
+        // visible after Sales Search / Location filtering. This prevents an
+        // all-company Post total from being shown beside a one-Sales filter.
         $('#dashboardSalesCount').text(visibleCount);
+        $('#dashboardPostCount').text(visiblePostCount);
         $salesDirectoryEmpty.toggleClass('hidden',visibleCount>0);
+
+        // Filtering no longer disables View Posts. Keep an already-open Sales
+        // panel only when its card still matches the active filters; otherwise
+        // close it so details can never remain attached to a hidden Sales card.
+        if(salesDirectoryExpandedControlsReady&&expandedSalesId){
+            const $expandedCard=$grid.find(
+                '.sales-progress-card[data-sales-id="'
+                +expandedSalesId
+                +'"]'
+            );
+
+            if(
+                !$expandedCard.length
+                ||$expandedCard.hasClass('sales-directory-hidden')
+            ){
+                closeExpandedPosts();
+            }else if(!$expanded.hasClass('hidden')){
+                placeExpandedAfterCardRow($expandedCard);
+                $expanded.removeClass('hidden');
+            }
+        }
     }
 
     /**
@@ -9656,6 +9675,12 @@ function renderPostGrid(data){
         let rowEnd=card;
 
         $grid.find('.sales-progress-card').each(function(){
+            const $candidate=$(this);
+
+            if($candidate.hasClass('sales-directory-hidden')){
+                return;
+            }
+
             const top=Math.round(
                 this.getBoundingClientRect().top
             );
@@ -9757,10 +9782,9 @@ function renderPostGrid(data){
      * @returns {void} No value is returned. / 无返回值。
      */
     function openExpandedPosts($card){
-        // v0.2.82 — Do not reopen Details while Sales Search or Location filter
-        // is active. Filtered mode must remain a compact card-list view.
-        if(salesDirectoryFilteringActive()){
-            closeExpandedPosts();
+        // v0.2.96 — Search/location filters narrow the Sales directory only;
+        // they must not disable View Posts for a Sales card that remains visible.
+        if($card.hasClass('sales-directory-hidden')){
             return;
         }
 
