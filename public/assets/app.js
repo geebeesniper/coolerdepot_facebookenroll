@@ -13989,9 +13989,13 @@ $(document).on('click','.website-source-delete',function(event){
             url:window.CD_BASE_PATH+'/api/verification-queue/bulk',method:'POST',dataType:'json',
             data:{_csrf:vqCsrf(),urls:urls},headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'}
         }).done(function(resp){
+            // v0.2.111: Bulk Submit is an AJAX hand-off just like Save & Wait.
+            // Once the server accepts and classifies the batch, close the popup;
+            // the Verification Queue on the Dashboard shows queued/error results.
             $('#salesBulkResult').removeClass('hidden').text(resp.message||'Bulk Submit complete.');
-            if(Number(resp.queued||0)>0)$('#salesBulkUrls').val('');
+            $('#salesBulkUrls').val('');
             vqLoadAll(false);
+            closeSalesBulkSubmitModal();
         }).fail(function(xhr){$('#salesBulkResult').removeClass('hidden').text((xhr.responseJSON&&xhr.responseJSON.message)||'Bulk Submit failed.');})
         .always(function(){$button.prop('disabled',false).text(salesTr('bulkSubmitPost'));});
     });
@@ -14045,7 +14049,8 @@ $(document).on('click','.website-source-delete',function(event){
             $button.prop('disabled',true);vqPost('/api/verification-queue/retry',{id:id},$panel).always(function(){$button.prop('disabled',false);});return;
         }
         if(action==='delete'){
-            if(!window.confirm('Delete this verification queue item? No counted Post will be deleted.'))return;
+            // v0.2.111: Queue errors are disposable working records, not counted Posts.
+            // Delete them directly without a browser confirmation dialog.
             $button.prop('disabled',true);vqPost('/api/verification-queue/delete',{id:id},$panel);return;
         }
         if(action==='edit'){
