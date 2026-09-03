@@ -799,7 +799,7 @@ const salesI18n={
         addToQueue:'Add to Verification Queue',
         verificationQueueEyebrow:'Background Verification',
         verificationQueueTitle:'Verification Queue',
-        verificationQueueHelp:'Waiting and failed items are not counted as Posts. Passed items are saved automatically.',
+        verificationQueueHelp:'Waiting and failed items are not counted as Posts. Passed items move into Posts automatically; use Passed for history.',
         refreshQueue:'Refresh',
         queueAll:'All',
         queueWaiting:'Waiting',
@@ -946,7 +946,7 @@ const salesI18n={
         addToQueue:'加入验证队列',
         verificationQueueEyebrow:'后台验证',
         verificationQueueTitle:'验证队列',
-        verificationQueueHelp:'等待中和失败的记录不计入 Post；通过后会自动保存并计数。',
+        verificationQueueHelp:'等待中和失败的记录不计入 Post；通过后自动进入正式 Posts，“已通过”仅保留历史。',
         refreshQueue:'刷新',
         queueAll:'全部',
         queueWaiting:'等待中',
@@ -1077,7 +1077,7 @@ const salesI18n={
         addToQueue:'加入驗證佇列',
         verificationQueueEyebrow:'背景驗證',
         verificationQueueTitle:'驗證佇列',
-        verificationQueueHelp:'等待中和失敗的記錄不計入 Post；通過後會自動儲存並計數。',
+        verificationQueueHelp:'等待中和失敗的記錄不計入 Post；通過後自動進入正式 Posts，「已通過」僅保留歷史。',
         refreshQueue:'重新整理',
         queueAll:'全部',
         queueWaiting:'等待中',
@@ -1214,7 +1214,7 @@ const salesI18n={
         addToQueue:'Agregar a la cola de verificación',
         verificationQueueEyebrow:'Verificación en segundo plano',
         verificationQueueTitle:'Cola de verificación',
-        verificationQueueHelp:'Los elementos en espera o fallidos no cuentan como Posts. Los aprobados se guardan automáticamente.',
+        verificationQueueHelp:'Los elementos en espera o fallidos no cuentan como Posts. Los aprobados pasan a Posts automáticamente; Passed conserva el historial.',
         refreshQueue:'Actualizar',
         queueAll:'Todos',
         queueWaiting:'En espera',
@@ -13677,8 +13677,22 @@ $(document).on('click','.website-source-delete',function(event){
         if(raw&&typeof raw==='object')return Object.keys(raw).map(function(key){return raw[key];});
         return [];
     }
+    function vqRefreshFormalPostsAfterPass(){
+        const $dashboard=$('#salesPortalDashboard');
+        if(!$dashboard.length||typeof loadSalesRange!=='function')return;
+        const from=String($('#salesRangeFrom').val()||$('#dailyPosts').attr('data-from')||$dashboard.attr('data-from')||'').trim();
+        const to=String($('#salesRangeTo').val()||$('#dailyPosts').attr('data-to')||$dashboard.attr('data-to')||'').trim();
+        if(!from||!to)return;
+        const period=String($dashboard.attr('data-range-period')||salesRangePeriod||'custom');
+        const channel=String($dashboard.attr('data-channel')||salesPlatformFilter||'all');
+        loadSalesRange({from:from,to:to},period,channel,'verification-passed');
+    }
     function vqRenderPanel($panel,data){
         const counts=data&&data.counts?data.counts:{};
+        const previousPassed=$panel.data('vqPassedCount');
+        const currentPassed=Number(counts.passed||0);
+        const passedAdvanced=previousPassed!==undefined&&currentPassed>Number(previousPassed||0);
+        $panel.data('vqPassedCount',currentPassed);
         Object.keys(counts).forEach(function(key){$panel.find('[data-vq-count="'+key+'"]').text(String(counts[key]||0));});
         const $list=$panel.find('[data-vq-list]').empty();
         const items=vqNormalizeItems(data&&data.items);
@@ -13704,6 +13718,14 @@ $(document).on('click','.website-source-delete',function(event){
         });
         $panel.find('[data-vq-empty]').toggleClass('hidden',$list.children().length>0);
         $panel.data('vqCounts',counts);
+        if(passedAdvanced){
+            // A Passed queue item is already a formal counted Post. Refresh the
+            // normal Post grid/counts with the existing AJAX range loader, then
+            // keep the Queue compact when no active/actionable items remain.
+            vqRefreshFormalPostsAfterPass();
+            const filter=String($panel.attr('data-vq-current-filter')||'all');
+            if(filter==='all'&&Number(counts.all||0)===0)vqSetCollapsed($panel,true,false);
+        }
     }
     function vqShowAcceptedItem(item,counts){
         if(!item||!item.id)return;

@@ -1332,3 +1332,43 @@ textarea {
         grid-template-columns:minmax(0,1fr) !important;
     }
 }
+
+/* V0.2.106 — restore the approved Admin desktop date/filter geometry in the
+ * canonical responsive layer (which loads after app.css). This is Admin-only:
+ * quick periods stay flush left, From/To stay flush right, full content width. */
+@media (min-width:721px) {
+    .admin-activity-head .admin-dashboard-range-anchor,
+    .admin-activity-head .admin-dashboard-range-bar,
+    .admin-activity-head .admin-dashboard-range-bar .admin-portal-head-actions,
+    .admin-activity-head .admin-dashboard-range-bar .admin-toolbar-row-filter {
+        width:100% !important;
+        max-width:none !important;
+        min-width:0 !important;
+        box-sizing:border-box !important;
+    }
+    .admin-activity-head .admin-dashboard-range-bar .admin-portal-head-actions {
+        display:block !important;
+    }
+    .admin-activity-head .admin-dashboard-range-bar .admin-toolbar-row-filter {
+        display:grid !important;
+        grid-template-columns:max-content minmax(24px,1fr) max-content !important;
+        align-items:end !important;
+        justify-content:stretch !important;
+        gap:0 !important;
+    }
+    .admin-activity-head .admin-dashboard-range-bar .sales-head-period-switch {
+        grid-column:1 !important;
+        grid-row:1 !important;
+        justify-self:start !important;
+        margin:0 !important;
+    }
+    .admin-activity-head .admin-dashboard-range-bar .dashboard-date-controls {
+        grid-column:3 !important;
+        grid-row:1 !important;
+        justify-self:end !important;
+        margin:0 !important;
+        width:auto !important;
+        min-width:296px !important;
+        max-width:296px !important;
+    }
+}

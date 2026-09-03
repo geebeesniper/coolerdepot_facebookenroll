@@ -37,6 +37,11 @@ final class VerificationQueue
             $where.=' AND status=?';$params[]=$filter;
         }elseif($filter==='needs_action'){
             $where.=" AND status IN ('failed','duplicate','invalid')";
+        }else{
+            // V0.2.106: the default Queue view is operational, not an archive.
+            // Passed rows have already been promoted to formal Posts; keep them
+            // available only under the dedicated Passed filter/history view.
+            $where.=" AND status<>'passed'";
         }
         $stmt=Database::connection()->prepare(
             "SELECT id,sales_user_id,platform,submitted_url,canonical_url,external_post_id,status,attempt_count,
@@ -61,7 +66,9 @@ final class VerificationQueue
         foreach($stmt->fetchAll()?:[] as $row){
             $status=(string)$row['status'];$count=(int)$row['c'];
             if(isset($counts[$status])){$counts[$status]=$count;}
-            $counts['all']+=$count;
+            // V0.2.106: All represents the active/actionable Verification Queue.
+            // Passed records are already counted Posts and live under Passed history.
+            if($status!=='passed')$counts['all']+=$count;
         }
         $counts['needs_action']=$counts['failed']+$counts['duplicate']+$counts['invalid'];
         return $counts;
