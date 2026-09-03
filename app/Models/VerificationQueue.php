@@ -35,14 +35,13 @@ final class VerificationQueue
         $filter=strtolower(trim($filter));
         if(in_array($filter,['waiting','verifying','passed','failed','duplicate','invalid'],true)){
             $where.=' AND status=?';$params[]=$filter;
-        }elseif($filter==='needs_action'){
+        }elseif(in_array($filter,['error','errors','needs_action'],true)){
+            // V0.2.110: one non-overlapping UI Error bucket covers every item that
+            // requires Sales action. Keep needs_action as an API compatibility alias.
             $where.=" AND status IN ('failed','duplicate','invalid')";
-        }else{
-            // V0.2.106: the default Queue view is operational, not an archive.
-            // Passed rows have already been promoted to formal Posts; keep them
-            // available only under the dedicated Passed filter/history view.
-            $where.=" AND status<>'passed'";
         }
+        // All intentionally has no status predicate: it means every current queue row,
+        // including Passed rows that have not yet been acknowledged/cleared.
         $stmt=Database::connection()->prepare(
             "SELECT id,sales_user_id,platform,submitted_url,canonical_url,external_post_id,status,attempt_count,
                     result_title,result_published_at,result_published_date,result_image_url,result_platform_account_name,
@@ -62,15 +61,16 @@ final class VerificationQueue
             "SELECT status,COUNT(*) c FROM cdsp_post_verification_queue WHERE sales_user_id=? GROUP BY status"
         );
         $stmt->execute([$salesUserId]);
-        $counts=['all'=>0,'waiting'=>0,'verifying'=>0,'passed'=>0,'failed'=>0,'duplicate'=>0,'invalid'=>0,'needs_action'=>0];
+        $counts=['all'=>0,'waiting'=>0,'verifying'=>0,'passed'=>0,'failed'=>0,'duplicate'=>0,'invalid'=>0,'error'=>0,'needs_action'=>0];
         foreach($stmt->fetchAll()?:[] as $row){
             $status=(string)$row['status'];$count=(int)$row['c'];
             if(isset($counts[$status])){$counts[$status]=$count;}
-            // V0.2.106: All represents the active/actionable Verification Queue.
-            // Passed records are already counted Posts and live under Passed history.
-            if($status!=='passed')$counts['all']+=$count;
+            // V0.2.110: All means all current queue rows, including unacknowledged Passed.
+            $counts['all']+=$count;
         }
-        $counts['needs_action']=$counts['failed']+$counts['duplicate']+$counts['invalid'];
+        $counts['error']=$counts['failed']+$counts['duplicate']+$counts['invalid'];
+        // Legacy API alias retained so older cached JavaScript does not break.
+        $counts['needs_action']=$counts['error'];
         return $counts;
     }
 

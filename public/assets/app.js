@@ -799,12 +799,25 @@ const salesI18n={
         addToQueue:'Add to Verification Queue',
         verificationQueueEyebrow:'Background Verification',
         verificationQueueTitle:'Verification Queue',
-        verificationQueueHelp:'Waiting and failed items are not counted as Posts. Passed items are saved in Posts; click a Passed card to clear it and show the saved Post.',
+        verificationQueueHelp:'Waiting, verifying and error items are not counted as Posts. Passed items are already saved in Posts; click a Passed card to clear it and show the saved Post.',
         refreshQueue:'Refresh',
         queueAll:'All',
         queueWaiting:'Waiting',
         queueVerifying:'Verifying',
         queuePassed:'Passed',
+        queueErrors:'Errors',
+        queueErrorDuplicateId:'Duplicated ID',
+        queueErrorDuplicateTitle:'Duplicated Title',
+        queueErrorDuplicatePhoto:'Duplicated Photo',
+        queueErrorDuplicateUrl:'Duplicated URL',
+        queueErrorInvalidUrl:'Invalid URL',
+        queueErrorTimeout:'System Timeout',
+        queueErrorProvider:'Provider Error',
+        queueErrorDate:'Date Not Verified',
+        queueErrorTitleCheck:'Title Not Verified',
+        queueErrorManual:'Manual Verification Required',
+        queueErrorSystem:'System Error',
+        queueErrorGeneric:'Verification Error',
         queueFailed:'Failed',
         queueDuplicate:'Duplicate',
         queueInvalid:'Invalid',
@@ -947,12 +960,25 @@ const salesI18n={
         addToQueue:'加入验证队列',
         verificationQueueEyebrow:'后台验证',
         verificationQueueTitle:'验证队列',
-        verificationQueueHelp:'等待中和失败的记录不计入 Post；通过后已保存到正式 Posts，点击“已通过”卡片可清除队列记录并定位到该 Post。',
+        verificationQueueHelp:'等待中、验证中和错误记录不计入 Post；通过后已保存到正式 Posts，点击“已通过”卡片可清除队列记录并定位到该 Post。',
         refreshQueue:'刷新',
         queueAll:'全部',
         queueWaiting:'等待中',
         queueVerifying:'验证中',
         queuePassed:'已通过',
+        queueErrors:'错误',
+        queueErrorDuplicateId:'重复 ID',
+        queueErrorDuplicateTitle:'重复标题',
+        queueErrorDuplicatePhoto:'重复图片',
+        queueErrorDuplicateUrl:'重复 URL',
+        queueErrorInvalidUrl:'无效 URL',
+        queueErrorTimeout:'系统超时',
+        queueErrorProvider:'Provider 错误',
+        queueErrorDate:'日期未验证',
+        queueErrorTitleCheck:'标题未验证',
+        queueErrorManual:'需要手动验证',
+        queueErrorSystem:'系统错误',
+        queueErrorGeneric:'验证错误',
         queueFailed:'失败',
         queueDuplicate:'重复',
         queueInvalid:'无效',
@@ -1079,12 +1105,25 @@ const salesI18n={
         addToQueue:'加入驗證佇列',
         verificationQueueEyebrow:'背景驗證',
         verificationQueueTitle:'驗證佇列',
-        verificationQueueHelp:'等待中和失敗的記錄不計入 Post；通過後已保存到正式 Posts，點擊「已通過」卡片可清除佇列記錄並定位到該 Post。',
+        verificationQueueHelp:'等待中、驗證中和錯誤記錄不計入 Post；通過後已保存到正式 Posts，點擊「已通過」卡片可清除佇列記錄並定位到該 Post。',
         refreshQueue:'重新整理',
         queueAll:'全部',
         queueWaiting:'等待中',
         queueVerifying:'驗證中',
         queuePassed:'已通過',
+        queueErrors:'錯誤',
+        queueErrorDuplicateId:'重複 ID',
+        queueErrorDuplicateTitle:'重複標題',
+        queueErrorDuplicatePhoto:'重複圖片',
+        queueErrorDuplicateUrl:'重複 URL',
+        queueErrorInvalidUrl:'無效 URL',
+        queueErrorTimeout:'系統逾時',
+        queueErrorProvider:'Provider 錯誤',
+        queueErrorDate:'日期未驗證',
+        queueErrorTitleCheck:'標題未驗證',
+        queueErrorManual:'需要手動驗證',
+        queueErrorSystem:'系統錯誤',
+        queueErrorGeneric:'驗證錯誤',
         queueFailed:'失敗',
         queueDuplicate:'重複',
         queueInvalid:'無效',
@@ -1217,12 +1256,25 @@ const salesI18n={
         addToQueue:'Agregar a la cola de verificación',
         verificationQueueEyebrow:'Verificación en segundo plano',
         verificationQueueTitle:'Cola de verificación',
-        verificationQueueHelp:'Los elementos en espera o fallidos no cuentan como Posts. Los aprobados se guardan en Posts; haz clic en una tarjeta Passed para quitarla de la cola y mostrar el Post guardado.',
+        verificationQueueHelp:'Los elementos en espera, verificación o error no cuentan como Posts. Los aprobados ya están en Posts; haz clic en una tarjeta aprobada para quitarla de la cola y mostrar el Post guardado.',
         refreshQueue:'Actualizar',
         queueAll:'Todos',
         queueWaiting:'En espera',
         queueVerifying:'Verificando',
         queuePassed:'Aprobados',
+        queueErrors:'Errores',
+        queueErrorDuplicateId:'ID duplicado',
+        queueErrorDuplicateTitle:'Título duplicado',
+        queueErrorDuplicatePhoto:'Foto duplicada',
+        queueErrorDuplicateUrl:'URL duplicada',
+        queueErrorInvalidUrl:'URL no válida',
+        queueErrorTimeout:'Tiempo de espera agotado',
+        queueErrorProvider:'Error del proveedor',
+        queueErrorDate:'Fecha no verificada',
+        queueErrorTitleCheck:'Título no verificado',
+        queueErrorManual:'Verificación manual requerida',
+        queueErrorSystem:'Error del sistema',
+        queueErrorGeneric:'Error de verificación',
         queueFailed:'Fallidos',
         queueDuplicate:'Duplicados',
         queueInvalid:'Inválidos',
@@ -13540,9 +13592,13 @@ $(document).on('click','.website-source-delete',function(event){
         collapsed=!!collapsed;
         $panel.toggleClass('is-collapsed',collapsed);
         const $toggle=$panel.find('[data-vq-collapse-toggle]').first();
-        $toggle.attr('aria-expanded',collapsed?'false':'true');
-        $toggle.attr('aria-label',collapsed?'Open Verification Queue':'Close Verification Queue');
-        $toggle.attr('title',collapsed?'Open Verification Queue':'Close Verification Queue');
+        const $titleToggle=$panel.find('[data-vq-title-toggle]').first();
+        const expanded=collapsed?'false':'true';
+        const actionLabel=collapsed?'Open Verification Queue':'Close Verification Queue';
+        $toggle.attr('aria-expanded',expanded);
+        $toggle.attr('aria-label',actionLabel);
+        $toggle.attr('title',actionLabel);
+        $titleToggle.attr('aria-expanded',expanded).attr('aria-label',actionLabel).attr('title',actionLabel);
         if(persist){
             try{window.localStorage.setItem(vqCollapseStorageKey,collapsed?'1':'0');}catch(error){}
         }
@@ -13560,6 +13616,39 @@ $(document).on('click','.website-source-delete',function(event){
         const map={waiting:'queueWaiting',verifying:'queueVerifying',passed:'queuePassed',failed:'queueFailed',duplicate:'queueDuplicate',invalid:'queueInvalid'};
         return salesTr(map[status]||map.waiting);
     }
+    function vqIsErrorStatus(status){
+        status=String(status||'').toLowerCase();
+        return status==='failed'||status==='duplicate'||status==='invalid';
+    }
+    function vqErrorType(item){
+        item=item||{};
+        const status=String(item.status||'').toLowerCase();
+        const code=String(item.failure_code||'').toUpperCase();
+        const kind=String(item.duplicate_kind||'').toLowerCase();
+        const message=String(item.failure_message||'').toLowerCase();
+        const result=function(slug,key){return {slug:slug,label:salesTr(key)};};
+
+        if(kind==='external_id'||kind==='queue_external_id')return result('duplicate-id','queueErrorDuplicateId');
+        if(kind==='same_account_title'||kind==='exact_title'||kind==='website_exact_title')return result('duplicate-title','queueErrorDuplicateTitle');
+        if(kind==='same_account_image'||kind==='same_platform_image'||kind==='website_exact_image'||code==='DUPLICATE_IMAGE')return result('duplicate-photo','queueErrorDuplicatePhoto');
+        if(kind==='url'||kind==='queue_url')return result('duplicate-url','queueErrorDuplicateUrl');
+        if(status==='duplicate'||code==='DUPLICATE'||code==='DUPLICATE_PREFLIGHT'){
+            if(String(item.external_post_id||'').trim()!=='')return result('duplicate-id','queueErrorDuplicateId');
+            return result('duplicate','queueDuplicate');
+        }
+        if(status==='invalid'||code==='INVALID_URL'||code==='URL_INVALID'||code==='PLATFORM_INVALID')return result('invalid-url','queueErrorInvalidUrl');
+        if(code.includes('TIMEOUT')||message.includes('timeout')||message.includes('timed out'))return result('timeout','queueErrorTimeout');
+        if(code==='FACEBOOK_PROVIDER_FAILED'||code==='FETCH_FAILED')return result('provider','queueErrorProvider');
+        if(code==='DATE_NOT_VERIFIABLE'||code==='FUTURE_DATE')return result('date','queueErrorDate');
+        if(code==='TITLE_NOT_VERIFIABLE')return result('title-check','queueErrorTitleCheck');
+        if(code==='MANUAL_VERIFICATION_REQUIRED')return result('manual','queueErrorManual');
+        if(code==='QUEUE_WORKER_ERROR'||code==='SAVE_BLOCKED'||code==='COMPARISON_UNAVAILABLE')return result('system','queueErrorSystem');
+        return result('generic','queueErrorGeneric');
+    }
+    function vqDisplayStatus(item){
+        const status=String((item&&item.status)||'waiting').toLowerCase();
+        return vqIsErrorStatus(status)?vqErrorType(item).label:vqStatusLabel(status);
+    }
     function vqShortUrl(raw){
         try{
             const u=new URL(String(raw||''));
@@ -13569,19 +13658,23 @@ $(document).on('click','.website-source-delete',function(event){
         }catch(error){return String(raw||'').slice(0,74);}
     }
     function vqRenderRow(item){
-        const status=String(item.status||'waiting');
-        const $row=$('<article>').addClass('sales-vq-row sales-vq-card status-'+status)
+        const status=String(item.status||'waiting').toLowerCase();
+        const errorType=vqIsErrorStatus(status)?vqErrorType(item):null;
+        const rowClasses=['sales-vq-row','sales-vq-card','status-'+status];
+        if(errorType)rowClasses.push('is-error','error-type-'+errorType.slug);
+        const displayStatus=errorType?errorType.label:vqStatusLabel(status);
+        const $row=$('<article>').addClass(rowClasses.join(' '))
             .attr({
                 'data-vq-id':String(item.id||''),
                 'role':'button',
                 'tabindex':'0',
-                'aria-label':status==='passed'?'Show saved Post and clear this Passed queue item':'Open '+vqStatusLabel(status)+' verification details'
+                'aria-label':status==='passed'?'Show saved Post and clear this Passed queue item':'Open '+displayStatus+' verification details'
             })
             .data('vqItem',item);
 
         const $top=$('<div>').addClass('sales-vq-card-top');
         $('<span>').addClass('sales-vq-platform').text(platformLabel(item.platform)||item.platform||'Marketplace').appendTo($top);
-        $('<span>').addClass('sales-vq-status '+status).text(vqStatusLabel(status)).appendTo($top);
+        $('<span>').addClass('sales-vq-status '+status+(errorType?' error-label error-type-'+errorType.slug:'')).attr('title',displayStatus).text(displayStatus).appendTo($top);
         $top.appendTo($row);
 
         const $url=$('<div>').addClass('sales-vq-url');
@@ -13604,9 +13697,10 @@ $(document).on('click','.website-source-delete',function(event){
         $('<span>').addClass('sales-vq-meta-line').text(bits.join(' · ')||'—').appendTo($meta);
         $meta.appendTo($row);
 
-        if(status==='failed'||status==='duplicate'||status==='invalid'){
-            const $failure=$('<div>').addClass('sales-vq-failure'+(status==='duplicate'?' duplicate':''));
-            $('<strong>').text(item.failure_message||vqStatusLabel(status)).appendTo($failure);
+        if(vqIsErrorStatus(status)){
+            const $failure=$('<div>').addClass('sales-vq-failure'+(status==='duplicate'?' duplicate':'')+(errorType?' error-type-'+errorType.slug:''));
+            const failureMessage=String(item.failure_message||'').trim();
+            $('<span>').addClass('sales-vq-error-message').text(failureMessage||(errorType?errorType.label:vqStatusLabel(status))).appendTo($failure);
             $('<span>').addClass('sales-vq-not-counted').text(salesTr('queueNotCounted')).appendTo($failure);
             $failure.appendTo($row);
         }else if(status==='passed'){
@@ -13615,11 +13709,11 @@ $(document).on('click','.website-source-delete',function(event){
         }
 
         const $actions=$('<div>').addClass('sales-vq-actions');
-        if(status==='failed'||status==='duplicate'||status==='invalid'){
+        if(vqIsErrorStatus(status)){
             $('<button type="button" class="btn">').attr('data-vq-action','edit').text(salesTr('queueEdit')).appendTo($actions);
             if(status!=='invalid')$('<button type="button" class="btn">').attr('data-vq-action','retry').text(salesTr('queueRetry')).appendTo($actions);
         }
-        if(status==='waiting'||status==='failed'||status==='duplicate'||status==='invalid'){
+        if(status==='waiting'||vqIsErrorStatus(status)){
             $('<button type="button" class="btn danger-soft">').attr('data-vq-action','delete').text(salesTr('queueDelete')).appendTo($actions);
         }
         if($actions.children().length)$actions.appendTo($row);
@@ -13638,12 +13732,17 @@ $(document).on('click','.website-source-delete',function(event){
         let message='Background verification is waiting to start.';
         if(status==='verifying')message='Background verification is running now.';
         if(status==='passed')message=salesTr('queuePassedHelp');
-        if(status==='failed'||status==='duplicate'||status==='invalid')message=String(item.failure_message||vqStatusLabel(status));
+        if(vqIsErrorStatus(status)){
+            const type=vqErrorType(item);
+            const detail=String(item.failure_message||'').trim();
+            message=detail?(type.label+': '+detail):type.label;
+        }
+        const displayStatus=vqDisplayStatus(item);
         $modal.find('[data-vq-detail-platform]').text(platform);
         $modal.find('[data-vq-detail-platform-value]').text(platform);
         $modal.find('[data-vq-detail-heading]').text('Verification details');
-        $modal.find('[data-vq-detail-status]').attr('class','sales-post-detail-status sales-vq-detail-status '+status).text(vqStatusLabel(status));
-        $modal.find('[data-vq-detail-status-value]').text(vqStatusLabel(status));
+        $modal.find('[data-vq-detail-status]').attr('class','sales-post-detail-status sales-vq-detail-status '+status).text(displayStatus);
+        $modal.find('[data-vq-detail-status-value]').text(displayStatus);
         $modal.find('[data-vq-detail-date]').text(date);
         $modal.find('[data-vq-detail-title]').text(title);
         $modal.find('[data-vq-detail-message]').text(message);
@@ -13740,7 +13839,7 @@ $(document).on('click','.website-source-delete',function(event){
     function vqFilterMatches(item,filter){
         const status=String((item&&item.status)||'').toLowerCase();
         if(filter==='all')return true;
-        if(filter==='needs_action')return status==='failed'||status==='duplicate'||status==='invalid';
+        if(filter==='error'||filter==='errors'||filter==='needs_action')return vqIsErrorStatus(status);
         return status===filter;
     }
     function vqNormalizeItems(raw){
@@ -13774,13 +13873,15 @@ $(document).on('click','.website-source-delete',function(event){
                 // Never turn a real queued record into an apparently empty queue
                 // because one optional display field failed to render.
                 if(window.console&&console.error)console.error('Verification Queue row render failed',error,item);
-                const fallbackStatus=String((item&&item.status)||'waiting');
-                const $fallback=$('<article>').addClass('sales-vq-row sales-vq-card status-'+fallbackStatus)
+                const fallbackStatus=String((item&&item.status)||'waiting').toLowerCase();
+                const fallbackType=vqIsErrorStatus(fallbackStatus)?vqErrorType(item||{}):null;
+                const fallbackClasses='sales-vq-row sales-vq-card status-'+fallbackStatus+(fallbackType?' is-error error-type-'+fallbackType.slug:'');
+                const $fallback=$('<article>').addClass(fallbackClasses)
                     .attr({'data-vq-id':String((item&&item.id)||''),'role':'button','tabindex':'0','aria-label':'Open verification details'})
                     .data('vqItem',item||{});
                 const $fallbackTop=$('<div>').addClass('sales-vq-card-top');
                 $('<span>').addClass('sales-vq-platform').text(platformLabel(item&&item.platform)||(item&&item.platform)||'Marketplace').appendTo($fallbackTop);
-                $('<span>').addClass('sales-vq-status '+fallbackStatus).text(vqStatusLabel(fallbackStatus)).appendTo($fallbackTop);
+                $('<span>').addClass('sales-vq-status '+fallbackStatus+(fallbackType?' error-label error-type-'+fallbackType.slug:'')).attr('title',fallbackType?fallbackType.label:vqStatusLabel(fallbackStatus)).text(fallbackType?fallbackType.label:vqStatusLabel(fallbackStatus)).appendTo($fallbackTop);
                 $fallbackTop.appendTo($fallback);
                 $('<div>').addClass('sales-vq-url').text(vqShortUrl((item&&item.canonical_url)||(item&&item.submitted_url)||'Queued listing')).appendTo($fallback);
                 $('<div>').addClass('sales-vq-meta').text('Queued item').appendTo($fallback);
@@ -13893,6 +13994,17 @@ $(document).on('click','.website-source-delete',function(event){
             vqLoadAll(false);
         }).fail(function(xhr){$('#salesBulkResult').removeClass('hidden').text((xhr.responseJSON&&xhr.responseJSON.message)||'Bulk Submit failed.');})
         .always(function(){$button.prop('disabled',false).text(salesTr('bulkSubmitPost'));});
+    });
+
+    $(document).on('click','[data-verification-queue-panel] [data-vq-title-toggle]',function(){
+        const $panel=$(this).closest('[data-verification-queue-panel]');
+        vqSetCollapsed($panel,!$panel.hasClass('is-collapsed'),true);
+    });
+    $(document).on('keydown','[data-verification-queue-panel] [data-vq-title-toggle]',function(event){
+        if(event.key!=='Enter'&&event.key!==' ')return;
+        event.preventDefault();
+        const $panel=$(this).closest('[data-verification-queue-panel]');
+        vqSetCollapsed($panel,!$panel.hasClass('is-collapsed'),true);
     });
 
     $(document).on('click','[data-verification-queue-panel] [data-vq-collapse-toggle]',function(){

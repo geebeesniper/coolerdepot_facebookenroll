@@ -16579,3 +16579,107 @@ button.website-history-control{
     outline:2px solid #22c55e;
     outline-offset:1px;
 }
+
+/* v0.2.110 — Verification Queue compact cards only.
+ * All selectors are namespaced to .sales-verification-queue so this cannot alter
+ * Admin/Sales date controls, Dashboard headers, Submit modal, or normal Post cards. */
+.sales-verification-queue [data-vq-title-toggle]{
+    cursor:pointer;
+    border-radius:4px;
+}
+.sales-verification-queue [data-vq-title-toggle]:focus-visible{
+    outline:2px solid #2563eb;
+    outline-offset:2px;
+}
+.sales-verification-queue .sales-verification-queue-list{
+    grid-template-columns:repeat(auto-fill,minmax(190px,220px));
+    justify-content:start;
+    gap:8px;
+    padding:8px;
+}
+.sales-verification-queue .sales-vq-row{
+    min-height:112px;
+    box-shadow:none;
+}
+.sales-verification-queue .sales-vq-card-top{
+    min-height:30px;
+    padding:5px 7px;
+    gap:5px;
+}
+.sales-verification-queue .sales-vq-platform{
+    font-size:7.5px;
+}
+.sales-verification-queue .sales-vq-status{
+    max-width:132px;
+    min-height:20px;
+    padding:2px 6px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+}
+.sales-verification-queue .sales-vq-url{
+    padding:7px 7px 0;
+    font-size:8px;
+}
+.sales-verification-queue .sales-vq-meta{
+    padding:5px 7px 7px;
+    font-size:7.5px;
+}
+.sales-verification-queue .sales-vq-title{
+    margin-bottom:2px;
+    font-size:9px;
+    -webkit-line-clamp:1;
+}
+.sales-verification-queue .sales-vq-failure{
+    margin:0 7px 7px;
+    padding:5px 6px;
+    font-size:7.5px;
+}
+.sales-verification-queue .sales-vq-error-message{
+    margin-top:2px;
+    display:-webkit-box;
+    overflow:hidden;
+    -webkit-box-orient:vertical;
+    -webkit-line-clamp:2;
+}
+.sales-verification-queue .sales-vq-actions{
+    gap:4px;
+    padding:6px 7px;
+}
+.sales-verification-queue .sales-vq-actions .btn{
+    min-height:25px;
+    padding:3px 6px;
+    font-size:7.5px;
+}
+.sales-verification-queue .sales-vq-row.is-error.error-type-duplicate-id,
+.sales-verification-queue .sales-vq-row.is-error.error-type-duplicate-title,
+.sales-verification-queue .sales-vq-row.is-error.error-type-duplicate-photo,
+.sales-verification-queue .sales-vq-row.is-error.error-type-duplicate-url{
+    --vq-accent:#dc2626;
+}
+.sales-verification-queue .sales-vq-status.error-label.error-type-duplicate-id,
+.sales-verification-queue .sales-vq-status.error-label.error-type-duplicate-title,
+.sales-verification-queue .sales-vq-status.error-label.error-type-duplicate-photo,
+.sales-verification-queue .sales-vq-status.error-label.error-type-duplicate-url{
+    background:#fee2e2;
+    color:#b91c1c;
+}
+.sales-verification-queue .sales-vq-status.error-label.error-type-timeout,
+.sales-verification-queue .sales-vq-status.error-label.error-type-provider,
+.sales-verification-queue .sales-vq-status.error-label.error-type-system{
+    background:#ffedd5;
+    color:#c2410c;
+}
+.sales-verification-queue .sales-vq-status.error-label.error-type-invalid-url,
+.sales-verification-queue .sales-vq-status.error-label.error-type-date,
+.sales-verification-queue .sales-vq-status.error-label.error-type-title-check,
+.sales-verification-queue .sales-vq-status.error-label.error-type-manual,
+.sales-verification-queue .sales-vq-status.error-label.error-type-generic{
+    background:#fff7ed;
+    color:#9a3412;
+}
+@media(max-width:520px){
+    .sales-verification-queue .sales-verification-queue-list{
+        grid-template-columns:1fr;
+    }
+}

@@ -1,4 +1,6 @@
 <?php
+/** V0.2.106 compatibility contract, updated for V0.2.110 queue-filter semantics. */
+declare(strict_types=1);
 $root=dirname(__DIR__);
 $fail=[];
 $check=function(bool $ok,string $label)use(&$fail){
@@ -17,24 +19,21 @@ $check(str_contains($responsive,'.admin-activity-head .admin-dashboard-range-bar
 $check(str_contains($responsive,'.admin-activity-head .admin-dashboard-range-bar .admin-portal-head-actions')
     && str_contains($responsive,'display:block !important;'),
     'Admin range row spans full width in the stylesheet loaded last');
-$check(str_contains($model,'$where.=" AND status<>\'passed\'";'),
-    'default Verification Queue excludes already-promoted Passed rows');
-$check(str_contains($model,"if(\$status!=='passed')\$counts['all']+=\$count;"),
-    'All counter represents active/actionable queue only');
+$check(str_contains($model,'$counts[\'all\']+=$count;')
+    && str_contains($model,'$counts[\'error\']=$counts[\'failed\']+$counts[\'duplicate\']+$counts[\'invalid\'];'),
+    'V0.2.110 All means every current queue row and Error combines all action failures');
 $check(str_contains($model,"['waiting','verifying','passed','failed','duplicate','invalid']"),
-    'Passed filter remains available until Sales acknowledges the saved Post');
+    'Passed rows remain queryable until Sales acknowledges the saved Post');
 $check(str_contains($js,'function vqRefreshFormalPostsAfterPass()')
     && str_contains($js,"'verification-passed'"),
     'Passed transition refreshes the formal Posts grid through existing AJAX loader');
 $check(str_contains($js,'const passedAdvanced=previousPassed!==undefined&&currentPassed>Number(previousPassed||0);'),
     'AJAX polling detects a new Passed transition without page reload');
-$check(str_contains($js,'if(filter===\'all\'&&Number(counts.all||0)===0)vqSetCollapsed($panel,true,false);'),
-    'Queue compacts after the last active item is promoted');
-$check(str_contains($js,'Passed items are saved in Posts; click a Passed card to clear it and show the saved Post.'),
-    'Queue help explains current Passed acknowledgement lifecycle');
+$check(str_contains($js,'Passed items are already saved in Posts; click a Passed card to clear it and show the saved Post.'),
+    'Queue help explains the Passed acknowledgement lifecycle');
 
 if($fail){
-    fwrite(STDERR,"V0.2.106 contract failed: ".implode('; ',$fail)."\n");
+    fwrite(STDERR,"V0.2.106 compatibility contract failed: ".implode('; ',$fail)."\n");
     exit(1);
 }
-echo "V0.2.106 Admin range + Passed lifecycle contract passed.\n";
+echo "V0.2.106 Admin range + Passed lifecycle compatibility contract passed.\n";

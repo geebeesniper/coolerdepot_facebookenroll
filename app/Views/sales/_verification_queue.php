@@ -7,10 +7,10 @@
 ?>
 <section class="panel sales-verification-queue is-collapsed" data-verification-queue-panel data-vq-current-filter="all">
     <div class="sales-verification-queue-head">
-        <div class="sales-verification-queue-title-block">
+        <div class="sales-verification-queue-title-block" data-vq-title-toggle role="button" tabindex="0" aria-expanded="false" aria-label="Open Verification Queue" title="Open Verification Queue">
             <span class="eyebrow" data-sales-i18n="verificationQueueEyebrow">Background Verification</span>
             <h2 data-sales-i18n="verificationQueueTitle">Verification Queue</h2>
-            <p data-sales-i18n="verificationQueueHelp">Waiting and failed items are not counted as Posts. Passed items are saved automatically.</p>
+            <p data-sales-i18n="verificationQueueHelp">Waiting, verifying and error items are not counted as Posts. Passed items are already saved in Posts.</p>
         </div>
 
         <div class="sales-verification-queue-head-actions">
@@ -36,10 +36,7 @@
             <button type="button" data-vq-filter="waiting"><span data-sales-i18n="queueWaiting">Waiting</span> <b data-vq-count="waiting">0</b></button>
             <button type="button" data-vq-filter="verifying"><span data-sales-i18n="queueVerifying">Verifying</span> <b data-vq-count="verifying">0</b></button>
             <button type="button" data-vq-filter="passed"><span data-sales-i18n="queuePassed">Passed</span> <b data-vq-count="passed">0</b></button>
-            <button type="button" data-vq-filter="failed"><span data-sales-i18n="queueFailed">Failed</span> <b data-vq-count="failed">0</b></button>
-            <button type="button" data-vq-filter="duplicate"><span data-sales-i18n="queueDuplicate">Duplicate</span> <b data-vq-count="duplicate">0</b></button>
-            <button type="button" data-vq-filter="invalid"><span data-sales-i18n="queueInvalid">Invalid</span> <b data-vq-count="invalid">0</b></button>
-            <button type="button" data-vq-filter="needs_action"><span data-sales-i18n="queueNeedsAction">Needs Action</span> <b data-vq-count="needs_action">0</b></button>
+            <button type="button" data-vq-filter="error"><span data-sales-i18n="queueErrors">Errors</span> <b data-vq-count="error">0</b></button>
         </div>
 
         <div class="sales-verification-queue-message hidden" data-vq-message aria-live="polite"></div>

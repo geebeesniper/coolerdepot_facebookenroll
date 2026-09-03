@@ -19,7 +19,7 @@ final class VerificationQueueController extends Controller
     {
         $u=Auth::requireRole('sales');
         $filter=strtolower(trim((string)($_GET['status']??'all')));
-        if(!in_array($filter,['all','waiting','verifying','passed','failed','duplicate','invalid','needs_action'],true))$filter='all';
+        if(!in_array($filter,['all','waiting','verifying','passed','error','errors','failed','duplicate','invalid','needs_action'],true))$filter='all';
         try{
             // V0.2.102: counters and rows must come from the same DB snapshot.
             // Previously the worker was kicked after counts but before listForSales(),
@@ -57,7 +57,7 @@ final class VerificationQueueController extends Controller
                 $row=VerificationQueue::recordPreflightIssue((int)$u['id'],$url,$preflight,(int)$u['id']);
                 $this->json([
                     'ok'=>true,'accepted'=>false,'item'=>$row,'worker_started'=>false,
-                    'message'=>(string)$preflight['message'].' Saved under Needs Action; edit or delete it there.',
+                    'message'=>(string)$preflight['message'].' Saved under Errors; edit or delete it there.',
                     'counts'=>VerificationQueue::countsForSales((int)$u['id']),
                 ]);
             }
