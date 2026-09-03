@@ -15,6 +15,7 @@ use App\Controllers\SalesController;
 use App\Controllers\AdminController;
 use App\Controllers\AdminSettingsController;
 use App\Controllers\ApiController;
+use App\Controllers\VerificationQueueController;
 use App\Controllers\AttachmentController;
 use App\Controllers\ExternalApiController;
 use App\Controllers\GraphqlController;
@@ -59,6 +60,13 @@ $router->post('/api/inspect/preflight', [ApiController::class, 'inspectPreflight
 $router->get('/api/inspect/status', [ApiController::class, 'inspectStatus']);
 $router->post('/api/inspect', [ApiController::class, 'inspect']);
 $router->post('/api/client-log', [ApiController::class, 'clientLog']);
+$router->get('/api/verification-queue', [VerificationQueueController::class, 'index']);
+$router->get('/api/verification-queue/history', [VerificationQueueController::class, 'history']);
+$router->post('/api/verification-queue/enqueue', [VerificationQueueController::class, 'enqueue']);
+$router->post('/api/verification-queue/bulk', [VerificationQueueController::class, 'bulkEnqueue']);
+$router->post('/api/verification-queue/retry', [VerificationQueueController::class, 'retry']);
+$router->post('/api/verification-queue/update', [VerificationQueueController::class, 'update']);
+$router->post('/api/verification-queue/delete', [VerificationQueueController::class, 'delete']);
 
 // Admin dashboard, review and reporting workflow.
 $router->get('/admin', [AdminController::class, 'dashboard']);

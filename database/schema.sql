@@ -403,3 +403,57 @@ CREATE TABLE IF NOT EXISTS cdsp_inspection_locks (
  KEY idx_cdsp_inspection_locks_started_at(started_at),
  CONSTRAINT fk_inspection_lock_sales_user FOREIGN KEY(sales_user_id) REFERENCES cdsp_users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- V0.2.95 background Marketplace verification queue. / V0.2.95 Marketplace 后台验证队列。
+CREATE TABLE IF NOT EXISTS cdsp_post_verification_queue (
+ id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+ sales_user_id INT UNSIGNED NOT NULL,
+ platform ENUM('facebook','offerup','craigslist') NULL,
+ submitted_url TEXT NOT NULL,
+ canonical_url TEXT NULL,
+ canonical_url_hash CHAR(64) NULL,
+ external_post_id VARCHAR(120) NULL,
+ status ENUM('waiting','verifying','passed','failed','duplicate','invalid') NOT NULL DEFAULT 'waiting',
+ attempt_count INT UNSIGNED NOT NULL DEFAULT 0,
+ worker_token CHAR(64) NULL,
+ result_title VARCHAR(500) NULL,
+ result_description MEDIUMTEXT NULL,
+ result_published_at DATETIME NULL,
+ result_published_date DATE NULL,
+ result_image_url TEXT NULL,
+ result_platform_account_name VARCHAR(255) NULL,
+ failure_code VARCHAR(80) NULL,
+ failure_message VARCHAR(1000) NULL,
+ duplicate_url TEXT NULL,
+ duplicate_kind VARCHAR(80) NULL,
+ result_json MEDIUMTEXT NULL,
+ post_id BIGINT UNSIGNED NULL,
+ created_at DATETIME NOT NULL,
+ queued_at DATETIME NOT NULL,
+ started_at DATETIME NULL,
+ finished_at DATETIME NULL,
+ updated_at DATETIME NOT NULL,
+ PRIMARY KEY(id),
+ KEY idx_vq_sales_status(sales_user_id,status,updated_at),
+ KEY idx_vq_status(status,queued_at),
+ KEY idx_vq_external(platform,external_post_id,status),
+ KEY idx_vq_url(sales_user_id,platform,canonical_url_hash,status),
+ KEY idx_vq_post(post_id),
+ CONSTRAINT fk_vq_sales FOREIGN KEY(sales_user_id) REFERENCES cdsp_users(id) ON DELETE CASCADE,
+ CONSTRAINT fk_vq_post FOREIGN KEY(post_id) REFERENCES cdsp_sales_posts(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS cdsp_post_verification_queue_history (
+ id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+ queue_id BIGINT UNSIGNED NOT NULL,
+ actor_user_id INT UNSIGNED NULL,
+ event_type VARCHAR(80) NOT NULL,
+ from_status VARCHAR(32) NULL,
+ to_status VARCHAR(32) NULL,
+ message VARCHAR(1000) NULL,
+ created_at DATETIME NOT NULL,
+ PRIMARY KEY(id),
+ KEY idx_vqh_queue(queue_id,created_at),
+ CONSTRAINT fk_vqh_queue FOREIGN KEY(queue_id) REFERENCES cdsp_post_verification_queue(id) ON DELETE CASCADE,
+ CONSTRAINT fk_vqh_actor FOREIGN KEY(actor_user_id) REFERENCES cdsp_users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

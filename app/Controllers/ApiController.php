@@ -15,6 +15,7 @@ use App\Core\Database;
 use App\Core\Logger;
 use App\Models\Inspection;
 use App\Models\Post;
+use App\Models\VerificationQueue;
 use App\Services\PostInspector;
 use App\Services\PlatformUrl;
 use App\Services\InspectionProcessLock;
@@ -57,6 +58,9 @@ class ApiController extends Controller
 
         $externalId = PlatformUrl::externalId($platform,$normalizedUrl);
         $dup = Post::duplicate((int)$u['id'],$platform,$normalizedUrl,$externalId,null,null);
+        if(!$dup){
+            $dup = VerificationQueue::reservationDuplicate((int)$u['id'],$platform,$normalizedUrl,$externalId);
+        }
 
         $this->json([
             'ok'=>$dup===null,

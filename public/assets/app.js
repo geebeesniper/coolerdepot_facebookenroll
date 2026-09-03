@@ -658,6 +658,7 @@ $(window).on('resize.cdspMobileNav',function(){
 
         $('#detectedPlatformValue').val(platform);
         $('#inspectButton').prop('disabled', salesInspectionBusy || !platform);
+        $('#saveWaitButton').prop('disabled', salesInspectionBusy || !platform);
 
         $label
             .removeClass('facebook offerup craigslist empty-platform')
@@ -779,6 +780,32 @@ const salesI18n={
         manualAccepted:'Manual details accepted. Save this post for Admin verification.',
         manualTitleRequired:'Enter the marketplace listing title.',
         manualDateRequired:'Enter the marketplace published date.',
+        saveAndWait:'Save & Wait',
+        saveAndWaitHelp:'Checks platform + hard duplicate first, then verifies in the background.',
+        bulkSubmit:'Bulk Submit',
+        bulkUrlsLabel:'One listing URL per line',
+        addToQueue:'Add to Verification Queue',
+        verificationQueueEyebrow:'Background Verification',
+        verificationQueueTitle:'Verification Queue',
+        verificationQueueHelp:'Waiting and failed items are not counted as Posts. Passed items are saved automatically.',
+        refreshQueue:'Refresh',
+        queueAll:'All',
+        queueWaiting:'Waiting',
+        queueVerifying:'Verifying',
+        queuePassed:'Passed',
+        queueFailed:'Failed',
+        queueDuplicate:'Duplicate',
+        queueInvalid:'Invalid',
+        queueNeedsAction:'Needs Action',
+        queueEmptyTitle:'No verification items',
+        queueEmptyHelp:'Use Save & Wait or Bulk Submit to add listings.',
+        queueRetry:'Retry',
+        queueEdit:'Edit & Re-verify',
+        queueDelete:'Delete',
+        queueHistory:'History',
+        queueSaveReverify:'Save & Re-verify',
+        queueNotCounted:'This submission was not counted as a post.',
+        queuePassedHelp:'Verified and saved as a counted Post.',
         reasonPlaceholder:'Why should this post be removed?'
     },
     'zh-CN':{
@@ -894,6 +921,32 @@ const salesI18n={
         manualAccepted:'手动信息已通过检查。请保存并交管理员审核。',
         manualTitleRequired:'请输入 Marketplace 帖子标题。',
         manualDateRequired:'请输入 Marketplace 发布日期。',
+        saveAndWait:'保存并等待',
+        saveAndWaitHelp:'先检查平台和硬重复，再放到后台完成验证。',
+        bulkSubmit:'批量提交',
+        bulkUrlsLabel:'每行一个帖子链接',
+        addToQueue:'加入验证队列',
+        verificationQueueEyebrow:'后台验证',
+        verificationQueueTitle:'验证队列',
+        verificationQueueHelp:'等待中和失败的记录不计入 Post；通过后会自动保存并计数。',
+        refreshQueue:'刷新',
+        queueAll:'全部',
+        queueWaiting:'等待中',
+        queueVerifying:'验证中',
+        queuePassed:'已通过',
+        queueFailed:'失败',
+        queueDuplicate:'重复',
+        queueInvalid:'无效',
+        queueNeedsAction:'需要处理',
+        queueEmptyTitle:'暂无验证记录',
+        queueEmptyHelp:'使用“保存并等待”或“批量提交”加入队列。',
+        queueRetry:'重试',
+        queueEdit:'修改并重新验证',
+        queueDelete:'删除',
+        queueHistory:'历史',
+        queueSaveReverify:'保存并重新验证',
+        queueNotCounted:'此记录未计入 Post 数量。',
+        queuePassedHelp:'验证通过，已自动保存并计入 Post。',
         reasonPlaceholder:'为什么要删除这个帖子？'
     },
     'zh-TW':{
@@ -993,6 +1046,32 @@ const salesI18n={
         manualAccepted:'手動資訊已通過檢查。請儲存並交管理員審核。',
         manualTitleRequired:'請輸入 Marketplace 貼文標題。',
         manualDateRequired:'請輸入 Marketplace 發布日期。',
+        saveAndWait:'儲存並等待',
+        saveAndWaitHelp:'先檢查平台與硬重複，再放到背景完成驗證。',
+        bulkSubmit:'批次提交',
+        bulkUrlsLabel:'每行一個貼文連結',
+        addToQueue:'加入驗證佇列',
+        verificationQueueEyebrow:'背景驗證',
+        verificationQueueTitle:'驗證佇列',
+        verificationQueueHelp:'等待中和失敗的記錄不計入 Post；通過後會自動儲存並計數。',
+        refreshQueue:'重新整理',
+        queueAll:'全部',
+        queueWaiting:'等待中',
+        queueVerifying:'驗證中',
+        queuePassed:'已通過',
+        queueFailed:'失敗',
+        queueDuplicate:'重複',
+        queueInvalid:'無效',
+        queueNeedsAction:'需要處理',
+        queueEmptyTitle:'暫無驗證記錄',
+        queueEmptyHelp:'使用「儲存並等待」或「批次提交」加入佇列。',
+        queueRetry:'重試',
+        queueEdit:'修改並重新驗證',
+        queueDelete:'刪除',
+        queueHistory:'歷史',
+        queueSaveReverify:'儲存並重新驗證',
+        queueNotCounted:'此記錄未計入 Post 數量。',
+        queuePassedHelp:'驗證通過，已自動儲存並計入 Post。',
         reasonPlaceholder:'為什麼要刪除這篇貼文？'
     },
     es:{
@@ -1098,6 +1177,32 @@ const salesI18n={
         manualAccepted:'Datos manuales aceptados. Guarda la publicación para revisión del administrador.',
         manualTitleRequired:'Introduce el título del anuncio del marketplace.',
         manualDateRequired:'Introduce la fecha de publicación del marketplace.',
+        saveAndWait:'Guardar y esperar',
+        saveAndWaitHelp:'Comprueba plataforma y duplicado duro, luego verifica en segundo plano.',
+        bulkSubmit:'Envío masivo',
+        bulkUrlsLabel:'Una URL por línea',
+        addToQueue:'Agregar a la cola de verificación',
+        verificationQueueEyebrow:'Verificación en segundo plano',
+        verificationQueueTitle:'Cola de verificación',
+        verificationQueueHelp:'Los elementos en espera o fallidos no cuentan como Posts. Los aprobados se guardan automáticamente.',
+        refreshQueue:'Actualizar',
+        queueAll:'Todos',
+        queueWaiting:'En espera',
+        queueVerifying:'Verificando',
+        queuePassed:'Aprobados',
+        queueFailed:'Fallidos',
+        queueDuplicate:'Duplicados',
+        queueInvalid:'Inválidos',
+        queueNeedsAction:'Requiere acción',
+        queueEmptyTitle:'No hay verificaciones',
+        queueEmptyHelp:'Usa Guardar y esperar o Envío masivo para agregar publicaciones.',
+        queueRetry:'Reintentar',
+        queueEdit:'Editar y verificar de nuevo',
+        queueDelete:'Eliminar',
+        queueHistory:'Historial',
+        queueSaveReverify:'Guardar y verificar de nuevo',
+        queueNotCounted:'Este envío no se contó como Post.',
+        queuePassedHelp:'Verificado, guardado y contado como Post.',
         reasonPlaceholder:'¿Por qué se debe eliminar esta publicación?'
     }
 };
@@ -1195,6 +1300,7 @@ window.cdspSalesLanguage={translate:salesTr,apply:applySalesLanguage};
 
 $(document).on('cdsp:language-changed',function(){
     applySalesLanguage();
+    if(typeof window.cdspRefreshVerificationQueue==='function'){window.cdspRefreshVerificationQueue();}
 
     if($('#salesActivityChartPanel').length){
         renderSalesChart();
@@ -4849,6 +4955,7 @@ function setSalesInspectionBusyState(busy,showMessage){
     $('#inspectButton')
         .prop('disabled',salesInspectionBusy||!platform)
         .text(salesInspectionBusy?salesTr('checking'):salesTr('checkPost'));
+    $('#saveWaitButton').prop('disabled',salesInspectionBusy||!platform);
     $('#postUrl')
         .prop('readonly',salesInspectionBusy)
         .attr('aria-busy',salesInspectionBusy?'true':'false');
@@ -10743,7 +10850,7 @@ function renderCommentAttachments(items){
                         +' data-attachment-delete="'
                         +escapeHtml(item.id)
                         +'" aria-label="Delete image permanently"'
-                        +' title="Delete image permanently">×</button>' 
+                        +' title="Delete image permanently">×</button>'
                 +'</div>'
             );
         }).join('')
@@ -11025,7 +11132,7 @@ function renderComments(items,reviewItems){
                                         +'</svg>'+
                                     '</button>'
                                 :'')
-                        +'</div>' 
+                        +'</div>'
                     +'</div>'+
                 '</div>'+
                 '<div class="review-comment-body">'
@@ -11199,7 +11306,7 @@ function renderAttachments(items){
                         +' data-attachment-delete="'
                         +escapeHtml(item.id)
                         +'" aria-label="Delete image permanently"'
-                        +' title="Delete image permanently">×</button>' 
+                        +' title="Delete image permanently">×</button>'
                 +'</div>'
             );
         }).join('')
@@ -13287,6 +13394,201 @@ $(document).on('click','.website-source-delete',function(event){
             $button.prop('disabled',false);
         });
     });
+})();
+
+
+/* v0.2.95 — Save & Wait / Bulk Verification Queue. */
+(function(){
+    let vqPollTimer=null;
+
+    function vqCsrf(){
+        return String($('#inspectForm input[name="_csrf"]').first().val()||$('input[name="_csrf"]').first().val()||'');
+    }
+    function vqValidUrl(raw){
+        try{
+            const u=new URL(String(raw||''));
+            return (u.protocol==='https:'||u.protocol==='http:')?u:null;
+        }catch(error){return null;}
+    }
+    function vqMessage($panel,message,type){
+        const $m=$panel.find('[data-vq-message]');
+        if(!message){$m.addClass('hidden').removeClass('ok error').text('');return;}
+        $m.removeClass('hidden ok error').addClass(type==='ok'?'ok':'error').text(message);
+    }
+    function vqStatusLabel(status){
+        const map={waiting:'queueWaiting',verifying:'queueVerifying',passed:'queuePassed',failed:'queueFailed',duplicate:'queueDuplicate',invalid:'queueInvalid'};
+        return salesTr(map[status]||map.waiting);
+    }
+    function vqShortUrl(raw){
+        try{
+            const u=new URL(String(raw||''));
+            let text=u.hostname.replace(/^www\./,'')+u.pathname;
+            if(text.length>74)text=text.slice(0,70)+'…';
+            return text;
+        }catch(error){return String(raw||'').slice(0,74);}
+    }
+    function vqRenderRow(item){
+        const status=String(item.status||'waiting');
+        const $row=$('<div>').addClass('sales-vq-row').attr('data-vq-id',String(item.id||''));
+        $('<div>').addClass('sales-vq-platform').text(platformLabel(item.platform)||item.platform||'Marketplace').appendTo($row);
+
+        const $url=$('<div>').addClass('sales-vq-url');
+        const parsed=vqValidUrl(item.canonical_url||item.submitted_url);
+        if(parsed){$('<a>').attr({href:parsed.href,target:'_blank',rel:'noopener noreferrer',title:parsed.href}).text(vqShortUrl(parsed.href)).appendTo($url);}
+        else{$url.text(vqShortUrl(item.submitted_url));}
+        $url.appendTo($row);
+
+        const $meta=$('<div>').addClass('sales-vq-meta');
+        if(item.result_title)$('<span>').addClass('sales-vq-title').text(item.result_title).appendTo($meta);
+        const when=item.result_published_date||item.updated_at||item.queued_at||'';
+        const account=String(item.result_platform_account_name||'').trim();
+        const bits=[];
+        if(item.external_post_id)bits.push('ID '+item.external_post_id);
+        if(account)bits.push(account);
+        if(when)bits.push(when);
+        $meta.append(document.createTextNode(bits.join(' · ')||'—')).appendTo($row);
+
+        $('<span>').addClass('sales-vq-status '+status).text(vqStatusLabel(status)).appendTo($row);
+
+        const $actions=$('<div>').addClass('sales-vq-actions');
+        if(status==='failed'||status==='duplicate'||status==='invalid'){
+            $('<button type="button" class="btn">').attr('data-vq-action','edit').text(salesTr('queueEdit')).appendTo($actions);
+            if(status!=='invalid')$('<button type="button" class="btn">').attr('data-vq-action','retry').text(salesTr('queueRetry')).appendTo($actions);
+        }
+        if(status==='waiting'||status==='failed'||status==='duplicate'||status==='invalid'){
+            $('<button type="button" class="btn danger-soft">').attr('data-vq-action','delete').text(salesTr('queueDelete')).appendTo($actions);
+        }
+        if(status==='failed'||status==='duplicate'||status==='invalid'||status==='passed'){
+            $('<button type="button" class="btn">').attr('data-vq-action','history').text(salesTr('queueHistory')).appendTo($actions);
+        }
+        if(status==='duplicate'&&item.duplicate_url){
+            const dup=vqValidUrl(item.duplicate_url);
+            if(dup)$('<a class="btn">').attr({href:dup.href,target:'_blank',rel:'noopener noreferrer'}).text('Open duplicate ↗').appendTo($actions);
+        }
+        $actions.appendTo($row);
+
+        if(status==='failed'||status==='duplicate'||status==='invalid'){
+            const $failure=$('<div>').addClass('sales-vq-failure'+(status==='duplicate'?' duplicate':''));
+            $('<strong>').text(item.failure_message||vqStatusLabel(status)).appendTo($failure);
+            $failure.append(document.createTextNode(' '));
+            $('<span>').addClass('sales-vq-not-counted').text(salesTr('queueNotCounted')).appendTo($failure);
+            $failure.appendTo($row);
+        }else if(status==='passed'){
+            $('<div>').addClass('sales-vq-failure').css('border-left-color','#9ca3af').css('background','#f9fafb').css('color','#4b5563').text(salesTr('queuePassedHelp')).appendTo($row);
+        }
+        return$row;
+    }
+    function vqRenderPanel($panel,data){
+        const counts=data&&data.counts?data.counts:{};
+        Object.keys(counts).forEach(function(key){$panel.find('[data-vq-count="'+key+'"]').text(String(counts[key]||0));});
+        const $list=$panel.find('[data-vq-list]').empty();
+        (data.items||[]).forEach(function(item){vqRenderRow(item).appendTo($list);});
+        $panel.find('[data-vq-empty]').toggleClass('hidden',$list.children().length>0);
+        $panel.data('vqCounts',counts);
+    }
+    function vqSchedulePoll(){
+        if(vqPollTimer){clearTimeout(vqPollTimer);vqPollTimer=null;}
+        let active=false;
+        $('[data-verification-queue-panel]').each(function(){
+            const counts=$(this).data('vqCounts')||{};
+            if(Number(counts.waiting||0)>0||Number(counts.verifying||0)>0)active=true;
+        });
+        if(active)vqPollTimer=setTimeout(function(){vqLoadAll(false);},2500);
+    }
+    function vqLoadPanel($panel,showError){
+        const filter=String($panel.attr('data-vq-current-filter')||'all');
+        return $.ajax({
+            url:window.CD_BASE_PATH+'/api/verification-queue',method:'GET',dataType:'json',cache:false,data:{status:filter},
+            headers:{'Accept':'application/json'}
+        }).done(function(data){vqRenderPanel($panel,data);if(showError)vqMessage($panel,'','ok');})
+        .fail(function(xhr){if(showError)vqMessage($panel,(xhr.responseJSON&&xhr.responseJSON.message)||'Verification Queue could not be loaded.','error');});
+    }
+    function vqLoadAll(showError){
+        const requests=[];$('[data-verification-queue-panel]').each(function(){requests.push(vqLoadPanel($(this),showError));});
+        $.when.apply($,requests).always(vqSchedulePoll);
+    }
+    function vqPost(path,data,$panel,success){
+        data=data||{};data._csrf=vqCsrf();
+        return $.ajax({url:window.CD_BASE_PATH+path,method:'POST',dataType:'json',data:data,headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'}})
+        .done(function(resp){if($panel&&$panel.length)vqMessage($panel,resp.message||'Updated.','ok');if(success)success(resp);vqLoadAll(false);})
+        .fail(function(xhr){const msg=(xhr.responseJSON&&xhr.responseJSON.message)||'Request failed.';if($panel&&$panel.length)vqMessage($panel,msg,'error');else setSalesSubmitMessage(msg,'error');if(xhr.responseJSON&&xhr.responseJSON.duplicate_url)setSalesDuplicateSource(xhr.responseJSON.duplicate_url,xhr.responseJSON.duplicate_kind);});
+    }
+
+    $('#saveWaitButton').on('click',function(){
+        if(salesInspectionBusy)return;
+        const url=String($('#postUrl').val()||'').trim();
+        if(!updateDetectedPlatform()){setSalesSubmitMessage(salesTr('useSupported'),'error');return;}
+        const $btn=$(this).prop('disabled',true).text(salesTr('checking'));
+        setSalesSubmitMessage('Checking platform and hard duplicate…','warning');
+        vqPost('/api/verification-queue/enqueue',{url:url},$(),function(resp){
+            setSalesSubmitMessage(resp.message||'Saved to Verification Queue.',resp.accepted===false?'warning':'ok');
+            $('#postUrl').val('').prop('readonly',false);
+            updateDetectedPlatform();
+        }).always(function(){updateDetectedPlatform();$btn.text(salesTr('saveAndWait'));});
+    });
+
+    $('#bulkSubmitToggle').on('click',function(){$('#salesBulkSubmitPanel').removeClass('hidden');$('#salesBulkUrls').trigger('focus');});
+    $('#bulkSubmitCancel').on('click',function(){$('#salesBulkSubmitPanel').addClass('hidden');});
+    $('#bulkQueueButton').on('click',function(){
+        const urls=String($('#salesBulkUrls').val()||'').trim();
+        if(!urls){$('#salesBulkResult').removeClass('hidden').text('Paste at least one listing URL.');return;}
+        const $button=$(this).prop('disabled',true).text(salesTr('checking'));
+        $.ajax({
+            url:window.CD_BASE_PATH+'/api/verification-queue/bulk',method:'POST',dataType:'json',
+            data:{_csrf:vqCsrf(),urls:urls},headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'}
+        }).done(function(resp){
+            $('#salesBulkResult').removeClass('hidden').text(resp.message||'Bulk Submit complete.');
+            if(Number(resp.queued||0)>0)$('#salesBulkUrls').val('');
+            vqLoadAll(false);
+        }).fail(function(xhr){$('#salesBulkResult').removeClass('hidden').text((xhr.responseJSON&&xhr.responseJSON.message)||'Bulk Submit failed.');})
+        .always(function(){$button.prop('disabled',false).text(salesTr('addToQueue'));});
+    });
+
+    $(document).on('click','[data-verification-queue-panel] [data-vq-filter]',function(){
+        const $button=$(this),$panel=$button.closest('[data-verification-queue-panel]');
+        $panel.attr('data-vq-current-filter',String($button.data('vq-filter')||'all'));
+        $panel.find('[data-vq-filter]').removeClass('active');$button.addClass('active');
+        vqLoadPanel($panel,true).always(vqSchedulePoll);
+    });
+    $(document).on('click','[data-verification-queue-panel] [data-verification-queue-refresh]',function(){vqLoadPanel($(this).closest('[data-verification-queue-panel]'),true).always(vqSchedulePoll);});
+
+    $(document).on('click','[data-vq-action]',function(){
+        const $button=$(this),action=String($button.data('vq-action')||''),$row=$button.closest('.sales-vq-row'),id=Number($row.data('vq-id')||0),$panel=$row.closest('[data-verification-queue-panel]');
+        if(!id)return;
+        if(action==='retry'){
+            $button.prop('disabled',true);vqPost('/api/verification-queue/retry',{id:id},$panel).always(function(){$button.prop('disabled',false);});return;
+        }
+        if(action==='delete'){
+            if(!window.confirm('Delete this verification queue item? No counted Post will be deleted.'))return;
+            $button.prop('disabled',true);vqPost('/api/verification-queue/delete',{id:id},$panel);return;
+        }
+        if(action==='edit'){
+            if($row.find('.sales-vq-edit').length){$row.find('.sales-vq-edit').remove();return;}
+            const current=$row.find('.sales-vq-url a').attr('href')||'';
+            const $edit=$('<div>').addClass('sales-vq-edit');
+            $('<input type="url">').val(current).attr('data-vq-edit-url','1').appendTo($edit);
+            $('<button type="button" class="btn primary">').attr('data-vq-edit-save','1').text(salesTr('queueSaveReverify')).appendTo($edit);
+            $('<button type="button" class="btn">').attr('data-vq-edit-cancel','1').text(salesTr('cancel')).appendTo($edit);
+            $edit.appendTo($row);$edit.find('input').trigger('focus');return;
+        }
+        if(action==='history'){
+            const $existing=$row.find('.sales-vq-history');if($existing.length){$existing.remove();return;}
+            $.getJSON(window.CD_BASE_PATH+'/api/verification-queue/history',{id:id}).done(function(resp){
+                const $h=$('<div>').addClass('sales-vq-history');
+                (resp.history||[]).forEach(function(entry){$('<div>').text((entry.created_at||'')+' · '+(entry.message||entry.event_type||'')).appendTo($h);});
+                if(!$h.children().length)$h.text('No history.');$h.appendTo($row);
+            });
+        }
+    });
+    $(document).on('click','[data-vq-edit-cancel]',function(){$(this).closest('.sales-vq-edit').remove();});
+    $(document).on('click','[data-vq-edit-save]',function(){
+        const $edit=$(this).closest('.sales-vq-edit'),$row=$edit.closest('.sales-vq-row'),id=Number($row.data('vq-id')||0),url=String($edit.find('[data-vq-edit-url]').val()||'').trim(),$panel=$row.closest('[data-verification-queue-panel]');
+        if(!url){vqMessage($panel,'Enter a listing URL.','error');return;}
+        $(this).prop('disabled',true);vqPost('/api/verification-queue/update',{id:id,url:url},$panel);
+    });
+
+    window.cdspRefreshVerificationQueue=function(){vqLoadAll(false);};
+    if($('[data-verification-queue-panel]').length)vqLoadAll(false);
 })();
 
 });

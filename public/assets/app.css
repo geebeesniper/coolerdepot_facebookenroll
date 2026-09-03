@@ -16040,3 +16040,146 @@ button.website-history-control{
     .website-products-host-select{flex:0 0 auto;width:100%;min-width:0}
     .website-scanned-products-toggle{padding:10px 12px;gap:8px}
 }
+
+/* v0.2.95 — Sales Save & Wait / Bulk Verification Queue. */
+.sales-queue-submit-actions{
+    display:grid;
+    grid-template-columns:auto minmax(0,1fr) auto;
+    gap:7px;
+    align-items:center;
+    margin-top:10px;
+    padding-top:9px;
+    border-top:1px solid #e2e8f0;
+}
+.sales-queue-submit-help{color:#64748b;font-size:8px;line-height:1.4;}
+.sales-bulk-submit{
+    margin-top:10px;
+    padding:10px;
+    border:1px solid #dbe3ee;
+    border-radius:4px;
+    background:#f8fafc;
+}
+.sales-bulk-submit textarea{width:100%;min-height:118px;margin-top:5px;resize:vertical;}
+.sales-bulk-submit-actions{display:flex;gap:7px;justify-content:flex-end;margin-top:8px;flex-wrap:wrap;}
+.sales-bulk-result{margin-top:8px;padding:7px 9px;border:1px solid #dbe3ee;border-radius:4px;background:#fff;color:#475569;font-size:9px;font-weight:800;}
+
+.sales-verification-queue{
+    margin-top:14px;
+    padding:0;
+    overflow:hidden;
+}
+.sales-verification-queue-head{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:12px;
+    padding:13px 15px;
+    border-bottom:1px solid #e2e8f0;
+    background:#f8fafc;
+}
+.sales-verification-queue-head h2{margin:2px 0 2px;}
+.sales-verification-queue-head p{margin:0;color:#64748b;font-size:9px;line-height:1.45;}
+.sales-verification-queue-filters{
+    display:flex;
+    gap:5px;
+    padding:9px 12px;
+    overflow:auto;
+    border-bottom:1px solid #e2e8f0;
+    background:#fff;
+}
+.sales-verification-queue-filters button{
+    flex:0 0 auto;
+    min-height:28px;
+    padding:4px 8px;
+    border:1px solid #dbe3ee;
+    border-radius:4px;
+    background:#fff;
+    color:#475569;
+    font-size:8px;
+    font-weight:900;
+    cursor:pointer;
+}
+.sales-verification-queue-filters button.active{border-color:#94a3b8;background:#f1f5f9;color:#0f172a;}
+.sales-verification-queue-filters b{margin-left:3px;font-size:8px;}
+.sales-verification-queue-message{margin:8px 12px 0;padding:7px 9px;border:1px solid #dbe3ee;border-radius:4px;font-size:9px;font-weight:800;}
+.sales-verification-queue-message.ok{background:#f0fdf4;border-color:#bbf7d0;color:#166534;}
+.sales-verification-queue-message.error{background:#fff7ed;border-color:#fed7aa;color:#9a3412;}
+.sales-verification-queue-list{display:grid;gap:0;}
+.sales-vq-row{
+    display:grid;
+    grid-template-columns:minmax(92px,.55fr) minmax(190px,1.65fr) minmax(150px,.8fr) auto;
+    gap:10px;
+    align-items:center;
+    min-width:0;
+    padding:8px 12px;
+    border-bottom:1px solid #edf1f5;
+    background:#fff;
+}
+.sales-vq-row:hover{background:#fbfcfe;}
+.sales-vq-platform{font-size:8px;font-weight:900;text-transform:uppercase;color:#475569;}
+.sales-vq-url{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9px;}
+.sales-vq-url a{color:#31598a;text-decoration:none;}
+.sales-vq-meta{min-width:0;color:#64748b;font-size:8px;line-height:1.45;}
+.sales-vq-title{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#334155;font-weight:800;}
+.sales-vq-status{justify-self:start;display:inline-flex;align-items:center;gap:4px;padding:2px 6px;border-radius:4px;font-size:8px;font-weight:900;white-space:nowrap;}
+.sales-vq-status.waiting{background:#f1f5f9;color:#475569;}
+.sales-vq-status.verifying{background:#eef2f7;color:#334155;}
+.sales-vq-status.verifying:before{content:'';width:6px;height:6px;border:1px solid #64748b;border-top-color:transparent;border-radius:50%;animation:sales-vq-spin .8s linear infinite;}
+.sales-vq-status.passed{background:#e5e7eb;color:#374151;}
+.sales-vq-status.failed{background:#ffedd5;color:#c2410c;}
+.sales-vq-status.duplicate{background:#fee2e2;color:#b91c1c;}
+@keyframes sales-vq-spin{to{transform:rotate(360deg)}}
+.sales-vq-actions{display:flex;gap:5px;justify-content:flex-end;flex-wrap:wrap;}
+.sales-vq-actions .btn{min-height:28px;padding:4px 7px;font-size:8px;}
+.sales-vq-failure{
+    grid-column:2 / -1;
+    margin-top:-4px;
+    padding:5px 7px;
+    border-left:2px solid #fb923c;
+    background:#fff7ed;
+    color:#9a3412;
+    font-size:8px;
+    line-height:1.45;
+}
+.sales-vq-failure.duplicate{border-left-color:#ef4444;background:#fef2f2;color:#991b1b;}
+.sales-vq-not-counted{font-weight:900;}
+.sales-vq-edit{
+    grid-column:2 / -1;
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto auto;
+    gap:6px;
+    padding:6px;
+    background:#f8fafc;
+    border:1px solid #e2e8f0;
+    border-radius:4px;
+}
+.sales-vq-edit input{min-width:0;min-height:32px;}
+.sales-verification-queue-empty{display:flex;flex-direction:column;gap:2px;padding:18px 12px;text-align:center;color:#64748b;font-size:9px;}
+.sales-verification-queue-empty strong{color:#334155;font-size:10px;}
+.sales-vq-history{grid-column:1 / -1;padding:6px 8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:4px;font-size:8px;color:#475569;}
+.sales-vq-history div+div{margin-top:3px;}
+
+@media(max-width:760px){
+    .sales-queue-submit-actions{grid-template-columns:1fr 1fr;}
+    .sales-queue-submit-help{grid-column:1/-1;grid-row:2;}
+    .sales-vq-row{grid-template-columns:86px minmax(0,1fr) auto;gap:7px;}
+    .sales-vq-meta{grid-column:2/3;}
+    .sales-vq-status{grid-column:3;grid-row:1;}
+    .sales-vq-actions{grid-column:2/-1;justify-content:flex-start;}
+    .sales-vq-failure,.sales-vq-edit{grid-column:2/-1;}
+}
+@media(max-width:520px){
+    .sales-queue-submit-actions{grid-template-columns:1fr;}
+    .sales-queue-submit-help{grid-column:1;grid-row:auto;}
+    .sales-queue-submit-actions .btn{width:100%;}
+    .sales-verification-queue-head{align-items:center;}
+    .sales-verification-queue-head p{display:none;}
+    .sales-vq-row{grid-template-columns:minmax(0,1fr) auto;}
+    .sales-vq-platform{grid-column:1;}
+    .sales-vq-url{grid-column:1/-1;grid-row:2;}
+    .sales-vq-meta{grid-column:1/-1;grid-row:3;}
+    .sales-vq-status{grid-column:2;grid-row:1;}
+    .sales-vq-actions,.sales-vq-failure,.sales-vq-edit{grid-column:1/-1;}
+    .sales-vq-edit{grid-template-columns:1fr;}
+}
+.sales-vq-status.invalid{background:#fff7ed;color:#9a3412;}

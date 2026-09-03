@@ -14,6 +14,7 @@ use App\Core\Csrf;
 use App\Core\Database;
 use App\Models\Post;
 use App\Models\Inspection;
+use App\Models\VerificationQueue;
 use App\Models\User;
 
 /**
@@ -263,6 +264,13 @@ private function salesPresetRange(
             $pdo->beginTransaction();
             $inspection=Inspection::savable($token,(int)$u['id'],true);
             if(!$inspection){throw new \DomainException('Verification expired or was already saved. Check the post again.');}
+            $queueDup=VerificationQueue::reservationDuplicate(
+                (int)$inspection['sales_user_id'],
+                (string)$inspection['platform'],
+                (string)($inspection['canonical_url']??''),
+                $inspection['external_post_id']??null
+            );
+            if($queueDup){throw new \DomainException((string)$queueDup['reason']);}
             $postId=Post::create($inspection);
             Inspection::consume((int)$inspection['id']);
             $pdo->commit();
@@ -299,6 +307,18 @@ private function salesPresetRange(
                         $duplicateTitle=$dup['title']??null;
                         $duplicateKind=$dup['kind']??null;
                     } else {
+                        $queueDup=VerificationQueue::reservationDuplicate(
+                            (int)$inspection['sales_user_id'],
+                            (string)$inspection['platform'],
+                            (string)($inspection['canonical_url']??''),
+                            $inspection['external_post_id']??null
+                        );
+                        if($queueDup){
+                            $duplicateUrl=$queueDup['canonical_url']??null;
+                            $duplicateKind=$queueDup['kind']??null;
+                        }
+                    }
+                    if(!$duplicateUrl){
                         // EN: A website/exact-image duplicate can appear between Verify and Save.
                         // Re-run the exact comparison so the AJAX error can still return the
                         // concrete duplicate URL instead of only a generic message.

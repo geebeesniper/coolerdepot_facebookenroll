@@ -88,6 +88,32 @@ use App\Core\Util;
                     </span>
                 </span>
             </div>
+
+            <div class="sales-queue-submit-actions">
+                <button type="button" class="btn" id="saveWaitButton" disabled>
+                    <span data-sales-i18n="saveAndWait">Save &amp; Wait</span>
+                </button>
+                <span class="sales-queue-submit-help" data-sales-i18n="saveAndWaitHelp">
+                    Checks platform + hard duplicate first, then verifies in the background.
+                </span>
+                <button type="button" class="btn compact" id="bulkSubmitToggle">
+                    <span data-sales-i18n="bulkSubmit">Bulk Submit</span>
+                </button>
+            </div>
+
+            <div class="sales-bulk-submit hidden" id="salesBulkSubmitPanel">
+                <label for="salesBulkUrls" data-sales-i18n="bulkUrlsLabel">One listing URL per line</label>
+                <textarea id="salesBulkUrls" rows="6" placeholder="https://www.facebook.com/marketplace/item/...&#10;https://offerup.com/item/detail/...&#10;https://craigslist.org/..."></textarea>
+                <div class="sales-bulk-submit-actions">
+                    <button type="button" class="btn primary" id="bulkQueueButton">
+                        <span data-sales-i18n="addToQueue">Add to Verification Queue</span>
+                    </button>
+                    <button type="button" class="btn" id="bulkSubmitCancel">
+                        <span data-sales-i18n="cancel">Cancel</span>
+                    </button>
+                </div>
+                <div class="sales-bulk-result hidden" id="salesBulkResult" aria-live="polite"></div>
+            </div>
         </form>
 
         <div id="inspectionProgress" class="sales-inspection-progress hidden">

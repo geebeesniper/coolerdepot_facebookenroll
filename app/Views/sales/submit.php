@@ -43,3 +43,4 @@ use App\Core\Util;
 </div>
 
 <?php require __DIR__ . '/_submit_form.php'; ?>
+<?php require __DIR__ . '/_verification_queue.php'; ?>

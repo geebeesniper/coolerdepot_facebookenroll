@@ -262,6 +262,8 @@ $chartTargetTop=
     </div>
 </div>
 
+<?php require __DIR__ . '/_verification_queue.php'; ?>
+
 <section
     class="sales-activity-chart-panel"
     id="salesActivityChartPanel"
