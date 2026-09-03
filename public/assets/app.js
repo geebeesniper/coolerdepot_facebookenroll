@@ -13566,7 +13566,14 @@ $(document).on('click','.website-source-delete',function(event){
     }
     function vqRenderRow(item){
         const status=String(item.status||'waiting');
-        const $row=$('<article>').addClass('sales-vq-row sales-vq-card status-'+status).attr('data-vq-id',String(item.id||''));
+        const $row=$('<article>').addClass('sales-vq-row sales-vq-card status-'+status)
+            .attr({
+                'data-vq-id':String(item.id||''),
+                'role':'button',
+                'tabindex':'0',
+                'aria-label':'Open '+vqStatusLabel(status)+' verification details'
+            })
+            .data('vqItem',item);
 
         const $top=$('<div>').addClass('sales-vq-card-top');
         $('<span>').addClass('sales-vq-platform').text(platformLabel(item.platform)||item.platform||'Marketplace').appendTo($top);
@@ -13617,6 +13624,48 @@ $(document).on('click','.website-source-delete',function(event){
         if($actions.children().length)$actions.appendTo($row);
         return $row;
     }
+    function vqOpenDetail($row){
+        const item=$row.data('vqItem')||{};
+        const status=String(item.status||'waiting').toLowerCase();
+        const $modal=$('[data-vq-detail-modal]').first();
+        if(!$modal.length)return;
+        const platform=platformLabel(item.platform)||item.platform||'Marketplace';
+        const rawUrl=String(item.canonical_url||item.submitted_url||'');
+        const parsed=vqValidUrl(rawUrl);
+        const title=String(item.result_title||'').trim()||'Queued listing';
+        const date=String(item.result_published_date||item.updated_at||item.queued_at||'—');
+        let message='Background verification is waiting to start.';
+        if(status==='verifying')message='Background verification is running now.';
+        if(status==='passed')message=salesTr('queuePassedHelp');
+        if(status==='failed'||status==='duplicate'||status==='invalid')message=String(item.failure_message||vqStatusLabel(status));
+        $modal.find('[data-vq-detail-platform]').text(platform);
+        $modal.find('[data-vq-detail-platform-value]').text(platform);
+        $modal.find('[data-vq-detail-heading]').text('Verification details');
+        $modal.find('[data-vq-detail-status]').attr('class','sales-post-detail-status sales-vq-detail-status '+status).text(vqStatusLabel(status));
+        $modal.find('[data-vq-detail-status-value]').text(vqStatusLabel(status));
+        $modal.find('[data-vq-detail-date]').text(date);
+        $modal.find('[data-vq-detail-title]').text(title);
+        $modal.find('[data-vq-detail-message]').text(message);
+        $modal.find('[data-vq-detail-post-id]').text(item.external_post_id||'—');
+        const $url=$modal.find('[data-vq-detail-url]');
+        const $open=$modal.find('[data-vq-detail-open]');
+        if(parsed){
+            $url.attr('href',parsed.href).text(parsed.href);
+            $open.attr('href',parsed.href).removeClass('disabled').attr('aria-disabled','false');
+        }else{
+            $url.attr('href','#').text(rawUrl||'—');
+            $open.attr('href','#').addClass('disabled').attr('aria-disabled','true');
+        }
+        $modal.removeClass('hidden').attr('aria-hidden','false');
+        $('body').addClass('sales-detail-open');
+        window.setTimeout(function(){$modal.find('[data-vq-detail-close]').first().trigger('focus');},0);
+    }
+    function vqCloseDetail($modal){
+        $modal=$modal&&$modal.length?$modal:$('[data-vq-detail-modal]').first();
+        $modal.addClass('hidden').attr('aria-hidden','true');
+        $('body').removeClass('sales-detail-open');
+    }
+
     function vqFilterMatches(item,filter){
         const status=String((item&&item.status)||'').toLowerCase();
         if(filter==='all')return true;
@@ -13641,7 +13690,9 @@ $(document).on('click','.website-source-delete',function(event){
                 // because one optional display field failed to render.
                 if(window.console&&console.error)console.error('Verification Queue row render failed',error,item);
                 const fallbackStatus=String((item&&item.status)||'waiting');
-                const $fallback=$('<article>').addClass('sales-vq-row sales-vq-card status-'+fallbackStatus).attr('data-vq-id',String((item&&item.id)||''));
+                const $fallback=$('<article>').addClass('sales-vq-row sales-vq-card status-'+fallbackStatus)
+                    .attr({'data-vq-id':String((item&&item.id)||''),'role':'button','tabindex':'0','aria-label':'Open verification details'})
+                    .data('vqItem',item||{});
                 const $fallbackTop=$('<div>').addClass('sales-vq-card-top');
                 $('<span>').addClass('sales-vq-platform').text(platformLabel(item&&item.platform)||(item&&item.platform)||'Marketplace').appendTo($fallbackTop);
                 $('<span>').addClass('sales-vq-status '+fallbackStatus).text(vqStatusLabel(fallbackStatus)).appendTo($fallbackTop);
@@ -13754,6 +13805,20 @@ $(document).on('click','.website-source-delete',function(event){
         vqLoadPanel($panel,true).always(vqSchedulePoll);
     });
     $(document).on('click','[data-verification-queue-panel] [data-verification-queue-refresh]',function(){vqLoadPanel($(this).closest('[data-verification-queue-panel]'),true).always(vqSchedulePoll);});
+
+    $(document).on('click','.sales-vq-row',function(event){
+        if($(event.target).closest('a,button,input,textarea,select,label').length)return;
+        vqOpenDetail($(this));
+    });
+    $(document).on('keydown','.sales-vq-row',function(event){
+        if($(event.target).closest('a,button,input,textarea,select').length)return;
+        if(event.key!=='Enter'&&event.key!==' ')return;
+        event.preventDefault();
+        vqOpenDetail($(this));
+    });
+    $(document).on('click','[data-vq-detail-close]',function(){vqCloseDetail($(this).closest('[data-vq-detail-modal]'));});
+    $(document).on('click','[data-vq-detail-modal]',function(event){if(event.target===this)vqCloseDetail($(this));});
+    $(document).on('keydown',function(event){if(event.key==='Escape'&&!$('[data-vq-detail-modal]').first().hasClass('hidden'))vqCloseDetail($('[data-vq-detail-modal]').first());});
 
     $(document).on('click','[data-vq-action]',function(){
         const $button=$(this),action=String($button.data('vq-action')||''),$row=$button.closest('.sales-vq-row'),id=Number($row.data('vq-id')||0),$panel=$row.closest('[data-verification-queue-panel]');

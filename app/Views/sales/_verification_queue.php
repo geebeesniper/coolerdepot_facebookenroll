@@ -54,3 +54,38 @@
         </div>
     </div>
 </section>
+
+<div class="sales-post-detail-backdrop sales-vq-detail-backdrop hidden" data-vq-detail-modal aria-hidden="true">
+    <section class="sales-post-detail-modal sales-vq-detail-modal" role="dialog" aria-modal="true" aria-label="Verification Queue item details">
+        <div class="sales-post-detail-head">
+            <div>
+                <span class="sales-post-detail-platform" data-vq-detail-platform>Marketplace</span>
+                <h2 data-vq-detail-heading>Verification details</h2>
+            </div>
+            <button type="button" class="icon-close sales-post-detail-close" data-vq-detail-close aria-label="Close verification details" title="Close">×</button>
+        </div>
+        <div class="sales-post-detail-scroll">
+            <div class="sales-post-detail-content">
+                <div class="sales-post-detail-status-row">
+                    <span class="sales-post-detail-status" data-vq-detail-status>Waiting</span>
+                </div>
+                <div class="sales-post-detail-date">
+                    <span>Queued</span>
+                    <strong data-vq-detail-date>—</strong>
+                </div>
+                <h3 data-vq-detail-title>Queued listing</h3>
+                <p data-vq-detail-message>Background verification is waiting to start.</p>
+                <dl class="sales-post-detail-facts">
+                    <div><dt>Platform</dt><dd data-vq-detail-platform-value>—</dd></div>
+                    <div><dt>Post ID</dt><dd data-vq-detail-post-id>—</dd></div>
+                    <div class="sales-vq-detail-url-fact"><dt>Original URL</dt><dd><a data-vq-detail-url target="_blank" rel="noopener noreferrer" href="#">—</a></dd></div>
+                    <div><dt>Status</dt><dd data-vq-detail-status-value>—</dd></div>
+                </dl>
+            </div>
+        </div>
+        <div class="sales-post-detail-footer">
+            <button type="button" class="btn" data-vq-detail-close>Close</button>
+            <a class="btn primary" data-vq-detail-open target="_blank" rel="noopener noreferrer" href="#">Open original</a>
+        </div>
+    </section>
+</div>

@@ -13,6 +13,37 @@ use App\Models\VerificationQueue;
 
 final class VerificationQueueWorker
 {
+    /** V0.2.104: one post-response FPM fallback per request. */
+    private static bool $deferredOne=false;
+
+    /**
+     * EN: After the AJAX response is sent, let the same PHP-FPM request process one queued item.
+     * This is the reliable fallback when detached CLI launch is unavailable or silently fails.
+     * 中文：AJAX 响应发出后，由当前 PHP-FPM 请求后台处理一条队列；CLI Worker 无法启动时仍能继续。
+     */
+    public static function deferOne(): void
+    {
+        if(self::$deferredOne||PHP_SAPI==='cli')return;
+        self::$deferredOne=true;
+        register_shutdown_function(static function():void{
+            ignore_user_abort(true);
+            @set_time_limit(0);
+            // Release the Sales session before long provider work so 2.5s AJAX polling
+            // and the rest of the Dashboard are never blocked by the background request.
+            if(session_status()===PHP_SESSION_ACTIVE){@session_write_close();}
+            if(function_exists('fastcgi_finish_request')){
+                try{@fastcgi_finish_request();}catch(\Throwable $ignore){}
+            }
+            try{
+                self::run(1);
+            }catch(\Throwable $e){
+                Logger::exception($e,'verification-queue',[
+                    'event'=>'Deferred verification queue worker failed'
+                ],'error');
+            }
+        });
+    }
+
     /**
      * EN: Start one detached CLI worker when possible. Queue remains durable if process launch is unavailable.
      * 中文：尽可能启动独立 CLI Worker；即使无法启动，队列记录仍会保存在数据库中。

@@ -28,7 +28,12 @@ final class VerificationQueueController extends Controller
             $snapshot=VerificationQueue::snapshotForSales((int)$u['id'],$filter,100);
             $counts=$snapshot['counts'];
             $items=$snapshot['items'];
-            if((int)$counts['waiting']>0&&(int)$counts['verifying']===0)VerificationQueueWorker::kick();
+            if((int)$counts['waiting']>0&&(int)$counts['verifying']===0){
+                VerificationQueueWorker::kick();
+                // V0.2.104: a Waiting item must never depend only on a detached CLI launch.
+                // The AJAX response returns first; one item is then processed by PHP-FPM.
+                VerificationQueueWorker::deferOne();
+            }
             $this->json([
                 'ok'=>true,
                 'filter'=>$filter,
@@ -58,6 +63,7 @@ final class VerificationQueueController extends Controller
             }
             $row=VerificationQueue::enqueueUrl((int)$u['id'],$url,(int)$u['id']);
             $launched=VerificationQueueWorker::kick();
+            VerificationQueueWorker::deferOne();
             $this->json([
                 'ok'=>true,'accepted'=>true,'item'=>$row,'worker_started'=>$launched,
                 'message'=>'Saved to Verification Queue. You can submit the next post now.',
@@ -103,7 +109,7 @@ final class VerificationQueueController extends Controller
                 $results[]=['line'=>$line+1,'url'=>$url,'status'=>'invalid','message'=>'Could not queue this URL.'];$invalid++;
             }
         }
-        if($queued>0)VerificationQueueWorker::kick();
+        if($queued>0){VerificationQueueWorker::kick();VerificationQueueWorker::deferOne();}
         $this->json([
             'ok'=>true,'submitted'=>count($urls),'queued'=>$queued,'duplicate'=>$duplicate,'invalid'=>$invalid,
             'results'=>$results,'counts'=>VerificationQueue::countsForSales((int)$u['id']),
@@ -115,7 +121,7 @@ final class VerificationQueueController extends Controller
     {
         $u=Auth::requireRole('sales');Csrf::verify($_POST['_csrf']??null);$id=(int)($_POST['id']??0);
         try{
-            $row=VerificationQueue::retry((int)$u['id'],$id,(int)$u['id']);VerificationQueueWorker::kick();
+            $row=VerificationQueue::retry((int)$u['id'],$id,(int)$u['id']);VerificationQueueWorker::kick();VerificationQueueWorker::deferOne();
             $this->json(['ok'=>true,'item'=>$row,'message'=>'Queued for re-verification.']);
         }catch(\DomainException $e){$this->json(['ok'=>false,'message'=>$e->getMessage()],409);}
     }
@@ -126,7 +132,7 @@ final class VerificationQueueController extends Controller
         try{
             $preflight=VerificationQueue::preflightUrl((int)$u['id'],$url,$id);
             if(!$preflight['ok'])$this->json(array_merge($preflight,['ok'=>false]),409);
-            $row=VerificationQueue::editAndRequeue((int)$u['id'],$id,$url,(int)$u['id']);VerificationQueueWorker::kick();
+            $row=VerificationQueue::editAndRequeue((int)$u['id'],$id,$url,(int)$u['id']);VerificationQueueWorker::kick();VerificationQueueWorker::deferOne();
             $this->json(['ok'=>true,'item'=>$row,'message'=>'URL updated and queued for re-verification.']);
         }catch(\DomainException $e){$this->json(['ok'=>false,'message'=>$e->getMessage()],409);}
     }

@@ -16474,3 +16474,38 @@ button.website-history-control{
         margin-top:0;
     }
 }
+
+/* v0.2.104 — queue cards open details like existing Post cards; status controls stay equal size. */
+.sales-vq-row[role="button"]{
+    cursor:pointer;
+    transition:border-color .16s ease,box-shadow .16s ease,transform .16s ease;
+}
+.sales-vq-row[role="button"]:hover,
+.sales-vq-row[role="button"]:focus-visible{
+    box-shadow:0 10px 24px rgba(15,23,42,.08);
+    transform:translateY(-1px);
+    outline:none;
+}
+.sales-vq-status{
+    width:72px;
+    min-width:72px;
+    height:22px;
+    min-height:22px;
+    justify-content:center;
+    box-sizing:border-box;
+    padding:2px 5px;
+}
+.sales-vq-detail-modal{width:min(720px,calc(100vw - 24px));}
+.sales-vq-detail-modal .sales-post-detail-content{padding-top:16px;}
+.sales-vq-detail-modal .sales-post-detail-facts{grid-template-columns:repeat(2,minmax(0,1fr));}
+.sales-vq-detail-url-fact a{color:#2563eb;text-decoration:none;overflow-wrap:anywhere;}
+.sales-vq-detail-status{width:88px;min-width:88px;justify-content:center;}
+.sales-vq-detail-status.waiting{background:#f1f5f9;color:#475569;}
+.sales-vq-detail-status.verifying{background:#eef2f7;color:#334155;}
+.sales-vq-detail-status.passed{background:#e5e7eb;color:#374151;}
+.sales-vq-detail-status.failed{background:#ffedd5;color:#c2410c;}
+.sales-vq-detail-status.duplicate{background:#fee2e2;color:#b91c1c;}
+.sales-vq-detail-status.invalid{background:#fff7ed;color:#9a3412;}
+@media(max-width:520px){
+    .sales-vq-detail-modal .sales-post-detail-facts{grid-template-columns:1fr;}
+}
