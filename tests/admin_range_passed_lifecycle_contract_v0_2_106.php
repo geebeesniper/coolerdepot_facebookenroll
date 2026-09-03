@@ -22,7 +22,7 @@ $check(str_contains($model,'$where.=" AND status<>\'passed\'";'),
 $check(str_contains($model,"if(\$status!=='passed')\$counts['all']+=\$count;"),
     'All counter represents active/actionable queue only');
 $check(str_contains($model,"['waiting','verifying','passed','failed','duplicate','invalid']"),
-    'Passed filter remains available as history');
+    'Passed filter remains available until Sales acknowledges the saved Post');
 $check(str_contains($js,'function vqRefreshFormalPostsAfterPass()')
     && str_contains($js,"'verification-passed'"),
     'Passed transition refreshes the formal Posts grid through existing AJAX loader');
@@ -30,8 +30,8 @@ $check(str_contains($js,'const passedAdvanced=previousPassed!==undefined&&curren
     'AJAX polling detects a new Passed transition without page reload');
 $check(str_contains($js,'if(filter===\'all\'&&Number(counts.all||0)===0)vqSetCollapsed($panel,true,false);'),
     'Queue compacts after the last active item is promoted');
-$check(str_contains($js,'Passed items move into Posts automatically; use Passed for history.'),
-    'Queue help explains Passed lifecycle');
+$check(str_contains($js,'Passed items are saved in Posts; click a Passed card to clear it and show the saved Post.'),
+    'Queue help explains current Passed acknowledgement lifecycle');
 
 if($fail){
     fwrite(STDERR,"V0.2.106 contract failed: ".implode('; ',$fail)."\n");

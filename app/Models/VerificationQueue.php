@@ -299,7 +299,9 @@ final class VerificationQueue
         try{
             $s=$pdo->prepare('SELECT status FROM cdsp_post_verification_queue WHERE id=? AND sales_user_id=? FOR UPDATE');$s->execute([$id,$salesUserId]);
             $status=(string)($s->fetchColumn()?:'');
-            if($status===''||!in_array($status,['waiting','failed','duplicate','invalid'],true))throw new \DomainException('Only waiting, failed, duplicate, or invalid queue items can be deleted.');
+            // V0.2.109: Passed queue rows are acknowledgements only. The formal Post
+            // already exists, so Sales may clear the queue row without deleting the Post.
+            if($status===''||!in_array($status,['waiting','passed','failed','duplicate','invalid'],true))throw new \DomainException('Only waiting, passed, failed, duplicate, or invalid queue items can be deleted.');
             $d=$pdo->prepare('DELETE FROM cdsp_post_verification_queue WHERE id=? AND sales_user_id=?');$d->execute([$id,$salesUserId]);
             $pdo->commit();
         }catch(\Throwable $e){if($pdo->inTransaction())$pdo->rollBack();throw$e;}
