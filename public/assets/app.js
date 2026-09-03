@@ -6888,6 +6888,7 @@ $('[data-html-note]').each(function(){
     const $salesLocationFilter=$('#salesLocationFilter');
     const $salesDirectoryEmpty=$('#salesDirectoryFilterEmpty');
     const selectedLocationFilters=new Set();
+    let salesDirectoryExpandedControlsReady=false;
 
     /**
      * EN: Normalize Sales directory text for case-insensitive search matching.
@@ -6908,10 +6909,27 @@ $('[data-html-note]').each(function(){
      *
      * @returns {void} No value is returned. / 无返回值。
      */
+    function salesDirectoryFilteringActive(){
+        return normalizeSalesDirectoryText(
+            $salesDirectorySearch.val()
+        )!=='' || selectedLocationFilters.size>0;
+    }
+
     function applySalesDirectoryFilters(){
         const query=normalizeSalesDirectoryText(
             $salesDirectorySearch.val()
         );
+
+        // v0.2.82 — Search/location filtering is a list-only state.
+        // Any previously expanded Sales/Post details must close immediately and
+        // stay closed while a directory filter is active.
+        if(
+            salesDirectoryFilteringActive()
+            && salesDirectoryExpandedControlsReady
+        ){
+            closeExpandedPosts();
+        }
+
         let visibleCount=0;
 
         $grid.find('.sales-progress-card').each(function(){
@@ -7695,6 +7713,7 @@ function applyDashboardLanguage(){
     const $expandedReviewMeta = $('#salesExpandedReviewMeta');
     const $expandedReviewEdit = $('#salesExpandedReviewEdit');
     const $expandedReviewRating = $('#salesExpandedReviewRating');
+    salesDirectoryExpandedControlsReady=true;
     const $adminSalesActivity = $('#adminSalesActivityChartPanel');
     const $adminSalesChartBars = $('#adminSalesChartBars');
     const $adminSalesChartCanvas = $('#adminSalesChartCanvas');
@@ -9631,6 +9650,13 @@ function renderPostGrid(data){
      * @returns {void} No value is returned. / 无返回值。
      */
     function openExpandedPosts($card){
+        // v0.2.82 — Do not reopen Details while Sales Search or Location filter
+        // is active. Filtered mode must remain a compact card-list view.
+        if(salesDirectoryFilteringActive()){
+            closeExpandedPosts();
+            return;
+        }
+
         const salesId = parseInt(
             $card.attr('data-sales-id'),
             10

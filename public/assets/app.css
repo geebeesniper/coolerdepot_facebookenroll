@@ -15511,3 +15511,12 @@ button.website-history-control:disabled{opacity:.38;cursor:default}
 .website-history-control.is-failed{color:#d92d20}
 .website-history-control.is-static{background:transparent !important}
 .website-history-processing-empty{padding:12px 10px;color:#667085;background:#fff}
+
+
+/* v0.2.82 — Location cards size independently while one card is being edited. */
+.sales-location-list{
+    align-items:start;
+}
+.sales-location-card{
+    align-self:start;
+}
