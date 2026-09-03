@@ -40,7 +40,8 @@ class WebsiteScanJob
                 updated_at DATETIME NOT NULL,
                 finished_at DATETIME NULL,
                 PRIMARY KEY (id),
-                UNIQUE KEY uq_cdsp_website_scan_host (source_host),
+                KEY idx_cdsp_website_scan_host (source_host,id),
+                KEY idx_cdsp_website_scan_history (history_id,id),
                 KEY idx_cdsp_website_scan_status (status,updated_at)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
         );
@@ -57,6 +58,22 @@ class WebsiteScanJob
         $statusColumn=$pdo->query("SHOW COLUMNS FROM cdsp_website_scan_jobs LIKE 'status'")->fetch();
         if($statusColumn && strpos((string)($statusColumn['Type']??''), "'paused'")===false){
             $pdo->exec("ALTER TABLE cdsp_website_scan_jobs MODIFY COLUMN status ENUM('running','completed','paused','stopped','failed') NOT NULL DEFAULT 'running'");
+        }
+
+        // v0.2.80: keep every run queue instead of overwriting one job per host.
+        // Each History row owns its own resumable job; only RUNNING is globally exclusive.
+        $indexes=$pdo->query('SHOW INDEX FROM cdsp_website_scan_jobs')->fetchAll()?:[];
+        $indexNames=[];
+        foreach($indexes as $index){$indexNames[(string)($index['Key_name']??'')]=(int)($index['Non_unique']??1);}
+        if(isset($indexNames['uq_cdsp_website_scan_host'])){
+            $pdo->exec('ALTER TABLE cdsp_website_scan_jobs DROP INDEX uq_cdsp_website_scan_host');
+            unset($indexNames['uq_cdsp_website_scan_host']);
+        }
+        if(!isset($indexNames['idx_cdsp_website_scan_host'])){
+            $pdo->exec('ALTER TABLE cdsp_website_scan_jobs ADD KEY idx_cdsp_website_scan_host (source_host,id)');
+        }
+        if(!isset($indexNames['idx_cdsp_website_scan_history'])){
+            $pdo->exec('ALTER TABLE cdsp_website_scan_jobs ADD KEY idx_cdsp_website_scan_history (history_id,id)');
         }
 
         Database::connection()->exec(
@@ -85,52 +102,29 @@ class WebsiteScanJob
     {
         self::ensureTable();
         $pdo=Database::connection();
-        $requestedHost=strtolower(trim((string)(parse_url(trim($website),PHP_URL_HOST)??'')));
         $globalLock='cdsp-webscan-global-start';
         $lock=$pdo->prepare('SELECT GET_LOCK(?,5)');
         $lock->execute([$globalLock]);
-        if((int)$lock->fetchColumn()!==1){
-            throw new \DomainException('Website scanner is busy. Try again in a moment.');
-        }
-
+        if((int)$lock->fetchColumn()!==1){throw new \DomainException('Website scanner is busy. Try again in a moment.');}
         try{
             $running=self::runningHosts();
-            if($running && ($requestedHost==='' || !in_array($requestedHost,$running,true))){
-                throw new \DomainException('Another website is currently scanning: '.$running[0].'. Stop it or wait for it to finish before starting another website.');
-            }
+            if($running){throw new \DomainException('Another website is currently scanning: '.$running[0].'. Stop or pause it before starting a new scan.');}
 
             $source=WebsiteCatalog::ensureSource($website,$adminId);
             $host=(string)$source['host'];
-            $existing=self::status($host);
-            if($existing && ($existing['status']??'')==='running'){
-                return $existing;
-            }
-
-            // Re-check after URL normalization/source persistence while the
-            // advisory lock is still held, so two simultaneous start clicks
-            // cannot create two running website jobs.
-            $running=self::runningHosts();
-            if($running && !in_array($host,$running,true)){
-                throw new \DomainException('Another website is currently scanning: '.$running[0].'. Stop it or wait for it to finish before starting another website.');
-            }
-
             $queue=WebsiteCatalog::productScanSeeds((string)$source['url']);
             $clear=$pdo->prepare('DELETE FROM cdsp_website_scan_errors WHERE source_host=?');
             $clear->execute([$host]);
-            $historyId=WebsiteActivityHistory::begin(
-                $host,(string)$source['url'],'product_scan',$adminId,'','Product scan started.'
-            );
+            $historyId=WebsiteActivityHistory::begin($host,(string)$source['url'],'product_scan',$adminId,'','Product scan started.');
             $q=$pdo->prepare(
                 "INSERT INTO cdsp_website_scan_jobs
                  (history_id,source_host,website_url,status,queue_json,seen_json,checked,products,images_found,indexed,failed,skipped_existing,last_error,started_by,created_at,updated_at,finished_at)
-                 VALUES(?,?,?,'running',?,'[]',0,0,0,0,0,0,NULL,?,NOW(),NOW(),NULL)
-                 ON DUPLICATE KEY UPDATE
-                    history_id=VALUES(history_id),website_url=VALUES(website_url),status='running',queue_json=VALUES(queue_json),seen_json='[]',
-                    checked=0,products=0,images_found=0,indexed=0,failed=0,skipped_existing=0,last_error=NULL,
-                    started_by=VALUES(started_by),created_at=NOW(),updated_at=NOW(),finished_at=NULL"
+                 VALUES(?,?,?,'running',?,'[]',0,0,0,0,0,0,NULL,?,NOW(),NOW(),NULL)"
             );
             $q->execute([$historyId,$host,(string)$source['url'],self::json($queue),$adminId]);
-            return self::status($host) ?? [];
+            $jobId=(int)$pdo->lastInsertId();
+            WebsiteActivityHistory::addScanItem($historyId,$jobId,(string)$source['url'],'running','run','','',false,false,'Scan started.');
+            return self::statusByHistory($historyId) ?? [];
         }finally{
             try{$release=$pdo->prepare('SELECT RELEASE_LOCK(?)');$release->execute([$globalLock]);}catch(\Throwable $e){}
         }
@@ -147,9 +141,27 @@ class WebsiteScanJob
             "SELECT id,history_id,source_host,website_url,status,checked,products,images_found,indexed,failed,skipped_existing,
                     last_error,created_at,updated_at,finished_at,queue_json,seen_json,
                     GREATEST(0,TIMESTAMPDIFF(SECOND,updated_at,NOW())) AS stale_seconds
-             FROM cdsp_website_scan_jobs WHERE source_host=? LIMIT 1"
+             FROM cdsp_website_scan_jobs WHERE source_host=?
+             ORDER BY (status='running') DESC,id DESC LIMIT 1"
         );
         $q->execute([$host]);
+        $row=$q->fetch();
+        return $row?self::publicRow($row):null;
+    }
+
+    /** Exact persisted run selected from one Product Scan History row. */
+    public static function statusByHistory(int $historyId): ?array
+    {
+        self::ensureTable();
+        if($historyId<1){return null;}
+        self::pauseStaleJobs();
+        $q=Database::connection()->prepare(
+            "SELECT id,history_id,source_host,website_url,status,checked,products,images_found,indexed,failed,skipped_existing,
+                    last_error,created_at,updated_at,finished_at,queue_json,seen_json,
+                    GREATEST(0,TIMESTAMPDIFF(SECOND,updated_at,NOW())) AS stale_seconds
+             FROM cdsp_website_scan_jobs WHERE history_id=? LIMIT 1"
+        );
+        $q->execute([$historyId]);
         $row=$q->fetch();
         return $row?self::publicRow($row):null;
     }
@@ -168,6 +180,18 @@ class WebsiteScanJob
             if($host!==''&&!in_array($host,$hosts,true)){$hosts[]=$host;}
         }
         return $hosts;
+    }
+
+    /** History ids whose paused queues are still persisted and can be resumed. */
+    public static function resumableHistoryIds(): array
+    {
+        self::ensureTable();
+        $rows=Database::connection()->query(
+            "SELECT history_id FROM cdsp_website_scan_jobs WHERE status='paused' AND history_id IS NOT NULL ORDER BY id DESC"
+        )->fetchAll()?:[];
+        $ids=[];
+        foreach($rows as $row){$id=(int)($row['history_id']??0);if($id>0){$ids[$id]=true;}}
+        return array_map('intval',array_keys($ids));
     }
 
     /** True when any website scan is currently active. / 任一网站正在扫描时返回 true。 */
@@ -251,50 +275,58 @@ class WebsiteScanJob
      * this same run from the saved queue.
      * 暂停正在运行的任务；保留 queue / seen / counters / history，之后可从 History 的播放按钮继续。
      */
-    public static function pause(string $host): ?array
+    public static function pause(string $host,int $historyId=0): ?array
     {
-        self::ensureTable();
-        $host=strtolower(trim($host));
-        if($host===''){return null;}
-        $pdo=Database::connection();
-        $lockName='cdsp-webscan-'.substr(hash('sha256',$host),0,40);
-        $lock=$pdo->prepare('SELECT GET_LOCK(?,35)');
-        $lock->execute([$lockName]);
-        if((int)$lock->fetchColumn()!==1){
-            throw new \DomainException('The current page is still finishing. Try Pause again in a moment.');
-        }
-        try{
-            $message='Scan paused by Admin. Use the Play control in Scan History to continue from the saved queue.';
-            $q=$pdo->prepare(
-                "UPDATE cdsp_website_scan_jobs
-                 SET status='paused',last_error=?,updated_at=NOW(),finished_at=NOW()
-                 WHERE source_host=? AND status='running'"
-            );
-            $q->execute([$message,$host]);
-            $state=self::status($host);
-            if($state && !empty($state['history_id'])){
-                WebsiteActivityHistory::update(
-                    (int)$state['history_id'],'paused',(int)$state['checked'],(int)$state['products'],(int)$state['failed'],
-                    self::historyMessage($state),true
-                );
-            }
-            return $state;
-        }finally{
-            try{$release=$pdo->prepare('SELECT RELEASE_LOCK(?)');$release->execute([$lockName]);}catch(\Throwable $e){}
-        }
+        return self::changeRunningState($host,$historyId,'paused','Scan paused by Admin. Use ▶ on this History row to continue.');
     }
 
     /** Backward-compatible alias for older callers that used stop() as pause(). */
-    public static function stop(string $host): ?array
+    public static function stop(string $host,int $historyId=0): ?array
     {
-        return self::pause($host);
+        return self::pause($host,$historyId);
     }
 
     /**
      * Stop the current run permanently. Its history remains visible, but its saved
      * queue is not exposed as resumable; a later Scan Website starts a new history run.
      */
-    public static function terminate(string $host): ?array
+    public static function terminate(string $host,int $historyId=0): ?array
+    {
+        return self::changeRunningState($host,$historyId,'stopped','Scan stopped by Admin.');
+    }
+
+    /** Continue the current paused run from its persisted queue without rescanning completed pages. */
+    public static function resume(string $host,int $historyId): ?array
+    {
+        self::ensureTable();
+        $host=strtolower(trim($host));
+        if($host===''||$historyId<1){return null;}
+        $pdo=Database::connection();
+        $globalLock='cdsp-webscan-global-start';
+        $lock=$pdo->prepare('SELECT GET_LOCK(?,5)');
+        $lock->execute([$globalLock]);
+        if((int)$lock->fetchColumn()!==1){throw new \DomainException('Website scanner is busy. Try again in a moment.');}
+        try{
+            $running=self::runningHosts();
+            if($running){throw new \DomainException('Another scan is already running: '.$running[0].'. Pause or stop it first.');}
+            $q=$pdo->prepare(
+                "UPDATE cdsp_website_scan_jobs SET status='running',last_error=NULL,updated_at=NOW(),finished_at=NULL
+                 WHERE source_host=? AND history_id=? AND status='paused'"
+            );
+            $q->execute([$host,$historyId]);
+            if($q->rowCount()!==1){throw new \DomainException('That paused History run is no longer resumable.');}
+            $state=self::statusByHistory($historyId);
+            if($state){
+                WebsiteActivityHistory::addScanItem($historyId,(int)$state['id'],(string)$state['website_url'],'running','run','','',false,false,'Scan resumed from saved queue.');
+                self::syncHistory($state,false);
+            }
+            return $state;
+        }finally{
+            try{$release=$pdo->prepare('SELECT RELEASE_LOCK(?)');$release->execute([$globalLock]);}catch(\Throwable $e){}
+        }
+    }
+
+    private static function changeRunningState(string $host,int $historyId,string $targetStatus,string $message): ?array
     {
         self::ensureTable();
         $host=strtolower(trim($host));
@@ -303,63 +335,27 @@ class WebsiteScanJob
         $lockName='cdsp-webscan-'.substr(hash('sha256',$host),0,40);
         $lock=$pdo->prepare('SELECT GET_LOCK(?,35)');
         $lock->execute([$lockName]);
-        if((int)$lock->fetchColumn()!==1){
-            throw new \DomainException('The current page is still finishing. Try Stop Scanning again in a moment.');
-        }
+        if((int)$lock->fetchColumn()!==1){throw new \DomainException('The current page is still finishing. Try again in a moment.');}
         try{
-            $message='Scan stopped by Admin.';
-            $q=$pdo->prepare(
-                "UPDATE cdsp_website_scan_jobs
-                 SET status='stopped',last_error=?,updated_at=NOW(),finished_at=NOW()
-                 WHERE source_host=? AND status='running'"
-            );
-            $q->execute([$message,$host]);
-            $state=self::status($host);
-            if($state && !empty($state['history_id'])){
-                WebsiteActivityHistory::update(
-                    (int)$state['history_id'],'stopped',(int)$state['checked'],(int)$state['products'],(int)$state['failed'],
-                    self::historyMessage($state),true
-                );
+            if($historyId>0){
+                $find=$pdo->prepare("SELECT id,history_id FROM cdsp_website_scan_jobs WHERE source_host=? AND history_id=? AND status='running' LIMIT 1");
+                $find->execute([$host,$historyId]);
+            }else{
+                $find=$pdo->prepare("SELECT id,history_id FROM cdsp_website_scan_jobs WHERE source_host=? AND status='running' ORDER BY id DESC LIMIT 1");
+                $find->execute([$host]);
+            }
+            $target=$find->fetch();
+            if(!$target){return $historyId>0?self::statusByHistory($historyId):self::status($host);}
+            $q=$pdo->prepare("UPDATE cdsp_website_scan_jobs SET status=?,last_error=?,updated_at=NOW(),finished_at=NOW() WHERE id=? AND status='running'");
+            $q->execute([$targetStatus,$message,(int)$target['id']]);
+            $state=self::statusByHistory((int)$target['history_id']);
+            if($state){
+                WebsiteActivityHistory::addScanItem((int)$state['history_id'],(int)$state['id'],(string)$state['website_url'],$targetStatus,'run','','',false,false,$message);
+                self::syncHistory($state,true);
             }
             return $state;
         }finally{
             try{$release=$pdo->prepare('SELECT RELEASE_LOCK(?)');$release->execute([$lockName]);}catch(\Throwable $e){}
-        }
-    }
-
-    /** Continue the current paused run from its persisted queue without rescanning completed pages. */
-    public static function resume(string $host): ?array
-    {
-        self::ensureTable();
-        $host=strtolower(trim($host));
-        if($host===''){return null;}
-        $pdo=Database::connection();
-        $globalLock='cdsp-webscan-global-start';
-        $lock=$pdo->prepare('SELECT GET_LOCK(?,5)');
-        $lock->execute([$globalLock]);
-        if((int)$lock->fetchColumn()!==1){
-            throw new \DomainException('Website scanner is busy. Try again in a moment.');
-        }
-        try{
-            $running=self::runningHosts();
-            if($running && !in_array($host,$running,true)){
-                throw new \DomainException('Another website is currently scanning: '.$running[0].'. Stop it or wait for it to finish before continuing this website.');
-            }
-            $q=$pdo->prepare(
-                "UPDATE cdsp_website_scan_jobs SET status='running',last_error=NULL,updated_at=NOW(),finished_at=NULL
-                 WHERE source_host=? AND status='paused'"
-            );
-            $q->execute([$host]);
-            $state=self::status($host);
-            if($state && !empty($state['history_id'])){
-                WebsiteActivityHistory::update(
-                    (int)$state['history_id'],'running',(int)$state['checked'],(int)$state['products'],(int)$state['failed'],
-                    self::historyMessage($state),false
-                );
-            }
-            return $state;
-        }finally{
-            try{$release=$pdo->prepare('SELECT RELEASE_LOCK(?)');$release->execute([$globalLock]);}catch(\Throwable $e){}
         }
     }
 
@@ -376,7 +372,7 @@ class WebsiteScanJob
      * short AJAX batch, not for the whole website scan.
      * 处理一个短批次；MySQL advisory lock 只保护该批次，避免两个标签页同时消费同一队列。
      */
-    public static function step(string $host): array
+    public static function step(string $host,int $historyId=0): array
     {
         self::ensureTable();
         $host=strtolower(trim($host));
@@ -385,14 +381,19 @@ class WebsiteScanJob
         $lock=$pdo->prepare('SELECT GET_LOCK(?,0)');
         $lock->execute([$lockName]);
         if((int)$lock->fetchColumn()!==1){
-            $state=self::status($host) ?? ['source_host'=>$host,'status'=>'running'];
+            $state=$historyId>0?(self::statusByHistory($historyId)??['source_host'=>$host,'status'=>'running']):(self::status($host)??['source_host'=>$host,'status'=>'running']);
             $state['busy']=true;
             return $state;
         }
 
         try{
-            $raw=$pdo->prepare('SELECT * FROM cdsp_website_scan_jobs WHERE source_host=? LIMIT 1');
-            $raw->execute([$host]);
+            if($historyId>0){
+                $raw=$pdo->prepare('SELECT * FROM cdsp_website_scan_jobs WHERE source_host=? AND history_id=? LIMIT 1');
+                $raw->execute([$host,$historyId]);
+            }else{
+                $raw=$pdo->prepare("SELECT * FROM cdsp_website_scan_jobs WHERE source_host=? AND status='running' ORDER BY id DESC LIMIT 1");
+                $raw->execute([$host]);
+            }
             $row=$raw->fetch();
             if(!$row){throw new \DomainException('Website scan job was not found.');}
             if((string)$row['status']!=='running'){return self::publicRow($row);}
@@ -411,10 +412,11 @@ class WebsiteScanJob
                 $message=count($seen)>=self::MAX_PAGES?'Stopped at the 5,000-page safety limit.':'Scan complete.';
                 $done=$pdo->prepare(
                     "UPDATE cdsp_website_scan_jobs SET status='completed',queue_json=?,seen_json=?,last_error=?,updated_at=NOW(),finished_at=NOW()
-                     WHERE source_host=? AND status='running'"
+                     WHERE id=? AND status='running'"
                 );
-                $done->execute([self::json($queue),self::json($seen),$message,$host]);
-                $state=self::status($host) ?? [];
+                $done->execute([self::json($queue),self::json($seen),$message,(int)$row['id']]);
+                $state=self::statusByHistory((int)$row['history_id']) ?? [];
+                if($state){WebsiteActivityHistory::addScanItem((int)$row['history_id'],(int)$row['id'],(string)$row['website_url'],'completed','run','','',false,false,$message);}
                 self::syncHistory($state,true);
                 return $state;
             }
@@ -432,6 +434,7 @@ class WebsiteScanJob
                         && WebsiteCatalog::referenceUrlExists($host,(string)$candidateUrl)
                     ){
                         $skippedExisting++;
+                        WebsiteActivityHistory::addScanItem((int)$row['history_id'],(int)$row['id'],(string)$candidateUrl,'skipped','product','','',false,false,'Existing product URL skipped.');
                         continue;
                     }
                     $scanBatch[]=$candidateUrl;
@@ -440,6 +443,23 @@ class WebsiteScanJob
                     ?WebsiteCatalog::scanProductBatch((string)$row['website_url'],$scanBatch)
                     :['checked'=>0,'products'=>0,'images_found'=>0,'indexed'=>0,'failed'=>0,'discovered'=>[],'results'=>[]];
                 self::recordErrors($host,(array)($result['results']??[]));
+                foreach((array)($result['results']??[]) as $pageResult){
+                    if(!is_array($pageResult)){continue;}
+                    $pageUrl=(string)($pageResult['url']??'');
+                    $kind=(string)($pageResult['kind']??'page');
+                    $ok=!empty($pageResult['ok']);
+                    $status=$ok?($kind==='product'?'saved':'checked'):'failed';
+                    $title=(string)($pageResult['title']??'');
+                    $imageUrl=(string)($pageResult['image_url']??'');
+                    $imageFound=$imageUrl!=='';
+                    $fingerprinted=!empty($pageResult['image_indexed']);
+                    $message='';
+                    if(!$ok){$message=(string)($pageResult['message']??'Scan failed.');}
+                    elseif($kind==='product'){$message='Product saved'.($imageFound?' · image found':' · no image').($fingerprinted?' · fingerprinted':'');}
+                    elseif($kind==='sitemap'){$message='Sitemap checked · '.(int)($pageResult['found']??0).' links discovered';}
+                    elseif($kind==='navigation'){$message='Navigation/category page checked';}
+                    WebsiteActivityHistory::addScanItem((int)$row['history_id'],(int)$row['id'],$pageUrl,$status,$kind,$title,$imageUrl,$imageFound,$fingerprinted,$message);
+                }
                 $queueMap=array_fill_keys($queue,true);
                 foreach((array)($result['discovered']??[]) as $url){
                     if(!is_string($url)||$url===''||isset($seenMap[$url])||isset($queueMap[$url])){continue;}
@@ -468,20 +488,20 @@ class WebsiteScanJob
                 $u=$pdo->prepare(
                     "UPDATE cdsp_website_scan_jobs
                      SET status=?,queue_json=?,seen_json=?,checked=?,products=?,images_found=?,indexed=?,failed=?,skipped_existing=?,last_error=?,updated_at=NOW(),finished_at=?
-                     WHERE source_host=? AND status='running'"
+                     WHERE id=? AND status='running'"
                 );
                 $u->execute([
                     $status,self::json($queue),self::json($seen),$checked,$products,$imagesFound,$indexed,$failed,$skippedExisting,$message,
-                    $status==='completed'?date('Y-m-d H:i:s'):null,$host
+                    $status==='completed'?date('Y-m-d H:i:s'):null,(int)$row['id']
                 ]);
             }catch(\Throwable $e){
                 \App\Core\Logger::exception($e,'website-catalog',['event'=>'Persistent website scan step failed','source_host'=>$host],'warning');
                 $u=$pdo->prepare(
-                    "UPDATE cdsp_website_scan_jobs SET failed=failed+1,last_error=?,queue_json=?,seen_json=?,updated_at=NOW() WHERE source_host=? AND status='running'"
+                    "UPDATE cdsp_website_scan_jobs SET failed=failed+1,last_error=?,queue_json=?,seen_json=?,updated_at=NOW() WHERE id=? AND status='running'"
                 );
-                $u->execute([$e->getMessage(),self::json($queue),self::json($seen),$host]);
+                $u->execute([$e->getMessage(),self::json($queue),self::json($seen),(int)$row['id']]);
             }
-            $state=self::status($host) ?? [];
+            $state=self::statusByHistory((int)$row['history_id']) ?? [];
             self::syncHistory($state,(string)($state['status']??'')!=='running');
             return $state;
         }finally{

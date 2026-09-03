@@ -15395,3 +15395,94 @@ button.website-history-control:hover:not(:disabled){background:#f2f6fb;border-co
 .website-history-detail-panel>small{color:#667085;font-size:9px}
 .website-history-empty-row td{padding:12px!important;color:#667085;text-align:center!important;background:#fff}
 @media(max-width:720px){.website-history-control{width:30px;height:30px;min-width:30px}.website-history-detail-panel{padding:9px 10px 11px}}
+
+/* v0.2.80 — Magento-style per-URL website scan processing history. */
+.website-scan-history-table .website-history-details-summary{
+    min-width:360px;
+    max-width:620px;
+    white-space:normal;
+    color:#475467;
+    line-height:1.4;
+}
+.website-history-details-summary>[data-history-detail-summary]{
+    display:inline;
+}
+.website-history-details-summary .website-history-row-chevron{
+    float:right;
+    margin:4px 2px 0 12px;
+}
+.website-history-detail-head{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:12px;
+}
+.website-history-detail-head>strong{color:#101828;font-size:12px}
+.website-history-detail-head>small{color:#667085;font-size:9px}
+.website-history-run-summary{
+    padding:7px 9px;
+    border:1px solid #e4e7ec;
+    border-radius:4px;
+    background:#fff;
+    color:#475467;
+}
+.website-history-processing-head,
+.website-history-processing-row{
+    display:grid;
+    grid-template-columns:118px 70px 72px minmax(240px,1.5fr) minmax(220px,1fr);
+    gap:10px;
+    align-items:center;
+    min-width:830px;
+}
+.website-history-processing-head{
+    padding:7px 9px;
+    border:1px solid #dfe5ec;
+    border-bottom:0;
+    border-radius:4px 4px 0 0;
+    background:#f3f6f9;
+    color:#475467;
+    font-size:9px;
+    font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:.02em;
+}
+.website-history-processing-log{
+    max-height:360px;
+    overflow:auto;
+    border:1px solid #dfe5ec;
+    border-radius:0 0 4px 4px;
+    background:#fff;
+}
+.website-history-processing-row{
+    padding:7px 9px;
+    border-bottom:1px solid #edf0f3;
+    font-size:10px;
+    line-height:1.35;
+}
+.website-history-processing-row:last-child{border-bottom:0}
+.website-history-processing-time{color:#667085;white-space:nowrap}
+.website-history-processing-status{
+    display:inline-flex;
+    width:max-content;
+    min-width:54px;
+    justify-content:center;
+    padding:3px 6px;
+    border-radius:4px;
+    font-weight:800;
+}
+.website-history-processing-status.is-saved,
+.website-history-processing-status.is-completed{background:#ecfdf3;color:#067647}
+.website-history-processing-status.is-skipped,
+.website-history-processing-status.is-checked{background:#f2f4f7;color:#475467}
+.website-history-processing-status.is-running{background:#eff6ff;color:#175cd3}
+.website-history-processing-status.is-paused{background:#fff8e8;color:#b54708}
+.website-history-processing-status.is-stopped,
+.website-history-processing-status.is-failed{background:#fff1f1;color:#b42318}
+.website-history-processing-kind{color:#475467;text-transform:capitalize}
+.website-history-processing-url{color:#175cd3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.website-history-processing-message{color:#344054;overflow-wrap:anywhere}
+.website-history-processing-empty{padding:16px;color:#667085;text-align:center;font-size:10px}
+@media(max-width:900px){
+    .website-scan-history-table .website-history-details-summary{min-width:280px}
+    .website-history-detail-head{align-items:flex-start;flex-direction:column;gap:3px}
+}

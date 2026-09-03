@@ -58,12 +58,13 @@ class AdminSettingsController extends Controller
         try { $websiteSourceStats = WebsiteCatalog::sourceStats(); } catch (\Throwable $e) {
             \App\Core\Logger::exception($e, 'website-catalog', ['event' => 'Website source stats could not be loaded'], 'warning');
         }
-        $websiteProductScanHistory=[];$websiteCsvHistory=[];$websiteAdvancedHistory=[];$websiteRunningScanHosts=[];
+        $websiteProductScanHistory=[];$websiteCsvHistory=[];$websiteAdvancedHistory=[];$websiteRunningScanHosts=[];$websiteResumableScanHistoryIds=[];
         try {
             $websiteProductScanHistory=WebsiteActivityHistory::allForActions(['product_scan']);
             $websiteCsvHistory=WebsiteActivityHistory::recent(['csv_import'],80);
             $websiteAdvancedHistory=WebsiteActivityHistory::recent(['advanced_import'],80);
             $websiteRunningScanHosts=WebsiteScanJob::runningHosts();
+            $websiteResumableScanHistoryIds=WebsiteScanJob::resumableHistoryIds();
         } catch (\Throwable $e) {
             \App\Core\Logger::exception($e,'website-catalog',['event'=>'Website activity history/status could not be loaded'],'warning');
         }
@@ -125,6 +126,7 @@ class AdminSettingsController extends Controller
             'websiteCsvHistory',
             'websiteAdvancedHistory',
             'websiteRunningScanHosts',
+            'websiteResumableScanHistoryIds',
             'websiteQuery',
             'websiteReferences',
             'inspectionLocks',
@@ -1035,6 +1037,7 @@ class AdminSettingsController extends Controller
         try{
             $state=WebsiteScanJob::start((string)($_POST['website_url']??''),(int)$admin['id']);
             $stats=WebsiteCatalog::sourceStats();$state['library_stats']=$stats[(string)($state['source_host']??'')]??[];
+            $state['history_items']=WebsiteActivityHistory::scanItems((int)($state['history_id']??0),0,100);
             $this->json(['ok'=>true,'state'=>$state]);
         }catch(\Throwable $e){
             \App\Core\Logger::exception($e,'website-catalog',['event'=>'Website product scan start failed'],'warning');
@@ -1048,8 +1051,11 @@ class AdminSettingsController extends Controller
         Auth::requireRole('admin');Csrf::verify($_POST['_csrf']??null);
         if(session_status()===PHP_SESSION_ACTIVE){session_write_close();}
         try{
-            $state=WebsiteScanJob::step((string)($_POST['host']??''));
+            $historyId=(int)($_POST['history_id']??0);
+            $afterItemId=max(0,(int)($_POST['after_item_id']??0));
+            $state=WebsiteScanJob::step((string)($_POST['host']??''),$historyId);
             $stats=WebsiteCatalog::sourceStats();$state['library_stats']=$stats[(string)($state['source_host']??'')]??[];
+            $state['history_items']=WebsiteActivityHistory::scanItems((int)($state['history_id']??0),$afterItemId,100);
             $this->json(['ok'=>true,'state'=>$state]);
         }catch(\Throwable $e){
             \App\Core\Logger::exception($e,'website-catalog',['event'=>'Website product scan step failed'],'warning');
@@ -1063,8 +1069,15 @@ class AdminSettingsController extends Controller
         Auth::requireRole('admin');
         if(session_status()===PHP_SESSION_ACTIVE){session_write_close();}
         try{
-            $state=WebsiteScanJob::status((string)($_GET['host']??''));
-            if($state){$stats=WebsiteCatalog::sourceStats();$state['library_stats']=$stats[(string)($state['source_host']??'')]??[];}
+            $historyId=(int)($_GET['history_id']??0);
+            $afterItemId=max(0,(int)($_GET['after_item_id']??0));
+            $state=$historyId>0
+                ?WebsiteScanJob::statusByHistory($historyId)
+                :WebsiteScanJob::status((string)($_GET['host']??''));
+            if($state){
+                $stats=WebsiteCatalog::sourceStats();$state['library_stats']=$stats[(string)($state['source_host']??'')]??[];
+                $state['history_items']=WebsiteActivityHistory::scanItems((int)($state['history_id']??0),$afterItemId,$historyId>0?5000:100);
+            }
             $this->json(['ok'=>true,'state'=>$state]);
         }catch(\Throwable $e){
             \App\Core\Logger::exception($e,'website-catalog',['event'=>'Website product scan status failed'],'warning');
@@ -1078,10 +1091,14 @@ class AdminSettingsController extends Controller
         Auth::requireRole('admin');Csrf::verify($_POST['_csrf']??null);
         try{
             $mode=strtolower(trim((string)($_POST['mode']??'pause')));
+            $historyId=(int)($_POST['history_id']??0);
             $state=$mode==='stop'
-                ?WebsiteScanJob::terminate((string)($_POST['host']??''))
-                :WebsiteScanJob::pause((string)($_POST['host']??''));
-            if($state){$stats=WebsiteCatalog::sourceStats();$state['library_stats']=$stats[(string)($state['source_host']??'')]??[];}
+                ?WebsiteScanJob::terminate((string)($_POST['host']??''),$historyId)
+                :WebsiteScanJob::pause((string)($_POST['host']??''),$historyId);
+            if($state){
+                $stats=WebsiteCatalog::sourceStats();$state['library_stats']=$stats[(string)($state['source_host']??'')]??[];
+                $state['history_items']=WebsiteActivityHistory::scanItems((int)($state['history_id']??0),0,100);
+            }
             $this->json(['ok'=>true,'state'=>$state]);
         }catch(\Throwable $e){
             \App\Core\Logger::exception($e,'website-catalog',['event'=>'Website product scan stop failed'],'warning');
@@ -1095,9 +1112,11 @@ class AdminSettingsController extends Controller
     {
         Auth::requireRole('admin');Csrf::verify($_POST['_csrf']??null);
         try{
-            $state=WebsiteScanJob::resume((string)($_POST['host']??''));
+            $historyId=(int)($_POST['history_id']??0);
+            $state=WebsiteScanJob::resume((string)($_POST['host']??''),$historyId);
             if(!$state){throw new \DomainException('Website scan job was not found.');}
             $stats=WebsiteCatalog::sourceStats();$state['library_stats']=$stats[(string)($state['source_host']??'')]??[];
+            $state['history_items']=WebsiteActivityHistory::scanItems((int)($state['history_id']??0),0,100);
             $this->json(['ok'=>true,'state'=>$state]);
         }catch(\Throwable $e){
             \App\Core\Logger::exception($e,'website-catalog',['event'=>'Website product scan resume failed'],'warning');

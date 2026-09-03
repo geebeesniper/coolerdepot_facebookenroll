@@ -13287,6 +13287,8 @@ $(document).on('click','.website-source-delete',function(event){
     const stepRequests={};
     const watchdogGraceUntil={};
     const runningHosts={};
+    const historyItemLast={};
+    const historyItemsLoaded={};
     let activeHost='';
     let $activePanel=$();
 
@@ -13450,13 +13452,18 @@ $(document).on('click','.website-source-delete',function(event){
         if(!$body.length){return $();}
         $body.find('[data-history-empty-row]').remove();
         const started=escapeHtml(String(state.created_at||'—'));
+        const summary=historyDetailText(state);
         const rowHtml='<tr class="website-history-main-row" data-scan-history-row data-website-history-id="'+historyId+'" data-history-source-host="'+escapeHtml(host)+'" tabindex="0" aria-expanded="false">'
             +'<td>'+started+'</td><td data-history-status-cell>'+historyStatusControl(String(state.status||''),host,historyId)+'</td>'
             +'<td data-history-processed>'+Number(state.checked||0)+'</td><td data-history-saved>'+Number(state.products||0)+'</td><td data-history-failed>'+Number(state.failed||0)+'</td>'
-            +'<td class="website-history-expand-cell"><span class="website-history-row-chevron" aria-hidden="true"></span></td></tr>'
-            +'<tr class="website-history-detail-row hidden" data-history-detail-row="'+historyId+'"><td colspan="6"><div class="website-history-detail-panel"><strong>Scan details</strong>'
+            +'<td class="website-history-details-summary"><span data-history-detail-summary>'+escapeHtml(summary)+'</span><span class="website-history-row-chevron" aria-hidden="true"></span></td></tr>'
+            +'<tr class="website-history-detail-row hidden" data-history-detail-row="'+historyId+'"><td colspan="6"><div class="website-history-detail-panel">'
+            +'<div class="website-history-detail-head"><strong>Processing log</strong><small>Each scanned URL is recorded here as it finishes.</small></div>'
             +'<a data-history-source-link href="'+escapeHtml(String(state.website_url||''))+'" target="_blank" rel="noopener noreferrer">'+escapeHtml(String(state.website_url||''))+'</a>'
-            +'<div data-history-detail-text>'+escapeHtml(historyDetailText(state))+'</div><small>Live scan history</small></div></td></tr>';
+            +'<div class="website-history-run-summary" data-history-detail-text>'+escapeHtml(summary)+'</div>'
+            +'<div class="website-history-processing-head"><span>Time</span><span>Result</span><span>Type</span><span>URL</span><span>Details</span></div>'
+            +'<div class="website-history-processing-log" data-history-processing-log data-history-id="'+historyId+'"><div class="website-history-processing-empty" data-history-processing-empty>Waiting for the first processed URL…</div></div>'
+            +'<small>Live scan history</small></div></td></tr>';
         $body.prepend(rowHtml);
         $row=$body.find('[data-scan-history-row][data-website-history-id="'+historyId+'"]').first();
         const count=$body.find('[data-scan-history-row]').length;
@@ -13464,17 +13471,61 @@ $(document).on('click','.website-source-delete',function(event){
         return $row;
     }
 
-    function syncHistoryControlAvailability(host,state){
-        const currentId=Number((state&&state.history_id)||0);const currentStatus=String((state&&state.status)||'');
-        const $wrap=scanHistoryWrap(host);
-        $wrap.find('[data-history-scan-control][data-history-action="resume"]').each(function(){
-            const $control=$(this);const same=Number($control.data('history-id')||0)===currentId&&currentStatus==='paused';
-            $control.prop('disabled',!same).toggleClass('is-history-archived',!same)
-                .attr('title',same?'Continue this scan':'Historical paused scan; its queue is no longer the active saved scan.');
-        });
+    function historyItemStatusLabel(item){
+        const status=String(item.result_status||'checked').toLowerCase();
+        if(status==='saved')return ['Saved','is-saved'];
+        if(status==='skipped')return ['Skipped','is-skipped'];
+        if(status==='failed')return ['Failed','is-failed'];
+        if(status==='running')return ['Running','is-running'];
+        if(status==='paused')return ['Paused','is-paused'];
+        if(status==='stopped')return ['Stopped','is-stopped'];
+        if(status==='completed')return ['Complete','is-completed'];
+        return ['Checked','is-checked'];
     }
 
-    function updateHistoryRow(state){
+    function historyItemHtml(item){
+        const id=Number(item.id||0);const status=historyItemStatusLabel(item);
+        const url=String(item.page_url||'');const title=String(item.title||'');const kind=String(item.result_kind||'page');
+        let detail=String(item.message||'');
+        if(title){detail=(title+(detail?' · '+detail:''));}
+        if(item.image_found){detail+=(detail?' · ':'')+'image found';}
+        if(item.fingerprinted){detail+=(detail?' · ':'')+'fingerprinted';}
+        return '<div class="website-history-processing-row" data-history-item-id="'+id+'">'
+            +'<span class="website-history-processing-time">'+escapeHtml(String(item.created_at||''))+'</span>'
+            +'<span class="website-history-processing-status '+status[1]+'">'+status[0]+'</span>'
+            +'<span class="website-history-processing-kind">'+escapeHtml(kind)+'</span>'
+            +'<a class="website-history-processing-url" href="'+escapeHtml(url)+'" target="_blank" rel="noopener noreferrer">'+escapeHtml(url)+'</a>'
+            +'<span class="website-history-processing-message">'+escapeHtml(detail||'—')+'</span>'
+            +'</div>';
+    }
+
+    function appendHistoryItems(state,replaceAll){
+        const historyId=Number(state.history_id||0);if(historyId<1)return;
+        const items=Array.isArray(state.history_items)?state.history_items:[];
+        const $log=$('[data-history-processing-log][data-history-id="'+historyId+'"]').first();if(!$log.length)return;
+        if(replaceAll){$log.empty();historyItemLast[historyId]=0;}
+        items.forEach(function(item){
+            const itemId=Number(item.id||0);if(itemId<1)return;
+            if($log.find('[data-history-item-id="'+itemId+'"]').length)return;
+            $log.append(historyItemHtml(item));
+            historyItemLast[historyId]=Math.max(Number(historyItemLast[historyId]||0),itemId);
+        });
+        if($log.find('[data-history-item-id]').length){$log.find('[data-history-processing-empty]').remove();}
+        else if(!$log.find('[data-history-processing-empty]').length){$log.html('<div class="website-history-processing-empty" data-history-processing-empty>No per-URL records yet.</div>');}
+    }
+
+    function loadHistoryItems(host,historyId){
+        historyId=Number(historyId||0);if(historyId<1||historyItemsLoaded[historyId])return;
+        historyItemsLoaded[historyId]=true;
+        const $log=$('[data-history-processing-log][data-history-id="'+historyId+'"]').first();
+        if($log.length){$log.html('<div class="website-history-processing-empty" data-history-processing-empty>Loading processing log…</div>');}
+        $.getJSON(endpoints.status,{host:host,history_id:historyId,after_item_id:0}).done(function(data){
+            if(!data||!data.ok||!data.state){historyItemsLoaded[historyId]=false;return;}
+            updateHistoryRow(data.state,true);
+        }).fail(function(){historyItemsLoaded[historyId]=false;if($log.length){$log.html('<div class="website-history-processing-empty" data-history-processing-empty>Could not load processing log.</div>');}});
+    }
+
+    function updateHistoryRow(state,replaceItems){
         const historyId=Number(state.history_id||0);const host=String(state.source_host||'').toLowerCase();
         if(historyId<1||!host){return;}
         const $row=ensureHistoryRow(state);if(!$row.length){return;}
@@ -13483,10 +13534,12 @@ $(document).on('click','.website-source-delete',function(event){
         $row.find('[data-history-saved]').text(Number(state.products||0));
         $row.find('[data-history-failed]').text(Number(state.failed||0));
         const $detail=$('[data-history-detail-row="'+historyId+'"]').first();
-        $detail.find('[data-history-detail-text]').text(historyDetailText(state));
+        const summary=historyDetailText(state);
+        $detail.find('[data-history-detail-text]').text(summary);
+        $row.find('[data-history-detail-summary]').text(summary);
         const website=String(state.website_url||'');
         if(website){$detail.find('[data-history-source-link]').attr('href',website).text(website);}
-        syncHistoryControlAvailability(host,state);
+        appendHistoryItems(state,!!replaceItems);
     }
 
     function renderScanState(state,$button,showProgress){
@@ -13547,7 +13600,8 @@ $(document).on('click','.website-source-delete',function(event){
         }
     }
 
-    function scanLoop(host){
+    function scanLoop(host,historyId){
+        historyId=Number(historyId||0);
         if(!host||loops[host]){return;}
         loops[host]=true;
         function tick(){
@@ -13555,7 +13609,7 @@ $(document).on('click','.website-source-delete',function(event){
             watchdogGraceUntil[host]=Date.now()+50000;
             stepRequests[host]=$.ajax({
                 url:endpoints.step,method:'POST',dataType:'json',timeout:45000,
-                data:{_csrf:csrf,host:host},
+                data:{_csrf:csrf,host:host,history_id:historyId,after_item_id:Number(historyItemLast[historyId]||0)},
                 headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'}
             }).done(function(data){
                 if(!data||!data.ok||!data.state){
@@ -13593,9 +13647,10 @@ $(document).on('click','.website-source-delete',function(event){
         host=String(host||'').toLowerCase();if(!host)return;
         loops[host]=false;
         if($control&&$control.length){$control.prop('disabled',true).addClass('is-busy');}
+        const historyId=$control&&$control.length?Number($control.data('history-id')||0):0;
         $.ajax({
             url:endpoints.stop,method:'POST',dataType:'json',
-            data:{_csrf:csrf,host:host,mode:mode},
+            data:{_csrf:csrf,host:host,mode:mode,history_id:historyId},
             headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'}
         }).done(function(data){
             if(data&&data.ok&&data.state){
@@ -13615,22 +13670,16 @@ $(document).on('click','.website-source-delete',function(event){
         const host=String($control.data('source-host')||'').toLowerCase();const historyId=Number($control.data('history-id')||0);
         if(!host||historyId<1)return;
         $control.prop('disabled',true).addClass('is-busy');
-        $.getJSON(endpoints.status,{host:host}).done(function(statusData){
-            if(!statusData||!statusData.ok||!statusData.state){showToast('Could not read the saved scan state.',true);return;}
-            const state=statusData.state;
-            if(Number(state.history_id||0)!==historyId||String(state.status||'')!=='paused'){
-                syncHistoryControlAvailability(host,state);
-                showToast('This is an older paused history record. Its saved queue is no longer the active scan.',true);
-                return;
-            }
-            $.ajax({url:endpoints.resume,method:'POST',dataType:'json',data:{_csrf:csrf,host:host},headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'}})
-                .done(function(data){
-                    if(data&&data.ok&&data.state){renderScanState(data.state,null,true);scanLoop(host);showToast('Scanning continued from the saved queue.',false);}
-                    else{showToast((data&&data.message)||'Could not continue scanning.',true);}
-                })
-                .fail(function(xhr){showToast((xhr.responseJSON&&xhr.responseJSON.message)||'Could not continue scanning.',true);});
-        }).fail(function(){showToast('Could not read the saved scan state.',true);})
-          .always(function(){if(!$control.hasClass('is-history-archived')){$control.prop('disabled',false);}$control.removeClass('is-busy');});
+        $.ajax({url:endpoints.resume,method:'POST',dataType:'json',data:{_csrf:csrf,host:host,history_id:historyId},headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'}})
+            .done(function(data){
+                if(data&&data.ok&&data.state){
+                    renderScanState(data.state,null,true);
+                    scanLoop(host,historyId);
+                    showToast('Scanning continued from this History run.',false);
+                }else{showToast((data&&data.message)||'Could not continue scanning.',true);}
+            })
+            .fail(function(xhr){showToast((xhr.responseJSON&&xhr.responseJSON.message)||'Could not continue scanning.',true);})
+            .always(function(){$control.prop('disabled',false).removeClass('is-busy');});
     }
 
     function startScan($button){
@@ -13638,16 +13687,23 @@ $(document).on('click','.website-source-delete',function(event){
         if(requestedAction==='stop'){
             const stopHost=hostForButton($button);if(stopHost){changeScanState(stopHost,'stop',$button);}return;
         }
-        const website=websiteForButton($button);
+        let website=websiteForButton($button);
         if(!website){showToast('Enter a company website first.',true);return;}
         let parsed;
         try{parsed=new URL(website);}catch(e){showToast('Enter a valid HTTPS website URL.',true);return;}
         if(parsed.protocol!=='https:'){showToast('Company website scanning requires https://.',true);return;}
         const requestedHost=String(parsed.hostname||'').toLowerCase();
         const inputSelector=String($button.data('website-input')||'').trim();
-        // Step 1's top field adds a new website. If that host is already saved,
-        // reveal its card instead of creating an accidental duplicate run.
-        if(inputSelector&&revealExistingSource(requestedHost,inputSelector)){return;}
+        // Step 1 may target an already-saved website. Reveal the existing card,
+        // but still start a NEW run immediately so a new History row is created.
+        if(inputSelector){
+            const $existing=sourceCard(requestedHost);
+            if($existing.length){
+                if(activeHost!==requestedHost){openInlineSource($existing);}
+                const savedUrl=String($existing.data('website-url')||'').trim();
+                if(savedUrl){website=savedUrl;parsed=new URL(savedUrl);}
+            }
+        }
         const active=runningHostList();
         if(active.length&&!runningHosts[requestedHost]){
             showToast('Another website is already scanning: '+active[0]+'. Stop it or pause it from Scan History first.',true);
@@ -13664,13 +13720,14 @@ $(document).on('click','.website-source-delete',function(event){
         }).done(function(data){
             if(!data||!data.ok||!data.state){showToast((data&&data.message)||'Scan could not start.',true);return;}
             const state=data.state;const host=String(state.source_host||'');
+            ensureHistoryRow(state);updateHistoryRow(state);
             const selector=String($button.data('website-input')||'').trim();if(selector){$(selector).val('');}
             const detailHost=String($('#website-source-detail').data('source-host')||'');
             if(!sourceCard(host).length&&detailHost!==host){
                 window.location.reload();
                 return;
             }
-            renderScanState(state,$button,true);scanLoop(host);
+            renderScanState(state,$button,true);scanLoop(host,Number(state.history_id||0));
         }).fail(function(xhr){
             showToast((xhr.responseJSON&&xhr.responseJSON.message)||'Scan could not start.',true);
         }).always(function(){
@@ -13694,6 +13751,7 @@ $(document).on('click','.website-source-delete',function(event){
         const $detail=$('[data-history-detail-row="'+id+'"]').first();const opening=$detail.hasClass('hidden');
         $row.attr('aria-expanded',opening?'true':'false').toggleClass('is-expanded',opening);
         $detail.toggleClass('hidden',!opening);
+        if(opening){loadHistoryItems(String($row.data('history-source-host')||''),id);}
     });
     $(document).on('keydown','.website-history-main-row[data-scan-history-row]',function(event){
         if(event.key!=='Enter'&&event.key!==' ')return;
@@ -13871,7 +13929,7 @@ $(document).on('click','.website-source-delete',function(event){
                 }
                 if(!loops[host]){
                     renderScanState(state,null,false);
-                    scanLoop(host);
+                    scanLoop(host,Number(state.history_id||0));
                 }
             });
         });
@@ -13883,7 +13941,7 @@ $(document).on('click','.website-source-delete',function(event){
         $.getJSON(endpoints.status,{host:host}).done(function(data){
             if(!data||!data.ok||!data.state){return;}
             renderScanState(data.state,null,String(data.state.status)==='running');
-            if(String(data.state.status)==='running'){scanLoop(host);}
+            if(String(data.state.status)==='running'){scanLoop(host,Number(data.state.history_id||0));}
         });
     });
     const detailHost=String($('#website-source-detail').data('source-host')||'');
@@ -13891,7 +13949,7 @@ $(document).on('click','.website-source-delete',function(event){
         $.getJSON(endpoints.status,{host:detailHost}).done(function(data){
             if(!data||!data.ok||!data.state){return;}
             renderScanState(data.state,null,String(data.state.status)==='running');
-            if(String(data.state.status)==='running'){scanLoop(detailHost);}
+            if(String(data.state.status)==='running'){scanLoop(detailHost,Number(data.state.history_id||0));}
         });
     }
 })(window.jQuery);

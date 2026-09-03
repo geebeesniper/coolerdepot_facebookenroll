@@ -34,6 +34,25 @@ class WebsiteActivityHistory
                 KEY idx_cdsp_website_activity_status (status,updated_at)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
         );
+        Database::connection()->exec(
+            "CREATE TABLE IF NOT EXISTS cdsp_website_scan_history_items (
+                id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                history_id BIGINT UNSIGNED NOT NULL,
+                job_id BIGINT UNSIGNED NOT NULL,
+                page_url TEXT NOT NULL,
+                result_status VARCHAR(24) NOT NULL,
+                result_kind VARCHAR(24) NOT NULL,
+                title VARCHAR(500) NULL,
+                image_url TEXT NULL,
+                image_found TINYINT(1) NOT NULL DEFAULT 0,
+                fingerprinted TINYINT(1) NOT NULL DEFAULT 0,
+                message TEXT NULL,
+                created_at DATETIME NOT NULL,
+                PRIMARY KEY (id),
+                KEY idx_cdsp_website_scan_item_history (history_id,id),
+                KEY idx_cdsp_website_scan_item_job (job_id,id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+        );
     }
 
     public static function begin(
@@ -141,11 +160,65 @@ class WebsiteActivityHistory
         return $q->fetchAll()?:[];
     }
 
+    public static function addScanItem(
+        int $historyId,
+        int $jobId,
+        string $pageUrl,
+        string $status,
+        string $kind,
+        string $title='',
+        string $imageUrl='',
+        bool $imageFound=false,
+        bool $fingerprinted=false,
+        string $message=''
+    ): int {
+        if($historyId<1||$jobId<1){return 0;}
+        self::ensureTable();
+        $status=strtolower(trim($status));
+        $kind=strtolower(trim($kind));
+        if(!in_array($status,['running','saved','checked','skipped','failed','paused','stopped','completed'],true)){$status='checked';}
+        if($kind===''){$kind='page';}
+        $q=Database::connection()->prepare(
+            "INSERT INTO cdsp_website_scan_history_items
+             (history_id,job_id,page_url,result_status,result_kind,title,image_url,image_found,fingerprinted,message,created_at)
+             VALUES(?,?,?,?,?,?,?,?,?,?,NOW())"
+        );
+        $q->execute([
+            $historyId,$jobId,trim($pageUrl),$status,$kind,
+            trim($title)!==''?trim($title):null,
+            trim($imageUrl)!==''?trim($imageUrl):null,
+            $imageFound?1:0,$fingerprinted?1:0,
+            trim($message)!==''?trim($message):null,
+        ]);
+        return (int)Database::connection()->lastInsertId();
+    }
+
+    /** @return array<int,array<string,mixed>> */
+    public static function scanItems(int $historyId,int $afterId=0,int $limit=200): array
+    {
+        if($historyId<1){return [];}
+        self::ensureTable();
+        $limit=max(1,min(5000,$limit));
+        $q=Database::connection()->prepare(
+            "SELECT id,history_id,job_id,page_url,result_status,result_kind,title,image_url,image_found,fingerprinted,message,created_at
+             FROM cdsp_website_scan_history_items
+             WHERE history_id=? AND id>? ORDER BY id ASC LIMIT {$limit}"
+        );
+        $q->execute([$historyId,max(0,$afterId)]);
+        return $q->fetchAll()?:[];
+    }
+
     public static function removeHost(string $host): void
     {
         self::ensureTable();
         $host=strtolower(trim($host));
         if($host===''){return;}
+        $items=Database::connection()->prepare(
+            'DELETE i FROM cdsp_website_scan_history_items i
+             INNER JOIN cdsp_website_activity_history h ON h.id=i.history_id
+             WHERE h.source_host=?'
+        );
+        $items->execute([$host]);
         $q=Database::connection()->prepare('DELETE FROM cdsp_website_activity_history WHERE source_host=?');
         $q->execute([$host]);
     }

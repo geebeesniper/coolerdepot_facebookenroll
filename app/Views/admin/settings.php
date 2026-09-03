@@ -771,7 +771,8 @@ $renderWebsiteHistory = static function(
     string $emptyText,
     bool $showWebsite=true,
     bool $interactiveScan=false,
-    string $historyHost=''
+    string $historyHost='',
+    array $resumableHistoryIds=[]
 ): void {
     if(!$rows && !$interactiveScan){
         echo '<div class="website-history-empty">'.Util::e($emptyText).'</div>';
@@ -802,10 +803,12 @@ $renderWebsiteHistory = static function(
                 'failed'=>'Scan failed',
                 default=>'Scan status',
             };
-            if($status==='running'||$status==='paused'){
-                $icon=$status==='running'?'Ⅱ':'▶';
-                $action=$status==='running'?'pause':'resume';
-                $statusHtml='<button type="button" class="website-history-control is-'.Util::e($status).'" data-history-scan-control data-history-action="'.Util::e($action).'" data-history-id="'.$historyId.'" data-source-host="'.Util::e($rowHost).'" aria-label="'.Util::e($statusTitle).'" title="'.Util::e($statusTitle).'">'.Util::e($icon).'</button>';
+            if($status==='running'){
+                $statusHtml='<button type="button" class="website-history-control is-running" data-history-scan-control data-history-action="pause" data-history-id="'.$historyId.'" data-source-host="'.Util::e($rowHost).'" aria-label="'.Util::e($statusTitle).'" title="'.Util::e($statusTitle).'">Ⅱ</button>';
+            }elseif($status==='paused' && in_array($historyId,$resumableHistoryIds,true)){
+                $statusHtml='<button type="button" class="website-history-control is-paused" data-history-scan-control data-history-action="resume" data-history-id="'.$historyId.'" data-source-host="'.Util::e($rowHost).'" aria-label="'.Util::e($statusTitle).'" title="'.Util::e($statusTitle).'">▶</button>';
+            }elseif($status==='paused'){
+                $statusHtml='<span class="website-history-control is-paused is-static is-history-archived" aria-label="Old paused scan" title="Historical paused run; its saved queue is no longer available.">▶</span>';
             }elseif($status==='stopped'){
                 $statusHtml='<span class="website-history-control is-stopped is-static" aria-label="'.Util::e($statusTitle).'" title="'.Util::e($statusTitle).'">■</span>';
             }elseif($status==='completed'){
@@ -822,15 +825,19 @@ $renderWebsiteHistory = static function(
                 .'<td data-history-processed>'.(int)($row['processed']??0).'</td>'
                 .'<td data-history-saved>'.(int)($row['saved']??0).'</td>'
                 .'<td data-history-failed>'.(int)($row['failed']??0).'</td>'
-                .'<td class="website-history-expand-cell"><span class="website-history-row-chevron" aria-hidden="true"></span></td>'
+                .'<td class="website-history-details-summary"><span data-history-detail-summary>'.Util::e($details!==''?$details:'Click to view processing log.').'</span><span class="website-history-row-chevron" aria-hidden="true"></span></td>'
                 .'</tr>';
             echo '<tr class="website-history-detail-row hidden" data-history-detail-row="'.$historyId.'"><td colspan="'.$colspan.'">'
                 .'<div class="website-history-detail-panel">'
-                .'<strong>Scan details</strong>';
+                .'<div class="website-history-detail-head"><strong>Processing log</strong><small>Each scanned URL is recorded here as it finishes.</small></div>';
             if($sourceUrl!==''){
                 echo '<a data-history-source-link href="'.Util::e($sourceUrl).'" target="_blank" rel="noopener noreferrer">'.Util::e($sourceUrl).'</a>';
             }
-            echo '<div data-history-detail-text>'.Util::e($details!==''?$details:'No additional details recorded.').'</div>'
+            echo '<div class="website-history-run-summary" data-history-detail-text>'.Util::e($details!==''?$details:'No additional details recorded.').'</div>'
+                .'<div class="website-history-processing-head"><span>Time</span><span>Result</span><span>Type</span><span>URL</span><span>Details</span></div>'
+                .'<div class="website-history-processing-log" data-history-processing-log data-history-id="'.$historyId.'">'
+                .'<div class="website-history-processing-empty" data-history-processing-empty>Click this row to load the per-URL processing log.</div>'
+                .'</div>'
                 .'<small>Updated '.Util::e((string)($row['updated_at']??'—')).'</small>'
                 .'</div></td></tr>';
             continue;
@@ -996,7 +1003,7 @@ $renderWebsiteHistory = static function(
                                         <div><strong>Product Scan History</strong><small>History for this website only.</small></div>
                                         <span><b data-scan-history-count><?= count($sourceScanHistory) ?></b> records</span>
                                     </div>
-                                    <?php $renderWebsiteHistory($sourceScanHistory,'No Website Scan history yet.',false,true,$host); ?>
+                                    <?php $renderWebsiteHistory($sourceScanHistory,'No Website Scan history yet.',false,true,$host,$websiteResumableScanHistoryIds ?? []); ?>
                                 </div>
                             </div>
                         </article>

@@ -17,7 +17,7 @@ $controller=$read('app/Controllers/AdminSettingsController.php');
 $job=$read('app/Services/WebsiteScanJob.php');
 $history=$read('app/Services/WebsiteActivityHistory.php');
 
-$check($version==='0.2.79','version');
+$check(version_compare($version,'0.2.79','>='),'version >= 0.2.79');
 $check(!str_contains($view,'Continue Scanning') && !str_contains($detailView,'Continue Scanning') && !str_contains($js,'Continue Scanning'),'Continue Scanning UI is removed');
 $check(!str_contains($view,'website-scan-continue') && !str_contains($detailView,'website-scan-continue'),'legacy Continue button markup is removed');
 $check(str_contains($js,".text(active?'Stop Scanning':'Scan Website')"),'Scan Website changes to Stop Scanning while running');
@@ -26,14 +26,14 @@ $check(str_contains($js,'data-history-action="resume"') && str_contains($js,'>�
 $check(str_contains($js,'is-stopped is-static') && str_contains($js,'>■</span>'),'stopped history uses red square icon');
 $check(str_contains($view,'data-scan-history-row') && str_contains($view,'data-history-detail-row'),'history rows have expandable detail rows');
 $check(str_contains($js,"$(document).on('click','.website-history-main-row[data-scan-history-row]'") && str_contains($js,"closest('[data-history-scan-control],a,button')"),'row click expands details without stealing icon clicks');
-$check(str_contains($js,'function ensureHistoryRow(state)') && str_contains($js,'function updateHistoryRow(state)'),'live history row creation/update exists');
+$check(str_contains($js,'function ensureHistoryRow(state)') && str_contains($js,'function updateHistoryRow(state'),'live history row creation/update exists');
 $check(str_contains($js,'updateHistoryRow(state);'),'each scan-state render updates history counters live');
 $check(str_contains($controller,"WebsiteActivityHistory::allForActions(['product_scan'])"),'all product scan history is loaded');
 $check(str_contains($history,'public static function allForActions'),'unbounded product scan history query exists');
 $check(str_contains($controller,"\$mode==='stop'") && str_contains($controller,'WebsiteScanJob::terminate'),'top Stop Scanning has terminal stop path');
 $check(str_contains($controller,'WebsiteScanJob::pause'),'history pause has separate pause path');
 $check(str_contains($job,'public static function pause') && str_contains($job,'public static function terminate'),'pause and terminal stop are distinct backend states');
-$check(preg_match("/WHERE source_host=\? AND status='paused'/",$job)===1,'resume only resumes paused current job');
+$check(str_contains($job,"WHERE source_host=? AND history_id=? AND status='paused'") || preg_match("/WHERE source_host=\? AND status='paused'/",$job)===1,'resume targets a paused persisted job');
 $check(str_contains($css,'v0.2.79 — Website Scan History is a live control surface'),'scan history control CSS is present');
 $check(str_contains($css,'.website-history-control.is-stopped') && str_contains($css,'#d92d20'),'stopped square is visibly red');
 
