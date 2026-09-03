@@ -18,7 +18,7 @@ $check($deleteBlock!==''&&!str_contains($deleteBlock,'window.confirm')&&!str_con
 $check($deleteBlock!==''&&str_contains($deleteBlock,"vqPost('/api/verification-queue/delete'"),'Verification Queue Delete still calls the existing AJAX delete endpoint');
 
 $bulkStart=strpos($js,"$('#bulkQueueButton').on('click'");
-$bulkEnd=$bulkStart===false?false:strpos($js,"$(document).on('click','[data-verification-queue-panel] [data-vq-title-toggle]'",$bulkStart);
+$bulkEnd=$bulkStart===false?false:strpos($js,"$(document).on('click','[data-verification-queue-panel] .sales-verification-queue-head'",$bulkStart);
 $bulkBlock=($bulkStart===false||$bulkEnd===false)?'':substr($js,$bulkStart,$bulkEnd-$bulkStart);
 $check($bulkBlock!==''&&str_contains($bulkBlock,"/api/verification-queue/bulk"),'Bulk Submit still uses the existing AJAX queue endpoint');
 $check($bulkBlock!==''&&str_contains($bulkBlock,'}).done(function(resp){')&&str_contains($bulkBlock,'closeSalesBulkSubmitModal();'),'Successful Bulk Submit closes the Bulk Submit popup');

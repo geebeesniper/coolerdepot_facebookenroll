@@ -14000,7 +14000,11 @@ $(document).on('click','.website-source-delete',function(event){
         .always(function(){$button.prop('disabled',false).text(salesTr('bulkSubmitPost'));});
     });
 
-    $(document).on('click','[data-verification-queue-panel] [data-vq-title-toggle]',function(){
+    // v0.2.112: the entire Verification Queue header is the open/close target.
+    // Keep Refresh / arrow and any other interactive controls independent so a
+    // button click never toggles the panel a second time.
+    $(document).on('click','[data-verification-queue-panel] .sales-verification-queue-head',function(event){
+        if($(event.target).closest('button,a,input,textarea,select,label').length)return;
         const $panel=$(this).closest('[data-verification-queue-panel]');
         vqSetCollapsed($panel,!$panel.hasClass('is-collapsed'),true);
     });
