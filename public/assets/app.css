@@ -15486,3 +15486,28 @@ button.website-history-control:hover:not(:disabled){background:#f2f6fb;border-co
     .website-scan-history-table .website-history-details-summary{min-width:280px}
     .website-history-detail-head{align-items:flex-start;flex-direction:column;gap:3px}
 }
+
+
+/* v0.2.81 — borderless vector scan controls + cleaner live processing log. */
+.website-history-control,
+button.website-history-control{
+    width:24px;
+    height:24px;
+    min-width:24px;
+    padding:2px;
+    border:0 !important;
+    border-radius:0;
+    background:transparent !important;
+    box-shadow:none !important;
+    outline-offset:2px;
+}
+.website-history-control svg{display:block;width:18px;height:18px;pointer-events:none}
+button.website-history-control:hover:not(:disabled){background:transparent !important;opacity:.72}
+button.website-history-control:disabled{opacity:.38;cursor:default}
+.website-history-control.is-running{color:#175cd3}
+.website-history-control.is-paused{color:#12a150}
+.website-history-control.is-stopped{color:#ef4444}
+.website-history-control.is-completed{color:#12a150}
+.website-history-control.is-failed{color:#d92d20}
+.website-history-control.is-static{background:transparent !important}
+.website-history-processing-empty{padding:12px 10px;color:#667085;background:#fff}

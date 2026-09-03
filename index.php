@@ -18,12 +18,15 @@ use App\Controllers\ApiController;
 use App\Controllers\AttachmentController;
 use App\Controllers\ExternalApiController;
 use App\Controllers\GraphqlController;
+use App\Controllers\HelpController;
+use App\Controllers\AdminMaintenanceController;
 
 $router = new Router($config['app']['base_path']);
 
 // Authentication and signed parent-portal handoff.
 $router->get('/', [AuthController::class, 'home']);
 $router->get('/login', [AuthController::class, 'login']);
+$router->get('/auth/recheck', [AuthController::class, 'recheck']);
 $router->post('/login', [AuthController::class, 'authenticate']);
 $router->post('/logout', [AuthController::class, 'logout']);
 $router->get('/auth/handoff', [AuthHandoffController::class, 'handoff']);
@@ -53,6 +56,7 @@ $router->get('/sales/daily-posts', [SalesController::class, 'dailyPostsAjax']);
 $router->post('/sales/save', [SalesController::class, 'save']);
 $router->post('/sales/delete-request', [SalesController::class, 'requestDelete']);
 $router->post('/api/inspect/preflight', [ApiController::class, 'inspectPreflight']);
+$router->get('/api/inspect/status', [ApiController::class, 'inspectStatus']);
 $router->post('/api/inspect', [ApiController::class, 'inspect']);
 $router->post('/api/client-log', [ApiController::class, 'clientLog']);
 
@@ -84,7 +88,11 @@ $router->post('/admin/post/delete', [AdminController::class, 'deletePost']);
 // Admin settings, provider registry and website duplicate-reference library.
 $router->get('/admin/settings', [AdminSettingsController::class, 'index']);
 $router->post('/admin/settings/brand', [AdminSettingsController::class, 'saveBrand']);
+$router->post('/admin/settings/location/add', [AdminSettingsController::class, 'addLocation']);
+$router->post('/admin/settings/location/update', [AdminSettingsController::class, 'updateLocation']);
+$router->post('/admin/settings/location/delete', [AdminSettingsController::class, 'deleteLocation']);
 $router->post('/admin/settings/website', [AdminSettingsController::class, 'saveWebsiteSource']);
+$router->get('/admin/website/source', [AdminSettingsController::class, 'websiteSourceDetail']);
 $router->post('/admin/settings/save', [AdminSettingsController::class, 'save']);
 $router->post('/admin/settings/test', [AdminSettingsController::class, 'test']);
 $router->post('/admin/providers/test', [AdminSettingsController::class, 'testProvider']);
@@ -93,12 +101,29 @@ $router->post('/admin/providers/add', [AdminSettingsController::class, 'addProvi
 $router->post('/admin/providers/reorder', [AdminSettingsController::class, 'reorderProviders']);
 $router->post('/admin/providers/toggle', [AdminSettingsController::class, 'toggleProvider']);
 $router->post('/admin/providers/delete', [AdminSettingsController::class, 'deleteProvider']);
+$router->post('/admin/inspection-lock/unlock', [AdminSettingsController::class, 'unlockInspection']);
 $router->post('/admin/website/scan', [AdminSettingsController::class, 'scanWebsite']);
+$router->post('/admin/website/source/remove', [AdminSettingsController::class, 'removeWebsiteSource']);
+$router->post('/admin/website/products/scan-batch', [AdminSettingsController::class, 'scanWebsiteProductsBatch']);
+$router->post('/admin/website/products/scan-start', [AdminSettingsController::class, 'startWebsiteProductScan']);
+$router->post('/admin/website/products/scan-step', [AdminSettingsController::class, 'stepWebsiteProductScan']);
+$router->get('/admin/website/products/scan-status', [AdminSettingsController::class, 'websiteProductScanStatus']);
+$router->post('/admin/website/products/scan-stop', [AdminSettingsController::class, 'stopWebsiteProductScan']);
+$router->post('/admin/website/products/scan-resume', [AdminSettingsController::class, 'resumeWebsiteProductScan']);
 $router->post('/admin/website/reference/add', [AdminSettingsController::class, 'addWebsiteReference']);
 $router->get('/admin/website/references', [AdminSettingsController::class, 'websiteReferences']);
 $router->post('/admin/website/reference/delete', [AdminSettingsController::class, 'deleteWebsiteReference']);
 $router->get('/admin/website-catalog/sample.csv', [AdminSettingsController::class, 'websiteCatalogSample']);
 $router->post('/admin/duplicate-catalog/import', [AdminSettingsController::class, 'importWebsiteCatalog']);
+
+// Browser-based Admin database maintenance for servers where SSH is unavailable.
+// 无 SSH 环境下通过浏览器执行 Admin 数据库维护。
+$router->get('/admin/maintenance', [AdminMaintenanceController::class, 'index']);
+$router->post('/admin/maintenance/repairs', [AdminMaintenanceController::class, 'runRepairs']);
+$router->post('/admin/maintenance/query', [AdminMaintenanceController::class, 'runQuery']);
+
+// Authenticated role-specific user manual. / 已登录用户按角色查看站内使用说明。
+$router->get('/help', [HelpController::class, 'show']);
 
 // Authenticated attachment delivery.
 $router->get('/attachment', [AttachmentController::class, 'show']);

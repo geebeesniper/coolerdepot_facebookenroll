@@ -182,12 +182,15 @@ class WebsiteScanJob
         return $hosts;
     }
 
-    /** History ids whose paused queues are still persisted and can be resumed. */
+    /** History ids that can be continued. v0.2.81 can restart legacy paused runs too. */
     public static function resumableHistoryIds(): array
     {
         self::ensureTable();
         $rows=Database::connection()->query(
-            "SELECT history_id FROM cdsp_website_scan_jobs WHERE status='paused' AND history_id IS NOT NULL ORDER BY id DESC"
+            "SELECT id AS history_id
+             FROM cdsp_website_activity_history
+             WHERE action='product_scan' AND status='paused'
+             ORDER BY id DESC"
         )->fetchAll()?:[];
         $ids=[];
         foreach($rows as $row){$id=(int)($row['history_id']??0);if($id>0){$ids[$id]=true;}}
@@ -295,7 +298,12 @@ class WebsiteScanJob
         return self::changeRunningState($host,$historyId,'stopped','Scan stopped by Admin.');
     }
 
-    /** Continue the current paused run from its persisted queue without rescanning completed pages. */
+    /**
+     * Continue one paused History run.
+     * v0.2.80+ runs resume their exact persisted queue. Older History rows were
+     * created before per-run queues existed, so v0.2.81 reconstructs a conservative
+     * seed queue for that same History id instead of leaving every old Play icon dead.
+     */
     public static function resume(string $host,int $historyId): ?array
     {
         self::ensureTable();
@@ -309,21 +317,74 @@ class WebsiteScanJob
         try{
             $running=self::runningHosts();
             if($running){throw new \DomainException('Another scan is already running: '.$running[0].'. Pause or stop it first.');}
-            $q=$pdo->prepare(
-                "UPDATE cdsp_website_scan_jobs SET status='running',last_error=NULL,updated_at=NOW(),finished_at=NULL
-                 WHERE source_host=? AND history_id=? AND status='paused'"
+
+            $job=$pdo->prepare(
+                "SELECT id,status FROM cdsp_website_scan_jobs WHERE source_host=? AND history_id=? ORDER BY id DESC LIMIT 1"
             );
-            $q->execute([$host,$historyId]);
-            if($q->rowCount()!==1){throw new \DomainException('That paused History run is no longer resumable.');}
+            $job->execute([$host,$historyId]);
+            $existing=$job->fetch();
+
+            if($existing){
+                if((string)$existing['status']!=='paused'){
+                    throw new \DomainException('That History run is not paused.');
+                }
+                $q=$pdo->prepare(
+                    "UPDATE cdsp_website_scan_jobs SET status='running',last_error=NULL,updated_at=NOW(),finished_at=NULL
+                     WHERE id=? AND status='paused'"
+                );
+                $q->execute([(int)$existing['id']]);
+                if($q->rowCount()!==1){throw new \DomainException('That paused History run could not be continued.');}
+            }else{
+                $history=WebsiteActivityHistory::find($historyId);
+                if(!$history
+                    || strtolower(trim((string)($history['source_host']??'')))!==$host
+                    || (string)($history['action']??'')!=='product_scan'
+                    || (string)($history['status']??'')!=='paused'
+                ){
+                    throw new \DomainException('That paused History run is no longer available.');
+                }
+
+                $website=trim((string)($history['website_url']??''));
+                if($website===''){throw new \DomainException('That History run has no website URL.');}
+                $queue=WebsiteCatalog::productScanSeeds($website);
+                $message=(string)($history['message']??'');
+                $imagesFound=self::historyMetric($message,'First images found');
+                $indexed=self::historyMetric($message,'Exact fingerprints');
+                $skipped=self::historyMetric($message,'Existing URLs skipped');
+
+                $q=$pdo->prepare(
+                    "INSERT INTO cdsp_website_scan_jobs
+                     (history_id,source_host,website_url,status,queue_json,seen_json,checked,products,images_found,indexed,failed,skipped_existing,last_error,started_by,created_at,updated_at,finished_at)
+                     VALUES(?,?,?,'running',?,'[]',?,?,?,?,?,?,NULL,NULL,NOW(),NOW(),NULL)"
+                );
+                $q->execute([
+                    $historyId,$host,$website,self::json($queue),
+                    max(0,(int)($history['processed']??0)),
+                    max(0,(int)($history['saved']??0)),
+                    $imagesFound,$indexed,
+                    max(0,(int)($history['failed']??0)),
+                    $skipped,
+                ]);
+            }
+
             $state=self::statusByHistory($historyId);
             if($state){
-                WebsiteActivityHistory::addScanItem($historyId,(int)$state['id'],(string)$state['website_url'],'running','run','','',false,false,'Scan resumed from saved queue.');
+                $message=$existing
+                    ?'Scan resumed from saved queue.'
+                    :'Legacy paused scan restarted from website entry points; previously saved products remain in the library and are skipped when rediscovered.';
+                WebsiteActivityHistory::addScanItem($historyId,(int)$state['id'],(string)$state['website_url'],'running','run','','',false,false,$message);
                 self::syncHistory($state,false);
             }
             return $state;
         }finally{
             try{$release=$pdo->prepare('SELECT RELEASE_LOCK(?)');$release->execute([$globalLock]);}catch(\Throwable $e){}
         }
+    }
+
+    private static function historyMetric(string $message,string $label): int
+    {
+        if($message===''||$label===''){return 0;}
+        return preg_match('/'.preg_quote($label,'/').'\s+(\d+)/i',$message,$m)?max(0,(int)$m[1]):0;
     }
 
     private static function changeRunningState(string $host,int $historyId,string $targetStatus,string $message): ?array

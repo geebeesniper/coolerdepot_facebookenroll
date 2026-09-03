@@ -766,6 +766,16 @@ $locationNoticeKey = [
 </section>
 
 <?php
+$websiteScanIcon = static function(string $name): string {
+    return match($name){
+        'pause'=>'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1" fill="currentColor"/><rect x="14" y="5" width="4" height="14" rx="1" fill="currentColor"/></svg>',
+        'play'=>'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.8v12.4c0 .9 1 1.4 1.7.9l9-6.2a1.1 1.1 0 0 0 0-1.8l-9-6.2A1.1 1.1 0 0 0 8 5.8Z" fill="currentColor"/></svg>',
+        'stop'=>'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/></svg>',
+        'done'=>'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5.5 12.5 4.1 4.1L18.7 7.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+        'failed'=>'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7.5v6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17" r="1.2" fill="currentColor"/></svg>',
+        default=>'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="2.5" fill="currentColor"/></svg>',
+    };
+};
 $renderWebsiteHistory = static function(
     array $rows,
     string $emptyText,
@@ -773,7 +783,7 @@ $renderWebsiteHistory = static function(
     bool $interactiveScan=false,
     string $historyHost='',
     array $resumableHistoryIds=[]
-): void {
+) use ($websiteScanIcon): void {
     if(!$rows && !$interactiveScan){
         echo '<div class="website-history-empty">'.Util::e($emptyText).'</div>';
         return;
@@ -804,19 +814,17 @@ $renderWebsiteHistory = static function(
                 default=>'Scan status',
             };
             if($status==='running'){
-                $statusHtml='<button type="button" class="website-history-control is-running" data-history-scan-control data-history-action="pause" data-history-id="'.$historyId.'" data-source-host="'.Util::e($rowHost).'" aria-label="'.Util::e($statusTitle).'" title="'.Util::e($statusTitle).'">Ⅱ</button>';
-            }elseif($status==='paused' && in_array($historyId,$resumableHistoryIds,true)){
-                $statusHtml='<button type="button" class="website-history-control is-paused" data-history-scan-control data-history-action="resume" data-history-id="'.$historyId.'" data-source-host="'.Util::e($rowHost).'" aria-label="'.Util::e($statusTitle).'" title="'.Util::e($statusTitle).'">▶</button>';
+                $statusHtml='<button type="button" class="website-history-control is-running" data-history-scan-control data-history-action="pause" data-history-id="'.$historyId.'" data-source-host="'.Util::e($rowHost).'" aria-label="'.Util::e($statusTitle).'" title="'.Util::e($statusTitle).'">'.$websiteScanIcon('pause').'</button>';
             }elseif($status==='paused'){
-                $statusHtml='<span class="website-history-control is-paused is-static is-history-archived" aria-label="Old paused scan" title="Historical paused run; its saved queue is no longer available.">▶</span>';
+                $statusHtml='<button type="button" class="website-history-control is-paused" data-history-scan-control data-history-action="resume" data-history-id="'.$historyId.'" data-source-host="'.Util::e($rowHost).'" aria-label="'.Util::e($statusTitle).'" title="'.Util::e($statusTitle).'">'.$websiteScanIcon('play').'</button>';
             }elseif($status==='stopped'){
-                $statusHtml='<span class="website-history-control is-stopped is-static" aria-label="'.Util::e($statusTitle).'" title="'.Util::e($statusTitle).'">■</span>';
+                $statusHtml='<span class="website-history-control is-stopped is-static" aria-label="'.Util::e($statusTitle).'" title="'.Util::e($statusTitle).'">'.$websiteScanIcon('stop').'</span>';
             }elseif($status==='completed'){
-                $statusHtml='<span class="website-history-control is-completed is-static" aria-label="'.Util::e($statusTitle).'" title="'.Util::e($statusTitle).'">✓</span>';
+                $statusHtml='<span class="website-history-control is-completed is-static" aria-label="'.Util::e($statusTitle).'" title="'.Util::e($statusTitle).'">'.$websiteScanIcon('done').'</span>';
             }elseif($status==='failed'){
-                $statusHtml='<span class="website-history-control is-failed is-static" aria-label="'.Util::e($statusTitle).'" title="'.Util::e($statusTitle).'">!</span>';
+                $statusHtml='<span class="website-history-control is-failed is-static" aria-label="'.Util::e($statusTitle).'" title="'.Util::e($statusTitle).'">'.$websiteScanIcon('failed').'</span>';
             }else{
-                $statusHtml='<span class="website-history-control is-static" aria-label="'.Util::e($statusTitle).'" title="'.Util::e($statusTitle).'">•</span>';
+                $statusHtml='<span class="website-history-control is-static" aria-label="'.Util::e($statusTitle).'" title="'.Util::e($statusTitle).'">'.$websiteScanIcon('dot').'</span>';
             }
             echo '<tr class="website-history-main-row" data-scan-history-row data-website-history-id="'.$historyId.'" data-history-source-host="'.Util::e($rowHost).'" tabindex="0" aria-expanded="false">'
                 .'<td>'.Util::e((string)($row['created_at']??'')).'</td>'

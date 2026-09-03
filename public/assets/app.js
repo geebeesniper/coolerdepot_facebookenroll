@@ -13425,18 +13425,28 @@ $(document).on('click','.website-source-delete',function(event){
         return detail;
     }
 
+    function websiteScanIcon(name){
+        const common='viewBox="0 0 24 24" aria-hidden="true" focusable="false"';
+        if(name==='pause')return '<svg '+common+'><rect x="6" y="5" width="4" height="14" rx="1" fill="currentColor"></rect><rect x="14" y="5" width="4" height="14" rx="1" fill="currentColor"></rect></svg>';
+        if(name==='play')return '<svg '+common+'><path d="M8 5.8v12.4c0 .9 1 1.4 1.7.9l9-6.2a1.1 1.1 0 0 0 0-1.8l-9-6.2A1.1 1.1 0 0 0 8 5.8Z" fill="currentColor"></path></svg>';
+        if(name==='stop')return '<svg '+common+'><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"></rect></svg>';
+        if(name==='done')return '<svg '+common+'><path d="m5.5 12.5 4.1 4.1L18.7 7.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
+        if(name==='failed')return '<svg '+common+'><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"></circle><path d="M12 7.5v6" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path><circle cx="12" cy="17" r="1.2" fill="currentColor"></circle></svg>';
+        return '<svg '+common+'><circle cx="12" cy="12" r="2.5" fill="currentColor"></circle></svg>';
+    }
+
     function historyStatusControl(status,host,historyId){
         status=String(status||'').toLowerCase();host=String(host||'').toLowerCase();historyId=Number(historyId||0);
         if(status==='running'){
-            return '<button type="button" class="website-history-control is-running" data-history-scan-control data-history-action="pause" data-history-id="'+historyId+'" data-source-host="'+escapeHtml(host)+'" aria-label="Pause this scan" title="Pause this scan">Ⅱ</button>';
+            return '<button type="button" class="website-history-control is-running" data-history-scan-control data-history-action="pause" data-history-id="'+historyId+'" data-source-host="'+escapeHtml(host)+'" aria-label="Pause this scan" title="Pause this scan">'+websiteScanIcon('pause')+'</button>';
         }
         if(status==='paused'){
-            return '<button type="button" class="website-history-control is-paused" data-history-scan-control data-history-action="resume" data-history-id="'+historyId+'" data-source-host="'+escapeHtml(host)+'" aria-label="Continue this scan" title="Continue this scan">▶</button>';
+            return '<button type="button" class="website-history-control is-paused" data-history-scan-control data-history-action="resume" data-history-id="'+historyId+'" data-source-host="'+escapeHtml(host)+'" aria-label="Continue this scan" title="Continue this scan">'+websiteScanIcon('play')+'</button>';
         }
-        if(status==='stopped')return '<span class="website-history-control is-stopped is-static" aria-label="Scan stopped" title="Scan stopped">■</span>';
-        if(status==='completed')return '<span class="website-history-control is-completed is-static" aria-label="Scan completed" title="Scan completed">✓</span>';
-        if(status==='failed')return '<span class="website-history-control is-failed is-static" aria-label="Scan failed" title="Scan failed">!</span>';
-        return '<span class="website-history-control is-static" aria-label="Scan status" title="Scan status">•</span>';
+        if(status==='stopped')return '<span class="website-history-control is-stopped is-static" aria-label="Scan stopped" title="Scan stopped">'+websiteScanIcon('stop')+'</span>';
+        if(status==='completed')return '<span class="website-history-control is-completed is-static" aria-label="Scan completed" title="Scan completed">'+websiteScanIcon('done')+'</span>';
+        if(status==='failed')return '<span class="website-history-control is-failed is-static" aria-label="Scan failed" title="Scan failed">'+websiteScanIcon('failed')+'</span>';
+        return '<span class="website-history-control is-static" aria-label="Scan status" title="Scan status">'+websiteScanIcon('dot')+'</span>';
     }
 
     function scanHistoryWrap(host){
@@ -13518,11 +13528,25 @@ $(document).on('click','.website-source-delete',function(event){
         historyId=Number(historyId||0);if(historyId<1||historyItemsLoaded[historyId])return;
         historyItemsLoaded[historyId]=true;
         const $log=$('[data-history-processing-log][data-history-id="'+historyId+'"]').first();
-        if($log.length){$log.html('<div class="website-history-processing-empty" data-history-processing-empty>Loading processing log…</div>');}
         $.getJSON(endpoints.status,{host:host,history_id:historyId,after_item_id:0}).done(function(data){
-            if(!data||!data.ok||!data.state){historyItemsLoaded[historyId]=false;return;}
+            if(!data||!data.ok){
+                historyItemsLoaded[historyId]=false;
+                if($log.length){$log.html('<div class="website-history-processing-empty" data-history-processing-empty>Processing log could not be loaded.</div>');}
+                return;
+            }
+            if(!data.state){
+                if($log.length){$log.html('<div class="website-history-processing-empty" data-history-processing-empty>No per-URL processing records were stored for this older scan.</div>');}
+                return;
+            }
             updateHistoryRow(data.state,true);
-        }).fail(function(){historyItemsLoaded[historyId]=false;if($log.length){$log.html('<div class="website-history-processing-empty" data-history-processing-empty>Could not load processing log.</div>');}});
+            if($log.length&&!$log.find('[data-history-item-id]').length){
+                const running=String(data.state.status||'')==='running';
+                $log.html('<div class="website-history-processing-empty" data-history-processing-empty>'+(running?'Waiting for the first scanned URL…':'No per-URL processing records were stored for this scan.')+'</div>');
+            }
+        }).fail(function(){
+            historyItemsLoaded[historyId]=false;
+            if($log.length){$log.html('<div class="website-history-processing-empty" data-history-processing-empty>Processing log could not be loaded.</div>');}
+        });
     }
 
     function updateHistoryRow(state,replaceItems){
@@ -13694,8 +13718,6 @@ $(document).on('click','.website-source-delete',function(event){
         if(parsed.protocol!=='https:'){showToast('Company website scanning requires https://.',true);return;}
         const requestedHost=String(parsed.hostname||'').toLowerCase();
         const inputSelector=String($button.data('website-input')||'').trim();
-        // Step 1 may target an already-saved website. Reveal the existing card,
-        // but still start a NEW run immediately so a new History row is created.
         if(inputSelector){
             const $existing=sourceCard(requestedHost);
             if($existing.length){
@@ -13709,30 +13731,64 @@ $(document).on('click','.website-source-delete',function(event){
             showToast('Another website is already scanning: '+active[0]+'. Stop it or pause it from Scan History first.',true);
             syncGlobalScanControls();return;
         }
-        $button.prop('disabled',true).text('Starting…');
+
+        let accepted=false;
+        let recoveryTimer=null;
+        let recoveryAttempts=0;
         const $wrap=progressWrap('', $button);$wrap.removeClass('hidden');
         const $startProgress=$wrap.hasClass('website-product-scan-progress')?$wrap:$wrap.find('.website-product-scan-progress');
-        $startProgress.removeClass('is-error is-done').text('Saving website and starting scan…');
+        $button.prop('disabled',true).text('Starting…');
+        $startProgress.removeClass('is-error is-done').text('Creating scan run…');
+
+        function acceptStartedState(state){
+            if(!state||String(state.source_host||'').toLowerCase()!==requestedHost){return false;}
+            if(String(state.status||'')!=='running'){return false;}
+            if(accepted){return true;}
+            accepted=true;
+            if(recoveryTimer){window.clearInterval(recoveryTimer);recoveryTimer=null;}
+            const host=String(state.source_host||'').toLowerCase();
+            ensureHistoryRow(state);updateHistoryRow(state);
+            const selector=String($button.data('website-input')||'').trim();if(selector){$(selector).val('');}
+            renderScanState(state,$button,true);
+            scanLoop(host,Number(state.history_id||0));
+            return true;
+        }
+
+        // If the start HTTP response is delayed after the DB run was already created,
+        // recover from persisted status instead of leaving the button on Starting….
+        recoveryTimer=window.setInterval(function(){
+            recoveryAttempts++;
+            $.getJSON(endpoints.status,{host:requestedHost}).done(function(data){
+                if(data&&data.ok&&data.state){acceptStartedState(data.state);}
+            });
+            if(recoveryAttempts>=12&&!accepted){
+                window.clearInterval(recoveryTimer);recoveryTimer=null;
+                $button.prop('disabled',false).text('Scan Website');
+                $startProgress.addClass('is-error').text('Scan did not enter Running state. Try again; no page refresh is required.');
+            }
+        },500);
+
         $.ajax({
-            url:endpoints.start,method:'POST',dataType:'json',
+            url:endpoints.start,method:'POST',dataType:'json',timeout:6000,
             data:{_csrf:csrf,website_url:website},
             headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'}
         }).done(function(data){
-            if(!data||!data.ok||!data.state){showToast((data&&data.message)||'Scan could not start.',true);return;}
-            const state=data.state;const host=String(state.source_host||'');
-            ensureHistoryRow(state);updateHistoryRow(state);
-            const selector=String($button.data('website-input')||'').trim();if(selector){$(selector).val('');}
-            const detailHost=String($('#website-source-detail').data('source-host')||'');
-            if(!sourceCard(host).length&&detailHost!==host){
-                window.location.reload();
+            if(!data||!data.ok||!data.state){
+                if(!accepted){showToast((data&&data.message)||'Scan could not start.',true);}
                 return;
             }
-            renderScanState(state,$button,true);scanLoop(host,Number(state.history_id||0));
-        }).fail(function(xhr){
-            showToast((xhr.responseJSON&&xhr.responseJSON.message)||'Scan could not start.',true);
+            const state=data.state;const host=String(state.source_host||'').toLowerCase();
+            if(!acceptStartedState(state)){return;}
+            const detailHost=String($('#website-source-detail').data('source-host')||'').toLowerCase();
+            if(!sourceCard(host).length&&detailHost!==host){window.location.reload();}
+        }).fail(function(xhr,textStatus){
+            if(accepted){return;}
+            $.getJSON(endpoints.status,{host:requestedHost}).done(function(data){
+                if(data&&data.ok&&data.state&&acceptStartedState(data.state)){return;}
+                showToast((xhr.responseJSON&&xhr.responseJSON.message)||(textStatus==='timeout'?'Scan start response timed out.':'Scan could not start.'),true);
+            }).fail(function(){showToast((xhr.responseJSON&&xhr.responseJSON.message)||'Scan could not start.',true);});
         }).always(function(){
-            if(!$button.closest('body').length)return;
-            if($button.attr('data-global-scan-disabled')!=='1'&&$button.prop('disabled')&&!$button.text().includes('Scanning')){$button.prop('disabled',false).text('Scan Website');}
+            if(accepted){return;}
             syncGlobalScanControls();
         });
     }

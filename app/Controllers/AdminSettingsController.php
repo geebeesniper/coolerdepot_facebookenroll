@@ -1034,6 +1034,7 @@ class AdminSettingsController extends Controller
     public function startWebsiteProductScan(): void
     {
         $admin=Auth::requireRole('admin');Csrf::verify($_POST['_csrf']??null);
+        if(session_status()===PHP_SESSION_ACTIVE){session_write_close();}
         try{
             $state=WebsiteScanJob::start((string)($_POST['website_url']??''),(int)$admin['id']);
             $stats=WebsiteCatalog::sourceStats();$state['library_stats']=$stats[(string)($state['source_host']??'')]??[];
@@ -1089,6 +1090,7 @@ class AdminSettingsController extends Controller
     public function stopWebsiteProductScan(): void
     {
         Auth::requireRole('admin');Csrf::verify($_POST['_csrf']??null);
+        if(session_status()===PHP_SESSION_ACTIVE){session_write_close();}
         try{
             $mode=strtolower(trim((string)($_POST['mode']??'pause')));
             $historyId=(int)($_POST['history_id']??0);
@@ -1111,6 +1113,7 @@ class AdminSettingsController extends Controller
     public function resumeWebsiteProductScan(): void
     {
         Auth::requireRole('admin');Csrf::verify($_POST['_csrf']??null);
+        if(session_status()===PHP_SESSION_ACTIVE){session_write_close();}
         try{
             $historyId=(int)($_POST['history_id']??0);
             $state=WebsiteScanJob::resume((string)($_POST['host']??''),$historyId);

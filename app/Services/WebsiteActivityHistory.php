@@ -138,6 +138,20 @@ class WebsiteActivityHistory
         return $q->fetchAll()?:[];
     }
 
+    /** Return one durable history run by id. / 按 ID 返回一条持久扫描历史。 */
+    public static function find(int $id): ?array
+    {
+        if($id<1){return null;}
+        self::ensureTable();
+        $q=Database::connection()->prepare(
+            "SELECT id,source_host,website_url,action,status,source_url,processed,saved,failed,message,created_at,updated_at,finished_at
+             FROM cdsp_website_activity_history WHERE id=? LIMIT 1"
+        );
+        $q->execute([$id]);
+        $row=$q->fetch();
+        return $row?:null;
+    }
+
     /** @return array<int,array<string,mixed>> */
     public static function recent(array $actions=[],int $limit=80): array
     {
