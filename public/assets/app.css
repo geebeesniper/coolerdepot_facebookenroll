@@ -16283,3 +16283,43 @@ button.website-history-control{
         grid-template-columns:1fr;
     }
 }
+
+/* V0.2.101 — restore the approved Sales header layout only.
+ * Keep Period at the left, From / To at the right, and place the two submit
+ * actions directly below the date controls, right-aligned. No workflow logic. */
+@media(min-width:1001px){
+    .sales-portal-head-actions{
+        width:100% !important;
+        display:grid !important;
+        grid-template-columns:minmax(0,1fr) auto !important;
+        grid-template-areas:
+            "period dates"
+            ". submit-actions";
+        column-gap:10px !important;
+        row-gap:10px !important;
+        align-items:start !important;
+        justify-content:stretch !important;
+        justify-self:stretch !important;
+    }
+    .sales-portal-head-actions .sales-head-period-switch{
+        grid-area:period;
+        justify-self:start;
+        margin-top:18px !important;
+    }
+    .sales-portal-head-actions .sales-range-filter{
+        grid-area:dates;
+        justify-self:end;
+    }
+    .sales-portal-head-actions .sales-submit-cta-cluster{
+        grid-area:submit-actions;
+        justify-self:end;
+        margin-top:0;
+        display:flex;
+        align-items:center;
+        justify-content:flex-end;
+        gap:8px;
+    }
+    .sales-submit-cta-cluster .sales-submit-cta{
+        margin-top:0;
+    }
+}
