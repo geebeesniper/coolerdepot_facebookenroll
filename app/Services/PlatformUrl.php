@@ -213,7 +213,12 @@ class PlatformUrl
             ],
             'craigslist' => [
                 '~/(\d{8,})\.html~i',
-                '~posting id:\s*(\d+)~i'
+                '~posting id:\s*(\d+)~i',
+                // Modern Craigslist share/view links use an opaque stable token
+                // instead of the legacy numeric posting ID in the URL.
+                // Craigslist 现代分享/查看链接会在 URL 中使用稳定的不透明 Token，
+                // 而不是旧版数字 posting ID。
+                '~/view/d/[^/?#]+/([a-z0-9_-]{12,})~i'
             ]
         ];
 

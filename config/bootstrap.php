@@ -64,7 +64,29 @@ if ($config['app']['enforce_host'] && $config['app']['host']) {
     }
 }
 
-$isStatelessApiRequest = PHP_SAPI !== 'cli' && \App\Core\ErrorPage::isApiRequest();
+/*
+ * Only the external integration API is stateless.
+ * Browser-owned endpoints under /api/client-log and /api/inspect still use
+ * the normal browser session for Auth + CSRF and therefore must start PHP
+ * session state. ErrorPage::isApiRequest() intentionally remains broader so
+ * those endpoints still receive JSON-formatted HTTP errors.
+ *
+ * 只有对外集成 API 使用无 Session 模式。浏览器自己的 /api/client-log
+ * 与 /api/inspect 仍依赖 Auth + CSRF，因此必须启动 PHP Session。
+ * ErrorPage::isApiRequest() 继续保持更宽的判断范围，以确保这些接口的错误
+ * 仍然返回 JSON。
+ */
+$requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+$basePath = rtrim((string)($config['app']['base_path'] ?? ''), '/');
+
+if ($basePath !== '' && strncmp($requestPath, $basePath, strlen($basePath)) === 0) {
+    $requestPath = substr($requestPath, strlen($basePath)) ?: '/';
+}
+
+$isStatelessApiRequest = PHP_SAPI !== 'cli' && (
+    strncmp($requestPath, '/api/v1/', 8) === 0
+    || $requestPath === '/graphql'
+);
 
 if (!$isStatelessApiRequest && session_status() !== PHP_SESSION_ACTIVE) {
     session_name($config['security']['session_name']);
@@ -82,5 +104,15 @@ if (!$isStatelessApiRequest && session_status() !== PHP_SESSION_ACTIVE) {
     session_set_cookie_params($cookie);
     session_start();
 }
+
+
+/*
+ * Direct-overlay compatibility / 直接覆盖升级兼容：
+ * A V0.2.07-V0.2.12 database lacks the V0.2.13 manual_pending ENUM value.
+ * The check is idempotent and only expands that ENUM on the first request.
+ * V0.2.07-V0.2.12 数据库缺少 V0.2.13 的 manual_pending ENUM；
+ * 此检查可重复执行，仅在首次需要时扩展该 ENUM，不删除或重写业务数据。
+ */
+\App\Core\SchemaCompatibility::ensureDirectOverlayCompatibility();
 
 return $config;

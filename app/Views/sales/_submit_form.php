@@ -14,6 +14,13 @@ use App\Core\Util;
     class="sales-submit-message hidden"
     aria-live="polite"
 ></div>
+<a
+    id="salesDuplicateSource"
+    class="sales-duplicate-source hidden"
+    href="#"
+    target="_blank"
+    rel="noopener noreferrer"
+>Duplicate link</a>
 
 <div class="sales-submit-layout">
     <section class="panel sales-submit-panel">
@@ -119,29 +126,37 @@ use App\Core\Util;
 
         <div id="inspectionResult" class="hidden">
             <div id="verificationBanner" class="banner"></div>
-            <a id="salesDuplicateSource" class="sales-duplicate-source hidden" href="#" target="_blank" rel="noopener noreferrer">Open existing duplicate post ↗</a>
             <div id="duplicateComparisonWarnings" class="duplicate-comparison-warnings hidden" role="status"></div>
             <p class="sales-verification-description">Comparison covers saved same-platform posts and imported website references. Image checks use available indexed photos; review any warnings below.</p>
 
             <div class="sales-verification-card">
-                <div class="sales-verification-title-row">
-                    <div>
-                        <span
-                            class="sales-verification-platform"
-                            id="resultPlatform"
+                <div class="sales-verification-main">
+                    <div id="resultImagesWrap" class="sales-verification-images sales-verification-media hidden" aria-label="Listing images">
+                        <strong class="sales-verification-images-title">Listing Images</strong>
+                        <div id="resultImages" class="sales-verification-image-grid"></div>
+                    </div>
+
+                    <div class="sales-verification-copy">
+                        <div class="sales-verification-title-row">
+                            <div>
+                                <span
+                                    class="sales-verification-platform"
+                                    id="resultPlatform"
+                                >
+                                    —
+                                </span>
+                                <h3 id="resultTitle">—</h3>
+                            </div>
+                        </div>
+
+                        <p
+                            class="sales-verification-description sales-verification-listing-description"
+                            id="resultDescription"
                         >
                             —
-                        </span>
-                        <h3 id="resultTitle">—</h3>
+                        </p>
                     </div>
                 </div>
-
-                <p
-                    class="sales-verification-description"
-                    id="resultDescription"
-                >
-                    —
-                </p>
 
                 <dl class="sales-verification-facts">
                     <div>
@@ -152,12 +167,65 @@ use App\Core\Util;
                         <dt data-sales-i18n="postId">Post ID</dt>
                         <dd id="resultExternalId">—</dd>
                     </div>
+                    <div id="resultPlatformAccountFact" class="hidden">
+                        <dt data-sales-i18n="platformAccount">Account</dt>
+                        <dd id="resultPlatformAccount">—</dd>
+                    </div>
                     <div class="wide">
                         <dt data-sales-i18n="originalUrl">Original URL</dt>
                         <dd id="resultCanonical">—</dd>
                     </div>
                 </dl>
             </div>
+
+            <form id="craigslistManualVerification" class="craigslist-manual-verification hidden" novalidate>
+                <input
+                    type="hidden"
+                    name="_csrf"
+                    value="<?= Util::e(Csrf::token()) ?>"
+                >
+                <input type="hidden" name="manual_marketplace" value="1">
+                <input
+                    type="hidden"
+                    name="inspection_token"
+                    id="craigslistManualInspectionToken"
+                    value=""
+                >
+
+                <div class="craigslist-manual-head">
+                    <strong data-sales-i18n="manualVerificationTitle">Manual marketplace verification</strong>
+                    <span data-sales-i18n="manualVerificationHelp">The marketplace blocked the server request and automatic provider fallback was unavailable. Confirm the listing details below; Admin will review this post.</span>
+                </div>
+
+                <label for="craigslistManualTitle" data-sales-i18n="manualTitleLabel">Listing title</label>
+                <input
+                    id="craigslistManualTitle"
+                    name="manual_title"
+                    type="text"
+                    maxlength="500"
+                    required
+                    autocomplete="off"
+                >
+
+                <label for="craigslistManualPublishedDate" data-sales-i18n="manualDateLabel">Published date</label>
+                <input
+                    id="craigslistManualPublishedDate"
+                    name="manual_published_date"
+                    type="date"
+                    required
+                >
+
+                <label for="craigslistManualDescription" data-sales-i18n="manualDescriptionLabel">Description (optional)</label>
+                <textarea
+                    id="craigslistManualDescription"
+                    name="manual_description"
+                    rows="3"
+                ></textarea>
+
+                <button type="submit" class="btn primary full" id="craigslistManualContinue">
+                    <span data-sales-i18n="continueManualVerification">Continue Manual Verification</span>
+                </button>
+            </form>
 
             <form
                 method="post"

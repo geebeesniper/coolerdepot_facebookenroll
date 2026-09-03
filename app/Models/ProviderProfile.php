@@ -26,8 +26,34 @@ class ProviderProfile
     public static function registryEnabled(): bool
     {
         try {
-            return Setting::get('provider_registry_enabled', '0') === '1'
-                && self::tableExists();
+            // EN: The database is the source of truth for upgraded installations.
+            // If provider rows already exist, a missing legacy migration flag must
+            // not disable a working Provider Registry or force Facebook back to
+            // obsolete legacy settings.
+            // 中文：升级后的安装以数据库实际结构与 Provider 数据为准。若
+            // Provider 记录已经存在，则不能因为旧版 migration flag 缺失而
+            // 禁用 Provider Registry，也不能让 Facebook 错误回退到旧配置。
+            if (!self::tableExists()) {
+                return false;
+            }
+
+            if (Setting::get('provider_registry_enabled', '0') === '1') {
+                return true;
+            }
+
+            if (self::count() <= 0) {
+                return false;
+            }
+
+            // EN: Existing provider rows prove that the registry migration/data is
+            // already present. Auto-heal the stale flag through the normal PDO
+            // settings model. Failure to persist the compatibility flag is logged,
+            // but does not disable an otherwise usable provider table.
+            // 中文：Provider 表中已有记录即证明 Registry 数据已经存在。通过
+            // 正常 PDO Settings Model 自动修复旧 flag；若写回失败则记录日志，
+            // 但不会因此禁用已经可用的 Provider 数据。
+            self::repairRegistryEnabledFlag();
+            return true;
         } catch (\Throwable $e) {
             \App\Core\Logger::exception(
                 $e,
@@ -36,6 +62,53 @@ class ProviderProfile
                 'warning'
             );
             return false;
+        }
+    }
+
+    /**
+     * EN: Persist a missing Provider Registry enabled flag by reusing the valid
+     * user identifier already stored on the first provider profile.
+     * 中文：复用首个 Provider Profile 中已有的有效用户 ID，自动写回缺失的
+     * Provider Registry enabled 标记。
+     *
+     * @return void No value is returned. / 无返回值。
+     */
+    private static function repairRegistryEnabledFlag(): void
+    {
+        try {
+            $stmt = Database::connection()->query(
+                "SELECT COALESCE(updated_by, created_by) AS user_id
+                 FROM cdsp_provider_profiles
+                 ORDER BY id ASC
+                 LIMIT 1"
+            );
+            $userId = (int)$stmt->fetchColumn();
+
+            if ($userId <= 0) {
+                \App\Core\Logger::warning(
+                    'Provider Registry flag could not be auto-repaired because no valid provider owner was found.',
+                    ['event' => 'Provider registry flag auto-repair skipped'],
+                    'provider-registry'
+                );
+                return;
+            }
+
+            Setting::set('provider_registry_enabled', '1', $userId);
+            \App\Core\Logger::info(
+                'Provider Registry enabled flag was auto-repaired from existing provider data.',
+                [
+                    'event' => 'Provider registry flag auto-repaired',
+                    'provider_count' => self::count(),
+                ],
+                'provider-registry'
+            );
+        } catch (\Throwable $e) {
+            \App\Core\Logger::exception(
+                $e,
+                'provider-registry',
+                ['event' => 'Provider registry flag auto-repair failed'],
+                'warning'
+            );
         }
     }
 

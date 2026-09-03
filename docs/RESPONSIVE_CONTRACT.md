@@ -7,7 +7,7 @@
 Header behavior:
 - Above 1050px: full desktop navigation and full language names.
 - 1050px and below: one-row compact header with `EN / 简 / 繁 / ES`, notification control, and hamburger menu.
-- The hamburger panel contains the user name and route links; it closes on route selection, outside click, Escape, or return to desktop width.
+- The hamburger panel uses a thin user-name row plus one horizontal action row (Sales: 4 actions; Admin: 5 actions); it closes on route selection, outside click, Escape, or return to desktop width.
 - The header and normal page layout must not create document-level horizontal overflow.
 
 Dashboard/control behavior:
@@ -24,7 +24,7 @@ Dashboard/control behavior:
 Header 行为：
 - 大于 1050px：显示完整桌面导航与完整语言名称。
 - 1050px 及以下：顶栏保持单行，语言显示 `EN / 简 / 繁 / ES`，并保留通知按钮与汉堡菜单。
-- 汉堡菜单展开后显示用户名和路由链接；选择链接、点击外部、按 Escape 或恢复桌面宽度时自动关闭。
+- 汉堡菜单展开后使用“紧凑用户名行 + 单行横向操作菜单”（Sales 4 项、Admin 5 项）；选择链接、点击外部、按 Escape 或恢复桌面宽度时自动关闭。
 - Header 与普通页面布局不得产生页面级横向滚动。
 
 Dashboard/控制区行为：

@@ -93,70 +93,74 @@ $adminPresetNames = [
     <div class="admin-dashboard-range-anchor" id="adminDashboardRangeAnchor">
         <div class="admin-dashboard-range-bar" id="adminDashboardRangeBar">
             <div class="sales-portal-head-actions admin-portal-head-actions">
-                <div
-                    class="sales-period-switch sales-head-period-switch"
-                    id="dashboardPeriodSwitch"
-                    role="group"
-                    aria-label="Admin sales activity period"
-                >
-                    <?php foreach([
-                        'single'=>'1 Day',
-                        'day'=>'3 Days',
-                        'week'=>'Weekly',
-                        'month'=>'Monthly',
-                        'custom'=>'Custom',
-                    ] as $presetKey=>$presetLabel): ?>
-                        <button
-                            type="button"
-                            class="sales-period-button<?= $adminPreset===$presetKey?' active':'' ?>"
-                            data-admin-preset="<?= Util::e($presetKey) ?>"
-                            aria-pressed="<?= $adminPreset===$presetKey?'true':'false' ?>"
-                        ><?= Util::e($presetLabel) ?></button>
-                    <?php endforeach; ?>
+                <div class="admin-toolbar-row admin-toolbar-row-filter">
+                    <div
+                        class="sales-period-switch sales-head-period-switch"
+                        id="dashboardPeriodSwitch"
+                        role="group"
+                        aria-label="Admin sales activity period"
+                    >
+                        <?php foreach([
+                            'single'=>'1 Day',
+                            'day'=>'3 Days',
+                            'week'=>'Weekly',
+                            'month'=>'Monthly',
+                            'custom'=>'Custom',
+                        ] as $presetKey=>$presetLabel): ?>
+                            <button
+                                type="button"
+                                class="sales-period-button<?= $adminPreset===$presetKey?' active':'' ?>"
+                                data-admin-preset="<?= Util::e($presetKey) ?>"
+                                aria-pressed="<?= $adminPreset===$presetKey?'true':'false' ?>"
+                            ><?= Util::e($presetLabel) ?></button>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <form
+                        class="filters dashboard-date-controls admin-range-controls sales-range-filter"
+                        method="get"
+                        id="dashboardDateForm"
+                        novalidate
+                    >
+                        <div class="dashboard-date-control-row sales-date-control-row activity-range-date-row">
+                            <div class="admin-range-field activity-range-field">
+                                <div class="activity-range-label-row">
+                                    <label for="dashboardFromInput" data-dashboard-i18n="from">From</label>
+                                </div>
+                                <input
+                                    type="date"
+                                    name="from"
+                                    id="dashboardFromInput"
+                                    value="<?= Util::e((string)$periodInfo['from']) ?>"
+                                    max="<?= Util::e(min((string)$periodInfo['to'],$today)) ?>"
+                                >
+                            </div>
+
+                            <div class="admin-range-field-stack activity-range-field activity-range-to-field">
+                                <div class="activity-range-label-row">
+                                    <label for="dashboardToInput" data-dashboard-i18n="to">To</label>
+                                    <button
+                                        type="button"
+                                        class="dashboard-back-today sales-back-today<?= ((string)$periodInfo['to']===$today)?' hidden':'' ?>"
+                                        id="dashboardBackToday"
+                                    >
+                                        <span data-dashboard-i18n="backToday">Back to today</span>
+                                    </button>
+                                </div>
+                                <input
+                                    type="date"
+                                    name="to"
+                                    id="dashboardToInput"
+                                    value="<?= Util::e((string)$periodInfo['to']) ?>"
+                                    min="<?= Util::e((string)$periodInfo['from']) ?>"
+                                    max="<?= Util::e($today) ?>"
+                                >
+                            </div>
+                        </div>
+                    </form>
                 </div>
 
-                <form
-                    class="filters dashboard-date-controls admin-range-controls sales-range-filter"
-                    method="get"
-                    id="dashboardDateForm"
-                    novalidate
-                >
-                    <div class="dashboard-date-control-row sales-date-control-row activity-range-date-row">
-                        <div class="admin-range-field activity-range-field">
-                            <div class="activity-range-label-row">
-                                <label for="dashboardFromInput" data-dashboard-i18n="from">From</label>
-                            </div>
-                            <input
-                                type="date"
-                                name="from"
-                                id="dashboardFromInput"
-                                value="<?= Util::e((string)$periodInfo['from']) ?>"
-                                max="<?= Util::e(min((string)$periodInfo['to'],$today)) ?>"
-                            >
-                        </div>
 
-                        <div class="admin-range-field-stack activity-range-field activity-range-to-field">
-                            <div class="activity-range-label-row">
-                                <label for="dashboardToInput" data-dashboard-i18n="to">To</label>
-                                <button
-                                    type="button"
-                                    class="dashboard-back-today sales-back-today<?= ((string)$periodInfo['to']===$today)?' hidden':'' ?>"
-                                    id="dashboardBackToday"
-                                >
-                                    <span data-dashboard-i18n="backToday">Back to today</span>
-                                </button>
-                            </div>
-                            <input
-                                type="date"
-                                name="to"
-                                id="dashboardToInput"
-                                value="<?= Util::e((string)$periodInfo['to']) ?>"
-                                min="<?= Util::e((string)$periodInfo['from']) ?>"
-                                max="<?= Util::e($today) ?>"
-                            >
-                        </div>
-                    </div>
-                </form>
             </div>
         </div>
     </div>
@@ -224,6 +228,59 @@ $adminPresetNames = [
 </div>
 
 <section class="admin-sales-progress-section">
+                <div class="admin-sales-directory-tools" id="adminSalesDirectoryTools">
+                    <label class="admin-sales-search-field" for="salesCardSearch">
+                        <span data-dashboard-i18n="salesSearch">Sales Search</span>
+                        <input
+                            type="search"
+                            id="salesCardSearch"
+                            autocomplete="off"
+                            placeholder="Search name or Sales ID"
+                            data-dashboard-i18n-placeholder="salesSearchPlaceholder"
+                        >
+                    </label>
+
+                    <div class="admin-sales-location-filter-wrap">
+                        <span class="admin-sales-filter-label" data-dashboard-i18n="location">Location</span>
+                        <div
+                            class="admin-sales-location-filter"
+                            id="salesLocationFilter"
+                            role="group"
+                            aria-label="Filter Sales by location"
+                        >
+                            <button
+                                type="button"
+                                class="admin-sales-location-button active"
+                                data-location-filter="all"
+                                aria-pressed="true"
+                            >
+                                <span data-dashboard-i18n="allLocations">All</span>
+                                <b data-location-count><?= count($salesProgress) ?></b>
+                            </button>
+                            <?php foreach (($locations ?? []) as $location): ?>
+                                <button
+                                    type="button"
+                                    class="admin-sales-location-button"
+                                    data-location-filter="<?= (int)$location['id'] ?>"
+                                    aria-pressed="false"
+                                >
+                                    <span><?= Util::e((string)$location['name']) ?></span>
+                                    <b data-location-count><?= (int)$location['sales_count'] ?></b>
+                                </button>
+                            <?php endforeach; ?>
+                            <button
+                                type="button"
+                                class="admin-sales-location-button"
+                                data-location-filter="0"
+                                aria-pressed="false"
+                            >
+                                <span data-dashboard-i18n="unassigned">Unassigned</span>
+                                <b data-location-count><?= (int)($unassignedSalesCount ?? 0) ?></b>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
     <div class="admin-section-head compact admin-section-head-with-summary">
         <div>
             <h2 id="dashboardProgressTitle">
@@ -253,6 +310,8 @@ $adminPresetNames = [
         value="<?= Util::e($csrf) ?>"
     >
 
+    <div class="admin-sales-filter-empty hidden" id="salesDirectoryFilterEmpty" data-dashboard-i18n="noSalesMatch">No Sales users match this search and location filter.</div>
+
     <div
         class="sales-progress-grid"
         id="salesProgressGrid"
@@ -263,6 +322,9 @@ $adminPresetNames = [
                 class="sales-progress-card sales-progress-color-<?= ($index % 8) + 1 ?><?= !empty($row['target_met']) ? ' target-met' : '' ?>"
                 data-sales-id="<?= (int)$row['sales_user_id'] ?>"
                 data-sales-name="<?= Util::e($row['display_name']) ?>"
+                data-sales-number="<?= Util::e((string)$row['sales_id']) ?>"
+                data-location-id="<?= (int)($row['location_id'] ?? 0) ?>"
+                data-location-name="<?= Util::e((string)($row['location_name'] ?? '')) ?>"
                 data-post-count="<?= (int)$row['post_count'] ?>"
                 data-daily-target="<?= (int)$row['daily_target'] ?>"
                 data-card-toggle
@@ -288,14 +350,28 @@ $adminPresetNames = [
                     <div class="sales-progress-person">
                         <strong><?= Util::e($row['display_name']) ?></strong>
                         <span>#<?= Util::e($row['sales_id']) ?></span>
+                        <span class="sales-progress-location" data-sales-location-label>
+                            <?= Util::e(trim((string)($row['location_name'] ?? '')) !== '' ? (string)$row['location_name'] : 'Unassigned') ?>
+                        </span>
                     </div>
 
-                    <span
-                        class="sales-target-badge<?= empty($row['target_met']) ? ' hidden' : '' ?>"
-                        data-target-badge
-                    >
-                        <span data-dashboard-i18n="targetMet">Target met</span>
-                    </span>
+                    <div class="sales-progress-badges">
+                        <span
+                            class="sales-new-posts-badge<?= ((int)$row['unreviewed_count'] > 0) ? '' : ' hidden' ?>"
+                            data-new-posts-badge
+                            title="Unreviewed posts waiting for Admin review"
+                        >
+                            <span data-new-posts-count><?= (int)$row['unreviewed_count'] ?></span>
+                            <span data-new-posts-label>New</span>
+                        </span>
+
+                        <span
+                            class="sales-target-badge<?= empty($row['target_met']) ? ' hidden' : '' ?>"
+                            data-target-badge
+                        >
+                            <span data-dashboard-i18n="targetMet">Target met</span>
+                        </span>
+                    </div>
                 </div>
 
                 <div class="sales-progress-number">
@@ -393,7 +469,7 @@ $adminPresetNames = [
                     >
                         <button
                             type="button"
-                            class="sales-daily-review<?= $period === 'day' ? '' : ' hidden' ?>"
+                            class="sales-daily-review<?= $adminPreset === 'single' ? '' : ' hidden' ?>"
                             data-daily-review
                         >
                             <span data-card-daily-review-label>
@@ -482,21 +558,34 @@ $adminPresetNames = [
         </div>
 
         <div class="sales-person-settings-body">
-            <label class="sales-person-target-field">
-                <span data-dashboard-i18n="dailyTarget">
-                    Daily Post Target
-                </span>
-                <input
-                    type="number"
-                    min="1"
-                    max="999"
-                    id="salesPersonDailyTarget"
-                    inputmode="numeric"
-                >
-                <small data-dashboard-i18n="targetChartHelp">
-                    This is the target line shown on the Sales activity chart.
-                </small>
-            </label>
+            <div class="sales-person-settings-fields">
+                <label class="sales-person-target-field">
+                    <span data-dashboard-i18n="dailyTarget">
+                        Daily Post Target
+                    </span>
+                    <input
+                        type="number"
+                        min="1"
+                        max="999"
+                        id="salesPersonDailyTarget"
+                        inputmode="numeric"
+                    >
+                    <small data-dashboard-i18n="targetChartHelp">
+                        This is the target line shown on the Sales activity chart.
+                    </small>
+                </label>
+
+                <label class="sales-person-location-field">
+                    <span data-dashboard-i18n="location">Location</span>
+                    <select id="salesPersonLocation">
+                        <option value="0" data-dashboard-i18n="unassigned">Unassigned</option>
+                        <?php foreach (($locations ?? []) as $location): ?>
+                            <option value="<?= (int)$location['id'] ?>"><?= Util::e((string)$location['name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <small data-dashboard-i18n="locationAssignmentHelp">Used by the Admin Sales location filter.</small>
+                </label>
+            </div>
 
             <div
                 class="sales-person-settings-message"
@@ -965,6 +1054,10 @@ $adminPresetNames = [
                     <span>Item ID</span>
                     <strong id="dashboardReviewItemId">—</strong>
                 </div>
+                <div id="dashboardReviewAccountFact" class="hidden">
+                    <span>Account</span>
+                    <strong id="dashboardReviewAccount">—</strong>
+                </div>
             </div>
 
             <section
@@ -983,23 +1076,29 @@ $adminPresetNames = [
                 </div>
 
                 <div class="review-content-body">
-                    <div
-                        class="review-content-date hidden"
-                        id="dashboardContentDate"
-                    ></div>
+                    <div class="review-product-detail" id="dashboardProductDetail">
+                        <div class="review-product-media" id="dashboardProductMedia">
+                            <div
+                                class="review-content-photos hidden"
+                                id="dashboardContentPhotos"
+                            ></div>
+                        </div>
 
-                    <h3 id="dashboardContentTitle">No content loaded</h3>
-                    <p id="dashboardContentDescription"></p>
+                        <div class="review-product-info">
+                            <div
+                                class="review-content-date hidden"
+                                id="dashboardContentDate"
+                            ></div>
 
-                    <div
-                        class="review-content-facts"
-                        id="dashboardContentFacts"
-                    ></div>
+                            <h3 id="dashboardContentTitle">No content loaded</h3>
+                            <p id="dashboardContentDescription"></p>
 
-                    <div
-                        class="review-content-photos hidden"
-                        id="dashboardContentPhotos"
-                    ></div>
+                            <div
+                                class="review-content-facts"
+                                id="dashboardContentFacts"
+                            ></div>
+                        </div>
+                    </div>
                 </div>
             </section>
 

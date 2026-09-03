@@ -25,7 +25,7 @@ class ImageFingerprint
     public static function urls(array $meta): array
     {
         $urls=[];
-        $imageKeys=['image','images','image_url','imageurl','photos','listingphotos','listing_photos','photo','photo_url','thumbnail','thumbnail_url','fetched_image_url','primary_listing_photo'];
+        $imageKeys=['image','images','image_url','imageurl','imageurls','image_urls','photos','listingphotos','listing_photos','itemphotos','item_photos','gallery','galleryurls','gallery_urls','pictures','picture','media','photo','photo_url','thumbnail','thumbnail_url','fetched_image_url','primary_listing_photo','original','orig','detail','large','full','fullsize'];
         $excludedKeys=['seller','seller_profile','sellerprofile','user','owner','author','profile','brand','logo','avatar','profile_picture','recommendations','related_listings','relatedlistings','similar_listings'];
         $walk=function($value, bool $image=false, int $depth=0) use (&$walk,&$urls,$imageKeys,$excludedKeys): void {
             if($depth>12){return;}
@@ -52,9 +52,16 @@ class ImageFingerprint
      *
      * @throws \RuntimeException When validation, persistence, or a delegated dependency cannot complete the operation. / 当验证、持久化或下游依赖无法完成操作时抛出。
      */
-    public static function fromUrl(string $url): array
+    public static function fromUrl(string $url,string $referer=''): array
     {
         $original=$url;
+        $referer=trim($referer);
+        if($referer!==''){
+            $rp=parse_url($referer);
+            if(!filter_var($referer,FILTER_VALIDATE_URL)||strtolower((string)($rp['scheme']??''))!=='https'){
+                $referer='';
+            }
+        }
         for($redirect=0;$redirect<4;$redirect++){
             $parts=parse_url($url);
             if(!filter_var($url,FILTER_VALIDATE_URL)||strtolower($parts['scheme']??'')!=='https'
@@ -81,8 +88,14 @@ class ImageFingerprint
                 CURLOPT_FOLLOWLOCATION=>false,CURLOPT_CONNECTTIMEOUT=>3,CURLOPT_TIMEOUT=>7,
                 CURLOPT_PROTOCOLS=>CURLPROTO_HTTPS,CURLOPT_SSL_VERIFYPEER=>true,CURLOPT_SSL_VERIFYHOST=>2,
                 CURLOPT_PROXY=>'',CURLOPT_RESOLVE=>[$host.':443:'.$ips[0]],
-                CURLOPT_USERAGENT=>'CoolerDepot-Image-Comparison/0.1.72',
-                CURLOPT_HTTPHEADER=>['Accept: image/jpeg,image/png,image/webp'],
+                CURLOPT_USERAGENT=>$referer!==''
+                    ?'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36'
+                    :'CoolerDepot-Image-Comparison/0.1.72',
+                CURLOPT_HTTPHEADER=>array_values(array_filter([
+                    'Accept: image/webp,image/png,image/jpeg,*/*;q=0.6',
+                    'Accept-Language: en-US,en;q=0.9',
+                    $referer!==''?'Referer: '.$referer:null,
+                ])),
                 CURLOPT_WRITEFUNCTION=>function($ch,$chunk)use(&$body,&$tooLarge){
                     if(strlen($body)+strlen($chunk)>8*1024*1024){$tooLarge=true;return 0;}
                     $body.=$chunk;return strlen($chunk);

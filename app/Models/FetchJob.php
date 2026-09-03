@@ -209,4 +209,65 @@ class FetchJob
 
         return $stmt->fetchAll();
     }
+
+    /**
+     * EN: Retrieve one filtered page of provider jobs together with pagination metadata.
+     * 中文：按时间范围读取一页 Provider Job，并返回分页元数据。
+     *
+     * @param int $page Requested one-based page number. / 请求的页码，从 1 开始。
+     * @param int $perPage Maximum jobs returned on each page. / 每页最多返回的 Job 数量。
+     * @param string $timeFilter Time-range key: 1h, 24h, 7d, 30d, or all. / 时间范围键：1h、24h、7d、30d 或 all。
+     *
+     * @return array Structured page data with jobs, total count, current page, total pages, page size, and normalized time filter. / 返回 Job、总数、当前页、总页数、每页数量及标准化时间筛选值。
+     */
+    public static function recentPage(int $page = 1, int $perPage = 8, string $timeFilter = '24h'): array
+    {
+        $page = max(1, $page);
+        $perPage = max(1, min(25, $perPage));
+        $timeFilter = strtolower(trim($timeFilter));
+
+        $timeSql = match ($timeFilter) {
+            '1h' => 'j.created_at >= DATE_SUB(NOW(), INTERVAL 1 HOUR)',
+            '7d' => 'j.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)',
+            '30d' => 'j.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)',
+            'all' => '1=1',
+            default => 'j.created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)',
+        };
+
+        if (!in_array($timeFilter, ['1h', '24h', '7d', '30d', 'all'], true)) {
+            $timeFilter = '24h';
+        }
+
+        $countStmt = Database::connection()->query(
+            "SELECT COUNT(*)
+             FROM cdsp_fetch_jobs j
+             WHERE {$timeSql}"
+        );
+        $total = (int)$countStmt->fetchColumn();
+        $pages = max(1, (int)ceil($total / $perPage));
+        $page = min($page, $pages);
+        $offset = ($page - 1) * $perPage;
+
+        $stmt = Database::connection()->prepare(
+            "SELECT j.*, u.display_name
+             FROM cdsp_fetch_jobs j
+             JOIN cdsp_users u ON u.id=j.requested_by_user_id
+             WHERE {$timeSql}
+             ORDER BY j.id DESC
+             LIMIT ? OFFSET ?"
+        );
+        $stmt->bindValue(1, $perPage, \PDO::PARAM_INT);
+        $stmt->bindValue(2, $offset, \PDO::PARAM_INT);
+        $stmt->execute();
+
+        return [
+            'jobs' => $stmt->fetchAll(),
+            'total' => $total,
+            'page' => $page,
+            'pages' => $pages,
+            'per_page' => $perPage,
+            'time_filter' => $timeFilter,
+        ];
+    }
+
 }

@@ -28,19 +28,24 @@ class User
     {
         $s = Database::connection()->prepare(
             "SELECT
-                id,
-                sales_id,
-                external_user_id,
-                username,
-                password_hash,
-                display_name,
-                role,
-                active,
-                daily_post_target,
-                auth_source,
-                last_handoff_at
-             FROM cdsp_users
-             WHERE id=?
+                u.id,
+                u.sales_id,
+                u.external_user_id,
+                u.username,
+                u.password_hash,
+                u.display_name,
+                u.role,
+                u.active,
+                u.daily_post_target,
+                u.location_id,
+                l.name AS location_name,
+                u.auth_source,
+                u.last_handoff_at
+             FROM cdsp_users u
+             LEFT JOIN cdsp_locations l
+               ON l.id=u.location_id
+              AND l.active=1
+             WHERE u.id=?
              LIMIT 1"
         );
         $s->execute([$id]);
@@ -80,17 +85,22 @@ class User
     {
         return Database::connection()->query(
             "SELECT
-                id,
-                sales_id,
-                external_user_id,
-                username,
-                display_name,
-                daily_post_target,
-                last_handoff_at
-             FROM cdsp_users
-             WHERE role='sales'
-               AND active=1
-             ORDER BY display_name"
+                u.id,
+                u.sales_id,
+                u.external_user_id,
+                u.username,
+                u.display_name,
+                u.daily_post_target,
+                u.location_id,
+                l.name AS location_name,
+                u.last_handoff_at
+             FROM cdsp_users u
+             LEFT JOIN cdsp_locations l
+               ON l.id=u.location_id
+              AND l.active=1
+             WHERE u.role='sales'
+               AND u.active=1
+             ORDER BY u.display_name"
         )->fetchAll();
     }
 
@@ -119,6 +129,47 @@ class User
         );
 
         $s->execute([$target, $userId]);
+
+        return $s->rowCount() > 0;
+    }
+
+    /**
+     * EN: Save the Admin-managed daily target and optional location for an active Sales user.
+     * 中文：保存 Admin 为启用中的 Sales 设置的每日目标与可选 Location。
+     *
+     * @param int $userId Application Sales user identifier. / Sales 用户 ID。
+     * @param int $target Daily post target. / 每日发帖目标。
+     * @param ?int $locationId Assigned Location ID, or null for Unassigned. / Location ID；未分配时为 null。
+     * @return bool True when MySQL reports a changed row. / MySQL 报告记录有变更时返回 true。
+     * @throws \InvalidArgumentException When the selected location is unavailable. / Location 不可用时抛出。
+     */
+    public static function setSalesSettings(
+        int $userId,
+        int $target,
+        ?int $locationId
+    ): bool {
+        $target = max(1, min(999, $target));
+        $locationId = $locationId !== null && $locationId > 0
+            ? $locationId
+            : null;
+
+        if ($locationId !== null) {
+            $location = Location::find($locationId);
+            if (!$location || !(int)($location['active'] ?? 0)) {
+                throw new \InvalidArgumentException('Selected location is not available.');
+            }
+        }
+
+        $s = Database::connection()->prepare(
+            "UPDATE cdsp_users
+             SET daily_post_target=?,
+                 location_id=?,
+                 updated_at=NOW()
+             WHERE id=?
+               AND role='sales'
+               AND active=1"
+        );
+        $s->execute([$target, $locationId, $userId]);
 
         return $s->rowCount() > 0;
     }

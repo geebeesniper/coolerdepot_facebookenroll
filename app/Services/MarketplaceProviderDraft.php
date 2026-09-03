@@ -74,11 +74,20 @@ class MarketplaceProviderDraft
                 throw new ProviderValidationException('brightdata_dataset_id', 'Bright Data Dataset ID must start with gd_.');
             }
 
+            $unlockerZone = trim((string)($input['brightdata_unlocker_zone'] ?? ''));
+            if ($unlockerZone !== '' && !preg_match('/^[A-Za-z0-9_-]{1,120}$/', $unlockerZone)) {
+                throw new ProviderValidationException(
+                    'brightdata_unlocker_zone',
+                    'Bright Data Web Unlocker Zone may contain letters, numbers, underscore, and hyphen only.'
+                );
+            }
+
             $profile['website_url'] = $website ?: 'https://brightdata.com/';
             $profile['api_endpoint'] = 'https://api.brightdata.com/datasets/v3/';
             $profile['config'] = [
                 'dataset_id' => $dataset,
-                'timeout_seconds' => max(15, min(90, (int)($input['timeout_seconds'] ?? 45))),
+                'unlocker_zone' => $unlockerZone,
+                'timeout_seconds' => max(15, min(120, (int)($input['timeout_seconds'] ?? 45))),
                 'poll_seconds' => max(2, min(10, (int)($input['poll_seconds'] ?? 3))),
             ];
         } elseif ($type === 'apify') {

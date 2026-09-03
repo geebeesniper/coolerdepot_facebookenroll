@@ -12,6 +12,7 @@ use App\Core\Auth;
 use App\Core\Csrf;
 use App\Core\ErrorPage;
 use App\Core\Logger;
+use App\Models\Setting;
 use App\Models\User;
 
 /**
@@ -60,11 +61,60 @@ class AuthController
         }
 
         if (!$config['auth']['allow_local_login']) {
-            $this->renderView('auth/access_required');
+            $this->renderView('auth/access_required', [
+                'authFailureRedirectUrl' => $this->configuredAuthFailureRedirectUrl(),
+            ]);
             return;
         }
 
         $this->renderView('auth/login', ['error' => null]);
+    }
+
+    /**
+     * Re-check the current Sales Post Tracker browser session once.
+     *
+     * The access-required page calls this endpoint before leaving the module.
+     * If the handoff/session became valid, the browser reloads the current page.
+     * Otherwise the browser is sent to the Admin-configured portal fallback URL.
+     */
+    public function recheck(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+        header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+
+        try {
+            $user = Auth::user();
+
+            if ($user) {
+                echo json_encode([
+                    'ok' => true,
+                    'authenticated' => true,
+                    'role' => (string)($user['role'] ?? ''),
+                ], JSON_UNESCAPED_SLASHES);
+                exit;
+            }
+
+            echo json_encode([
+                'ok' => true,
+                'authenticated' => false,
+                'redirect_url' => $this->configuredAuthFailureRedirectUrl(),
+            ], JSON_UNESCAPED_SLASHES);
+            exit;
+        } catch (\Throwable $e) {
+            Logger::exception(
+                $e,
+                'auth',
+                ['event' => 'Authentication recheck failed'],
+                'warning'
+            );
+
+            echo json_encode([
+                'ok' => false,
+                'authenticated' => false,
+                'redirect_url' => $this->configuredAuthFailureRedirectUrl(),
+            ], JSON_UNESCAPED_SLASHES);
+            exit;
+        }
     }
 
     /**
@@ -143,6 +193,33 @@ class AuthController
         global $config;
         header('Location: ' . $config['app']['base_path'] . '/login');
         exit;
+    }
+
+    /**
+     * Return the Admin-configured fallback URL used after a failed auth recheck.
+     * Only absolute http/https URLs are accepted.
+     */
+    private function configuredAuthFailureRedirectUrl(): string
+    {
+        try {
+            $url = trim((string)Setting::get('auth_failure_redirect_url', ''));
+        } catch (\Throwable $e) {
+            Logger::exception(
+                $e,
+                'auth',
+                ['event' => 'Authentication fallback URL could not be loaded'],
+                'warning'
+            );
+            return '';
+        }
+
+        if ($url === '' || strlen($url) > 2048 || !filter_var($url, FILTER_VALIDATE_URL)) {
+            return '';
+        }
+
+        $scheme = strtolower((string)parse_url($url, PHP_URL_SCHEME));
+
+        return in_array($scheme, ['http', 'https'], true) ? $url : '';
     }
 
     /**

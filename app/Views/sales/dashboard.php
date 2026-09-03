@@ -661,6 +661,11 @@ $chartTargetTop=
                         <dt data-sales-i18n="postId">Post ID</dt>
                         <dd id="salesPostDetailExternalId">—</dd>
                     </div>
+
+                    <div id="salesPostDetailAccountFact" class="hidden">
+                        <dt data-sales-i18n="platformAccount">Account</dt>
+                        <dd id="salesPostDetailAccount">—</dd>
+                    </div>
                 </dl>
             </div>
         </div>

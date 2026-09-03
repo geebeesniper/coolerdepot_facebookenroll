@@ -98,7 +98,7 @@ CREATE TABLE IF NOT EXISTS cdsp_post_inspections (
  published_at DATETIME NULL,
  published_date DATE NULL,
  fetched_at DATETIME NULL,
- verification_status ENUM('verified','failed') NOT NULL,
+ verification_status ENUM('verified','manual_pending','failed') NOT NULL,
  failure_code VARCHAR(80) NULL,
  failure_message VARCHAR(500) NULL,
  raw_meta_json MEDIUMTEXT NULL,
@@ -120,6 +120,10 @@ CREATE TABLE IF NOT EXISTS cdsp_sales_posts (
  canonical_url TEXT NOT NULL,
  canonical_url_hash CHAR(64) NOT NULL,
  external_post_id VARCHAR(120) NULL,
+ platform_account_id VARCHAR(191) NULL,
+ platform_account_name VARCHAR(255) NULL,
+ platform_account_url TEXT NULL,
+ platform_account_key_hash CHAR(64) NULL,
  title VARCHAR(500) NOT NULL,
  normalized_title_hash CHAR(64) NOT NULL,
  description MEDIUMTEXT NULL,
@@ -128,15 +132,16 @@ CREATE TABLE IF NOT EXISTS cdsp_sales_posts (
  published_date DATE NOT NULL,
  fetched_at DATETIME NOT NULL,
  fetched_image_url TEXT NULL,
- verification_status ENUM('verified','failed') NOT NULL DEFAULT 'verified',
+ verification_status ENUM('verified','manual_pending','failed') NOT NULL DEFAULT 'verified',
  admin_review_status ENUM('good','bad') NULL DEFAULT NULL,
  created_at DATETIME NOT NULL,
  updated_at DATETIME NOT NULL,
  deleted_at DATETIME NULL,
  deleted_by INT UNSIGNED NULL,
  PRIMARY KEY(id),
- UNIQUE KEY uq_post_canonical(canonical_url_hash),
- UNIQUE KEY uq_post_external(platform,external_post_id),
+ KEY idx_post_canonical_hash(canonical_url_hash),
+ KEY idx_post_external(platform,external_post_id),
+ KEY idx_post_platform_account(platform,platform_account_key_hash),
  KEY idx_post_sales_date(sales_user_id,created_at),
  KEY idx_post_title(sales_user_id,platform,normalized_title_hash),
  KEY idx_post_desc(sales_user_id,platform,description_hash),
@@ -384,4 +389,17 @@ CREATE TABLE IF NOT EXISTS cdsp_website_references (
  UNIQUE KEY uq_website_page(page_url_hash),
  KEY idx_website_title(title_hash),
  KEY idx_website_image(sha256)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Marketplace verification process lock registry. / Marketplace 验证进程锁注册表。
+CREATE TABLE IF NOT EXISTS cdsp_inspection_locks (
+ sales_user_id INT UNSIGNED NOT NULL,
+ lock_token CHAR(64) NOT NULL,
+ platform VARCHAR(32) NULL,
+ url_hash CHAR(64) NULL,
+ started_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+ PRIMARY KEY(sales_user_id),
+ KEY idx_cdsp_inspection_locks_started_at(started_at),
+ CONSTRAINT fk_inspection_lock_sales_user FOREIGN KEY(sales_user_id) REFERENCES cdsp_users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

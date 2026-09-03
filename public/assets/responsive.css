@@ -619,12 +619,20 @@ textarea {
     box-sizing:border-box;
 }
 
-.app-nav-menu > [data-nav-i18n="dashboard"] { width:78px; min-width:78px; max-width:78px; }
-.app-nav-menu > [data-nav-i18n="reports"] { width:76px; min-width:76px; max-width:76px; }
-.app-nav-menu > [data-nav-i18n="settings"] { width:94px; min-width:94px; max-width:94px; }
-.app-nav-menu > [data-nav-i18n="submit"] { width:70px; min-width:70px; max-width:70px; }
-.app-nav-menu > .app-nav-signout { width:78px; min-width:78px; max-width:78px; }
-.app-nav-menu > .app-nav-signout button { width:78px; min-width:78px; max-width:78px; }
+/* Desktop navigation sizing. Both roles use fixed slots so changing language
+ * never shifts neighboring items. Admin uses compact fixed widths like Sales. */
+.topbar[data-user-role="sales"] .app-nav-menu > [data-nav-i18n="dashboard"] { width:78px; min-width:78px; max-width:78px; }
+.topbar[data-user-role="sales"] .app-nav-menu > [data-nav-i18n="submit"] { width:70px; min-width:70px; max-width:70px; }
+.topbar[data-user-role="sales"] .app-nav-menu > .app-nav-signout { width:78px; min-width:78px; max-width:78px; }
+.topbar[data-user-role="sales"] .app-nav-menu > .app-nav-signout button { width:78px; min-width:78px; max-width:78px; }
+
+.topbar[data-user-role="admin"] .app-nav-menu { gap:4px; }
+.topbar[data-user-role="admin"] .app-nav-menu > [data-nav-i18n="dashboard"] { width:78px; min-width:78px; max-width:78px; }
+.topbar[data-user-role="admin"] .app-nav-menu > [data-nav-i18n="reports"] { width:72px; min-width:72px; max-width:72px; }
+.topbar[data-user-role="admin"] .app-nav-menu > [data-nav-i18n="settings"] { width:86px; min-width:86px; max-width:86px; }
+.topbar[data-user-role="admin"] .app-nav-menu > [data-nav-i18n="help"] { width:58px; min-width:58px; max-width:58px; }
+.topbar[data-user-role="admin"] .app-nav-menu > .app-nav-signout { width:76px; min-width:76px; max-width:76px; }
+.topbar[data-user-role="admin"] .app-nav-menu > .app-nav-signout button { width:76px; min-width:76px; max-width:76px; }
 
 .mobile-nav-toggle {
     width:36px;
@@ -776,13 +784,25 @@ textarea {
         width:100% !important;
         min-width:0 !important;
         margin:0 !important;
-        padding:8px 10px 10px !important;
-        grid-template-columns:minmax(0,1fr) !important;
+        padding:5px 8px 8px !important;
         gap:4px !important;
         border-top:1px solid rgba(255,255,255,.10) !important;
         border-bottom:1px solid rgba(15,23,42,.20) !important;
         background:#101828 !important;
         box-shadow:0 12px 24px rgba(15,23,42,.22) !important;
+    }
+
+    /* EN: The narrow-screen menu is intentionally horizontal. Sales has four
+     * actions and Admin has five; the user name spans the compact row above.
+     * This keeps the expanded menu shallow instead of creating a tall stack.
+     * 中文：窄屏菜单改为横向排列。Sales 有四个操作，Admin 有五个操作；
+     * 用户名独占上方紧凑信息行，避免展开后形成很高的纵向菜单。 */
+    .topbar[data-user-role="sales"] .app-nav-menu {
+        grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+    }
+
+    .topbar[data-user-role="admin"] .app-nav-menu {
+        grid-template-columns:repeat(5,minmax(0,1fr)) !important;
     }
 
     .nav.mobile-open .app-nav-menu {
@@ -791,18 +811,22 @@ textarea {
 
     .mobile-nav-user {
         display:block !important;
-        padding:6px 9px 8px !important;
+        grid-column:1 / -1 !important;
+        min-height:20px !important;
+        padding:2px 4px 3px !important;
         overflow:hidden;
         text-overflow:ellipsis;
         white-space:nowrap;
         color:#93c5fd;
-        font-size:11px;
+        font-size:10px;
+        line-height:15px;
         font-weight:800;
     }
 
     .app-nav-menu > .app-nav-link,
     .app-nav-menu > .app-nav-signout,
     .app-nav-menu > .app-nav-signout button {
+        box-sizing:border-box !important;
         width:100% !important;
         min-width:0 !important;
         max-width:none !important;
@@ -810,11 +834,14 @@ textarea {
 
     .app-nav-menu > .app-nav-link,
     .app-nav-menu > .app-nav-signout button {
-        min-height:38px !important;
-        justify-content:flex-start !important;
-        padding:0 10px !important;
-        text-align:left !important;
-        font-size:12px !important;
+        min-height:34px !important;
+        justify-content:center !important;
+        padding:0 4px !important;
+        overflow:hidden !important;
+        text-align:center !important;
+        text-overflow:ellipsis !important;
+        white-space:nowrap !important;
+        font-size:11px !important;
     }
 
     .app-nav-menu > .app-nav-signout {
@@ -864,6 +891,24 @@ textarea {
         min-width:25px !important;
         max-width:25px !important;
     }
+
+    /* EN: Preserve one horizontal action row even around 390-420px by
+     * tightening label typography rather than reverting to vertical stacking.
+     * 中文：约 390-420px 仍保持单行横向菜单，通过压缩字号和间距，
+     * 不再退回纵向堆叠。 */
+    .app-nav-menu {
+        column-gap:3px !important;
+        padding-left:6px !important;
+        padding-right:6px !important;
+    }
+
+    .app-nav-menu > .app-nav-link,
+    .app-nav-menu > .app-nav-signout button {
+        min-height:32px !important;
+        padding-left:2px !important;
+        padding-right:2px !important;
+        font-size:10px !important;
+    }
 }
 
 /* EN: Neutralize the legacy phone rule that gave Back to today a 100% flex
@@ -878,5 +923,412 @@ textarea {
         width:auto !important;
         max-width:100% !important;
         margin-left:auto !important;
+    }
+}
+
+/* ========================================================================
+ * v0.2.08 — Unified activity-header responsive toolbar
+ * EN: This final responsive layer is the single owner of the Sales/Admin
+ * activity header geometry. It removes historical right-floating and early
+ * stacking rules so the title, presets, dates, and Submit button follow one
+ * predictable layout at every viewport width.
+ * 中文：本最终响应式层统一接管 Sales/Admin Activity 页头布局，覆盖历史上
+ * 右浮、过早换行等冲突规则，使标题、快捷日期、From/To 与 Submit 按钮在
+ * 所有屏幕宽度下遵循同一套稳定布局。
+ * ====================================================================== */
+
+/* EN: Keep the page identity on its own row and place the entire control deck
+ * directly below it. This prevents Admin dates from drifting to the far right
+ * while Sales controls sit on another geometry.
+ * 中文：标题区独占一行，整组筛选控件紧接其下；避免 Admin 日期漂到最右侧，
+ * 同时保证 Sales 与 Admin 使用相同的视觉结构。 */
+.sales-portal-head,
+.admin-page-head.sales-portal-head,
+.admin-activity-head {
+    display:grid !important;
+    grid-template-columns:minmax(0,1fr) !important;
+    align-items:start !important;
+    justify-items:start !important;
+    gap:14px !important;
+}
+
+.sales-portal-head > :first-child,
+.admin-activity-head .admin-dashboard-heading {
+    width:100% !important;
+    min-width:0 !important;
+    max-width:none !important;
+}
+
+.admin-dashboard-range-anchor,
+.admin-activity-head .admin-dashboard-range-anchor {
+    display:block !important;
+    justify-self:stretch !important;
+    width:100% !important;
+    max-width:none !important;
+}
+
+.admin-activity-head .admin-dashboard-range-bar {
+    width:100% !important;
+    max-width:none !important;
+}
+
+/* EN: Desktop control deck. Presets, date pair and CTA share one baseline.
+ * 中文：桌面工具栏。快捷范围、日期组和 CTA 使用同一底部基线。 */
+.sales-portal-head-actions,
+.admin-activity-head .admin-dashboard-range-bar .admin-portal-head-actions {
+    box-sizing:border-box !important;
+    display:grid !important;
+    grid-template-columns:max-content max-content max-content !important;
+    align-items:end !important;
+    justify-content:start !important;
+    justify-items:start !important;
+    justify-self:start !important;
+    column-gap:10px !important;
+    row-gap:8px !important;
+    width:max-content !important;
+    max-width:100% !important;
+    min-width:0 !important;
+}
+
+.admin-activity-head .admin-dashboard-range-bar .admin-portal-head-actions {
+    grid-template-columns:max-content max-content !important;
+}
+
+/* EN: Five presets always occupy one balanced row. The old 3/4-column rules
+ * are intentionally neutralized here.
+ * 中文：五个快捷范围始终保持单行均分，明确覆盖历史 3/4 列规则。 */
+.sales-portal-head-actions .sales-head-period-switch,
+.admin-activity-head .admin-dashboard-range-bar .sales-head-period-switch {
+    box-sizing:border-box !important;
+    display:grid !important;
+    grid-template-columns:repeat(5,minmax(0,1fr)) !important;
+    align-self:end !important;
+    width:286px !important;
+    min-width:286px !important;
+    max-width:286px !important;
+    height:40px !important;
+    min-height:40px !important;
+    margin:0 !important;
+    padding:2px !important;
+    gap:2px !important;
+}
+
+.sales-portal-head-actions .sales-head-period-switch .sales-period-button,
+.admin-activity-head .admin-dashboard-range-bar .sales-head-period-switch .sales-period-button {
+    box-sizing:border-box !important;
+    width:100% !important;
+    min-width:0 !important;
+    max-width:none !important;
+    height:34px !important;
+    min-height:34px !important;
+    padding:0 6px !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+    white-space:nowrap !important;
+}
+
+/* EN: Date pair is one component: two equal fields, one label row, fixed
+ * desktop geometry. / 中文：From/To 作为一个组件，桌面下两列等宽且标签对齐。 */
+.sales-portal-head-actions #salesRangeForm,
+.admin-activity-head .dashboard-date-controls {
+    box-sizing:border-box !important;
+    width:296px !important;
+    min-width:296px !important;
+    max-width:296px !important;
+    margin:0 !important;
+    padding:0 !important;
+    align-self:end !important;
+}
+
+.sales-portal-head-actions .activity-range-date-row,
+.admin-activity-head .activity-range-date-row {
+    box-sizing:border-box !important;
+    display:grid !important;
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    align-items:start !important;
+    gap:8px !important;
+    width:100% !important;
+    min-width:0 !important;
+}
+
+.sales-portal-head-actions .activity-range-field,
+.admin-activity-head .activity-range-field,
+.sales-portal-head-actions .sales-to-field-stack.activity-range-field,
+.admin-activity-head .admin-range-field-stack.activity-range-field {
+    box-sizing:border-box !important;
+    width:100% !important;
+    min-width:0 !important;
+    max-width:none !important;
+    flex:1 1 auto !important;
+}
+
+.sales-portal-head-actions .activity-range-field input[type="date"],
+.admin-activity-head .activity-range-field input[type="date"] {
+    box-sizing:border-box !important;
+    width:100% !important;
+    min-width:0 !important;
+    max-width:none !important;
+    height:40px !important;
+    min-height:40px !important;
+    max-height:40px !important;
+    margin:0 !important;
+    padding:0 10px !important;
+    line-height:40px !important;
+}
+
+.sales-portal-head-actions .activity-range-label-row,
+.admin-activity-head .activity-range-label-row {
+    height:16px !important;
+    min-height:16px !important;
+    line-height:16px !important;
+}
+
+.sales-portal-head-actions .activity-range-label-row label,
+.admin-activity-head .activity-range-label-row label {
+    font-size:8px !important;
+    line-height:16px !important;
+}
+
+.sales-portal-head-actions .sales-submit-cta {
+    box-sizing:border-box !important;
+    align-self:end !important;
+    justify-self:start !important;
+    width:158px !important;
+    min-width:158px !important;
+    max-width:158px !important;
+    height:40px !important;
+    min-height:40px !important;
+    margin:0 !important;
+    padding:0 16px !important;
+}
+
+/* EN: Medium screens keep presets + date pair on the first toolbar row; the
+ * Sales CTA moves to a deliberate second row instead of arbitrary wrapping.
+ * 中文：中等宽度下快捷范围与日期保持第一行，Sales CTA 明确进入第二行，
+ * 不再依赖浏览器随机换行。 */
+@media (max-width:999px) {
+    .sales-portal-head-actions,
+    .admin-activity-head .admin-dashboard-range-bar .admin-portal-head-actions {
+        grid-template-columns:286px 296px !important;
+        width:min(100%,592px) !important;
+        max-width:100% !important;
+    }
+
+    .sales-portal-head-actions .sales-submit-cta {
+        grid-column:1 / -1 !important;
+        grid-row:2 !important;
+    }
+}
+
+/* EN: Phone/narrow tablet uses three deliberate full-width rows: presets,
+ * date pair, CTA. Date fields remain paired while there is enough room.
+ * 中文：手机/窄平板使用三行稳定结构：快捷范围、日期组、CTA；空间允许时
+ * From/To 继续保持并排。 */
+@media (max-width:640px) {
+    .sales-portal-head,
+    .admin-page-head.sales-portal-head,
+    .admin-activity-head {
+        gap:12px !important;
+    }
+
+    .admin-dashboard-range-anchor,
+    .admin-activity-head .admin-dashboard-range-anchor,
+    .admin-activity-head .admin-dashboard-range-bar {
+        width:100% !important;
+        max-width:100% !important;
+    }
+
+    .sales-portal-head-actions,
+    .admin-activity-head .admin-dashboard-range-bar .admin-portal-head-actions {
+        grid-template-columns:minmax(0,1fr) !important;
+        width:100% !important;
+        max-width:100% !important;
+        gap:9px !important;
+    }
+
+    .sales-portal-head-actions .sales-head-period-switch,
+    .admin-activity-head .admin-dashboard-range-bar .sales-head-period-switch,
+    .sales-portal-head-actions #salesRangeForm,
+    .admin-activity-head .dashboard-date-controls {
+        width:100% !important;
+        min-width:0 !important;
+        max-width:none !important;
+    }
+
+    .sales-portal-head-actions .sales-submit-cta {
+        grid-column:auto !important;
+        grid-row:auto !important;
+        width:100% !important;
+        min-width:0 !important;
+        max-width:none !important;
+        justify-self:stretch !important;
+    }
+}
+
+/* EN: Very small phones stack native date inputs to avoid cramped calendar
+ * controls or horizontal overflow. / 中文：超窄手机将原生日期控件改为单列，
+ * 防止日历控件被挤压或产生横向溢出。 */
+@media (max-width:360px) {
+    .sales-portal-head-actions .activity-range-date-row,
+    .admin-activity-head .activity-range-date-row {
+        grid-template-columns:minmax(0,1fr) !important;
+    }
+}
+
+
+/* --------------------------------------------------------------------------
+ * v0.2.09 — authoritative Sales/Admin activity toolbar geometry
+ * EN: Keep the quick presets left, keep From/To right, and place Submit Post
+ * on its own second row aligned to the right. Admin and Sales share the same
+ * responsive geometry.
+ * 中文：快捷日期固定在左侧，From/To 固定在右侧，Submit Post 单独放在第二行右对齐；
+ * Admin 与 Sales 共用同一套响应式布局。
+ * ----------------------------------------------------------------------- */
+.sales-portal-head-actions,
+.admin-activity-head .admin-dashboard-range-bar .admin-portal-head-actions {
+    display:grid !important;
+    grid-template-columns:minmax(286px,max-content) minmax(300px,max-content) !important;
+    align-items:end !important;
+    justify-content:space-between !important;
+    justify-items:stretch !important;
+    gap:10px 18px !important;
+    width:100% !important;
+}
+
+.sales-portal-head-actions #salesPeriodSwitch,
+.admin-activity-head .admin-dashboard-range-bar .sales-head-period-switch {
+    grid-column:1 !important;
+    grid-row:1 !important;
+    width:286px !important;
+    min-width:286px !important;
+    max-width:286px !important;
+    margin-top:0 !important;
+    justify-self:start !important;
+    align-self:end !important;
+}
+
+.sales-portal-head-actions #salesRangeForm,
+.admin-activity-head .admin-dashboard-range-bar .dashboard-date-controls {
+    grid-column:2 !important;
+    grid-row:1 !important;
+    width:auto !important;
+    min-width:300px !important;
+    justify-self:end !important;
+    align-self:end !important;
+}
+
+.sales-portal-head-actions .sales-date-control-row,
+.admin-activity-head .dashboard-date-control-row.activity-range-date-row {
+    display:grid !important;
+    grid-template-columns:repeat(2, minmax(144px, 1fr)) !important;
+    align-items:end !important;
+    gap:8px !important;
+}
+
+.sales-portal-head-actions .activity-range-field,
+.admin-activity-head .activity-range-field,
+.sales-portal-head-actions .sales-to-field-stack.activity-range-field,
+.admin-activity-head .admin-range-field-stack.activity-range-field {
+    width:100% !important;
+    min-width:0 !important;
+}
+
+.sales-portal-head-actions .activity-range-field input[type="date"],
+.admin-activity-head .activity-range-field input[type="date"] {
+    width:100% !important;
+    min-width:0 !important;
+}
+
+.sales-portal-head-actions .sales-submit-cta {
+    grid-column:2 !important;
+    grid-row:2 !important;
+    justify-self:end !important;
+    align-self:start !important;
+    width:auto !important;
+    min-width:160px !important;
+    margin-top:0 !important;
+}
+
+@media (max-width:999px) {
+    .sales-portal-head-actions,
+    .admin-activity-head .admin-dashboard-range-bar .admin-portal-head-actions {
+        grid-template-columns:minmax(0,1fr) minmax(300px,max-content) !important;
+        gap:10px 14px !important;
+    }
+
+    .sales-portal-head-actions #salesPeriodSwitch,
+    .admin-activity-head .admin-dashboard-range-bar .sales-head-period-switch {
+        width:100% !important;
+        min-width:0 !important;
+        max-width:none !important;
+    }
+}
+
+@media (max-width:720px) {
+    .sales-portal-head-actions,
+    .admin-activity-head .admin-dashboard-range-bar .admin-portal-head-actions {
+        grid-template-columns:minmax(0,1fr) !important;
+        gap:9px !important;
+    }
+
+    .sales-portal-head-actions #salesPeriodSwitch,
+    .admin-activity-head .admin-dashboard-range-bar .sales-head-period-switch,
+    .sales-portal-head-actions #salesRangeForm,
+    .admin-activity-head .admin-dashboard-range-bar .dashboard-date-controls,
+    .sales-portal-head-actions .sales-submit-cta {
+        grid-column:1 !important;
+        justify-self:stretch !important;
+        width:100% !important;
+        min-width:0 !important;
+        max-width:none !important;
+    }
+
+    .sales-portal-head-actions #salesPeriodSwitch,
+    .admin-activity-head .admin-dashboard-range-bar .sales-head-period-switch {
+        grid-row:auto !important;
+        grid-template-columns:repeat(5,minmax(0,1fr)) !important;
+    }
+
+    .sales-portal-head-actions #salesRangeForm,
+    .admin-activity-head .admin-dashboard-range-bar .dashboard-date-controls {
+        grid-row:auto !important;
+    }
+
+    .sales-portal-head-actions .sales-submit-cta {
+        grid-row:auto !important;
+        justify-self:end !important;
+        width:auto !important;
+    }
+}
+
+@media (max-width:640px) {
+    .sales-portal-head-actions .activity-range-date-row,
+    .admin-activity-head .activity-range-date-row {
+        grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    }
+
+    .sales-portal-head-actions .sales-submit-cta {
+        justify-self:stretch !important;
+        width:100% !important;
+    }
+}
+
+@media (max-width:480px) {
+    .sales-portal-head-actions .activity-range-date-row,
+    .admin-activity-head .activity-range-date-row {
+        grid-template-columns:minmax(0,1fr) !important;
+    }
+}
+
+/* v0.2.10 — Provider Chain / Jobs responsive split */
+@media (min-width:1181px){
+    .provider-operations-grid{
+        grid-template-columns:minmax(0,1.08fr) minmax(520px,.92fr) !important;
+    }
+}
+
+@media (max-width:1180px){
+    .provider-operations-grid{
+        grid-template-columns:minmax(0,1fr) !important;
     }
 }
