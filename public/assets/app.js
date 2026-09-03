@@ -13768,13 +13768,22 @@ $(document).on('click','.website-source-delete',function(event){
             // Show the accepted queue record immediately; the background refresh then
             // reconciles it with the worker's latest status.
             vqShowAcceptedItem(resp.item,resp.counts);
-            setSalesSubmitMessage(resp.message||'Saved to Verification Queue.',resp.accepted===false?'warning':'ok');
+            if(resp.accepted===false){
+                setSalesSubmitMessage(resp.message||'Could not add this listing to the Verification Queue.','warning');
+                return;
+            }
+
+            // v0.2.105: Save & Wait is an AJAX hand-off. Once the queue accepts
+            // the listing, close the Submit Post popup immediately so Sales can
+            // continue from the Dashboard without dismissing a stale modal.
             $('#salesPreflightActions').addClass('hidden');
             setInspectionStep('fetch','skipped','Background');
             setInspectionStep('date','skipped','Background');
             setInspectionStep('final','skipped','Background');
-            $('#postUrl').val('').prop('readonly',false);
+            $('#postUrl').val('').prop('readonly',false).removeClass('field-error');
             updateDetectedPlatform();
+            setSalesSubmitMessage('',null);
+            closeSalesSubmitModal();
         }).always(function(){updateDetectedPlatform();$btn.text(salesTr('saveAndWait'));});
     });
 

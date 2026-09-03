@@ -16509,3 +16509,28 @@ button.website-history-control{
 @media(max-width:520px){
     .sales-vq-detail-modal .sales-post-detail-facts{grid-template-columns:1fr;}
 }
+
+/* v0.2.105 — visual-only control sizing + Save & Wait modal hand-off support.
+ * Keep the approved Dashboard layout unchanged. Only normalize the controls
+ * that share the same row so paired buttons have identical heights. */
+.sales-verification-queue-head-actions > .btn.compact,
+.sales-verification-queue-head-actions > .sales-verification-queue-collapse{
+    box-sizing:border-box;
+    height:30px;
+    min-height:30px;
+}
+.sales-submit-cta-cluster > .sales-submit-cta{
+    box-sizing:border-box;
+    height:38px;
+    min-height:38px;
+    padding-top:0;
+    padding-bottom:0;
+    align-items:center;
+    justify-content:center;
+}
+@media(pointer:coarse){
+    .sales-submit-cta-cluster > .sales-submit-cta{
+        height:44px;
+        min-height:44px;
+    }
+}
