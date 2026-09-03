@@ -15368,3 +15368,30 @@ body.provider-sort-active *{
         width:100% !important;
     }
 }
+
+/* v0.2.79 — Website Scan History is a live control surface. */
+.website-scan-history-table .website-history-main-row{cursor:pointer;transition:background-color .12s ease}
+.website-scan-history-table .website-history-main-row:focus{outline:2px solid #84adff;outline-offset:-2px}
+.website-scan-history-table .website-history-main-row.is-expanded{background:#f8fbff}
+.website-scan-history-table [data-history-status-cell]{width:46px;text-align:center;vertical-align:middle}
+.website-history-control{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;min-width:26px;padding:0;border:1px solid #cfd8e3;border-radius:4px;background:#fff;color:#344054;font:700 12px/1 Arial,sans-serif;box-sizing:border-box}
+button.website-history-control{cursor:pointer}
+button.website-history-control:hover:not(:disabled){background:#f2f6fb;border-color:#98a9bd}
+.website-history-control.is-running{border-color:#9ec5fe;background:#eff6ff;color:#175cd3}
+.website-history-control.is-paused{border-color:#a6d8b6;background:#ecfdf3;color:#067647}
+.website-history-control.is-stopped{border-color:#f6b5b5;background:#fff1f1;color:#d92d20;font-size:13px}
+.website-history-control.is-completed{border-color:#a6d8b6;background:#ecfdf3;color:#067647}
+.website-history-control.is-failed{border-color:#f6b5b5;background:#fff1f1;color:#b42318}
+.website-history-control.is-static{cursor:default}
+.website-history-control.is-busy{opacity:.55}
+.website-history-control.is-history-archived{opacity:.4;cursor:not-allowed}
+.website-history-expand-cell{width:34px;text-align:center!important;vertical-align:middle!important}
+.website-history-row-chevron{display:inline-block;width:7px;height:7px;border-right:1.5px solid #667085;border-bottom:1.5px solid #667085;transform:rotate(45deg);transition:transform .12s ease;margin-top:-3px}
+.website-history-main-row.is-expanded .website-history-row-chevron{transform:rotate(225deg);margin-top:3px}
+.website-history-detail-row>td{padding:0!important;background:#fbfcfe!important;white-space:normal!important}
+.website-history-detail-panel{display:grid;gap:5px;padding:10px 12px 12px;border-top:1px solid #e4e7ec;color:#475467;font-size:10.5px;line-height:1.45}
+.website-history-detail-panel>strong{color:#101828;font-size:11px}
+.website-history-detail-panel>a{color:#175cd3;overflow-wrap:anywhere}
+.website-history-detail-panel>small{color:#667085;font-size:9px}
+.website-history-empty-row td{padding:12px!important;color:#667085;text-align:center!important;background:#fff}
+@media(max-width:720px){.website-history-control{width:30px;height:30px;min-width:30px}.website-history-detail-panel{padding:9px 10px 11px}}

@@ -14,11 +14,15 @@ use App\Core\Csrf;
 use App\Models\FetchJob;
 use App\Models\ProviderProfile;
 use App\Models\Setting;
+use App\Models\Location;
 use App\Services\MarketplaceProviderDraft;
 use App\Services\MarketplaceProviderFactory;
 use App\Services\PlatformUrl;
 use App\Services\ProviderValidationException;
 use App\Services\WebsiteCatalog;
+use App\Services\WebsiteScanJob;
+use App\Services\WebsiteActivityHistory;
+use App\Services\InspectionProcessLock;
 
 /**
  * EN: HTTP controller for admin settings requests, responses, and server-side authorization.
@@ -39,11 +43,30 @@ class AdminSettingsController extends Controller
         $admin = Auth::requireRole('admin');
 
         $providers = ProviderProfile::allAdmin();
-        $jobs = FetchJob::recent(20);
+        $locations = Location::allWithSalesCounts();
+        $unassignedSalesCount = Location::unassignedSalesCount();
+        $locationNotice = trim((string)($_GET['location_notice'] ?? ''));
+        $jobPageData = FetchJob::recentPage(1, 8, '24h');
+        $jobs = $jobPageData['jobs'];
         $registryReady = ProviderProfile::registryEnabled();
         $websiteStats = \App\Services\DuplicateIndex::websiteStats();
         $companyName = trim((string)Setting::get('company_name', 'CoolerDepot')) ?: 'CoolerDepot';
-        $websiteUrl = trim((string)Setting::get('company_website_url', ''));
+        $authFailureRedirectUrl = trim((string)Setting::get('auth_failure_redirect_url', ''));
+        $websiteSources = WebsiteCatalog::sources();
+        $websiteUrl = (string)($websiteSources[0]['url'] ?? trim((string)Setting::get('company_website_url', '')));
+        $websiteSourceStats = [];
+        try { $websiteSourceStats = WebsiteCatalog::sourceStats(); } catch (\Throwable $e) {
+            \App\Core\Logger::exception($e, 'website-catalog', ['event' => 'Website source stats could not be loaded'], 'warning');
+        }
+        $websiteProductScanHistory=[];$websiteCsvHistory=[];$websiteAdvancedHistory=[];$websiteRunningScanHosts=[];
+        try {
+            $websiteProductScanHistory=WebsiteActivityHistory::allForActions(['product_scan']);
+            $websiteCsvHistory=WebsiteActivityHistory::recent(['csv_import'],80);
+            $websiteAdvancedHistory=WebsiteActivityHistory::recent(['advanced_import'],80);
+            $websiteRunningScanHosts=WebsiteScanJob::runningHosts();
+        } catch (\Throwable $e) {
+            \App\Core\Logger::exception($e,'website-catalog',['event'=>'Website activity history/status could not be loaded'],'warning');
+        }
         $websiteQuery = trim((string)($_GET['website_q'] ?? ''));
         $websiteReferences = [];
         $websiteStats['library_ready'] = false;
@@ -61,6 +84,20 @@ class AdminSettingsController extends Controller
                 $websiteReferences = [];
             }
         }
+        $inspectionLocks = [];
+        $inspectionLockError = null;
+        try {
+            $inspectionLocks = InspectionProcessLock::activeLocks();
+        } catch (\Throwable $e) {
+            $inspectionLockError = $e->getMessage();
+            \App\Core\Logger::exception(
+                $e,
+                'admin-settings',
+                ['event' => 'Inspection lock list could not be loaded'],
+                'warning'
+            );
+        }
+
         $providerNames = [];
 
         foreach ($providers as $provider) {
@@ -71,15 +108,197 @@ class AdminSettingsController extends Controller
         $this->render('admin/settings', compact(
             'admin',
             'providers',
+            'locations',
+            'unassignedSalesCount',
+            'locationNotice',
             'jobs',
+            'jobPageData',
             'registryReady',
             'providerNames',
             'websiteStats',
             'companyName',
+            'authFailureRedirectUrl',
             'websiteUrl',
+            'websiteSources',
+            'websiteSourceStats',
+            'websiteProductScanHistory',
+            'websiteCsvHistory',
+            'websiteAdvancedHistory',
+            'websiteRunningScanHosts',
             'websiteQuery',
-            'websiteReferences'
+            'websiteReferences',
+            'inspectionLocks',
+            'inspectionLockError'
         ));
+    }
+
+    /**
+     * EN: Add an Admin-managed Sales location.
+     * 中文：新增由 Admin 管理的 Sales Location。
+     *
+     * @return void No value is returned. / 无返回值。
+     */
+    public function addLocation(): void
+    {
+        Auth::requireRole('admin');
+        Csrf::verify($_POST['_csrf'] ?? null);
+        $ajax=(string)($_POST['ajax'] ?? '')==='1';
+
+        try {
+            $location=Location::create((string)($_POST['location_name'] ?? ''));
+            if($ajax){
+                $this->json([
+                    'ok'=>true,
+                    'location'=>$location,
+                    'locations_count'=>count(Location::allWithSalesCounts()),
+                    'unassigned_sales_count'=>Location::unassignedSalesCount(),
+                    'message'=>'Location added.'
+                ]);
+                return;
+            }
+            $this->redirect('/admin/settings?location_notice=added#sales-locations');
+        } catch (\InvalidArgumentException $e) {
+            $notice = str_contains(strtolower($e->getMessage()), 'exists')
+                ? 'duplicate'
+                : 'invalid';
+            if($ajax){
+                $this->json([
+                    'ok'=>false,
+                    'code'=>$notice,
+                    'message'=>$e->getMessage()
+                ],422);
+                return;
+            }
+            $this->redirect('/admin/settings?location_notice=' . $notice . '#sales-locations');
+        } catch (\Throwable $e) {
+            \App\Core\Logger::exception(
+                $e,
+                'admin-settings',
+                ['event'=>'Sales location could not be added'],
+                'warning'
+            );
+            if($ajax){
+                $this->json(['ok'=>false,'code'=>'error','message'=>'Location could not be saved.'],500);
+                return;
+            }
+            $this->redirect('/admin/settings?location_notice=error#sales-locations');
+        }
+    }
+
+    /**
+     * EN: Rename an existing Admin-managed Sales location without changing Sales assignments.
+     * 中文：修改现有 Sales Location 名称，不改变任何 Sales 的 Location 分配。
+     *
+     * @return void No value is returned. / 无返回值。
+     */
+    public function updateLocation(): void
+    {
+        Auth::requireRole('admin');
+        Csrf::verify($_POST['_csrf'] ?? null);
+        $ajax=(string)($_POST['ajax'] ?? '')==='1';
+        $locationId=(int)($_POST['location_id'] ?? 0);
+
+        try {
+            $location=Location::rename(
+                $locationId,
+                (string)($_POST['location_name'] ?? '')
+            );
+            if(!$location){
+                throw new \RuntimeException('Location was not found.');
+            }
+            if($ajax){
+                $this->json([
+                    'ok'=>true,
+                    'location'=>$location,
+                    'locations_count'=>count(Location::allWithSalesCounts()),
+                    'unassigned_sales_count'=>Location::unassignedSalesCount(),
+                    'message'=>'Location updated.'
+                ]);
+                return;
+            }
+            $this->redirect('/admin/settings?location_notice=updated#sales-locations');
+        } catch (\InvalidArgumentException $e) {
+            $notice = str_contains(strtolower($e->getMessage()), 'exists')
+                ? 'duplicate'
+                : 'invalid';
+            if($ajax){
+                $this->json(['ok'=>false,'code'=>$notice,'message'=>$e->getMessage()],422);
+                return;
+            }
+            $this->redirect('/admin/settings?location_notice=' . $notice . '#sales-locations');
+        } catch (\RuntimeException $e) {
+            if($ajax){
+                $this->json(['ok'=>false,'code'=>'missing','message'=>$e->getMessage()],404);
+                return;
+            }
+            $this->redirect('/admin/settings?location_notice=missing#sales-locations');
+        } catch (\Throwable $e) {
+            \App\Core\Logger::exception(
+                $e,
+                'admin-settings',
+                ['event'=>'Sales location could not be updated','location_id'=>$locationId],
+                'warning'
+            );
+            if($ajax){
+                $this->json(['ok'=>false,'code'=>'error','message'=>'Location could not be saved.'],500);
+                return;
+            }
+            $this->redirect('/admin/settings?location_notice=error#sales-locations');
+        }
+    }
+
+    /**
+     * EN: Delete an Admin-managed Sales location and move assigned Sales to Unassigned.
+     * 中文：删除 Admin Location，并把已分配 Sales 自动移到 Unassigned。
+     *
+     * @return void No value is returned. / 无返回值。
+     */
+    public function deleteLocation(): void
+    {
+        Auth::requireRole('admin');
+        Csrf::verify($_POST['_csrf'] ?? null);
+        $locationId=(int)($_POST['location_id'] ?? 0);
+        $ajax=(string)($_POST['ajax'] ?? '')==='1';
+
+        try {
+            if ($locationId < 1 || !Location::deleteWithUnassign($locationId)) {
+                if($ajax){
+                    $this->json(['ok'=>false,'code'=>'missing','message'=>'Location was not found.'],404);
+                    return;
+                }
+                $this->redirect('/admin/settings?location_notice=missing#sales-locations');
+                return;
+            }
+            if($ajax){
+                $this->json([
+                    'ok'=>true,
+                    'location_id'=>$locationId,
+                    'locations_count'=>count(Location::allWithSalesCounts()),
+                    'unassigned_sales_count'=>Location::unassignedSalesCount(),
+                    'message'=>'Location deleted.'
+                ]);
+                return;
+            }
+            $this->redirect('/admin/settings?location_notice=deleted#sales-locations');
+        } catch (\RuntimeException $e) {
+            if($ajax){
+                $this->json(['ok'=>false,'code'=>'error','message'=>$e->getMessage()],500);
+                return;
+            }
+            $this->redirect('/admin/settings?location_notice=error#sales-locations');
+        } catch (\Throwable $e) {
+            \App\Core\Logger::exception(
+                $e,
+                'admin-settings',
+                ['event'=>'Sales location could not be deleted','location_id'=>$locationId],
+                'warning'
+            );
+            if($ajax){
+                $this->json(['ok'=>false,'code'=>'error','message'=>'Location could not be deleted.'],500);
+                return;
+            }
+            $this->redirect('/admin/settings?location_notice=error#sales-locations');
+        }
     }
 
     /**
@@ -106,7 +325,11 @@ class AdminSettingsController extends Controller
                 (string)$provider['name'];
         }
 
-        $jobs = FetchJob::recent(20);
+        $page = max(1, (int)($_GET['page'] ?? 1));
+        $perPage = max(1, min(25, (int)($_GET['per_page'] ?? 8)));
+        $timeFilter = (string)($_GET['time'] ?? '24h');
+        $jobPageData = FetchJob::recentPage($page, $perPage, $timeFilter);
+        $jobs = $jobPageData['jobs'];
         $out = [];
 
         foreach ($jobs as $job) {
@@ -135,6 +358,13 @@ class AdminSettingsController extends Controller
         $this->json([
             'ok' => true,
             'jobs' => $out,
+            'pagination' => [
+                'total' => (int)$jobPageData['total'],
+                'page' => (int)$jobPageData['page'],
+                'pages' => (int)$jobPageData['pages'],
+                'per_page' => (int)$jobPageData['per_page'],
+                'time_filter' => (string)$jobPageData['time_filter'],
+            ],
             'server_time' => date('Y-m-d H:i:s'),
         ]);
     }
@@ -149,26 +379,43 @@ class AdminSettingsController extends Controller
      */
     public function importWebsiteCatalog(): void
     {
-        Auth::requireRole('admin');
+        $admin=Auth::requireRole('admin');
         Csrf::verify($_POST['_csrf'] ?? null);
+        $historyId=0;$historyHost='';$historyWebsite='';
         try {
-            $websiteUrl=trim((string)Setting::get('company_website_url',''));
-            if($websiteUrl===''){
-                throw new \DomainException('Save the company website URL in Settings first.');
-            }
             $file=$_FILES['catalog']??[];
             if(($file['error']??UPLOAD_ERR_NO_FILE)!==UPLOAD_ERR_OK||!is_uploaded_file($file['tmp_name']??'')){
                 throw new \DomainException('Choose a CSV file smaller than 5 MB.');
             }
+            // Step 2 does not ask the admin to choose a website. The CSV URL
+            // column identifies the website and registers it in Step 1 when needed.
+            $detectedSource=WebsiteCatalog::inferCsvSource($file['tmp_name'],(int)$admin['id']);
+            $websiteUrl=(string)$detectedSource['url'];
+            $historyWebsite=$websiteUrl;
+            $historyHost=(string)$detectedSource['host'];
+            if($historyHost!==''){
+                $historyId=WebsiteActivityHistory::begin(
+                    $historyHost,$historyWebsite,'csv_import',(int)$admin['id'],'',
+                    'CSV import: '.basename((string)($file['name']??'catalog.csv'))
+                );
+            }
             $result=WebsiteCatalog::importCsv($file['tmp_name'],$websiteUrl);
+            if($historyId>0){
+                WebsiteActivityHistory::update(
+                    $historyId,'completed',(int)$result['processed'],(int)$result['saved'],count((array)$result['failed']),
+                    'CSV import completed.',true
+                );
+            }
             $_SESSION['flash_success']=(int)$result['saved'].' website references imported from '.(int)$result['processed'].' CSV rows.';
             if(!empty($result['failed'])){
-                $_SESSION['flash_success'].=' Some rows failed; search the website library to review the imported records.';
+                $_SESSION['flash_success'].=' Some rows failed; open URL CSV history for details.';
             }
         } catch (\DomainException $e) {
+            if($historyId>0){WebsiteActivityHistory::fail($historyId,$e->getMessage());}
             \App\Core\Logger::exception($e, 'website-catalog', ['event' => 'Website catalog import rejected'], 'warning');
             $_SESSION['flash_error']=$e->getMessage();
         } catch (\Throwable $e) {
+            if($historyId>0){try{WebsiteActivityHistory::fail($historyId,$e->getMessage());}catch(\Throwable $historyError){}}
             \App\Core\Logger::exception($e, 'website-catalog', ['event' => 'Website catalog import failed'], 'error');
             $_SESSION['flash_error']='Website catalog could not be imported. Check the migration and CSV, then retry.';
         }
@@ -481,6 +728,56 @@ class AdminSettingsController extends Controller
         }
     }
 
+    /**
+     * EN: Force-clear one Sales Marketplace verification gate from Admin Settings.
+     * 中文：从 Admin Settings 手动清除指定 Sales 的 Marketplace 验证锁。
+     *
+     * @return void No value is returned. / 无返回值。
+     */
+    public function unlockInspection(): void
+    {
+        $admin = Auth::requireRole('admin');
+        Csrf::verify($_POST['_csrf'] ?? null);
+        $salesUserId = (int)($_POST['sales_user_id'] ?? 0);
+
+        if ($salesUserId <= 0) {
+            $_SESSION['flash_error'] = 'Invalid Sales verification lock.';
+            $this->redirect('/admin/settings#verification-locks');
+        }
+
+        try {
+            $released = InspectionProcessLock::forceRelease($salesUserId);
+            \App\Core\Logger::log(
+                $released ? 'warning' : 'info',
+                $released ? 'Admin manually unlocked Sales Marketplace verification' : 'Admin unlock requested but no Sales verification lock existed',
+                [
+                    'event' => 'admin_inspection_force_unlock',
+                    'admin_user_id' => (int)$admin['id'],
+                    'sales_user_id' => $salesUserId,
+                    'released' => $released,
+                ],
+                'admin-settings'
+            );
+            $_SESSION['flash_success'] = $released
+                ? 'Sales verification lock cleared.'
+                : 'No active verification lock was found for that Sales user.';
+        } catch (\Throwable $e) {
+            \App\Core\Logger::exception(
+                $e,
+                'admin-settings',
+                [
+                    'event' => 'Admin inspection force unlock failed',
+                    'admin_user_id' => (int)$admin['id'],
+                    'sales_user_id' => $salesUserId,
+                ],
+                'error'
+            );
+            $_SESSION['flash_error'] = 'Verification lock could not be cleared: ' . $e->getMessage();
+        }
+
+        $this->redirect('/admin/settings#verification-locks');
+    }
+
     // Old v0.1.11 endpoints stay harmless for bookmarks/forms during rollout.
     /**
      * EN: Handle the save HTTP action for admin settings controller and return the appropriate response.
@@ -520,13 +817,60 @@ class AdminSettingsController extends Controller
     {
         $admin=Auth::requireRole('admin');
         Csrf::verify($_POST['_csrf']??null);
+        $scope=trim((string)($_POST['setting_scope']??'both'));
+
+        if($scope==='company_name'){
+            $name=trim(strip_tags((string)($_POST['company_name']??'')));
+            if($name===''||mb_strlen($name)>80||str_contains($name,'<')||str_contains($name,'>')){
+                $_SESSION['flash_error']='Company name must be plain text, 1–80 characters.';
+                $this->redirect('/admin/settings#application-settings');
+            }
+            Setting::set('company_name',$name,(int)$admin['id']);
+            $_SESSION['flash_success']='Company name updated.';
+            $this->redirect('/admin/settings#application-settings');
+        }
+
+        if($scope==='portal_url'){
+            $redirectUrl=trim((string)($_POST['auth_failure_redirect_url']??''));
+            if($redirectUrl!=='' && (
+                strlen($redirectUrl)>2048
+                || !filter_var($redirectUrl,FILTER_VALIDATE_URL)
+                || !in_array(strtolower((string)parse_url($redirectUrl,PHP_URL_SCHEME)),['http','https'],true)
+            )){
+                $_SESSION['flash_error']='Portal fallback URL must be a valid http:// or https:// address.';
+                $this->redirect('/admin/settings#application-settings');
+            }
+            if($redirectUrl===''){
+                Setting::delete('auth_failure_redirect_url');
+            }else{
+                Setting::set('auth_failure_redirect_url',$redirectUrl,(int)$admin['id']);
+            }
+            $_SESSION['flash_success']='Portal fallback URL updated.';
+            $this->redirect('/admin/settings#application-settings');
+        }
+
+        // Backward compatibility for an older combined form still open in a browser tab.
         $name=trim(strip_tags((string)($_POST['company_name']??'')));
+        $redirectUrl=trim((string)($_POST['auth_failure_redirect_url']??''));
         if($name===''||mb_strlen($name)>80||str_contains($name,'<')||str_contains($name,'>')){
             $_SESSION['flash_error']='Company name must be plain text, 1–80 characters.';
             $this->redirect('/admin/settings#application-settings');
         }
+        if($redirectUrl!=='' && (
+            strlen($redirectUrl)>2048
+            || !filter_var($redirectUrl,FILTER_VALIDATE_URL)
+            || !in_array(strtolower((string)parse_url($redirectUrl,PHP_URL_SCHEME)),['http','https'],true)
+        )){
+            $_SESSION['flash_error']='Portal fallback URL must be a valid http:// or https:// address.';
+            $this->redirect('/admin/settings#application-settings');
+        }
         Setting::set('company_name',$name,(int)$admin['id']);
-        $_SESSION['flash_success']='Company name updated.';
+        if($redirectUrl===''){
+            Setting::delete('auth_failure_redirect_url');
+        }else{
+            Setting::set('auth_failure_redirect_url',$redirectUrl,(int)$admin['id']);
+        }
+        $_SESSION['flash_success']='Application settings updated.';
         $this->redirect('/admin/settings#application-settings');
     }
 
@@ -541,14 +885,39 @@ class AdminSettingsController extends Controller
         $admin=Auth::requireRole('admin');
         Csrf::verify($_POST['_csrf']??null);
         try{
-            $url=WebsiteCatalog::normalizeUrl((string)($_POST['website_url']??''));
-            Setting::set('company_website_url',$url,(int)$admin['id']);
-            $_SESSION['flash_success']='Company website URL saved.';
+            $source=WebsiteCatalog::addSource((string)($_POST['website_url']??''),(int)$admin['id']);
+            $_SESSION['flash_success']='Website source added: '.$source['host'].'.';
         }catch(\Throwable $e){
             \App\Core\Logger::exception($e, 'website-catalog', ['event' => 'Website source save failed'], 'warning');
             $_SESSION['flash_error']=$e->getMessage();
         }
         $this->redirect('/admin/settings#website-comparison');
+    }
+
+    /**
+     * Show one configured website and only the URLs/products indexed for that
+     * source. Admin can search, add and delete records without mixing sites.
+     * 显示单个网站及其扫描得到的 URL / 产品记录；Admin 可在该网站范围内搜索、添加和删除。
+     */
+    public function websiteSourceDetail(): void
+    {
+        $admin=Auth::requireRole('admin');
+        $host=strtolower(trim((string)($_GET['host']??'')));
+        try{
+            $source=WebsiteCatalog::source($host);
+            if(!$source){throw new \DomainException('Website source was not found.');}
+            $query=trim((string)($_GET['q']??''));
+            $references=WebsiteCatalog::search($query,200,$host);
+            $allStats=WebsiteCatalog::sourceStats();
+            $sourceStats=$allStats[$host]??['total'=>0,'indexed'=>0,'last_imported'=>null];
+            $this->render('admin/website-source',compact(
+                'admin','source','sourceStats','query','references'
+            ));
+        }catch(\Throwable $e){
+            \App\Core\Logger::exception($e,'website-catalog',['event'=>'Website source detail could not be loaded','host'=>$host],'warning');
+            $_SESSION['flash_error']=$e->getMessage();
+            $this->redirect('/admin/settings#website-comparison');
+        }
     }
 
     /**
@@ -561,18 +930,35 @@ class AdminSettingsController extends Controller
      */
     public function scanWebsite(): void
     {
-        Auth::requireRole('admin');
+        $admin=Auth::requireRole('admin');
         Csrf::verify($_POST['_csrf']??null);
+        $historyId=0;
         try{
-            $website=trim((string)Setting::get('company_website_url',''));
-            if($website===''){throw new \DomainException('Save the company website URL first.');}
             $source=trim((string)($_POST['source_url']??''));
+            if($source===''){throw new \DomainException('Enter a page or sitemap URL.');}
+            // Step 3 derives the website directly from the URL. If this host is
+            // new, it is added to the Step 1 website list automatically.
+            $detectedSource=WebsiteCatalog::ensureSourceForUrl($source,(int)$admin['id']);
+            $website=(string)$detectedSource['url'];
+            $host=(string)$detectedSource['host'];
+            if($host!==''){
+                $historyId=WebsiteActivityHistory::begin(
+                    $host,$website,'advanced_import',(int)$admin['id'],$source,
+                    $source!==''?'Page / sitemap import started.':'Website import started.'
+                );
+            }
 
             // Website scans can take several seconds. Release the session lock so
             // other admin checks remain independent and can finish first.
             if(session_status()===PHP_SESSION_ACTIVE){session_write_close();}
 
             $result=WebsiteCatalog::scan($website,$source);
+            if($historyId>0){
+                WebsiteActivityHistory::update(
+                    $historyId,'completed',(int)$result['checked'],(int)$result['saved'],(int)$result['failed'],
+                    !empty($result['limited'])?'Completed; limited to the first 75 URLs for this run.':'Scan & import completed.',true
+                );
+            }
             $message=(int)$result['saved'].' URLs checked and saved';
             if((int)$result['failed']>0){$message.=', '.(int)$result['failed'].' had problems';}
             if(!empty($result['limited'])){$message.=' (first 75 URLs this run)';}
@@ -580,11 +966,143 @@ class AdminSettingsController extends Controller
             if(session_status()!==PHP_SESSION_ACTIVE){@session_start();}
             $_SESSION['flash_success']=$message.'.';
         }catch(\Throwable $e){
+            if($historyId>0){try{WebsiteActivityHistory::fail($historyId,$e->getMessage());}catch(\Throwable $historyError){}}
             if(session_status()!==PHP_SESSION_ACTIVE){@session_start();}
             \App\Core\Logger::exception($e, 'website-catalog', ['event' => 'Website scan failed'], 'warning');
             $_SESSION['flash_error']=$e->getMessage();
         }
         $this->redirect('/admin/settings#website-comparison');
+    }
+
+    /**
+     * Remove one configured website source and all URLs/products indexed from
+     * that source host. / 删除网站来源，并删除该网站关联的全部扫描 URL / 产品记录。
+     */
+    public function removeWebsiteSource(): void
+    {
+        $admin=Auth::requireRole('admin');Csrf::verify($_POST['_csrf']??null);
+        try{
+            $host=(string)($_POST['host']??'');
+            $runningHosts=WebsiteScanJob::runningHosts();
+            if($runningHosts){
+                throw new \DomainException('Stop the active website scan before deleting any website. Currently scanning: '.$runningHosts[0].'.');
+            }
+            $deleted=WebsiteCatalog::removeSource($host,(int)$admin['id']);
+            try{WebsiteScanJob::remove($host);}catch(\Throwable $scanCleanupError){\App\Core\Logger::exception($scanCleanupError,'website-catalog',['event'=>'Website scan state cleanup failed','host'=>$host],'warning');}
+            $_SESSION['flash_success']='Website source deleted with '.$deleted.' related URL'.($deleted===1?'':'s').'.';
+        }catch(\Throwable $e){
+            \App\Core\Logger::exception($e,'website-catalog',['event'=>'Website source remove failed'],'warning');
+            $_SESSION['flash_error']=$e->getMessage();
+        }
+        $this->redirect('/admin/settings#website-comparison');
+    }
+
+    /**
+     * Run one AJAX product-crawler batch. The browser repeatedly calls this
+     * endpoint so a large website does not require one long PHP request.
+     * 运行一次 AJAX 产品扫描批次；浏览器重复调用，避免长时间 PHP 请求。
+     */
+    public function scanWebsiteProductsBatch(): void
+    {
+        $admin=Auth::requireRole('admin');Csrf::verify($_POST['_csrf']??null);
+        try{
+            $website=(string)($_POST['website_url']??'');
+            $urls=json_decode((string)($_POST['urls']??'[]'),true);
+            if(!is_array($urls)){throw new \DomainException('Invalid product scan batch.');}
+
+            // EN: Scan Products is also allowed to be the first action. Ensure
+            // the typed website is saved before scanning so Admin does not have
+            // to click Save Website and then click Scan Products separately.
+            // 中文：允许 Scan Products 作为第一步；扫描前自动保存输入的网站，
+            // Admin 不需要先 Save Website 再另外点一次 Scan Products。
+            $source=WebsiteCatalog::ensureSource($website,(int)$admin['id']);
+            $website=(string)$source['url'];
+
+            if(session_status()===PHP_SESSION_ACTIVE){session_write_close();}
+            $result=WebsiteCatalog::scanProductBatch($website,$urls);
+            header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+            $this->json(['ok'=>true,'website_url'=>$website,'source_host'=>$source['host']]+$result);
+        }catch(\Throwable $e){
+            \App\Core\Logger::exception($e,'website-catalog',['event'=>'Website product scan batch failed'],'warning');
+            $this->json(['ok'=>false,'message'=>$e->getMessage()],422);
+        }
+    }
+
+    /** Start or resume a persistent website product scan. / 启动或恢复持久化网站产品扫描。 */
+    public function startWebsiteProductScan(): void
+    {
+        $admin=Auth::requireRole('admin');Csrf::verify($_POST['_csrf']??null);
+        try{
+            $state=WebsiteScanJob::start((string)($_POST['website_url']??''),(int)$admin['id']);
+            $stats=WebsiteCatalog::sourceStats();$state['library_stats']=$stats[(string)($state['source_host']??'')]??[];
+            $this->json(['ok'=>true,'state'=>$state]);
+        }catch(\Throwable $e){
+            \App\Core\Logger::exception($e,'website-catalog',['event'=>'Website product scan start failed'],'warning');
+            $this->json(['ok'=>false,'message'=>$e->getMessage()],422);
+        }
+    }
+
+    /** Process one short persisted website scan step. / 处理一个短批次的持久化网站扫描。 */
+    public function stepWebsiteProductScan(): void
+    {
+        Auth::requireRole('admin');Csrf::verify($_POST['_csrf']??null);
+        if(session_status()===PHP_SESSION_ACTIVE){session_write_close();}
+        try{
+            $state=WebsiteScanJob::step((string)($_POST['host']??''));
+            $stats=WebsiteCatalog::sourceStats();$state['library_stats']=$stats[(string)($state['source_host']??'')]??[];
+            $this->json(['ok'=>true,'state'=>$state]);
+        }catch(\Throwable $e){
+            \App\Core\Logger::exception($e,'website-catalog',['event'=>'Website product scan step failed'],'warning');
+            $this->json(['ok'=>false,'message'=>$e->getMessage()],422);
+        }
+    }
+
+    /** Return persisted website scan state after refresh. / 页面刷新后读取持久化扫描状态。 */
+    public function websiteProductScanStatus(): void
+    {
+        Auth::requireRole('admin');
+        if(session_status()===PHP_SESSION_ACTIVE){session_write_close();}
+        try{
+            $state=WebsiteScanJob::status((string)($_GET['host']??''));
+            if($state){$stats=WebsiteCatalog::sourceStats();$state['library_stats']=$stats[(string)($state['source_host']??'')]??[];}
+            $this->json(['ok'=>true,'state'=>$state]);
+        }catch(\Throwable $e){
+            \App\Core\Logger::exception($e,'website-catalog',['event'=>'Website product scan status failed'],'warning');
+            $this->json(['ok'=>false,'message'=>$e->getMessage()],422);
+        }
+    }
+
+    /** Stop one persistent website scan without deleting scanned products. / 停止扫描但保留已扫描产品。 */
+    public function stopWebsiteProductScan(): void
+    {
+        Auth::requireRole('admin');Csrf::verify($_POST['_csrf']??null);
+        try{
+            $mode=strtolower(trim((string)($_POST['mode']??'pause')));
+            $state=$mode==='stop'
+                ?WebsiteScanJob::terminate((string)($_POST['host']??''))
+                :WebsiteScanJob::pause((string)($_POST['host']??''));
+            if($state){$stats=WebsiteCatalog::sourceStats();$state['library_stats']=$stats[(string)($state['source_host']??'')]??[];}
+            $this->json(['ok'=>true,'state'=>$state]);
+        }catch(\Throwable $e){
+            \App\Core\Logger::exception($e,'website-catalog',['event'=>'Website product scan stop failed'],'warning');
+            $this->json(['ok'=>false,'message'=>$e->getMessage()],422);
+        }
+    }
+
+
+    /** Continue a stopped/interrupted persistent scan from the saved queue. */
+    public function resumeWebsiteProductScan(): void
+    {
+        Auth::requireRole('admin');Csrf::verify($_POST['_csrf']??null);
+        try{
+            $state=WebsiteScanJob::resume((string)($_POST['host']??''));
+            if(!$state){throw new \DomainException('Website scan job was not found.');}
+            $stats=WebsiteCatalog::sourceStats();$state['library_stats']=$stats[(string)($state['source_host']??'')]??[];
+            $this->json(['ok'=>true,'state'=>$state]);
+        }catch(\Throwable $e){
+            \App\Core\Logger::exception($e,'website-catalog',['event'=>'Website product scan resume failed'],'warning');
+            $this->json(['ok'=>false,'message'=>$e->getMessage()],422);
+        }
     }
 
     /**
@@ -600,19 +1118,32 @@ class AdminSettingsController extends Controller
         Auth::requireRole('admin');
         Csrf::verify($_POST['_csrf']??null);
         try{
-            $website=trim((string)Setting::get('company_website_url',''));
-            if($website===''){throw new \DomainException('Save the company website URL first.');}
-            WebsiteCatalog::addManual(
+            $website=trim((string)($_POST['website_url']??''));
+            if($website===''){$website=(string)(WebsiteCatalog::sources()[0]['url']??'');}
+            if($website===''){throw new \DomainException('Add a company website source first.');}
+            $referenceId=WebsiteCatalog::addManual(
                 $website,
                 (string)($_POST['page_url']??''),
                 (string)($_POST['title']??''),
                 (string)($_POST['description']??''),
                 (string)($_POST['image_url']??'')
             );
+            if((string)($_POST['ajax']??'')==='1'){
+                $this->json(['ok'=>true,'id'=>$referenceId,'message'=>'Website reference saved.']);
+                return;
+            }
             $_SESSION['flash_success']='Website reference saved.';
         }catch(\Throwable $e){
             \App\Core\Logger::exception($e, 'website-catalog', ['event' => 'Manual website reference save failed'], 'warning');
+            if((string)($_POST['ajax']??'')==='1'){
+                $this->json(['ok'=>false,'message'=>$e->getMessage()],422);
+                return;
+            }
             $_SESSION['flash_error']=$e->getMessage();
+        }
+        $returnHost=strtolower(trim((string)($_POST['return_host']??'')));
+        if($returnHost!==''&&WebsiteCatalog::source($returnHost)){
+            $this->redirect('/admin/website/source?host='.rawurlencode($returnHost));
         }
         $this->redirect('/admin/settings#website-comparison');
     }
@@ -628,8 +1159,12 @@ class AdminSettingsController extends Controller
         Auth::requireRole('admin');
         if(session_status()===PHP_SESSION_ACTIVE){session_write_close();}
         try{
-            $rows=WebsiteCatalog::search(trim((string)($_GET['q']??'')),100);
-            $this->json(['ok'=>true,'rows'=>$rows]);
+            $host=strtolower(trim((string)($_GET['host']??'')));
+            if($host!==''&&!WebsiteCatalog::source($host)){
+                throw new \DomainException('Website source was not found.');
+            }
+            $rows=WebsiteCatalog::search(trim((string)($_GET['q']??'')),200,$host);
+            $this->json(['ok'=>true,'host'=>$host,'rows'=>$rows]);
         }catch(\Throwable $e){
             \App\Core\Logger::exception($e, 'website-catalog', ['event' => 'Website reference search failed'], 'warning');
             $this->json(['ok'=>false,'message'=>$e->getMessage()],422);

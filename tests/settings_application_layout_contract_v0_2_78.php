@@ -12,7 +12,7 @@ $version=trim($read('VERSION'));
 $view=$read('app/Views/admin/settings.php');
 $css=$read('public/assets/app.css');
 
-$check($version==='0.2.78','version');
+$check(version_compare($version,'0.2.78','>='),'version >= 0.2.78');
 $check(str_contains($view,'class="application-setting-control-row"'),'settings markup uses control row');
 $check(substr_count($view,'class="btn primary application-setting-save"')>=2,'both settings use compact save button');
 $check(str_contains($css,'v0.2.78 — Application Settings compact control rows'),'v0.2.78 settings CSS present');
