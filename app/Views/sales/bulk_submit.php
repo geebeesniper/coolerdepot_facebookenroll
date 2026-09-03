@@ -19,16 +19,6 @@ use App\Core\Util;
     </a>
 </div>
 
-<section class="panel sales-bulk-submit sales-bulk-submit-page">
-    <input type="hidden" name="_csrf" id="salesBulkCsrf" value="<?= Util::e(Csrf::token()) ?>">
-    <label for="salesBulkUrls" data-sales-i18n="bulkUrlsLabel">One listing URL per line</label>
-    <textarea id="salesBulkUrls" rows="12" placeholder="https://www.facebook.com/marketplace/item/...&#10;https://offerup.com/item/detail/...&#10;https://craigslist.org/..."></textarea>
-    <div class="sales-bulk-submit-actions">
-        <button type="button" class="btn primary" id="bulkQueueButton">
-            <span data-sales-i18n="bulkSubmitPost">Bulk Submit Post</span>
-        </button>
-    </div>
-    <div class="sales-bulk-result hidden" id="salesBulkResult" aria-live="polite"></div>
-</section>
+<?php require __DIR__ . '/_bulk_submit_form.php'; ?>
 
 <?php require __DIR__ . '/_verification_queue.php'; ?>

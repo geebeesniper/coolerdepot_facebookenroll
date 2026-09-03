@@ -1,7 +1,7 @@
 <?php
 /**
- * V0.2.98 contract: the original Submit Post action must remain visible on the
- * Sales dashboard and Bulk Submit Post must be added beside it, not replace it.
+ * V0.2.98+ contract: original Submit Post must remain visible and functional;
+ * Bulk Submit Post is added as a peer without replacing or restyling Submit.
  */
 $root=dirname(__DIR__);
 $checks=[];
@@ -11,21 +11,12 @@ $css=(string)@file_get_contents($root.'/public/assets/app.css');
 $js=(string)@file_get_contents($root.'/public/assets/app.js');
 
 $checks['VERSION is >= 0.2.98']=version_compare($version,'0.2.98','>=');
-$checks['Dashboard still contains original Submit Post button']=
-    str_contains($dashboard,'data-open-sales-submit') &&
-    str_contains($dashboard,'data-sales-i18n="submitPost"');
-$checks['Dashboard contains Bulk Submit Post peer link']=
-    str_contains($dashboard,'data-sales-i18n="bulkSubmitPost"') &&
-    str_contains($dashboard,'/sales/bulk-submit');
-$checks['Both dashboard submit actions share one peer action group']=
-    str_contains($dashboard,'class="sales-submit-actions"') &&
-    substr_count($dashboard,'sales-submit-actions')===1;
-$checks['Peer action group keeps both controls side by side on desktop']=
-    str_contains($css,'.sales-submit-actions{') &&
-    str_contains($css,'min-width:324px') &&
-    str_contains($css,'.sales-submit-actions .sales-submit-cta');
-$checks['Original Submit Post click handler still exists']=
-    str_contains($js,"$(document).on('click','[data-open-sales-submit]'");
+$checks['Dashboard still contains original Submit Post button']=str_contains($dashboard,'class="btn primary sales-submit-cta"')&&str_contains($dashboard,'data-open-sales-submit')&&str_contains($dashboard,'data-sales-i18n="submitPost"');
+$checks['Dashboard contains Bulk Submit Post peer button']=str_contains($dashboard,'class="btn primary sales-submit-cta sales-bulk-submit-cta"')&&str_contains($dashboard,'data-open-sales-bulk-submit')&&str_contains($dashboard,'data-sales-i18n="bulkSubmitPost"');
+$checks['Both peer buttons are direct dashboard header controls']=!str_contains($dashboard,'class="sales-submit-actions"');
+$checks['Original Submit Post click handler still exists']=str_contains($js,"$(document).on('click','[data-open-sales-submit]'");
+$checks['Bulk Submit popup click handler exists']=str_contains($js,"$(document).on('click','[data-open-sales-bulk-submit]'");
+$checks['Desktop header reserves four peer control columns']=str_contains($css,'grid-template-columns:auto auto auto auto');
 
 $failed=[];
 foreach($checks as $name=>$ok){

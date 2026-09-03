@@ -1861,6 +1861,7 @@ function startSalesRangeVisualState(reason){
 
 
 const $salesSubmitModal=$('#salesSubmitModal');
+const $salesBulkSubmitModal=$('#salesBulkSubmitModal');
 const $salesPostDetailModal=$('#salesPostDetailModal');
 const $salesPostDetailImageButton=$('#salesPostDetailImageButton');
 const $salesImageLightbox=$('#salesImageLightbox');
@@ -3803,6 +3804,27 @@ function closeSalesSubmitModal(){
 }
 
 /**
+ * EN: Open Bulk Submit Post with the same modal shell and interaction pattern
+ * as the approved single Submit Post workflow.
+ * 中文：Bulk Submit Post 复用已经通过的 Submit Post 弹窗外壳与交互方式。
+ */
+function openSalesBulkSubmitModal(){
+    if(!$salesBulkSubmitModal.length){return false;}
+    $('body').addClass('sales-submit-modal-open');
+    showSalesOverlay($salesBulkSubmitModal,function(){
+        $('#salesBulkUrls').trigger('focus');
+    });
+    return true;
+}
+
+function closeSalesBulkSubmitModal(){
+    if(!$salesBulkSubmitModal.length){return;}
+    hideSalesOverlay($salesBulkSubmitModal,function(){
+        $('body').removeClass('sales-submit-modal-open');
+    });
+}
+
+/**
  * EN: Open or show the open sales post detail behavior used by the application UI.
  * 中文：打开或显示application UI 使用的“open sales post detail”行为。
  *
@@ -4343,12 +4365,26 @@ $(document).on('click','[data-open-sales-submit]',function(event){
     openSalesSubmitModal();
 });
 
+$(document).on('click','[data-open-sales-bulk-submit]',function(event){
+    if(!$salesBulkSubmitModal.length){return;}
+    event.preventDefault();
+    openSalesBulkSubmitModal();
+});
+
 $('#salesSubmitModalClose').on('click',function(){
     closeSalesSubmitModal();
 });
 
 $salesSubmitModal.on('click',function(event){
     if(event.target===this){closeSalesSubmitModal();}
+});
+
+$('#salesBulkSubmitModalClose').on('click',function(){
+    closeSalesBulkSubmitModal();
+});
+
+$salesBulkSubmitModal.on('click',function(event){
+    if(event.target===this){closeSalesBulkSubmitModal();}
 });
 
 $('#salesPostDeleteRequestOpen').on('click',function(){

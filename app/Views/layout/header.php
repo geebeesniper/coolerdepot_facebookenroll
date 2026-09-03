@@ -280,6 +280,7 @@ if ($u && ($u['role'] ?? '') === 'admin') {
                     href="<?= Util::e($base) ?>/sales/bulk-submit"
                     <?= $navActive['bulk_submit'] ? 'aria-current="page"' : '' ?>
                     data-nav-i18n="bulkSubmit"
+                    data-open-sales-bulk-submit
                 >
                     Bulk Submit
                 </a>

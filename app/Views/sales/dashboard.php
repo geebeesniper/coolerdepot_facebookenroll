@@ -251,24 +251,24 @@ $chartTargetTop=
             ></span>
         </form>
 
-        <div class="sales-submit-actions" role="group" aria-label="Post submission actions">
-            <button
-                class="btn primary sales-submit-cta"
-                type="button"
-                data-open-sales-submit
-            >
-                <span class="sales-submit-plus">+</span>
-                <span data-sales-i18n="submitPost">Submit Post</span>
-            </button>
+        <button
+            class="btn primary sales-submit-cta sales-bulk-submit-cta"
+            type="button"
+            data-open-sales-bulk-submit
+            data-bulk-fallback-url="<?= Util::e($config['app']['base_path']) ?>/sales/bulk-submit"
+        >
+            <span class="sales-submit-plus">+</span>
+            <span data-sales-i18n="bulkSubmitPost">Bulk Submit Post</span>
+        </button>
 
-            <a
-                class="btn sales-submit-cta sales-bulk-submit-cta"
-                href="<?= Util::e($config['app']['base_path']) ?>/sales/bulk-submit"
-            >
-                <span class="sales-submit-plus">+</span>
-                <span data-sales-i18n="bulkSubmitPost">Bulk Submit Post</span>
-            </a>
-        </div>
+        <button
+            class="btn primary sales-submit-cta"
+            type="button"
+            data-open-sales-submit
+        >
+            <span class="sales-submit-plus">+</span>
+            <span data-sales-i18n="submitPost">Submit Post</span>
+        </button>
     </div>
 </div>
 
@@ -581,6 +581,21 @@ $chartTargetTop=
         </div>
         <div class="sales-submit-modal-scroll">
             <?php require __DIR__ . '/_submit_form.php'; ?>
+        </div>
+    </section>
+</div>
+
+<div class="sales-submit-modal-backdrop hidden" id="salesBulkSubmitModal" aria-hidden="true">
+    <section class="sales-submit-modal" role="dialog" aria-modal="true" aria-labelledby="salesBulkSubmitModalTitle">
+        <div class="sales-submit-modal-head">
+            <div>
+                <div class="eyebrow" data-sales-i18n="bulkSubmit">Bulk Submit</div>
+                <h2 id="salesBulkSubmitModalTitle" data-sales-i18n="bulkSubmitPost">Bulk Submit Post</h2>
+            </div>
+            <button type="button" class="icon-close" id="salesBulkSubmitModalClose" aria-label="Close bulk submit post" title="Close">×</button>
+        </div>
+        <div class="sales-submit-modal-scroll">
+            <?php require __DIR__ . '/_bulk_submit_form.php'; ?>
         </div>
     </section>
 </div>
