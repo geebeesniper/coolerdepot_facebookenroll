@@ -15760,3 +15760,8 @@ button.website-history-control:disabled{opacity:.38;cursor:default}
     .app-help-page .hero h1{font-size:22px}
     .app-help-page .two-col{grid-template-columns:1fr}
 }
+\n/* v0.2.86 — Immediate scan-run visibility and live in-flight URL row. */
+.website-history-main-row.is-starting{background:#f8fbff}
+.website-history-processing-row.is-active{background:#f8fbff}
+.website-history-processing-row.is-active .website-history-processing-message{font-style:italic;color:#475467}
+.website-history-processing-row.is-active .website-history-processing-status.is-running{font-weight:700}

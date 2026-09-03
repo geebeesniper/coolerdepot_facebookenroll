@@ -13479,6 +13479,41 @@ $(document).on('click','.website-source-delete',function(event){
         return sourceCard(host).find('[data-scan-history-host="'+cssEscape(host)+'"]').first();
     }
 
+    function startHistoryPlaceholder(host,website){
+        host=String(host||'').toLowerCase();
+        if(!host){return;}
+        const $wrap=scanHistoryWrap(host);const $body=$wrap.find('[data-scan-history-body]').first();
+        if(!$body.length){return;}
+        $body.find('[data-history-empty-row]').remove();
+        $body.find('[data-history-start-placeholder="'+cssEscape(host)+'"],[data-history-start-placeholder-detail="'+cssEscape(host)+'"]').remove();
+        const now=(new Date()).toLocaleString();
+        const row='<tr class="website-history-main-row is-expanded is-starting" data-history-start-placeholder="'+escapeHtml(host)+'" aria-expanded="true">'
+            +'<td>'+escapeHtml(now)+'</td>'
+            +'<td data-history-status-cell><span class="website-history-control is-running is-static" aria-label="Starting scan" title="Starting scan">'+websiteScanIcon('dot')+'</span></td>'
+            +'<td>0</td><td>0</td><td>0</td>'
+            +'<td class="website-history-details-summary"><span>Creating scan run…</span><span class="website-history-row-chevron" aria-hidden="true"></span></td></tr>'
+            +'<tr class="website-history-detail-row" data-history-start-placeholder-detail="'+escapeHtml(host)+'"><td colspan="6"><div class="website-history-detail-panel">'
+            +'<div class="website-history-detail-head"><strong>Processing log</strong><small>The run is being created now.</small></div>'
+            +'<a href="'+escapeHtml(String(website||''))+'" target="_blank" rel="noopener noreferrer">'+escapeHtml(String(website||''))+'</a>'
+            +'<div class="website-history-run-summary">Creating persisted History run…</div>'
+            +'<div class="website-history-processing-head"><span>Time</span><span>Result</span><span>Type</span><span>URL</span><span>Details</span></div>'
+            +'<div class="website-history-processing-log"><div class="website-history-processing-empty">Creating scan run…</div></div>'
+            +'</div></td></tr>';
+        $body.prepend(row);
+        const count=$body.find('[data-scan-history-row]').length+1;
+        $wrap.closest('.website-source-card-history').find('[data-scan-history-count]').first().text(count);
+    }
+
+    function removeStartHistoryPlaceholder(host){
+        host=String(host||'').toLowerCase();if(!host){return;}
+        const $wrap=scanHistoryWrap(host);const $body=$wrap.find('[data-scan-history-body]').first();
+        if(!$body.length){return;}
+        $body.find('[data-history-start-placeholder="'+cssEscape(host)+'"],[data-history-start-placeholder-detail="'+cssEscape(host)+'"]').remove();
+        const count=$body.find('[data-scan-history-row]').length;
+        $wrap.closest('.website-source-card-history').find('[data-scan-history-count]').first().text(count);
+        if(!count){$body.html('<tr class="website-history-empty-row" data-history-empty-row><td colspan="6">No Website Scan history yet.</td></tr>');}
+    }
+
     function ensureHistoryRow(state){
         const historyId=Number(state.history_id||0);const host=String(state.source_host||'').toLowerCase();
         if(historyId<1||!host){return $();}
@@ -13499,7 +13534,7 @@ $(document).on('click','.website-source-delete',function(event){
             +'<a data-history-source-link href="'+escapeHtml(String(state.website_url||''))+'" target="_blank" rel="noopener noreferrer">'+escapeHtml(String(state.website_url||''))+'</a>'
             +'<div class="website-history-run-summary" data-history-detail-text>'+escapeHtml(summary)+'</div>'
             +'<div class="website-history-processing-head"><span>Time</span><span>Result</span><span>Type</span><span>URL</span><span>Details</span></div>'
-            +'<div class="website-history-processing-log" data-history-processing-log data-history-id="'+historyId+'"><div class="website-history-processing-empty" data-history-processing-empty>Waiting for the first processed URL…</div></div>'
+            +'<div class="website-history-processing-log" data-history-processing-log data-history-id="'+historyId+'"><div class="website-history-processing-empty" data-history-processing-empty>Preparing first URL…</div></div>'
             +'<small>Live scan history</small></div></td></tr>';
         $body.prepend(rowHtml);
         $row=$body.find('[data-scan-history-row][data-website-history-id="'+historyId+'"]').first();
@@ -13534,6 +13569,27 @@ $(document).on('click','.website-source-delete',function(event){
             +'<a class="website-history-processing-url" href="'+escapeHtml(url)+'" target="_blank" rel="noopener noreferrer">'+escapeHtml(url)+'</a>'
             +'<span class="website-history-processing-message">'+escapeHtml(detail||'—')+'</span>'
             +'</div>';
+    }
+
+    function updateActiveProcessingRow(state){
+        const historyId=Number(state.history_id||0);if(historyId<1)return;
+        const $log=$('[data-history-processing-log][data-history-id="'+historyId+'"]').first();if(!$log.length)return;
+        $log.find('[data-history-processing-active]').remove();
+        if(String(state.status||'').toLowerCase()!=='running'){return;}
+        const nextUrl=String(state.next_url||'').trim();
+        $log.find('[data-history-processing-empty]').remove();
+        if(!nextUrl){
+            $log.append('<div class="website-history-processing-empty" data-history-processing-active>Preparing next URL…</div>');
+            return;
+        }
+        const active='<div class="website-history-processing-row is-active" data-history-processing-active>'
+            +'<span class="website-history-processing-time">Now</span>'
+            +'<span class="website-history-processing-status is-running">Scanning</span>'
+            +'<span class="website-history-processing-kind">page</span>'
+            +'<a class="website-history-processing-url" href="'+escapeHtml(nextUrl)+'" target="_blank" rel="noopener noreferrer">'+escapeHtml(nextUrl)+'</a>'
+            +'<span class="website-history-processing-message">Request in progress…</span></div>';
+        $log.append(active);
+        const node=$log.get(0);if(node){node.scrollTop=node.scrollHeight;}
     }
 
     function appendHistoryItems(state,replaceAll){
@@ -13577,9 +13633,9 @@ $(document).on('click','.website-source-delete',function(event){
                 return;
             }
             updateHistoryRow(data.state,true);
-            if($log.length&&!$log.find('[data-history-item-id]').length){
+            if($log.length&&!$log.find('[data-history-item-id]').length&&!$log.find('[data-history-processing-active]').length){
                 const running=String(data.state.status||'')==='running';
-                $log.html('<div class="website-history-processing-empty" data-history-processing-empty>'+(running?'Waiting for the first scanned URL…':'No per-URL processing records were stored for this scan.')+'</div>');
+                $log.html('<div class="website-history-processing-empty" data-history-processing-empty>'+(running?'Preparing next URL…':'No per-URL processing records were stored for this scan.')+'</div>');
             }
         }).fail(function(){
             historyItemsLoaded[historyId]=false;
@@ -13602,6 +13658,7 @@ $(document).on('click','.website-source-delete',function(event){
         const website=String(state.website_url||'');
         if(website){$detail.find('[data-history-source-link]').attr('href',website).text(website);}
         appendHistoryItems(state,!!replaceItems);
+        updateActiveProcessingRow(state);
         if(String(state.status||'').toLowerCase()==='running'){
             $row.attr('aria-expanded','true').addClass('is-expanded');
             $detail.removeClass('hidden');
@@ -13616,14 +13673,17 @@ $(document).on('click','.website-source-delete',function(event){
         const status=String(state.status||'');
         const interrupted=!!state.client_interrupted;
         updateRunningHost(host,status==='running');
+        const hasLibraryStats=!!state.library_stats;
         const stats=state.library_stats||{};
 
         // v0.2.84: scan processing belongs to its History run only.
         // There is intentionally no standalone "Scanning…" progress strip above History.
         if($card.length){
-            $card.find('[data-source-stat="products"]').text(Number(stats.total||0));
-            $card.find('[data-source-stat="images-found"]').text(Number(stats.images_found||0));
-            $card.find('[data-source-stat="indexed"]').text(Number(stats.indexed||0));
+            if(hasLibraryStats){
+                $card.find('[data-source-stat="products"]').text(Number(stats.total||0));
+                $card.find('[data-source-stat="images-found"]').text(Number(stats.images_found||0));
+                $card.find('[data-source-stat="indexed"]').text(Number(stats.indexed||0));
+            }
             $card.find('[data-source-stat="checked"]').text(Number(state.checked||0));
             $card.find('[data-source-stat="skipped-existing"]').text(Number(state.skipped_existing||0));
             $card.find('[data-source-scan-state]').text(status==='running'&&!interrupted?'Website scanning':status==='completed'?'Scan complete':status==='paused'?'Scan paused':status==='stopped'?'Scan stopped':status==='failed'?'Scan failed':'Ready')
@@ -13755,6 +13815,7 @@ $(document).on('click','.website-source-delete',function(event){
         let accepted=false;
         let recoveryTimer=null;
         let recoveryAttempts=0;
+        startHistoryPlaceholder(requestedHost,website);
         $button.prop('disabled',true).text('Starting…');
 
         function acceptStartedState(state){
@@ -13764,6 +13825,7 @@ $(document).on('click','.website-source-delete',function(event){
             accepted=true;
             if(recoveryTimer){window.clearInterval(recoveryTimer);recoveryTimer=null;}
             const host=String(state.source_host||'').toLowerCase();
+            removeStartHistoryPlaceholder(requestedHost);
             ensureHistoryRow(state);updateHistoryRow(state);
             const selector=String($button.data('website-input')||'').trim();if(selector){$(selector).val('');}
             renderScanState(state,$button,true);
@@ -13780,6 +13842,7 @@ $(document).on('click','.website-source-delete',function(event){
             });
             if(recoveryAttempts>=12&&!accepted){
                 window.clearInterval(recoveryTimer);recoveryTimer=null;
+                removeStartHistoryPlaceholder(requestedHost);
                 $button.prop('disabled',false).text('Scan Website');
                 showToast('Scan did not enter Running state. Try again; no page refresh is required.',true);
             }
@@ -13791,7 +13854,7 @@ $(document).on('click','.website-source-delete',function(event){
             headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'}
         }).done(function(data){
             if(!data||!data.ok||!data.state){
-                if(!accepted){showToast((data&&data.message)||'Scan could not start.',true);}
+                if(!accepted){removeStartHistoryPlaceholder(requestedHost);showToast((data&&data.message)||'Scan could not start.',true);}
                 return;
             }
             const state=data.state;const host=String(state.source_host||'').toLowerCase();
@@ -13802,6 +13865,7 @@ $(document).on('click','.website-source-delete',function(event){
             if(accepted){return;}
             $.getJSON(endpoints.status,{host:requestedHost}).done(function(data){
                 if(data&&data.ok&&data.state&&acceptStartedState(data.state)){return;}
+                removeStartHistoryPlaceholder(requestedHost);
                 showToast((xhr.responseJSON&&xhr.responseJSON.message)||(textStatus==='timeout'?'Scan start response timed out.':'Scan could not start.'),true);
             }).fail(function(){showToast((xhr.responseJSON&&xhr.responseJSON.message)||'Scan could not start.',true);});
         }).always(function(){

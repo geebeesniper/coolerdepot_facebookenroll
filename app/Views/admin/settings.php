@@ -845,7 +845,7 @@ $renderWebsiteHistory = static function(
             echo '<div class="website-history-run-summary" data-history-detail-text>'.Util::e($details!==''?$details:'No additional details recorded.').'</div>'
                 .'<div class="website-history-processing-head"><span>Time</span><span>Result</span><span>Type</span><span>URL</span><span>Details</span></div>'
                 .'<div class="website-history-processing-log" data-history-processing-log data-history-id="'.$historyId.'">'
-                .'<div class="website-history-processing-empty" data-history-processing-empty>'.($runningOpen?'Waiting for the first scanned URL…':'Click this row to load the per-URL processing log.').'</div>'
+                .'<div class="website-history-processing-empty" data-history-processing-empty>'.($runningOpen?'Preparing first URL…':'Click this row to load the per-URL processing log.').'</div>'
                 .'</div>'
                 .'<small>Updated '.Util::e((string)($row['updated_at']??'—')).'</small>'
                 .'</div></td></tr>';

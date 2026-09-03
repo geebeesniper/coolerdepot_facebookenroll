@@ -1037,8 +1037,10 @@ class AdminSettingsController extends Controller
         if(session_status()===PHP_SESSION_ACTIVE){session_write_close();}
         try{
             $state=WebsiteScanJob::start((string)($_POST['website_url']??''),(int)$admin['id']);
-            $stats=WebsiteCatalog::sourceStats();$state['library_stats']=$stats[(string)($state['source_host']??'')]??[];
-            $state['history_items']=WebsiteActivityHistory::scanItems((int)($state['history_id']??0),0,100);
+            // Start is intentionally lightweight: create the persisted run and
+            // return immediately. Library totals and per-URL records are filled
+            // by the first scan-step response.
+            $state['history_items']=[];
             $this->json(['ok'=>true,'state'=>$state]);
         }catch(\Throwable $e){
             \App\Core\Logger::exception($e,'website-catalog',['event'=>'Website product scan start failed'],'warning');

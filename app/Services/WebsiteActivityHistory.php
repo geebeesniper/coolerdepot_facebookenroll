@@ -10,9 +10,20 @@ use App\Core\Database;
 
 class WebsiteActivityHistory
 {
+    /** Prevent repeated runtime schema probes inside one AJAX request. */
+    private static bool $schemaReady = false;
+
     public static function ensureTable(): void
     {
-        Database::connection()->exec(
+        if(self::$schemaReady){return;}
+        $pdo=Database::connection();
+        $tableCount=(int)$pdo->query(
+            "SELECT COUNT(*) FROM information_schema.tables
+             WHERE table_schema=DATABASE()
+               AND table_name IN ('cdsp_website_activity_history','cdsp_website_scan_history_items')"
+        )->fetchColumn();
+        if($tableCount===2){self::$schemaReady=true;return;}
+        $pdo->exec(
             "CREATE TABLE IF NOT EXISTS cdsp_website_activity_history (
                 id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
                 source_host VARCHAR(191) NOT NULL,
@@ -34,7 +45,7 @@ class WebsiteActivityHistory
                 KEY idx_cdsp_website_activity_status (status,updated_at)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
         );
-        Database::connection()->exec(
+        $pdo->exec(
             "CREATE TABLE IF NOT EXISTS cdsp_website_scan_history_items (
                 id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
                 history_id BIGINT UNSIGNED NOT NULL,
@@ -53,6 +64,7 @@ class WebsiteActivityHistory
                 KEY idx_cdsp_website_scan_item_job (job_id,id)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
         );
+        self::$schemaReady=true;
     }
 
     public static function begin(

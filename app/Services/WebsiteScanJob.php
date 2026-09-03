@@ -15,11 +15,25 @@ class WebsiteScanJob
     private const MAX_PAGES = 5000;
     private const STEP_SIZE = 1;
     private const STALE_AFTER_SECONDS = 55;
+    /** Avoid repeating CREATE/SHOW/ALTER schema probes inside the same AJAX request. */
+    private static bool $schemaReady = false;
 
     /** Ensure the persistent scan-job table exists. / 确保持久化扫描任务表存在。 */
     public static function ensureTable(): void
     {
-        Database::connection()->exec(
+        if(self::$schemaReady){return;}
+        $pdo=Database::connection();
+        $tableCount=(int)$pdo->query(
+            "SELECT COUNT(*) FROM information_schema.tables
+             WHERE table_schema=DATABASE()
+               AND table_name IN ('cdsp_website_scan_jobs','cdsp_website_scan_errors')"
+        )->fetchColumn();
+        if($tableCount===2){
+            WebsiteActivityHistory::ensureTable();
+            self::$schemaReady=true;
+            return;
+        }
+        $pdo->exec(
             "CREATE TABLE IF NOT EXISTS cdsp_website_scan_jobs (
                 id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
                 history_id BIGINT UNSIGNED NULL,
@@ -46,7 +60,6 @@ class WebsiteScanJob
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
         );
         WebsiteActivityHistory::ensureTable();
-        $pdo=Database::connection();
         $column=$pdo->query("SHOW COLUMNS FROM cdsp_website_scan_jobs LIKE 'history_id'")->fetch();
         if(!$column){
             $pdo->exec("ALTER TABLE cdsp_website_scan_jobs ADD COLUMN history_id BIGINT UNSIGNED NULL AFTER id");
@@ -76,7 +89,7 @@ class WebsiteScanJob
             $pdo->exec('ALTER TABLE cdsp_website_scan_jobs ADD KEY idx_cdsp_website_scan_history (history_id,id)');
         }
 
-        Database::connection()->exec(
+        $pdo->exec(
             "CREATE TABLE IF NOT EXISTS cdsp_website_scan_errors (
                 id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
                 source_host VARCHAR(191) NOT NULL,
@@ -89,6 +102,7 @@ class WebsiteScanJob
                 KEY idx_cdsp_website_scan_error_host (source_host,created_at)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
         );
+        self::$schemaReady=true;
     }
 
     /**
@@ -103,28 +117,69 @@ class WebsiteScanJob
         self::ensureTable();
         $pdo=Database::connection();
         $globalLock='cdsp-webscan-global-start';
-        $lock=$pdo->prepare('SELECT GET_LOCK(?,5)');
+
+        // Start must never sit on a 5-second advisory-lock wait. The user needs
+        // an immediate History run or an immediate busy response.
+        $lock=$pdo->prepare('SELECT GET_LOCK(?,0)');
         $lock->execute([$globalLock]);
         if((int)$lock->fetchColumn()!==1){throw new \DomainException('Website scanner is busy. Try again in a moment.');}
+
         try{
-            $running=self::runningHosts();
-            if($running){throw new \DomainException('Another website is currently scanning: '.$running[0].'. Stop or pause it before starting a new scan.');}
+            // Clean abandoned jobs once, then do the running check directly.
+            // Avoid runningHosts() here because that used to repeat schema work
+            // and stale-job scans before a new History row could be returned.
+            self::pauseStaleJobs();
+            $runningRow=$pdo->query("SELECT source_host FROM cdsp_website_scan_jobs WHERE status='running' ORDER BY updated_at ASC,id ASC LIMIT 1")->fetch();
+            if($runningRow){
+                throw new \DomainException('Another website is currently scanning: '.(string)$runningRow['source_host'].'. Stop or pause it before starting a new scan.');
+            }
 
             $source=WebsiteCatalog::ensureSource($website,$adminId);
             $host=(string)$source['host'];
-            $queue=WebsiteCatalog::productScanSeeds((string)$source['url']);
+            $websiteUrl=(string)$source['url'];
+            $queue=WebsiteCatalog::productScanSeeds($websiteUrl);
+
             $clear=$pdo->prepare('DELETE FROM cdsp_website_scan_errors WHERE source_host=?');
             $clear->execute([$host]);
-            $historyId=WebsiteActivityHistory::begin($host,(string)$source['url'],'product_scan',$adminId,'','Product scan started.');
+
+            // Persist the History run before any remote page request. Nothing in
+            // this start path performs HTTP crawling. The browser receives the
+            // run immediately and starts /scan-step separately.
+            $historyId=WebsiteActivityHistory::begin($host,$websiteUrl,'product_scan',$adminId,'','Product scan started.');
             $q=$pdo->prepare(
                 "INSERT INTO cdsp_website_scan_jobs
                  (history_id,source_host,website_url,status,queue_json,seen_json,checked,products,images_found,indexed,failed,skipped_existing,last_error,started_by,created_at,updated_at,finished_at)
                  VALUES(?,?,?,'running',?,'[]',0,0,0,0,0,0,NULL,?,NOW(),NOW(),NULL)"
             );
-            $q->execute([$historyId,$host,(string)$source['url'],self::json($queue),$adminId]);
+            $q->execute([$historyId,$host,$websiteUrl,self::json($queue),$adminId]);
             $jobId=(int)$pdo->lastInsertId();
-            WebsiteActivityHistory::addScanItem($historyId,$jobId,(string)$source['url'],'running','run','','',false,false,'Scan started.');
-            return self::statusByHistory($historyId) ?? [];
+            // Do not call statusByHistory() here. That path performs additional
+            // stale/schema/status work and was the reason the browser could sit on
+            // Starting… before the new History row appeared. Return the known fresh
+            // state directly; the first scan-step owns all remote work.
+            $now=date('Y-m-d H:i:s');
+            return [
+                'id'=>$jobId,
+                'history_id'=>$historyId,
+                'source_host'=>$host,
+                'website_url'=>$websiteUrl,
+                'status'=>'running',
+                'checked'=>0,
+                'products'=>0,
+                'images_found'=>0,
+                'indexed'=>0,
+                'failed'=>0,
+                'skipped_existing'=>0,
+                'queue'=>count($queue),
+                'seen'=>0,
+                'next_url'=>(string)($queue[0]??''),
+                'last_error'=>'',
+                'created_at'=>$now,
+                'updated_at'=>$now,
+                'stale_seconds'=>0,
+                'finished_at'=>'',
+                'page_errors'=>[],
+            ];
         }finally{
             try{$release=$pdo->prepare('SELECT RELEASE_LOCK(?)');$release->execute([$globalLock]);}catch(\Throwable $e){}
         }
@@ -590,6 +645,7 @@ class WebsiteScanJob
             'skipped_existing'=>(int)($row['skipped_existing']??0),
             'queue'=>count($queue),
             'seen'=>count($seen),
+            'next_url'=>(string)($queue[0]??''),
             'last_error'=>(string)($row['last_error']??''),
             'created_at'=>(string)($row['created_at']??''),
             'updated_at'=>$updatedAt,

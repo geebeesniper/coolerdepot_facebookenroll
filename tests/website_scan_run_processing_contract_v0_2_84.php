@@ -18,12 +18,12 @@ $css=$read('public/assets/app.css');
 $controller=$read('app/Controllers/AdminSettingsController.php');
 $history=$read('app/Services/WebsiteActivityHistory.php');
 
-$must($version==='0.2.84','VERSION must be 0.2.84.');
+$must(version_compare($version,'0.2.84','>='),'VERSION must be >= 0.2.84.');
 $must(!str_contains($settings,'website-product-scan-progress-wrap hidden'),'Saved Websites must not render the standalone scan progress strip.');
 $must(str_contains($settings,"\$runningOpen=\$status==='running';"),'Server-rendered running History row must auto-expand.');
 $must(str_contains($settings,"website-history-detail-row'.(\$runningOpen?'':' hidden')"),'Processing detail row must be attached directly under its History run.');
 $must(str_contains($settings,'Processing log'),'History run must contain Processing log.');
-$must(str_contains($settings,'Waiting for the first scanned URL…'),'Running scan must show an in-run waiting state before the first URL finishes.');
+$must(str_contains($settings,'Preparing first URL…'),'Running scan must show an in-run preparation state before the first URL finishes.');
 
 $must(str_contains($js,'v0.2.84: scan processing belongs to its History run only.'),'V0.2.84 scan placement marker is missing.');
 $must(str_contains($js,'There is intentionally no standalone "Scanning…" progress strip above History.'),'Standalone Scanning strip must be explicitly disabled.');
