@@ -14116,12 +14116,25 @@ $(document).on('click','.website-source-delete',function(event){
     $(document).on('change','.website-products-host-select',function(){
         activateProductsHost(String($(this).val()||''),true);
     });
-    $(document).on('click','[data-website-tool-toggle="website-tool-panel-4"]',function(){
+    // v0.2.93: Scanned Products belongs inside the Website Scan detail workspace.
+    // It has its own local accordion state and must never participate in the
+    // top-level Website Scan / URL CSV / Page-Sitemap accordion.
+    $(document).on('click','[data-scanned-products-toggle]',function(){
         const $toggle=$(this);
-        window.setTimeout(function(){
-            if($toggle.attr('aria-expanded')!=='true'||!$activePanel.length){return;}
+        const $section=$toggle.closest('[data-scanned-products-section]');
+        const $body=$section.find('[data-scanned-products-body]').first();
+        if(!$body.length){return;}
+        const isOpen=$toggle.attr('aria-expanded')==='true';
+        if(isOpen){
+            $toggle.attr('aria-expanded','false');
+            $body.stop(true,true).slideUp(160,function(){$(this).addClass('hidden').removeAttr('style');});
+            return;
+        }
+        $toggle.attr('aria-expanded','true');
+        $body.stop(true,true).removeClass('hidden').hide().slideDown(180,function(){$(this).removeAttr('style');});
+        if($activePanel.length){
             activateProductsHost(String($activePanel.find('.website-products-host-select').val()||''),true);
-        },0);
+        }
     });
     $(document).on('click','.website-source-inline-add-toggle',function(){
         if(!$activePanel.length){return;}
@@ -14223,7 +14236,8 @@ $(document).on('click','.website-source-delete',function(event){
 })(window.jQuery);
 
 /* v0.2.36 — Website Library 1/2/3 top-level accordion. */
-/* v0.2.92 — Scanned Products uses a child shortcut under Website Scan, but panel 4 remains an independent sibling work panel. */
+/* v0.2.93 — Top-level accordion remains Website Scan / URL CSV / Page-Sitemap only.
+   Scanned Products now has a separate local accordion inside Website Scan detail. */
 (function($){
     'use strict';
     const storageKey='cdspWebsiteToolPanel';

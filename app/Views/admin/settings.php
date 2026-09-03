@@ -879,7 +879,7 @@ $renderWebsiteHistory = static function(
         <div>
             <div class="eyebrow">Duplicate Sources</div>
             <h2>Company Website Library</h2>
-            <p class="settings-subtitle">Website Scan includes a Scanned Products shortcut directly underneath it. URL CSV and Page / Sitemap Import remain separate tools, and each work panel opens independently.</p>
+            <p class="settings-subtitle">Website Scan opens one detailed workspace. Scanned Products lives inside that workspace below Website Scan and opens or closes independently. URL CSV and Page / Sitemap Import remain separate tools.</p>
         </div>
         <?php if (!empty($websiteStats['library_ready'])): ?>
             <div class="website-library-stats">
@@ -895,27 +895,15 @@ $renderWebsiteHistory = static function(
         <div class="banner bad">Run <code>php scripts/migrate_v0_1_70.php</code>, then <code>php scripts/migrate_v0_1_71.php</code>.</div>
     <?php else: ?>
         <div class="website-tools-grid" data-website-tools>
-            <div class="website-tool-card-group website-tool-card-group-one">
-                <button type="button" class="website-tool-card website-tool-card-one website-tool-card-primary" data-website-tool-toggle="website-tool-panel-1" aria-expanded="false" aria-controls="website-tool-panel-1">
-                    <span class="settings-step">1</span>
-                    <span class="website-tool-card-copy">
-                        <strong>Website Scan</strong>
-                        <small>Add websites, run scans and review each website's scan history.</small>
-                        <span class="website-tool-card-count"><?= count($websiteSources ?? []) ?> website<?= count($websiteSources ?? [])===1?'':'s' ?></span>
-                    </span>
-                    <span class="website-tool-arrow" aria-hidden="true"></span>
-                </button>
-
-                <button type="button" class="website-tool-subcard website-tool-subcard-products" data-website-tool-toggle="website-tool-panel-4" aria-expanded="false" aria-controls="website-tool-panel-4">
-                    <span class="website-tool-subcard-icon" aria-hidden="true"></span>
-                    <span class="website-tool-card-copy">
-                        <strong>Scanned Products</strong>
-                        <small>Search, open, add or delete saved product URLs without opening a Website Scan card.</small>
-                        <span class="website-tool-card-count"><?= (int)($websiteStats['total'] ?? 0) ?> product reference<?= (int)($websiteStats['total'] ?? 0)===1?'':'s' ?></span>
-                    </span>
-                    <span class="website-tool-arrow" aria-hidden="true"></span>
-                </button>
-            </div>
+            <button type="button" class="website-tool-card website-tool-card-one" data-website-tool-toggle="website-tool-panel-1" aria-expanded="false" aria-controls="website-tool-panel-1">
+                <span class="settings-step">1</span>
+                <span class="website-tool-card-copy">
+                    <strong>Website Scan</strong>
+                    <small>Add websites, run scans and review each website's scan history.</small>
+                    <span class="website-tool-card-count"><?= count($websiteSources ?? []) ?> website<?= count($websiteSources ?? [])===1?'':'s' ?></span>
+                </span>
+                <span class="website-tool-arrow" aria-hidden="true"></span>
+            </button>
 
             <button type="button" class="website-tool-card website-tool-card-two" data-website-tool-toggle="website-tool-panel-2" aria-expanded="false" aria-controls="website-tool-panel-2">
                 <span class="settings-step">2</span>
@@ -1028,50 +1016,55 @@ $renderWebsiteHistory = static function(
                 </div>
 
             </div>
-        </section>
+            <section class="website-scanned-products-section" data-scanned-products-section>
+                <button type="button" class="website-scanned-products-toggle" data-scanned-products-toggle aria-expanded="false" aria-controls="website-scanned-products-body">
+                    <span class="website-scanned-products-copy">
+                        <strong>Scanned Products</strong>
+                        <small>Search, open, add or delete saved product URLs without opening an individual Website Scan card.</small>
+                        <span class="website-scanned-products-count"><?= (int)($websiteStats['total'] ?? 0) ?> product reference<?= (int)($websiteStats['total'] ?? 0)===1?'':'s' ?></span>
+                    </span>
+                    <span class="website-tool-arrow" aria-hidden="true"></span>
+                </button>
 
-        <section class="website-tool-detail website-tool-detail-four hidden" id="website-tool-panel-4" data-website-tool-panel="website-tool-panel-4">
-            <div class="website-tool-detail-head">
-                <div class="website-tool-detail-title-no-step"><div><strong>Scanned Products</strong><small>Search, open, add or delete saved product URLs. This panel is separate from Website Scan even though its shortcut sits directly underneath Website Scan.</small></div></div>
-                <button type="button" class="website-tool-detail-close" data-website-tool-close="website-tool-panel-4" aria-label="Close Scanned Products">×</button>
-            </div>
-
-            <div class="website-source-inline-panel website-products-library-panel" data-products-library-panel>
-                <div class="website-source-inline-toolbar website-products-library-toolbar">
-                    <select class="website-products-host-select" aria-label="Website">
-                        <?php if (empty($websiteSources)): ?>
-                            <option value="">No saved websites</option>
-                        <?php else: ?>
-                            <?php foreach (($websiteSources ?? []) as $productSource): ?>
-                                <option value="<?= Util::e((string)$productSource['host']) ?>" data-website-url="<?= Util::e((string)$productSource['url']) ?>"><?= Util::e((string)$productSource['host']) ?></option>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </select>
-                    <div class="website-source-inline-search">
-                        <input type="search" class="website-inline-search" placeholder="Search title, URL or description">
-                        <button type="button" class="btn website-inline-search-button">Search</button>
+                <div class="website-scanned-products-body hidden" id="website-scanned-products-body" data-scanned-products-body>
+                    <div class="website-source-inline-panel website-products-library-panel" data-products-library-panel>
+                        <div class="website-source-inline-toolbar website-products-library-toolbar">
+                            <select class="website-products-host-select" aria-label="Website">
+                                <?php if (empty($websiteSources)): ?>
+                                    <option value="">No saved websites</option>
+                                <?php else: ?>
+                                    <?php foreach (($websiteSources ?? []) as $productSource): ?>
+                                        <option value="<?= Util::e((string)$productSource['host']) ?>" data-website-url="<?= Util::e((string)$productSource['url']) ?>"><?= Util::e((string)$productSource['host']) ?></option>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </select>
+                            <div class="website-source-inline-search">
+                                <input type="search" class="website-inline-search" placeholder="Search title, URL or description">
+                                <button type="button" class="btn website-inline-search-button">Search</button>
+                            </div>
+                            <button type="button" class="btn ghost website-source-inline-add-toggle" <?= empty($websiteSources) ? 'disabled' : '' ?>>+ Add URL</button>
+                        </div>
+                        <form class="website-source-inline-add">
+                            <input type="hidden" name="_csrf" value="<?= Util::e(Csrf::token()) ?>">
+                            <input type="hidden" name="ajax" value="1">
+                            <input type="hidden" name="website_url" value="<?= !empty($websiteSources) ? Util::e((string)$websiteSources[0]['url']) : '' ?>">
+                            <div class="website-source-inline-add-grid">
+                                <label>Page URL<input type="url" name="page_url" required placeholder="https://example.com/product/example"></label>
+                                <label>Title<input type="text" name="title" maxlength="500" required></label>
+                                <label class="wide">Description<textarea name="description" rows="2"></textarea></label>
+                                <label class="wide">First image URL<input type="url" name="image_url"></label>
+                            </div>
+                            <div><button type="submit" class="btn">Add URL</button></div>
+                        </form>
+                        <div class="website-source-inline-summary">
+                            <span><strong data-inline-count>0</strong> matching products</span>
+                            <span data-products-host-copy><?= !empty($websiteSources) ? 'Search/add/delete applies only to '.Util::e((string)$websiteSources[0]['host']).'.' : 'Save a website in Website Scan first.' ?></span>
+                        </div>
+                        <div class="website-source-product-list-head"><span>Image</span><span>Title / Description</span><span>Page URL</span><span>Image</span><span>Indexed</span><span></span></div>
+                        <div class="website-source-product-grid"><div class="website-source-inline-empty"><?= empty($websiteSources) ? 'No saved websites yet.' : 'Open Scanned Products to load products.' ?></div></div>
                     </div>
-                    <button type="button" class="btn ghost website-source-inline-add-toggle" <?= empty($websiteSources) ? 'disabled' : '' ?>>+ Add URL</button>
                 </div>
-                <form class="website-source-inline-add">
-                    <input type="hidden" name="_csrf" value="<?= Util::e(Csrf::token()) ?>">
-                    <input type="hidden" name="ajax" value="1">
-                    <input type="hidden" name="website_url" value="<?= !empty($websiteSources) ? Util::e((string)$websiteSources[0]['url']) : '' ?>">
-                    <div class="website-source-inline-add-grid">
-                        <label>Page URL<input type="url" name="page_url" required placeholder="https://example.com/product/example"></label>
-                        <label>Title<input type="text" name="title" maxlength="500" required></label>
-                        <label class="wide">Description<textarea name="description" rows="2"></textarea></label>
-                        <label class="wide">First image URL<input type="url" name="image_url"></label>
-                    </div>
-                    <div><button type="submit" class="btn">Add URL</button></div>
-                </form>
-                <div class="website-source-inline-summary">
-                    <span><strong data-inline-count>0</strong> matching products</span>
-                    <span data-products-host-copy><?= !empty($websiteSources) ? 'Search/add/delete applies only to '.Util::e((string)$websiteSources[0]['host']).'.' : 'Save a website in Website Scan first.' ?></span>
-                </div>
-                <div class="website-source-product-list-head"><span>Image</span><span>Title / Description</span><span>Page URL</span><span>Image</span><span>Indexed</span><span></span></div>
-                <div class="website-source-product-grid"><div class="website-source-inline-empty"><?= empty($websiteSources) ? 'No saved websites yet.' : 'Open Scanned Products to load products.' ?></div></div>
-            </div>
+            </section>
         </section>
 
         <section class="website-tool-detail website-tool-detail-two hidden" id="website-tool-panel-2" data-website-tool-panel="website-tool-panel-2">

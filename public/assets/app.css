@@ -15970,9 +15970,10 @@ button.website-history-control{
 }
 .website-history-processing-message{overflow-wrap:normal}
 
-.website-tool-detail-four .website-source-inline-panel{
+.website-products-library-panel{
     border:0;
     border-radius:0;
+    margin:0;
 }
 .website-products-library-toolbar{
     align-items:center;
@@ -15982,90 +15983,60 @@ button.website-history-control{
     min-width:170px;
     height:40px;
 }
-@media(max-width:760px){
-    .website-products-library-toolbar{align-items:stretch;flex-direction:column}
-    .website-products-host-select{flex:0 0 auto;width:100%;min-width:0}
-}
-.website-tool-card-four{color:#7c3aed;background:#faf8ff}
-.website-tool-detail-four{border-color:#7c3aed}
-.website-tool-detail-four .website-tool-detail-head{color:#7c3aed;background:#faf8ff}
 
-/* v0.2.92 — Scanned Products is a detailed child shortcut under Website Scan,
-   while its expanded work panel remains a first-class sibling of Website Scan. */
-.website-tools-grid{align-items:start}
-.website-tool-card-group{
+/* v0.2.93 — Scanned Products lives inside the expanded Website Scan detail
+   workspace, below the Website Scan controls, as an independent sibling row. */
+.website-scanned-products-section{
+    border-top:2px solid #2563eb;
+    background:#fff;
     min-width:0;
-    border:2px solid #2563eb;
-    border-radius:4px;
-    background:#f7faff;
-    overflow:hidden;
-    box-sizing:border-box;
 }
-.website-tool-card-group .website-tool-card-primary{
-    border:0;
-    border-radius:0;
-    background:transparent;
-    box-shadow:none;
-}
-.website-tool-card-group .website-tool-card-primary:hover,
-.website-tool-card-group .website-tool-card-primary[aria-expanded="true"]{
-    background:#f3f7ff;
-    box-shadow:none;
-}
-.website-tool-subcard{
+.website-scanned-products-toggle{
     appearance:none;
     width:100%;
     min-width:0;
+    min-height:58px;
     border:0;
-    border-top:1px solid #c7d7fe;
     border-radius:0;
-    background:#fff;
-    padding:10px 16px;
+    background:#f7faff;
+    padding:10px 14px;
     display:grid;
-    grid-template-columns:24px minmax(0,1fr) 14px;
-    gap:10px;
-    align-items:start;
+    grid-template-columns:minmax(0,1fr) 14px;
+    gap:12px;
+    align-items:center;
     text-align:left;
     cursor:pointer;
     color:#2563eb;
     box-shadow:none;
 }
-.website-tool-subcard:hover,
-.website-tool-subcard[aria-expanded="true"]{background:#f8faff}
-.website-tool-subcard-icon{
-    position:relative;
-    width:24px;
-    height:24px;
-    min-width:24px;
+.website-scanned-products-toggle:hover,
+.website-scanned-products-toggle[aria-expanded="true"]{background:#f3f7ff}
+.website-scanned-products-copy{
+    min-width:0;
+    display:grid;
+    gap:2px;
+    color:#101828;
 }
-.website-tool-subcard-icon::before{
-    content:"";
-    position:absolute;
-    left:8px;
-    top:1px;
-    width:9px;
-    height:13px;
-    border-left:1px solid #9db8f8;
-    border-bottom:1px solid #9db8f8;
-    border-radius:0 0 0 3px;
-}
-.website-tool-subcard .website-tool-card-copy{gap:3px}
-.website-tool-subcard .website-tool-card-copy strong{font-size:13.5px;line-height:1.25;color:#101828}
-.website-tool-subcard .website-tool-card-copy small{font-size:10px;line-height:1.4;color:#667085;max-width:52ch}
-.website-tool-subcard .website-tool-card-count{font-size:9.5px;line-height:1.3;color:#2563eb;margin-top:1px}
-.website-tool-subcard .website-tool-arrow{align-self:center;justify-self:end;margin-top:0}
-.website-tool-subcard[aria-expanded="true"] .website-tool-arrow::before{
+.website-scanned-products-copy strong{font-size:14px;line-height:1.25;color:#101828}
+.website-scanned-products-copy small{font-size:10px;line-height:1.4;color:#667085;font-weight:400}
+.website-scanned-products-count{font-size:10px;line-height:1.3;color:#2563eb;font-weight:700;margin-top:1px}
+.website-scanned-products-toggle .website-tool-arrow{align-self:center;justify-self:end;margin:0}
+.website-scanned-products-toggle[aria-expanded="true"] .website-tool-arrow::before{
     top:3px;
     transform:rotate(-135deg);
 }
-.website-tool-detail-four{border-color:#2563eb}
-.website-tool-detail-four .website-tool-detail-head{color:#2563eb;background:#f7faff}
-.website-tool-detail-title-no-step>div{display:grid;gap:2px;color:#101828}
-@media(max-width:760px){
-    .website-tool-card-group{width:100%}
-    .website-tool-subcard{padding:10px 13px;grid-template-columns:22px minmax(0,1fr) 12px;gap:8px}
-    .website-tool-subcard-icon{width:22px;min-width:22px}
+.website-scanned-products-body{
+    min-width:0;
+    border-top:1px solid #dbe7ff;
+    background:#fff;
 }
-@media(max-width:480px){
-    .website-tool-subcard .website-tool-card-copy small{display:block}
+.website-scanned-products-body .website-source-inline-panel{
+    border:0;
+    border-radius:0;
+    margin:0;
+}
+@media(max-width:760px){
+    .website-products-library-toolbar{align-items:stretch;flex-direction:column}
+    .website-products-host-select{flex:0 0 auto;width:100%;min-width:0}
+    .website-scanned-products-toggle{padding:10px 12px;gap:8px}
 }
