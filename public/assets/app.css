@@ -15520,3 +15520,24 @@ button.website-history-control:disabled{opacity:.38;cursor:default}
 .sales-location-card{
     align-self:start;
 }
+
+
+/* v0.2.84 — Scan Processing belongs only to its own Product Scan History run. */
+.website-source-manager .website-product-scan-progress-wrap,
+#website-source-detail .website-product-scan-progress-wrap{
+    display:none !important;
+}
+.website-scan-history-table .website-history-main-row.is-expanded + .website-history-detail-row{
+    display:table-row;
+}
+.website-history-detail-row>td{
+    border-bottom:1px solid #d8e1ec !important;
+}
+.website-history-detail-panel{
+    margin:0;
+    border-top:0;
+    background:#fbfcfe;
+}
+.website-history-processing-log{
+    scroll-behavior:auto;
+}

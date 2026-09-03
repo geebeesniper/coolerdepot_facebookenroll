@@ -13489,11 +13489,12 @@ $(document).on('click','.website-source-delete',function(event){
         $body.find('[data-history-empty-row]').remove();
         const started=escapeHtml(String(state.created_at||'—'));
         const summary=historyDetailText(state);
-        const rowHtml='<tr class="website-history-main-row" data-scan-history-row data-website-history-id="'+historyId+'" data-history-source-host="'+escapeHtml(host)+'" tabindex="0" aria-expanded="false">'
+        const running=String(state.status||'').toLowerCase()==='running';
+        const rowHtml='<tr class="website-history-main-row'+(running?' is-expanded':'')+'" data-scan-history-row data-website-history-id="'+historyId+'" data-history-source-host="'+escapeHtml(host)+'" tabindex="0" aria-expanded="'+(running?'true':'false')+'">'
             +'<td>'+started+'</td><td data-history-status-cell>'+historyStatusControl(String(state.status||''),host,historyId)+'</td>'
             +'<td data-history-processed>'+Number(state.checked||0)+'</td><td data-history-saved>'+Number(state.products||0)+'</td><td data-history-failed>'+Number(state.failed||0)+'</td>'
             +'<td class="website-history-details-summary"><span data-history-detail-summary>'+escapeHtml(summary)+'</span><span class="website-history-row-chevron" aria-hidden="true"></span></td></tr>'
-            +'<tr class="website-history-detail-row hidden" data-history-detail-row="'+historyId+'"><td colspan="6"><div class="website-history-detail-panel">'
+            +'<tr class="website-history-detail-row'+(running?'':' hidden')+'" data-history-detail-row="'+historyId+'"><td colspan="6"><div class="website-history-detail-panel">'
             +'<div class="website-history-detail-head"><strong>Processing log</strong><small>Each scanned URL is recorded here as it finishes.</small></div>'
             +'<a data-history-source-link href="'+escapeHtml(String(state.website_url||''))+'" target="_blank" rel="noopener noreferrer">'+escapeHtml(String(state.website_url||''))+'</a>'
             +'<div class="website-history-run-summary" data-history-detail-text>'+escapeHtml(summary)+'</div>'
@@ -13539,15 +13540,26 @@ $(document).on('click','.website-source-delete',function(event){
         const historyId=Number(state.history_id||0);if(historyId<1)return;
         const items=Array.isArray(state.history_items)?state.history_items:[];
         const $log=$('[data-history-processing-log][data-history-id="'+historyId+'"]').first();if(!$log.length)return;
+        const node=$log.get(0);
+        const followTail=!!node&&(node.scrollTop+node.clientHeight>=node.scrollHeight-24);
         if(replaceAll){$log.empty();historyItemLast[historyId]=0;}
         items.forEach(function(item){
             const itemId=Number(item.id||0);if(itemId<1)return;
+            // Processing Log is URL processing only. Run lifecycle events stay in
+            // the History row/status and never create fake URL rows.
+            const pageUrl=String(item.page_url||'').trim();
+            const kind=String(item.result_kind||'').toLowerCase();
+            historyItemLast[historyId]=Math.max(Number(historyItemLast[historyId]||0),itemId);
+            if(!pageUrl||kind==='run'){return;}
             if($log.find('[data-history-item-id="'+itemId+'"]').length)return;
             $log.append(historyItemHtml(item));
-            historyItemLast[historyId]=Math.max(Number(historyItemLast[historyId]||0),itemId);
         });
-        if($log.find('[data-history-item-id]').length){$log.find('[data-history-processing-empty]').remove();}
-        else if(!$log.find('[data-history-processing-empty]').length){$log.html('<div class="website-history-processing-empty" data-history-processing-empty>No per-URL records yet.</div>');}
+        if($log.find('[data-history-item-id]').length){
+            $log.find('[data-history-processing-empty]').remove();
+            if(followTail&&node){node.scrollTop=node.scrollHeight;}
+        }else if(!$log.find('[data-history-processing-empty]').length){
+            $log.html('<div class="website-history-processing-empty" data-history-processing-empty>No per-URL records yet.</div>');
+        }
     }
 
     function loadHistoryItems(host,historyId){
@@ -13590,42 +13602,24 @@ $(document).on('click','.website-source-delete',function(event){
         const website=String(state.website_url||'');
         if(website){$detail.find('[data-history-source-link]').attr('href',website).text(website);}
         appendHistoryItems(state,!!replaceItems);
+        if(String(state.status||'').toLowerCase()==='running'){
+            $row.attr('aria-expanded','true').addClass('is-expanded');
+            $detail.removeClass('hidden');
+            historyItemsLoaded[historyId]=true;
+        }
     }
 
     function renderScanState(state,$button,showProgress){
         if(!state){return;}
         const host=String(state.source_host||'').toLowerCase();
         const $card=sourceCard(host);
-        const $wrap=progressWrap(host,$button);
-        const $progress=$wrap.hasClass('website-product-scan-progress')?$wrap:$wrap.find('.website-product-scan-progress').first();
         const status=String(state.status||'');
         const interrupted=!!state.client_interrupted;
         updateRunningHost(host,status==='running');
         const stats=state.library_stats||{};
-        let text='Checked '+Number(state.checked||0)+' pages';
-        text+=' · Library '+Number(stats.total||0)+' unique products';
-        text+=' · This run '+Number(state.products||0)+' product pages';
-        text+=' · '+Number(state.images_found||0)+' first images found';
-        text+=' · '+Number(state.indexed||0)+' exact fingerprints';
-        if(Number(state.skipped_existing||0)){text+=' · '+Number(state.skipped_existing||0)+' existing URLs skipped';}
-        if(Number(state.failed||0)){text+=' · '+Number(state.failed||0)+' page errors';}
-        text+=' · Queue '+Number(state.queue||0);
-        if(status==='running'&&!interrupted){text+=' · Scanning…';}
-        else if(status==='running'&&interrupted){text+=' · Scan connection interrupted; status will retry automatically.';}
-        else if(status==='completed'){text+=' · '+(String(state.last_error||'Scan complete.'));}
-        else if(status==='paused'){text+=' · Paused. Use ▶ in Scan History to continue.';}
-        else if(status==='stopped'){text+=' · Stopped.';}
-        else if(status==='failed'){text+=' · '+(String(state.last_error||'Scan failed.'));}
-        if($progress.length){
-            $progress.removeClass('is-done is-error')
-                .toggleClass('is-done',status==='completed')
-                .toggleClass('is-error',status==='failed'||interrupted)
-                .text(text);
-            let $errors=$wrap.find('.website-scan-errors-hosted');
-            if(!$errors.length){$errors=$('<div class="website-scan-errors-hosted"></div>').appendTo($wrap);}
-            $errors.html(scanErrorRows(state.page_errors||[]));
-            if(showProgress!==false){$wrap.removeClass('hidden');}
-        }
+
+        // v0.2.84: scan processing belongs to its History run only.
+        // There is intentionally no standalone "Scanning…" progress strip above History.
         if($card.length){
             $card.find('[data-source-stat="products"]').text(Number(stats.total||0));
             $card.find('[data-source-stat="images-found"]').text(Number(stats.images_found||0));
@@ -13761,10 +13755,7 @@ $(document).on('click','.website-source-delete',function(event){
         let accepted=false;
         let recoveryTimer=null;
         let recoveryAttempts=0;
-        const $wrap=progressWrap('', $button);$wrap.removeClass('hidden');
-        const $startProgress=$wrap.hasClass('website-product-scan-progress')?$wrap:$wrap.find('.website-product-scan-progress');
         $button.prop('disabled',true).text('Starting…');
-        $startProgress.removeClass('is-error is-done').text('Creating scan run…');
 
         function acceptStartedState(state){
             if(!state||String(state.source_host||'').toLowerCase()!==requestedHost){return false;}
@@ -13790,7 +13781,7 @@ $(document).on('click','.website-source-delete',function(event){
             if(recoveryAttempts>=12&&!accepted){
                 window.clearInterval(recoveryTimer);recoveryTimer=null;
                 $button.prop('disabled',false).text('Scan Website');
-                $startProgress.addClass('is-error').text('Scan did not enter Running state. Try again; no page refresh is required.');
+                showToast('Scan did not enter Running state. Try again; no page refresh is required.',true);
             }
         },500);
 
@@ -13840,10 +13831,6 @@ $(document).on('click','.website-source-delete',function(event){
         if($(event.target).closest('[data-history-scan-control]').length)return;
         event.preventDefault();$(this).trigger('click');
     });
-    $(document).on('click','.website-scan-progress-close',function(){
-        $(this).closest('.website-product-scan-progress-wrap').addClass('hidden');
-    });
-
     function productCard(row){
         const id=Number(row.id||0);
         const title=escapeHtml(String(row.title||''));

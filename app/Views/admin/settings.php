@@ -826,7 +826,8 @@ $renderWebsiteHistory = static function(
             }else{
                 $statusHtml='<span class="website-history-control is-static" aria-label="'.Util::e($statusTitle).'" title="'.Util::e($statusTitle).'">'.$websiteScanIcon('dot').'</span>';
             }
-            echo '<tr class="website-history-main-row" data-scan-history-row data-website-history-id="'.$historyId.'" data-history-source-host="'.Util::e($rowHost).'" tabindex="0" aria-expanded="false">'
+            $runningOpen=$status==='running';
+            echo '<tr class="website-history-main-row'.($runningOpen?' is-expanded':'').'" data-scan-history-row data-website-history-id="'.$historyId.'" data-history-source-host="'.Util::e($rowHost).'" tabindex="0" aria-expanded="'.($runningOpen?'true':'false').'">'
                 .'<td>'.Util::e((string)($row['created_at']??'')).'</td>'
                 .($showWebsite?'<td><strong>'.Util::e((string)($row['source_host']??'')).'</strong></td>':'')
                 .'<td data-history-status-cell>'.$statusHtml.'</td>'
@@ -835,7 +836,7 @@ $renderWebsiteHistory = static function(
                 .'<td data-history-failed>'.(int)($row['failed']??0).'</td>'
                 .'<td class="website-history-details-summary"><span data-history-detail-summary>'.Util::e($details!==''?$details:'Click to view processing log.').'</span><span class="website-history-row-chevron" aria-hidden="true"></span></td>'
                 .'</tr>';
-            echo '<tr class="website-history-detail-row hidden" data-history-detail-row="'.$historyId.'"><td colspan="'.$colspan.'">'
+            echo '<tr class="website-history-detail-row'.($runningOpen?'':' hidden').'" data-history-detail-row="'.$historyId.'"><td colspan="'.$colspan.'">'
                 .'<div class="website-history-detail-panel">'
                 .'<div class="website-history-detail-head"><strong>Processing log</strong><small>Each scanned URL is recorded here as it finishes.</small></div>';
             if($sourceUrl!==''){
@@ -844,7 +845,7 @@ $renderWebsiteHistory = static function(
             echo '<div class="website-history-run-summary" data-history-detail-text>'.Util::e($details!==''?$details:'No additional details recorded.').'</div>'
                 .'<div class="website-history-processing-head"><span>Time</span><span>Result</span><span>Type</span><span>URL</span><span>Details</span></div>'
                 .'<div class="website-history-processing-log" data-history-processing-log data-history-id="'.$historyId.'">'
-                .'<div class="website-history-processing-empty" data-history-processing-empty>Click this row to load the per-URL processing log.</div>'
+                .'<div class="website-history-processing-empty" data-history-processing-empty>'.($runningOpen?'Waiting for the first scanned URL…':'Click this row to load the per-URL processing log.').'</div>'
                 .'</div>'
                 .'<small>Updated '.Util::e((string)($row['updated_at']??'—')).'</small>'
                 .'</div></td></tr>';
@@ -952,10 +953,6 @@ $renderWebsiteHistory = static function(
                         <button class="btn primary website-product-scan-button" type="button"
                             data-website-input="#companyWebsiteScanUrl">Scan Website</button>
                     </div>
-                    <div class="website-product-scan-progress-wrap hidden">
-                        <div class="website-product-scan-progress website-product-scan-primary-progress" aria-live="polite"></div>
-                        <button type="button" class="website-scan-progress-close" aria-label="Hide scan progress">×</button>
-                    </div>
                 </form>
 
                 <div class="website-detail-section-head">
@@ -996,10 +993,6 @@ $renderWebsiteHistory = static function(
                                             data-reference-count="<?= (int)($stat['total']??0) ?>"
                                             <?= $hasActiveWebsiteScan ? 'disabled data-global-scan-disabled="1" title="Pause the active website scan before deleting any website."' : '' ?>>Delete Website</button>
                                     </form>
-                                </div>
-                                <div class="website-product-scan-progress-wrap hidden">
-                                    <div class="website-product-scan-progress" aria-live="polite"></div>
-                                    <button type="button" class="website-scan-progress-close" aria-label="Hide scan progress">×</button>
                                 </div>
                                 <?php
                                 $sourceScanHistory=array_values(array_filter(($websiteProductScanHistory ?? []),static function(array $row) use ($host): bool {
