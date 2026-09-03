@@ -15,6 +15,54 @@ use App\Models\Post;
 
 $u = Auth::user();
 $base = $config['app']['base_path'];
+
+// EN: Keep the primary menu synchronized with the actual routed page. Query
+// strings never affect the active state; route families such as Reports and
+// Settings keep their parent menu item active on child pages.
+// 中文：主菜单依据当前实际 URL 路由显示选中状态；Query String 不影响高亮，
+// Reports / Settings 等子页面继续高亮所属的父级菜单。
+$requestPath = (string)(parse_url((string)($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?? '/');
+$basePath = rtrim((string)$base, '/');
+$relativePath = $requestPath;
+if ($basePath !== '' && $basePath !== '/' && str_starts_with($requestPath, $basePath)) {
+    $relativePath = substr($requestPath, strlen($basePath)) ?: '/';
+}
+$relativePath = '/' . ltrim($relativePath, '/');
+
+$navActive = [
+    'dashboard' => false,
+    'submit' => false,
+    'reports' => false,
+    'settings' => false,
+    'help' => false,
+];
+if ($u) {
+    if (str_starts_with($relativePath, '/help')) {
+        $navActive['help'] = true;
+    } elseif (($u['role'] ?? '') === 'sales') {
+        if (str_starts_with($relativePath, '/sales/submit')) {
+            $navActive['submit'] = true;
+        } elseif ($relativePath === '/sales' || str_starts_with($relativePath, '/sales/')) {
+            $navActive['dashboard'] = true;
+        }
+    } elseif (($u['role'] ?? '') === 'admin') {
+        if (str_starts_with($relativePath, '/admin/reports')) {
+            $navActive['reports'] = true;
+        } elseif (
+            str_starts_with($relativePath, '/admin/settings')
+            || str_starts_with($relativePath, '/admin/providers')
+            || str_starts_with($relativePath, '/admin/inspection-lock')
+            || str_starts_with($relativePath, '/admin/website')
+            || str_starts_with($relativePath, '/admin/duplicate-catalog')
+            || str_starts_with($relativePath, '/admin/maintenance')
+        ) {
+            $navActive['settings'] = true;
+        } elseif ($relativePath === '/admin' || str_starts_with($relativePath, '/admin/')) {
+            $navActive['dashboard'] = true;
+        }
+    }
+}
+
 $ok = $_SESSION['flash_success'] ?? null;
 $bad = $_SESSION['flash_error'] ?? null;
 unset($_SESSION['flash_success'], $_SESSION['flash_error']);
@@ -208,15 +256,17 @@ if ($u && ($u['role'] ?? '') === 'admin') {
 
             <?php if ($u['role'] === 'sales'): ?>
                 <a
-                    class="app-nav-link"
+                    class="app-nav-link<?= $navActive['dashboard'] ? ' active' : '' ?>"
                     href="<?= Util::e($base) ?>/sales"
+                    <?= $navActive['dashboard'] ? 'aria-current="page"' : '' ?>
                     data-nav-i18n="dashboard"
                 >
                     Dashboard
                 </a>
                 <a
-                    class="app-nav-link"
+                    class="app-nav-link<?= $navActive['submit'] ? ' active' : '' ?>"
                     href="<?= Util::e($base) ?>/sales/submit"
+                    <?= $navActive['submit'] ? 'aria-current="page"' : '' ?>
                     data-nav-i18n="submit"
                     data-open-sales-submit
                 >
@@ -224,27 +274,41 @@ if ($u && ($u['role'] ?? '') === 'admin') {
                 </a>
             <?php else: ?>
                 <a
-                    class="app-nav-link"
+                    class="app-nav-link<?= $navActive['dashboard'] ? ' active' : '' ?>"
                     href="<?= Util::e($base) ?>/admin"
+                    <?= $navActive['dashboard'] ? 'aria-current="page"' : '' ?>
                     data-nav-i18n="dashboard"
                 >
                     Dashboard
                 </a>
                 <a
-                    class="app-nav-link"
+                    class="app-nav-link<?= $navActive['reports'] ? ' active' : '' ?>"
                     href="<?= Util::e($base) ?>/admin/reports"
+                    <?= $navActive['reports'] ? 'aria-current="page"' : '' ?>
                     data-nav-i18n="reports"
                 >
                     Reports
                 </a>
                 <a
-                    class="app-nav-link"
+                    class="app-nav-link<?= $navActive['settings'] ? ' active' : '' ?>"
                     href="<?= Util::e($base) ?>/admin/settings"
+                    <?= $navActive['settings'] ? 'aria-current="page"' : '' ?>
                     data-nav-i18n="settings"
                 >
                     Settings
                 </a>
             <?php endif; ?>
+
+                <!-- EN: Help is a normal routed application page and uses the same header/navigation/footer.
+                     中文：Help 是系统内的正常路由页面，与其他页面共用 Header / Navigation / Footer。 -->
+                <a
+                    class="app-nav-link<?= $navActive['help'] ? ' active' : '' ?>"
+                    href="<?= Util::e($base) ?>/help"
+                    <?= $navActive['help'] ? 'aria-current="page"' : '' ?>
+                    data-nav-i18n="help"
+                >
+                    Help
+                </a>
 
             <form class="app-nav-signout" method="post" action="<?= Util::e($base) ?>/logout">
                 <input
@@ -287,6 +351,7 @@ if ($u && ($u['role'] ?? '') === 'admin') {
                 <div><span>Platform</span><strong id="adminDeleteRequestPlatform">—</strong></div>
                 <div><span>Published</span><strong id="adminDeleteRequestPublished">—</strong></div>
                 <div><span>Post ID</span><strong id="adminDeleteRequestPostId">—</strong></div>
+                <div class="hidden" id="adminDeleteRequestAccountFact"><span>Account</span><strong id="adminDeleteRequestAccount">—</strong></div>
             </div>
 
             <section class="admin-delete-request-content">

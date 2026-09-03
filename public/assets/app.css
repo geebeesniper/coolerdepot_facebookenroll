@@ -15541,3 +15541,222 @@ button.website-history-control:disabled{opacity:.38;cursor:default}
 .website-history-processing-log{
     scroll-behavior:auto;
 }
+
+/* v0.2.85 — Help is a normal application page, never a standalone document. */
+.app-help-page{
+    width:100%;
+    min-width:0;
+}
+.app-help-guide-layout{
+    display:grid;
+    grid-template-columns:220px minmax(0,1fr);
+    gap:16px;
+    align-items:start;
+    width:100%;
+    min-width:0;
+}
+.app-help-toc{
+    position:sticky;
+    top:62px;
+    align-self:start;
+    max-height:calc(100vh - 82px);
+    overflow:auto;
+    padding:12px;
+    background:#fff;
+    border:1px solid #dbe4ef;
+    border-radius:4px;
+}
+.app-help-toc strong{
+    display:block;
+    margin:2px 8px 8px;
+    color:#344054;
+    font-size:11px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.05em;
+}
+.app-help-toc a{
+    display:block;
+    padding:7px 8px;
+    border-radius:4px;
+    color:#344054;
+    font-size:11px;
+    line-height:1.35;
+    text-decoration:none;
+}
+.app-help-toc a:hover{
+    background:#f2f6fb;
+    color:#175cd3;
+}
+.app-help-guide-content{
+    min-width:0;
+}
+.app-help-page .hero,
+.app-help-page .section{
+    background:#fff;
+    border:1px solid #dbe4ef;
+    border-radius:4px;
+}
+.app-help-page .hero{
+    padding:22px;
+    margin-bottom:14px;
+}
+.app-help-page .hero .eyebrow{
+    color:#175cd3;
+    font-size:10px;
+    font-weight:800;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+}
+.app-help-page .hero h1{
+    margin:5px 0 6px;
+    color:#101828;
+    font-size:26px;
+    line-height:1.15;
+}
+.app-help-page .hero p,
+.app-help-page .section p{
+    color:#475467;
+}
+.app-help-page .rolepill{
+    display:inline-flex;
+    margin-top:8px;
+    padding:4px 8px;
+    border-radius:4px;
+    background:#eff6ff;
+    color:#175cd3;
+    font-size:10px;
+    font-weight:800;
+}
+.app-help-page .section{
+    padding:18px;
+    margin-bottom:14px;
+}
+.app-help-page .section h2{
+    margin:0 0 6px;
+    color:#101828;
+    font-size:18px;
+}
+.app-help-page .section h3{
+    margin:18px 0 7px;
+    font-size:14px;
+}
+.app-help-page .workflow,
+.app-help-page .cards{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:8px;
+    margin:10px 0;
+}
+.app-help-page .step,
+.app-help-page .card,
+.app-help-page .ui,
+.app-help-page .screenmap{
+    border:1px solid #dbe4ef;
+    border-radius:4px;
+    background:#fff;
+    padding:12px;
+}
+.app-help-page .step .n{
+    display:inline-grid;
+    place-items:center;
+    width:21px;
+    height:21px;
+    margin-bottom:6px;
+    border-radius:50%;
+    background:#175cd3;
+    color:#fff;
+    font-size:10px;
+    font-weight:700;
+}
+.app-help-page .callout{
+    margin:10px 0;
+    padding:10px 12px;
+    border-left:3px solid #175cd3;
+    border-radius:4px;
+    background:#f4f8ff;
+}
+.app-help-page .callout.warn{border-left-color:#dc9800;background:#fff9e8}
+.app-help-page .callout.danger{border-left-color:#d92d20;background:#fff4f3}
+.app-help-page .callout.good,
+.app-help-page .callout.ok{border-left-color:#16a34a;background:#f0fdf4}
+.app-help-page .tablewrap{
+    overflow:auto;
+    margin:10px 0;
+    border:1px solid #dbe4ef;
+    border-radius:4px;
+}
+.app-help-page table{
+    width:100%;
+    min-width:680px;
+    border-collapse:collapse;
+    background:#fff;
+}
+.app-help-page th,
+.app-help-page td{
+    padding:8px 10px;
+    border-bottom:1px solid #e8edf3;
+    text-align:left;
+    vertical-align:top;
+}
+.app-help-page th{
+    background:#f7f9fc;
+    color:#475467;
+    font-size:10px;
+    text-transform:uppercase;
+}
+.app-help-page .two-col{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+}
+.app-help-page .checklist{
+    display:grid;
+    gap:7px;
+    margin:8px 0;
+}
+.app-help-page .check{
+    display:flex;
+    gap:8px;
+    align-items:flex-start;
+}
+.app-help-page .check:before{
+    content:'✓';
+    flex:0 0 18px;
+    color:#16803b;
+    font-weight:800;
+}
+.app-help-page .toc-mobile{display:none}
+
+/* The same application language selector controls Help content. */
+.app-help-page .en,
+.app-help-page .zh,
+.app-help-page .zh-tw,
+.app-help-page .es,
+.app-help-page .en-inline,
+.app-help-page .zh-inline,
+.app-help-page .zh-tw-inline,
+.app-help-page .es-inline{
+    display:none!important;
+}
+.app-help-page.help-lang-en .en,
+.app-help-page.help-lang-zh-CN .zh,
+.app-help-page.help-lang-zh-TW .zh-tw,
+.app-help-page.help-lang-es .es{
+    display:revert!important;
+}
+.app-help-page.help-lang-en .en-inline,
+.app-help-page.help-lang-zh-CN .zh-inline,
+.app-help-page.help-lang-zh-TW .zh-tw-inline,
+.app-help-page.help-lang-es .es-inline{
+    display:inline!important;
+}
+
+@media(max-width:900px){
+    .app-help-guide-layout{grid-template-columns:1fr}
+    .app-help-toc{display:none}
+    .app-help-page .toc-mobile{display:block}
+    .app-help-page .hero{padding:16px}
+    .app-help-page .hero h1{font-size:22px}
+    .app-help-page .two-col{grid-template-columns:1fr}
+}

@@ -18,7 +18,7 @@ $check(version_compare($version, '0.2.83', '>='), 'VERSION must be 0.2.83 or new
 $controller = $read('app/Controllers/HelpController.php');
 $check(str_contains($controller, 'Auth::requireLogin()'), 'Help must remain authenticated.');
 $check(str_contains($controller, "['sales', 'admin']"), 'Help role isolation must remain explicit.');
-$check(str_contains($controller, "'/docs/user-guides/' . \$role . '.html'"), 'Help must remain role-specific.');
+$check(str_contains($controller, "'/Views/help/' . \$role . '.php'") || str_contains($controller, "'/docs/user-guides/' . \$role . '.html'"), 'Help must remain role-specific.');
 $check(str_contains($controller, "Cache-Control: private, no-store, max-age=0"), 'Help must disable stale browser caching after upgrades.');
 
 $appJs = $read('public/assets/app.js');
