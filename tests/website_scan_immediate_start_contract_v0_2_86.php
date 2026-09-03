@@ -32,9 +32,9 @@ $check(str_contains($job,'private static bool $schemaReady = false'),'scan-job s
 $check(str_contains($job,'information_schema.tables'),'scan job uses a cheap existing-schema fast path');
 $check(str_contains($history,'information_schema.tables'),'history uses a cheap existing-schema fast path');
 
-$check(str_contains($js,'function startHistoryPlaceholder(host,website)'),'click inserts an immediate History run placeholder');
-$check(str_contains($js,'startHistoryPlaceholder(requestedHost,website);'),'start click shows History before waiting for the HTTP response');
-$check(str_contains($js,'removeStartHistoryPlaceholder(requestedHost);'),'temporary row is reconciled with the persisted run');
+$check(str_contains($js,'function startHistoryPlaceholder(host,website'),'click inserts an immediate History run placeholder');
+$check(str_contains($js,'startHistoryPlaceholder(requestedHost,website'),'start click shows History before waiting for the HTTP response');
+$check(str_contains($js,'removeStartHistoryPlaceholder(requestedHost'),'temporary row is reconciled with the persisted run');
 $check(str_contains($js,'function updateActiveProcessingRow(state)'),'current run has an in-flight URL renderer');
 $check(str_contains($js,'Request in progress…'),'processing log visibly shows the URL currently being fetched');
 $check(str_contains($js,"const nextUrl=String(state.next_url||'').trim();"),'in-flight row follows persisted queue state');

@@ -13380,7 +13380,14 @@ $(document).on('click','.website-source-delete',function(event){
     }
 
     function sourceCard(host){
-        return $('.website-product-source[data-website-source="'+cssEscape(host)+'"]').first();
+        host=String(host||'').trim().toLowerCase();
+        if(!host){return $();}
+        // V0.2.89: never depend on CSS selector escaping to identify a website
+        // card. Compare the literal data value so hosts containing dots, dashes,
+        // IDN/punycode text, etc. cannot make Scan History disappear.
+        return $('.website-product-source').filter(function(){
+            return String($(this).attr('data-website-source')||$(this).data('website-source')||'').trim().toLowerCase()===host;
+        }).first();
     }
 
     function cssEscape(value){
@@ -13477,26 +13484,57 @@ $(document).on('click','.website-source-delete',function(event){
         return '<span class="website-history-control is-static" aria-label="Scan status" title="Scan status">'+websiteScanIcon('dot')+'</span>';
     }
 
-    function scanHistoryWrap(host){
-        return sourceCard(host).find('[data-scan-history-host="'+cssEscape(host)+'"]').first();
+    function scanHistoryWrap(host,$context){
+        host=String(host||'').trim().toLowerCase();
+        if(!host){return $();}
+        let $card=$();
+        if($context&&$context.length){$card=$context.closest('.website-product-source');}
+        if(!$card.length){$card=sourceCard(host);}
+
+        // V0.2.89: the History table belongs to the card that contains the Scan
+        // button. Find it directly first. Do not rebuild an attribute selector
+        // from host text and then silently lose the task when that lookup fails.
+        let $wrap=$card.find('[data-scan-history-host]').filter(function(){
+            return String($(this).attr('data-scan-history-host')||'').trim().toLowerCase()===host;
+        }).first();
+        if(!$wrap.length){
+            $wrap=$('[data-scan-history-host]').filter(function(){
+                return String($(this).attr('data-scan-history-host')||'').trim().toLowerCase()===host;
+            }).first();
+        }
+        return $wrap;
     }
 
-    function startHistoryPlaceholder(host,website){
+    function scanHistoryBody(host,$context){
+        host=String(host||'').trim().toLowerCase();
+        let $card=$();
+        if($context&&$context.length){$card=$context.closest('.website-product-source');}
+        if(!$card.length){$card=sourceCard(host);}
+        // The direct card -> tbody path is the authoritative locator.
+        let $body=$card.find('[data-scan-history-body]').first();
+        if($body.length){return $body;}
+        const $wrap=scanHistoryWrap(host,$context);
+        return $wrap.find('[data-scan-history-body]').first();
+    }
+
+    function startHistoryPlaceholder(host,website,$button){
         host=String(host||'').toLowerCase();
-        if(!host){return;}
-        // v0.2.88: a click must make the History task visible immediately, even
-        // when the user started it from the top Website URL field while the saved
-        // website card was collapsed.
-        const $card=sourceCard(host);
+        if(!host){return false;}
+        // V0.2.89: a click must make the History task visible immediately and
+        // keep the exact clicked card as its rendering context.
+        let $card=$button&&$button.length?$button.closest('.website-product-source'):$();
+        if(!$card.length){$card=sourceCard(host);}
         if($card.length){
             $card.addClass('is-expanded');
             $card.find('.website-source-expand').attr('aria-expanded','true');
             $card.find('[data-website-source-detail]').first().stop(true,true).removeClass('hidden').show();
         }
-        const $wrap=scanHistoryWrap(host);const $body=$wrap.find('[data-scan-history-body]').first();
-        if(!$body.length){return;}
+        const $body=scanHistoryBody(host,$button);
+        if(!$body.length){return false;}
         $body.find('[data-history-empty-row]').remove();
-        $body.find('[data-history-start-placeholder="'+cssEscape(host)+'"],[data-history-start-placeholder-detail="'+cssEscape(host)+'"]').remove();
+        $body.find('[data-history-start-placeholder],[data-history-start-placeholder-detail]').filter(function(){
+            return String($(this).attr('data-history-start-placeholder')||$(this).attr('data-history-start-placeholder-detail')||'').trim().toLowerCase()===host;
+        }).remove();
         const now=(new Date()).toLocaleString();
         const row='<tr class="website-history-main-row is-expanded is-starting" data-history-start-placeholder="'+escapeHtml(host)+'" aria-expanded="true">'
             +'<td>'+escapeHtml(now)+'</td>'
@@ -13512,25 +13550,28 @@ $(document).on('click','.website-source-delete',function(event){
             +'</div></td></tr>';
         $body.prepend(row);
         const count=$body.find('[data-scan-history-row]').length+1;
-        $wrap.closest('.website-source-card-history').find('[data-scan-history-count]').first().text(count);
+        $body.closest('.website-source-card-history').find('[data-scan-history-count]').first().text(count);
+        return true;
     }
 
-    function removeStartHistoryPlaceholder(host){
+    function removeStartHistoryPlaceholder(host,$context){
         host=String(host||'').toLowerCase();if(!host){return;}
-        const $wrap=scanHistoryWrap(host);const $body=$wrap.find('[data-scan-history-body]').first();
+        const $body=scanHistoryBody(host,$context);
         if(!$body.length){return;}
-        $body.find('[data-history-start-placeholder="'+cssEscape(host)+'"],[data-history-start-placeholder-detail="'+cssEscape(host)+'"]').remove();
+        $body.find('[data-history-start-placeholder],[data-history-start-placeholder-detail]').filter(function(){
+            return String($(this).attr('data-history-start-placeholder')||$(this).attr('data-history-start-placeholder-detail')||'').trim().toLowerCase()===host;
+        }).remove();
         const count=$body.find('[data-scan-history-row]').length;
-        $wrap.closest('.website-source-card-history').find('[data-scan-history-count]').first().text(count);
+        $body.closest('.website-source-card-history').find('[data-scan-history-count]').first().text(count);
         if(!count){$body.html('<tr class="website-history-empty-row" data-history-empty-row><td colspan="6">No Website Scan history yet.</td></tr>');}
     }
 
-    function ensureHistoryRow(state){
+    function ensureHistoryRow(state,$context){
         const historyId=Number(state.history_id||0);const host=String(state.source_host||'').toLowerCase();
         if(historyId<1||!host){return $();}
         let $row=$('[data-scan-history-row][data-website-history-id="'+historyId+'"]').first();
         if($row.length){return $row;}
-        const $wrap=scanHistoryWrap(host);const $body=$wrap.find('[data-scan-history-body]').first();
+        const $body=scanHistoryBody(host,$context);
         if(!$body.length){return $();}
         $body.find('[data-history-empty-row]').remove();
         const started=escapeHtml(String(state.created_at||'—'));
@@ -13550,7 +13591,7 @@ $(document).on('click','.website-source-delete',function(event){
         $body.prepend(rowHtml);
         $row=$body.find('[data-scan-history-row][data-website-history-id="'+historyId+'"]').first();
         const count=$body.find('[data-scan-history-row]').length;
-        $wrap.closest('.website-source-card-history').find('[data-scan-history-count]').first().text(count);
+        $body.closest('.website-source-card-history').find('[data-scan-history-count]').first().text(count);
         return $row;
     }
 
@@ -13859,7 +13900,12 @@ $(document).on('click','.website-source-delete',function(event){
         let accepted=false;
         let recoveryTimer=null;
         let recoveryAttempts=0;
-        startHistoryPlaceholder(requestedHost,website);
+        const hasSavedCard=sourceCard(requestedHost).length>0;
+        const placeholderVisible=startHistoryPlaceholder(requestedHost,website,$button);
+        if(hasSavedCard&&!placeholderVisible){
+            showToast('Scan History could not be opened for this website. The scan was not started.',true);
+            return;
+        }
         $button.prop('disabled',true).text('Starting…');
 
         function acceptStartedState(state){
@@ -13869,8 +13915,23 @@ $(document).on('click','.website-source-delete',function(event){
             accepted=true;
             if(recoveryTimer){window.clearInterval(recoveryTimer);recoveryTimer=null;}
             const host=String(state.source_host||'').toLowerCase();
-            removeStartHistoryPlaceholder(requestedHost);
-            ensureHistoryRow(state);updateHistoryRow(state);
+            // Create the persisted row before removing the temporary row. This
+            // makes the transition atomic from the user's point of view: there is
+            // never a moment where a database run exists but History is blank.
+            const $historyRow=ensureHistoryRow(state,$button);
+            if(hasSavedCard&&!$historyRow.length){
+                accepted=false;
+                $button.prop('disabled',false).text('Scan Website');
+                $.ajax({
+                    url:endpoints.stop,method:'POST',dataType:'json',
+                    data:{_csrf:csrf,host:host,mode:'pause',history_id:Number(state.history_id||0)},
+                    headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'}
+                });
+                showToast('Scan History task could not be rendered. The scan was paused instead of running invisibly.',true);
+                return false;
+            }
+            removeStartHistoryPlaceholder(requestedHost,$button);
+            updateHistoryRow(state);
             const selector=String($button.data('website-input')||'').trim();if(selector){$(selector).val('');}
             renderScanState(state,$button,true);
             scanLoop(host,Number(state.history_id||0));
@@ -13886,7 +13947,7 @@ $(document).on('click','.website-source-delete',function(event){
             });
             if(recoveryAttempts>=12&&!accepted){
                 window.clearInterval(recoveryTimer);recoveryTimer=null;
-                removeStartHistoryPlaceholder(requestedHost);
+                removeStartHistoryPlaceholder(requestedHost,$button);
                 $button.prop('disabled',false).text('Scan Website');
                 showToast('Scan did not enter Running state. Try again; no page refresh is required.',true);
             }
@@ -13898,7 +13959,7 @@ $(document).on('click','.website-source-delete',function(event){
             headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'}
         }).done(function(data){
             if(!data||!data.ok||!data.state){
-                if(!accepted){removeStartHistoryPlaceholder(requestedHost);showToast((data&&data.message)||'Scan could not start.',true);}
+                if(!accepted){removeStartHistoryPlaceholder(requestedHost,$button);showToast((data&&data.message)||'Scan could not start.',true);}
                 return;
             }
             const state=data.state;const host=String(state.source_host||'').toLowerCase();
@@ -13909,7 +13970,7 @@ $(document).on('click','.website-source-delete',function(event){
             if(accepted){return;}
             $.getJSON(endpoints.status,{host:requestedHost}).done(function(data){
                 if(data&&data.ok&&data.state&&acceptStartedState(data.state)){return;}
-                removeStartHistoryPlaceholder(requestedHost);
+                removeStartHistoryPlaceholder(requestedHost,$button);
                 showToast((xhr.responseJSON&&xhr.responseJSON.message)||(textStatus==='timeout'?'Scan start response timed out.':'Scan could not start.'),true);
             }).fail(function(){showToast((xhr.responseJSON&&xhr.responseJSON.message)||'Scan could not start.',true);});
         }).always(function(){
