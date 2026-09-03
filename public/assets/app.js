@@ -13309,8 +13309,10 @@ $(document).on('click','.website-source-delete',function(event){
         resume:String($manager.data('scan-resume-url')||'')
     };
     const csrf=String($manager.data('csrf')||'');
-    const loops={};
-    const stepRequests={};
+    // v0.2.88: loop ownership is per persisted History run, not merely per host.
+    // A previous run for the same website must never block or cancel a newly-created run.
+    const loops={}; // host => history_id
+    const stepRequests={}; // host => {historyId, xhr}
     const watchdogGraceUntil={};
     const runningHosts={};
     const historyItemLast={};
@@ -13482,6 +13484,15 @@ $(document).on('click','.website-source-delete',function(event){
     function startHistoryPlaceholder(host,website){
         host=String(host||'').toLowerCase();
         if(!host){return;}
+        // v0.2.88: a click must make the History task visible immediately, even
+        // when the user started it from the top Website URL field while the saved
+        // website card was collapsed.
+        const $card=sourceCard(host);
+        if($card.length){
+            $card.addClass('is-expanded');
+            $card.find('.website-source-expand').attr('aria-expanded','true');
+            $card.find('[data-website-source-detail]').first().stop(true,true).removeClass('hidden').show();
+        }
         const $wrap=scanHistoryWrap(host);const $body=$wrap.find('[data-scan-history-body]').first();
         if(!$body.length){return;}
         $body.find('[data-history-empty-row]').remove();
@@ -13705,43 +13716,75 @@ $(document).on('click','.website-source-delete',function(event){
     }
 
     function scanLoop(host,historyId){
+        host=String(host||'').toLowerCase();
         historyId=Number(historyId||0);
-        if(!host||loops[host]){return;}
-        loops[host]=true;
+        if(!host||historyId<1){return;}
+
+        // v0.2.88: multiple History runs can exist for the same host. The old
+        // boolean host loop let a stale/paused prior run leave loops[host]=true,
+        // which made a brand-new run return here without ever sending scan-step.
+        // Bind the browser worker to the exact persisted History id instead.
+        const previousHistoryId=Number(loops[host]||0);
+        if(previousHistoryId===historyId){return;}
+        if(previousHistoryId>0&&previousHistoryId!==historyId){
+            const previousRequest=stepRequests[host];
+            if(previousRequest&&Number(previousRequest.historyId||0)===previousHistoryId
+                &&previousRequest.xhr&&typeof previousRequest.xhr.abort==='function'){
+                try{previousRequest.xhr.abort('scan-superseded');}catch(e){}
+            }
+        }
+        loops[host]=historyId;
+
+        function isCurrentRun(){return Number(loops[host]||0)===historyId;}
+        function releaseCurrentRun(){if(isCurrentRun()){delete loops[host];}}
+
         function tick(){
-            if(!loops[host]){return;}
+            if(!isCurrentRun()){return;}
             watchdogGraceUntil[host]=Date.now()+50000;
-            stepRequests[host]=$.ajax({
+            const xhr=$.ajax({
                 url:endpoints.step,method:'POST',dataType:'json',timeout:45000,
                 data:{_csrf:csrf,host:host,history_id:historyId,after_item_id:Number(historyItemLast[historyId]||0)},
                 headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'}
-            }).done(function(data){
+            });
+            stepRequests[host]={historyId:historyId,xhr:xhr};
+            xhr.done(function(data){
+                // An older request may finish after a newer History run has started.
+                // It is not allowed to repaint the UI or clear the new worker.
+                if(!isCurrentRun()){return;}
                 if(!data||!data.ok||!data.state){
-                    loops[host]=false;showToast((data&&data.message)||'Website scan failed.',true);return;
+                    releaseCurrentRun();showToast((data&&data.message)||'Website scan failed.',true);return;
                 }
-                const state=data.state;renderScanState(state,null,false);
+                const state=data.state;
+                if(Number(state.history_id||0)!==historyId){
+                    releaseCurrentRun();
+                    showToast('Scanner returned a different History run. Refresh is not required; start the scan again.',true);
+                    return;
+                }
+                renderScanState(state,null,false);
                 if(String(state.status)==='running'){
                     window.setTimeout(tick,state.busy?700:220);
                     return;
                 }
-                loops[host]=false;
+                releaseCurrentRun();
                 if(String(state.status)==='completed'){
                     showToast('Scan complete: '+host,false);
                     if(activeHost===host){loadInlineProducts(host,'');}
                 }
-            }).fail(function(xhr,textStatus){
-                loops[host]=false;
-                if(textStatus==='scan-watchdog'){return;}
-                $.getJSON(endpoints.status,{host:host}).done(function(data){
-                    if(data&&data.ok&&data.state){
+            }).fail(function(xhrFailed,textStatus){
+                if(textStatus==='scan-superseded'){return;}
+                if(!isCurrentRun()){return;}
+                releaseCurrentRun();
+                $.getJSON(endpoints.status,{host:host,history_id:historyId}).done(function(data){
+                    if(data&&data.ok&&data.state&&Number(data.state.history_id||0)===historyId){
                         data.state.client_interrupted=true;
                         renderScanState(data.state,null,true);
                     }
                 });
-                const msg=(xhr.responseJSON&&xhr.responseJSON.message)||('Scanner connection interrupted'+(xhr.status?' (HTTP '+xhr.status+')':'')+'.');
+                const msg=(xhrFailed.responseJSON&&xhrFailed.responseJSON.message)||('Scanner connection interrupted'+(xhrFailed.status?' (HTTP '+xhrFailed.status+')':'')+'.');
                 showToast(msg+' Progress is saved and status will retry automatically.',true);
             }).always(function(){
-                delete stepRequests[host];
+                const current=stepRequests[host];
+                if(current&&Number(current.historyId||0)===historyId&&current.xhr===xhr){delete stepRequests[host];}
             });
         }
         tick();
@@ -13749,9 +13792,10 @@ $(document).on('click','.website-source-delete',function(event){
 
     function changeScanState(host,mode,$control){
         host=String(host||'').toLowerCase();if(!host)return;
-        loops[host]=false;
         if($control&&$control.length){$control.prop('disabled',true).addClass('is-busy');}
         const historyId=$control&&$control.length?Number($control.data('history-id')||0):0;
+        const activeHistoryId=Number(loops[host]||0);
+        if(historyId<1||activeHistoryId===historyId){delete loops[host];}
         $.ajax({
             url:endpoints.stop,method:'POST',dataType:'json',
             data:{_csrf:csrf,host:host,mode:mode,history_id:historyId},
@@ -14045,24 +14089,28 @@ $(document).on('click','.website-source-delete',function(event){
                 const state=data.state;
                 const status=String(state.status||'');
                 if(status!=='running'){
-                    loops[host]=false;
+                    const stoppedHistoryId=Number(state.history_id||0);
+                    if(stoppedHistoryId<1||Number(loops[host]||0)===stoppedHistoryId){delete loops[host];}
                     renderScanState(state,null,false);
                     return;
                 }
                 const stale=Math.max(0,Number(state.stale_seconds||0));
                 if(stale>=55&&Date.now()>=Number(watchdogGraceUntil[host]||0)){
-                    if(stepRequests[host]&&typeof stepRequests[host].abort==='function'){
-                        try{stepRequests[host].abort('scan-watchdog');}catch(e){}
+                    const staleHistoryId=Number(state.history_id||0);
+                    const pending=stepRequests[host];
+                    if(pending&&Number(pending.historyId||0)===staleHistoryId&&pending.xhr&&typeof pending.xhr.abort==='function'){
+                        try{pending.xhr.abort('scan-watchdog');}catch(e){}
                     }
-                    loops[host]=false;
+                    if(Number(loops[host]||0)===staleHistoryId){delete loops[host];}
                     state.client_interrupted=true;
                     renderScanState(state,null,true);
                     showToast('Website scan paused because no progress was recorded for '+stale+' seconds. Progress was saved; use ▶ in Scan History after the job is paused.',true);
                     return;
                 }
-                if(!loops[host]){
+                const runningHistoryId=Number(state.history_id||0);
+                if(runningHistoryId>0&&Number(loops[host]||0)!==runningHistoryId){
                     renderScanState(state,null,false);
-                    scanLoop(host,Number(state.history_id||0));
+                    scanLoop(host,runningHistoryId);
                 }
             });
         });

@@ -15913,3 +15913,6 @@ button.website-history-control:disabled{opacity:.38;cursor:default}
         grid-template-columns:1fr;
     }
 }
+
+/* v0.2.88 — Website scan run ownership is History-scoped; new runs cannot be blocked by stale same-host browser workers. */
+.website-history-main-row.is-starting [data-history-status-cell] .website-history-control{opacity:1}
