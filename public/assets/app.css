@@ -16534,3 +16534,22 @@ button.website-history-control{
         min-height:44px;
     }
 }
+/* v0.2.107 — collapsed Verification Queue header stays clean.
+ * All / Needs Action are real filters only inside the expanded filter row;
+ * do not duplicate them as fake summary controls in the collapsed header.
+ * Refresh and collapse are the only right-side controls and share one height. */
+.sales-verification-queue-head-actions > [data-verification-queue-refresh],
+.sales-verification-queue-head-actions > [data-vq-collapse-toggle]{
+    box-sizing:border-box !important;
+    height:30px !important;
+    min-height:30px !important;
+    max-height:30px !important;
+    margin:0 !important;
+    padding-top:0 !important;
+    padding-bottom:0 !important;
+    align-items:center;
+    justify-content:center;
+}
+.sales-verification-queue-head-actions > [data-verification-queue-refresh]{
+    display:inline-flex;
+}

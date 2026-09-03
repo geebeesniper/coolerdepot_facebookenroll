@@ -14,10 +14,6 @@
         </div>
 
         <div class="sales-verification-queue-head-actions">
-            <div class="sales-verification-queue-summary" aria-live="polite">
-                <span><span data-sales-i18n="queueAll">All</span> <b data-vq-count="all">0</b></span>
-                <span><span data-sales-i18n="queueNeedsAction">Needs Action</span> <b data-vq-count="needs_action">0</b></span>
-            </div>
             <button type="button" class="btn compact" data-verification-queue-refresh>
                 <span data-sales-i18n="refreshQueue">Refresh</span>
             </button>
