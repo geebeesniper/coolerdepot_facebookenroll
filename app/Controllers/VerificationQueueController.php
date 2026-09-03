@@ -21,13 +21,19 @@ final class VerificationQueueController extends Controller
         $filter=strtolower(trim((string)($_GET['status']??'all')));
         if(!in_array($filter,['all','waiting','verifying','passed','failed','duplicate','invalid','needs_action'],true))$filter='all';
         try{
-            $counts=VerificationQueue::countsForSales((int)$u['id']);
+            // V0.2.102: counters and rows must come from the same DB snapshot.
+            // Previously the worker was kicked after counts but before listForSales(),
+            // so a newly queued row could move status between the two SELECTs and the
+            // browser could render a non-zero counter with an empty list.
+            $snapshot=VerificationQueue::snapshotForSales((int)$u['id'],$filter,100);
+            $counts=$snapshot['counts'];
+            $items=$snapshot['items'];
             if((int)$counts['waiting']>0&&(int)$counts['verifying']===0)VerificationQueueWorker::kick();
             $this->json([
                 'ok'=>true,
                 'filter'=>$filter,
                 'counts'=>$counts,
-                'items'=>VerificationQueue::listForSales((int)$u['id'],$filter,100),
+                'items'=>$items,
             ]);
         }catch(\Throwable $e){
             Logger::exception($e,'verification-queue',['event'=>'Queue list failed'],'error');

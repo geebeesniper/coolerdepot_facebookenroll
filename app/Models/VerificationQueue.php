@@ -67,6 +67,31 @@ final class VerificationQueue
         return $counts;
     }
 
+    /**
+     * EN: Read queue counters and visible rows from one database snapshot so the UI
+     * cannot receive "Waiting 1" together with an empty list while a worker changes
+     * the row between two separate SELECT statements.
+     * 中文：在同一个数据库快照中读取计数和列表，避免 Worker 恰好在两次查询之间
+     * 修改状态，导致界面出现“Waiting 1”但列表为空。
+     *
+     * @return array{counts:array,items:array}
+     */
+    public static function snapshotForSales(int $salesUserId,string $filter='all',int $limit=100):array
+    {
+        $pdo=Database::connection();
+        $ownsTransaction=!$pdo->inTransaction();
+        try{
+            if($ownsTransaction)$pdo->beginTransaction();
+            $counts=self::countsForSales($salesUserId);
+            $items=self::listForSales($salesUserId,$filter,$limit);
+            if($ownsTransaction&&$pdo->inTransaction())$pdo->commit();
+            return ['counts'=>$counts,'items'=>$items];
+        }catch(\Throwable $e){
+            if($ownsTransaction&&$pdo->inTransaction())$pdo->rollBack();
+            throw $e;
+        }
+    }
+
     public static function historyForSales(int $salesUserId,int $queueId,int $limit=30):array
     {
         $limit=max(1,min(100,$limit));

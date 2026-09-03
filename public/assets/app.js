@@ -13594,13 +13594,55 @@ $(document).on('click','.website-source-delete',function(event){
         }
         return$row;
     }
+    function vqFilterMatches(item,filter){
+        const status=String((item&&item.status)||'').toLowerCase();
+        if(filter==='all')return true;
+        if(filter==='needs_action')return status==='failed'||status==='duplicate'||status==='invalid';
+        return status===filter;
+    }
+    function vqNormalizeItems(raw){
+        if(Array.isArray(raw))return raw;
+        if(raw&&typeof raw==='object')return Object.keys(raw).map(function(key){return raw[key];});
+        return [];
+    }
     function vqRenderPanel($panel,data){
         const counts=data&&data.counts?data.counts:{};
         Object.keys(counts).forEach(function(key){$panel.find('[data-vq-count="'+key+'"]').text(String(counts[key]||0));});
         const $list=$panel.find('[data-vq-list]').empty();
-        (data.items||[]).forEach(function(item){vqRenderRow(item).appendTo($list);});
+        const items=vqNormalizeItems(data&&data.items);
+        items.forEach(function(item){
+            try{
+                vqRenderRow(item).appendTo($list);
+            }catch(error){
+                // Never turn a real queued record into an apparently empty queue
+                // because one optional display field failed to render.
+                if(window.console&&console.error)console.error('Verification Queue row render failed',error,item);
+                const $fallback=$('<div>').addClass('sales-vq-row').attr('data-vq-id',String((item&&item.id)||''));
+                $('<div>').addClass('sales-vq-platform').text(platformLabel(item&&item.platform)||(item&&item.platform)||'Marketplace').appendTo($fallback);
+                $('<div>').addClass('sales-vq-url').text(vqShortUrl((item&&item.canonical_url)||(item&&item.submitted_url)||'Queued listing')).appendTo($fallback);
+                $('<div>').addClass('sales-vq-meta').text('Queued item').appendTo($fallback);
+                $('<span>').addClass('sales-vq-status '+String((item&&item.status)||'waiting')).text(vqStatusLabel(String((item&&item.status)||'waiting'))).appendTo($fallback);
+                $fallback.appendTo($list);
+            }
+        });
         $panel.find('[data-vq-empty]').toggleClass('hidden',$list.children().length>0);
         $panel.data('vqCounts',counts);
+    }
+    function vqShowAcceptedItem(item,counts){
+        if(!item||!item.id)return;
+        $('[data-verification-queue-panel]').each(function(){
+            const $panel=$(this);
+            if(counts&&typeof counts==='object'){
+                Object.keys(counts).forEach(function(key){$panel.find('[data-vq-count="'+key+'"]').text(String(counts[key]||0));});
+                $panel.data('vqCounts',counts);
+            }
+            const filter=String($panel.attr('data-vq-current-filter')||'all');
+            if(!vqFilterMatches(item,filter))return;
+            const $list=$panel.find('[data-vq-list]');
+            $list.find('[data-vq-id="'+String(item.id)+'"]').remove();
+            try{vqRenderRow(item).prependTo($list);}catch(error){if(window.console&&console.error)console.error('Verification Queue immediate row render failed',error,item);}
+            $panel.find('[data-vq-empty]').toggleClass('hidden',$list.children().length>0);
+        });
     }
     function vqSchedulePoll(){
         if(vqPollTimer){clearTimeout(vqPollTimer);vqPollTimer=null;}
@@ -13646,6 +13688,9 @@ $(document).on('click','.website-source-delete',function(event){
         const $btn=$(this).prop('disabled',true).text(salesTr('checking'));
         setSalesSubmitMessage('Checking platform and hard duplicate…','warning');
         vqPost('/api/verification-queue/enqueue',{url:url},$(),function(resp){
+            // Show the accepted queue record immediately; the background refresh then
+            // reconciles it with the worker's latest status.
+            vqShowAcceptedItem(resp.item,resp.counts);
             setSalesSubmitMessage(resp.message||'Saved to Verification Queue.',resp.accepted===false?'warning':'ok');
             $('#salesPreflightActions').addClass('hidden');
             setInspectionStep('fetch','skipped','Background');
