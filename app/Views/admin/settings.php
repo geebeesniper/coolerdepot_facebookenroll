@@ -879,7 +879,7 @@ $renderWebsiteHistory = static function(
         <div>
             <div class="eyebrow">Duplicate Sources</div>
             <h2>Company Website Library</h2>
-            <p class="settings-subtitle">Website Scan, CSV Import, Page / Sitemap Import and Scanned Products are separated below. Open each tool independently.</p>
+            <p class="settings-subtitle">Website Scan includes a Scanned Products shortcut directly underneath it. URL CSV and Page / Sitemap Import remain separate tools, and each work panel opens independently.</p>
         </div>
         <?php if (!empty($websiteStats['library_ready'])): ?>
             <div class="website-library-stats">
@@ -895,15 +895,27 @@ $renderWebsiteHistory = static function(
         <div class="banner bad">Run <code>php scripts/migrate_v0_1_70.php</code>, then <code>php scripts/migrate_v0_1_71.php</code>.</div>
     <?php else: ?>
         <div class="website-tools-grid" data-website-tools>
-            <button type="button" class="website-tool-card website-tool-card-one" data-website-tool-toggle="website-tool-panel-1" aria-expanded="false" aria-controls="website-tool-panel-1">
-                <span class="settings-step">1</span>
-                <span class="website-tool-card-copy">
-                    <strong>Website Scan</strong>
-                    <small>Add websites, run scans and review each website's scan history.</small>
-                    <span class="website-tool-card-count"><?= count($websiteSources ?? []) ?> website<?= count($websiteSources ?? [])===1?'':'s' ?></span>
-                </span>
-                <span class="website-tool-arrow" aria-hidden="true"></span>
-            </button>
+            <div class="website-tool-card-group website-tool-card-group-one">
+                <button type="button" class="website-tool-card website-tool-card-one website-tool-card-primary" data-website-tool-toggle="website-tool-panel-1" aria-expanded="false" aria-controls="website-tool-panel-1">
+                    <span class="settings-step">1</span>
+                    <span class="website-tool-card-copy">
+                        <strong>Website Scan</strong>
+                        <small>Add websites, run scans and review each website's scan history.</small>
+                        <span class="website-tool-card-count"><?= count($websiteSources ?? []) ?> website<?= count($websiteSources ?? [])===1?'':'s' ?></span>
+                    </span>
+                    <span class="website-tool-arrow" aria-hidden="true"></span>
+                </button>
+
+                <button type="button" class="website-tool-subcard website-tool-subcard-products" data-website-tool-toggle="website-tool-panel-4" aria-expanded="false" aria-controls="website-tool-panel-4">
+                    <span class="website-tool-subcard-icon" aria-hidden="true"></span>
+                    <span class="website-tool-card-copy">
+                        <strong>Scanned Products</strong>
+                        <small>Search, open, add or delete saved product URLs without opening a Website Scan card.</small>
+                        <span class="website-tool-card-count"><?= (int)($websiteStats['total'] ?? 0) ?> product reference<?= (int)($websiteStats['total'] ?? 0)===1?'':'s' ?></span>
+                    </span>
+                    <span class="website-tool-arrow" aria-hidden="true"></span>
+                </button>
+            </div>
 
             <button type="button" class="website-tool-card website-tool-card-two" data-website-tool-toggle="website-tool-panel-2" aria-expanded="false" aria-controls="website-tool-panel-2">
                 <span class="settings-step">2</span>
@@ -925,15 +937,6 @@ $renderWebsiteHistory = static function(
                 <span class="website-tool-arrow" aria-hidden="true"></span>
             </button>
 
-            <button type="button" class="website-tool-card website-tool-card-four" data-website-tool-toggle="website-tool-panel-4" aria-expanded="false" aria-controls="website-tool-panel-4">
-                <span class="settings-step">4</span>
-                <span class="website-tool-card-copy">
-                    <strong>Scanned Products</strong>
-                    <small>Search, open, add or delete saved product URLs without opening a Website Scan card.</small>
-                    <span class="website-tool-card-count"><?= (int)($websiteStats['total'] ?? 0) ?> product reference<?= (int)($websiteStats['total'] ?? 0)===1?'':'s' ?></span>
-                </span>
-                <span class="website-tool-arrow" aria-hidden="true"></span>
-            </button>
         </div>
 
         <section class="website-tool-detail website-tool-detail-one hidden" id="website-tool-panel-1" data-website-tool-panel="website-tool-panel-1">
@@ -1029,7 +1032,7 @@ $renderWebsiteHistory = static function(
 
         <section class="website-tool-detail website-tool-detail-four hidden" id="website-tool-panel-4" data-website-tool-panel="website-tool-panel-4">
             <div class="website-tool-detail-head">
-                <div><span class="settings-step">4</span><div><strong>Scanned Products</strong><small>This is independent from Website Scan. Opening a saved website no longer opens this product list.</small></div></div>
+                <div class="website-tool-detail-title-no-step"><div><strong>Scanned Products</strong><small>Search, open, add or delete saved product URLs. This panel is separate from Website Scan even though its shortcut sits directly underneath Website Scan.</small></div></div>
                 <button type="button" class="website-tool-detail-close" data-website-tool-close="website-tool-panel-4" aria-label="Close Scanned Products">×</button>
             </div>
 

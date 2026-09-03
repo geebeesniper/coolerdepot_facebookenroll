@@ -14223,7 +14223,7 @@ $(document).on('click','.website-source-delete',function(event){
 })(window.jQuery);
 
 /* v0.2.36 — Website Library 1/2/3 top-level accordion. */
-/* v0.2.91 — the same accordion now also owns independent Scanned Products panel 4. */
+/* v0.2.92 — Scanned Products uses a child shortcut under Website Scan, but panel 4 remains an independent sibling work panel. */
 (function($){
     'use strict';
     const storageKey='cdspWebsiteToolPanel';
