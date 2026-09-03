@@ -251,22 +251,24 @@ $chartTargetTop=
             ></span>
         </form>
 
-        <button
-            class="btn primary sales-submit-cta"
-            type="button"
-            data-open-sales-submit
-        >
-            <span class="sales-submit-plus">+</span>
-            <span data-sales-i18n="submitPost">Submit Post</span>
-        </button>
+        <div class="sales-submit-actions" role="group" aria-label="Post submission actions">
+            <button
+                class="btn primary sales-submit-cta"
+                type="button"
+                data-open-sales-submit
+            >
+                <span class="sales-submit-plus">+</span>
+                <span data-sales-i18n="submitPost">Submit Post</span>
+            </button>
 
-        <a
-            class="btn sales-submit-cta sales-bulk-submit-cta"
-            href="<?= Util::e($config['app']['base_path']) ?>/sales/bulk-submit"
-        >
-            <span class="sales-submit-plus">+</span>
-            <span data-sales-i18n="bulkSubmitPost">Bulk Submit Post</span>
-        </a>
+            <a
+                class="btn sales-submit-cta sales-bulk-submit-cta"
+                href="<?= Util::e($config['app']['base_path']) ?>/sales/bulk-submit"
+            >
+                <span class="sales-submit-plus">+</span>
+                <span data-sales-i18n="bulkSubmitPost">Bulk Submit Post</span>
+            </a>
+        </div>
     </div>
 </div>
 
