@@ -13295,6 +13295,16 @@ $(document).on('click','.website-source-delete',function(event){
 (function($){
     'use strict';
     if(!$){return;}
+
+    // v0.2.90: this scanner is intentionally outside the large document-ready
+    // closure above, so it must own its HTML escaper too. The older code called
+    // escapeHtml() from here even though that helper was scoped inside the closed
+    // ready callback. Clicking Scan Website therefore threw ReferenceError before
+    // the placeholder, Starting state, or /scan-start request could happen.
+    function escapeHtml(value){
+        return $('<div>').text(value == null ? '' : String(value)).html();
+    }
+
     const $manager=$('.website-source-manager,#website-source-detail').first();
     if(!$manager.length){return;}
 
