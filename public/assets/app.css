@@ -15916,3 +15916,76 @@ button.website-history-control:disabled{opacity:.38;cursor:default}
 
 /* v0.2.88 — Website scan run ownership is History-scoped; new runs cannot be blocked by stale same-host browser workers. */
 .website-history-main-row.is-starting [data-history-status-cell] .website-history-control{opacity:1}
+
+/* v0.2.91 — compact scan rows, user-owned History collapse, and independent Scanned Products tool. */
+.website-scan-history-table .website-history-main-row>td{
+    padding-top:2px!important;
+    padding-bottom:2px!important;
+    vertical-align:middle!important;
+    line-height:1.2;
+}
+.website-scan-history-table [data-history-status-cell]{
+    vertical-align:middle!important;
+    text-align:center!important;
+}
+.website-scan-history-table [data-history-status-cell] .website-history-control{
+    vertical-align:middle;
+}
+.website-history-control,
+button.website-history-control{
+    width:20px;
+    height:20px;
+    min-width:20px;
+    padding:1px;
+}
+.website-history-control svg{width:15px;height:15px}
+
+.website-history-processing-head,
+.website-history-processing-row{
+    grid-template-columns:112px 64px minmax(180px,.8fr) minmax(340px,1.7fr);
+    gap:8px;
+    align-items:center;
+    min-width:740px;
+}
+.website-history-processing-head{
+    padding:4px 8px;
+}
+.website-history-processing-row{
+    padding:2px 8px;
+    min-height:22px;
+    line-height:1.15;
+}
+.website-history-processing-status{
+    min-width:50px;
+    padding:1px 5px;
+    line-height:1.15;
+    align-items:center;
+}
+.website-history-processing-url,
+.website-history-processing-message{
+    min-width:0;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+.website-history-processing-message{overflow-wrap:normal}
+
+.website-tool-detail-four .website-source-inline-panel{
+    border:0;
+    border-radius:0;
+}
+.website-products-library-toolbar{
+    align-items:center;
+}
+.website-products-host-select{
+    flex:0 0 min(250px,28vw);
+    min-width:170px;
+    height:40px;
+}
+@media(max-width:760px){
+    .website-products-library-toolbar{align-items:stretch;flex-direction:column}
+    .website-products-host-select{flex:0 0 auto;width:100%;min-width:0}
+}
+.website-tool-card-four{color:#7c3aed;background:#faf8ff}
+.website-tool-detail-four{border-color:#7c3aed}
+.website-tool-detail-four .website-tool-detail-head{color:#7c3aed;background:#faf8ff}

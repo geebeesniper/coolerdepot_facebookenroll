@@ -843,7 +843,7 @@ $renderWebsiteHistory = static function(
                 echo '<a data-history-source-link href="'.Util::e($sourceUrl).'" target="_blank" rel="noopener noreferrer">'.Util::e($sourceUrl).'</a>';
             }
             echo '<div class="website-history-run-summary" data-history-detail-text>'.Util::e($details!==''?$details:'No additional details recorded.').'</div>'
-                .'<div class="website-history-processing-head"><span>Time</span><span>Result</span><span>Type</span><span>URL</span><span>Details</span></div>'
+                .'<div class="website-history-processing-head"><span>Time</span><span>Result</span><span>URL</span><span>Details</span></div>'
                 .'<div class="website-history-processing-log" data-history-processing-log data-history-id="'.$historyId.'">'
                 .'<div class="website-history-processing-empty" data-history-processing-empty>'.($runningOpen?'Preparing first URL…':'Click this row to load the per-URL processing log.').'</div>'
                 .'</div>'
@@ -879,7 +879,7 @@ $renderWebsiteHistory = static function(
         <div>
             <div class="eyebrow">Duplicate Sources</div>
             <h2>Company Website Library</h2>
-            <p class="settings-subtitle">Website Scan, CSV Import and Page / Sitemap Import are separated below. Open 1, 2 or 3 to see its controls and history.</p>
+            <p class="settings-subtitle">Website Scan, CSV Import, Page / Sitemap Import and Scanned Products are separated below. Open each tool independently.</p>
         </div>
         <?php if (!empty($websiteStats['library_ready'])): ?>
             <div class="website-library-stats">
@@ -899,7 +899,7 @@ $renderWebsiteHistory = static function(
                 <span class="settings-step">1</span>
                 <span class="website-tool-card-copy">
                     <strong>Website Scan</strong>
-                    <small>Add websites, scan products, manage scanned URLs and review scan history.</small>
+                    <small>Add websites, run scans and review each website's scan history.</small>
                     <span class="website-tool-card-count"><?= count($websiteSources ?? []) ?> website<?= count($websiteSources ?? [])===1?'':'s' ?></span>
                 </span>
                 <span class="website-tool-arrow" aria-hidden="true"></span>
@@ -921,6 +921,16 @@ $renderWebsiteHistory = static function(
                     <strong>Page / Sitemap Import</strong>
                     <small>Scan one page or sitemap; its website is detected automatically from the URL.</small>
                     <span class="website-tool-card-count"><?= count($websiteAdvancedHistory ?? []) ?> scan/import record<?= count($websiteAdvancedHistory ?? [])===1?'':'s' ?></span>
+                </span>
+                <span class="website-tool-arrow" aria-hidden="true"></span>
+            </button>
+
+            <button type="button" class="website-tool-card website-tool-card-four" data-website-tool-toggle="website-tool-panel-4" aria-expanded="false" aria-controls="website-tool-panel-4">
+                <span class="settings-step">4</span>
+                <span class="website-tool-card-copy">
+                    <strong>Scanned Products</strong>
+                    <small>Search, open, add or delete saved product URLs without opening a Website Scan card.</small>
+                    <span class="website-tool-card-count"><?= (int)($websiteStats['total'] ?? 0) ?> product reference<?= (int)($websiteStats['total'] ?? 0)===1?'':'s' ?></span>
                 </span>
                 <span class="website-tool-arrow" aria-hidden="true"></span>
             </button>
@@ -956,7 +966,7 @@ $renderWebsiteHistory = static function(
                 </form>
 
                 <div class="website-detail-section-head">
-                    <div><strong>Saved Websites</strong><small>Click a website card to open scan controls, live counters and scanned product details.</small></div>
+                    <div><strong>Saved Websites</strong><small>Click a website card to open scan controls, live counters and scan history.</small></div>
                     <span><?= count($websiteSources ?? []) ?> total</span>
                 </div>
 
@@ -1014,6 +1024,50 @@ $renderWebsiteHistory = static function(
                     <?php endif; ?>
                 </div>
 
+            </div>
+        </section>
+
+        <section class="website-tool-detail website-tool-detail-four hidden" id="website-tool-panel-4" data-website-tool-panel="website-tool-panel-4">
+            <div class="website-tool-detail-head">
+                <div><span class="settings-step">4</span><div><strong>Scanned Products</strong><small>This is independent from Website Scan. Opening a saved website no longer opens this product list.</small></div></div>
+                <button type="button" class="website-tool-detail-close" data-website-tool-close="website-tool-panel-4" aria-label="Close Scanned Products">×</button>
+            </div>
+
+            <div class="website-source-inline-panel website-products-library-panel" data-products-library-panel>
+                <div class="website-source-inline-toolbar website-products-library-toolbar">
+                    <select class="website-products-host-select" aria-label="Website">
+                        <?php if (empty($websiteSources)): ?>
+                            <option value="">No saved websites</option>
+                        <?php else: ?>
+                            <?php foreach (($websiteSources ?? []) as $productSource): ?>
+                                <option value="<?= Util::e((string)$productSource['host']) ?>" data-website-url="<?= Util::e((string)$productSource['url']) ?>"><?= Util::e((string)$productSource['host']) ?></option>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </select>
+                    <div class="website-source-inline-search">
+                        <input type="search" class="website-inline-search" placeholder="Search title, URL or description">
+                        <button type="button" class="btn website-inline-search-button">Search</button>
+                    </div>
+                    <button type="button" class="btn ghost website-source-inline-add-toggle" <?= empty($websiteSources) ? 'disabled' : '' ?>>+ Add URL</button>
+                </div>
+                <form class="website-source-inline-add">
+                    <input type="hidden" name="_csrf" value="<?= Util::e(Csrf::token()) ?>">
+                    <input type="hidden" name="ajax" value="1">
+                    <input type="hidden" name="website_url" value="<?= !empty($websiteSources) ? Util::e((string)$websiteSources[0]['url']) : '' ?>">
+                    <div class="website-source-inline-add-grid">
+                        <label>Page URL<input type="url" name="page_url" required placeholder="https://example.com/product/example"></label>
+                        <label>Title<input type="text" name="title" maxlength="500" required></label>
+                        <label class="wide">Description<textarea name="description" rows="2"></textarea></label>
+                        <label class="wide">First image URL<input type="url" name="image_url"></label>
+                    </div>
+                    <div><button type="submit" class="btn">Add URL</button></div>
+                </form>
+                <div class="website-source-inline-summary">
+                    <span><strong data-inline-count>0</strong> matching products</span>
+                    <span data-products-host-copy><?= !empty($websiteSources) ? 'Search/add/delete applies only to '.Util::e((string)$websiteSources[0]['host']).'.' : 'Save a website in Website Scan first.' ?></span>
+                </div>
+                <div class="website-source-product-list-head"><span>Image</span><span>Title / Description</span><span>Page URL</span><span>Image</span><span>Indexed</span><span></span></div>
+                <div class="website-source-product-grid"><div class="website-source-inline-empty"><?= empty($websiteSources) ? 'No saved websites yet.' : 'Open Scanned Products to load products.' ?></div></div>
             </div>
         </section>
 

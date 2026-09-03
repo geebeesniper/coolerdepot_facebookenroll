@@ -13327,8 +13327,11 @@ $(document).on('click','.website-source-delete',function(event){
     const runningHosts={};
     const historyItemLast={};
     const historyItemsLoaded={};
-    let activeHost='';
-    let $activePanel=$();
+    // v0.2.91: a user's manual collapse wins over live polling. A running row
+    // may start open, but once the user closes it the scanner must not reopen it.
+    const historyUserCollapsed={};
+    let $activePanel=$('[data-products-library-panel]').first();
+    let activeHost=String($activePanel.find('.website-products-host-select').val()||'').toLowerCase();
 
     // v0.2.39: one active website scan at a time. The backend enforces the
     // same rule; this client state keeps every Scan/Delete control honest.
@@ -13405,10 +13408,18 @@ $(document).on('click','.website-source-delete',function(event){
         return String(value).replace(/(["\\])/g,'\\$1');
     }
 
+    function compactUrlLabel(value){
+        const raw=String(value||'').trim();
+        if(!raw){return 'Open URL ↗';}
+        let label=raw.replace(/^https?:\/\//i,'').replace(/^www\./i,'');
+        if(label.length>42){label=label.slice(0,25)+'…'+label.slice(-14);}
+        return label;
+    }
+
     function revealExistingSource(host,inputSelector){
         const $card=sourceCard(host);
         if(!$card.length){return false;}
-        if(activeHost!==host){openInlineSource($card);}
+        ensureWebsiteSourceCardOpen($card,true);
         if(inputSelector){$(inputSelector).val('');}
         const node=$card.get(0);
         if(node&&typeof node.scrollIntoView==='function'){
@@ -13555,7 +13566,7 @@ $(document).on('click','.website-source-delete',function(event){
             +'<div class="website-history-detail-head"><strong>Processing log</strong><small>The run is being created now.</small></div>'
             +'<a href="'+escapeHtml(String(website||''))+'" target="_blank" rel="noopener noreferrer">'+escapeHtml(String(website||''))+'</a>'
             +'<div class="website-history-run-summary">Creating persisted History run…</div>'
-            +'<div class="website-history-processing-head"><span>Time</span><span>Result</span><span>Type</span><span>URL</span><span>Details</span></div>'
+            +'<div class="website-history-processing-head"><span>Time</span><span>Result</span><span>URL</span><span>Details</span></div>'
             +'<div class="website-history-processing-log"><div class="website-history-processing-empty">Creating scan run…</div></div>'
             +'</div></td></tr>';
         $body.prepend(row);
@@ -13595,7 +13606,7 @@ $(document).on('click','.website-source-delete',function(event){
             +'<div class="website-history-detail-head"><strong>Processing log</strong><small>Each scanned URL is recorded here as it finishes.</small></div>'
             +'<a data-history-source-link href="'+escapeHtml(String(state.website_url||''))+'" target="_blank" rel="noopener noreferrer">'+escapeHtml(String(state.website_url||''))+'</a>'
             +'<div class="website-history-run-summary" data-history-detail-text>'+escapeHtml(summary)+'</div>'
-            +'<div class="website-history-processing-head"><span>Time</span><span>Result</span><span>Type</span><span>URL</span><span>Details</span></div>'
+            +'<div class="website-history-processing-head"><span>Time</span><span>Result</span><span>URL</span><span>Details</span></div>'
             +'<div class="website-history-processing-log" data-history-processing-log data-history-id="'+historyId+'"><div class="website-history-processing-empty" data-history-processing-empty>Preparing first URL…</div></div>'
             +'<small>Live scan history</small></div></td></tr>';
         $body.prepend(rowHtml);
@@ -13619,7 +13630,7 @@ $(document).on('click','.website-source-delete',function(event){
 
     function historyItemHtml(item){
         const id=Number(item.id||0);const status=historyItemStatusLabel(item);
-        const url=String(item.page_url||'');const title=String(item.title||'');const kind=String(item.result_kind||'page');
+        const url=String(item.page_url||'');const title=String(item.title||'');
         let detail=String(item.message||'');
         if(title){detail=(title+(detail?' · '+detail:''));}
         if(item.image_found){detail+=(detail?' · ':'')+'image found';}
@@ -13627,9 +13638,8 @@ $(document).on('click','.website-source-delete',function(event){
         return '<div class="website-history-processing-row" data-history-item-id="'+id+'">'
             +'<span class="website-history-processing-time">'+escapeHtml(String(item.created_at||''))+'</span>'
             +'<span class="website-history-processing-status '+status[1]+'">'+status[0]+'</span>'
-            +'<span class="website-history-processing-kind">'+escapeHtml(kind)+'</span>'
-            +'<a class="website-history-processing-url" href="'+escapeHtml(url)+'" target="_blank" rel="noopener noreferrer">'+escapeHtml(url)+'</a>'
-            +'<span class="website-history-processing-message">'+escapeHtml(detail||'—')+'</span>'
+            +'<a class="website-history-processing-url" href="'+escapeHtml(url)+'" title="'+escapeHtml(url)+'" target="_blank" rel="noopener noreferrer">'+escapeHtml(compactUrlLabel(url))+'</a>'
+            +'<span class="website-history-processing-message" title="'+escapeHtml(detail||'—')+'">'+escapeHtml(detail||'—')+'</span>'
             +'</div>';
     }
 
@@ -13647,8 +13657,7 @@ $(document).on('click','.website-source-delete',function(event){
         const active='<div class="website-history-processing-row is-active" data-history-processing-active>'
             +'<span class="website-history-processing-time">Now</span>'
             +'<span class="website-history-processing-status is-running">Scanning</span>'
-            +'<span class="website-history-processing-kind">page</span>'
-            +'<a class="website-history-processing-url" href="'+escapeHtml(nextUrl)+'" target="_blank" rel="noopener noreferrer">'+escapeHtml(nextUrl)+'</a>'
+            +'<a class="website-history-processing-url" href="'+escapeHtml(nextUrl)+'" title="'+escapeHtml(nextUrl)+'" target="_blank" rel="noopener noreferrer">'+escapeHtml(compactUrlLabel(nextUrl))+'</a>'
             +'<span class="website-history-processing-message">Request in progress…</span></div>';
         $log.append(active);
         const node=$log.get(0);if(node){node.scrollTop=node.scrollHeight;}
@@ -13722,8 +13731,10 @@ $(document).on('click','.website-source-delete',function(event){
         appendHistoryItems(state,!!replaceItems);
         updateActiveProcessingRow(state);
         if(String(state.status||'').toLowerCase()==='running'){
-            $row.attr('aria-expanded','true').addClass('is-expanded');
-            $detail.removeClass('hidden');
+            if(!historyUserCollapsed[historyId]){
+                $row.attr('aria-expanded','true').addClass('is-expanded');
+                $detail.removeClass('hidden');
+            }
             historyItemsLoaded[historyId]=true;
         }
     }
@@ -13896,7 +13907,7 @@ $(document).on('click','.website-source-delete',function(event){
         if(inputSelector){
             const $existing=sourceCard(requestedHost);
             if($existing.length){
-                if(activeHost!==requestedHost){openInlineSource($existing);}
+                ensureWebsiteSourceCardOpen($existing,true);
                 const savedUrl=String($existing.data('website-url')||'').trim();
                 if(savedUrl){website=savedUrl;parsed=new URL(savedUrl);}
             }
@@ -14001,6 +14012,7 @@ $(document).on('click','.website-source-delete',function(event){
         if($(event.target).closest('[data-history-scan-control],a,button').length)return;
         const $row=$(this);const id=Number($row.data('website-history-id')||0);if(id<1)return;
         const $detail=$('[data-history-detail-row="'+id+'"]').first();const opening=$detail.hasClass('hidden');
+        if(opening){delete historyUserCollapsed[id];}else{historyUserCollapsed[id]=true;}
         $row.attr('aria-expanded',opening?'true':'false').toggleClass('is-expanded',opening);
         $detail.toggleClass('hidden',!opening);
         if(opening){loadHistoryItems(String($row.data('history-source-host')||''),id);}
@@ -14049,69 +14061,70 @@ $(document).on('click','.website-source-delete',function(event){
         });
     }
 
-    function rowEndCard($card){
-        const top=Math.round($card.position().top);let $last=$card;
-        $card.nextAll('.website-product-source').each(function(){
-            const $candidate=$(this);
-            if(Math.abs(Math.round($candidate.position().top)-top)>2){return false;}
-            $last=$candidate;
-        });
-        return $last;
-    }
-
-    function openInlineSource($card){
-        const host=String($card.data('website-source')||'');
-        const website=String($card.data('website-url')||'');
+    function closeWebsiteSourceCard($card,immediate){
+        if(!$card||!$card.length){return;}
         const $button=$card.find('.website-source-expand').first();
         const $detail=$card.find('[data-website-source-detail]').first();
-        if(activeHost===host){closeInlineSource(false);return;}
-        closeInlineSource(true);
-        activeHost=host;
-        $button.attr('aria-expanded','true');
+        $card.removeClass('is-expanded');
+        $button.attr('aria-expanded','false');
+        if(!$detail.length){return;}
+        if(immediate){$detail.stop(true,true).hide().addClass('hidden').removeAttr('style');}
+        else{$detail.stop(true,true).slideUp(150,function(){$(this).addClass('hidden').removeAttr('style');});}
+    }
+
+    function ensureWebsiteSourceCardOpen($card,immediate){
+        if(!$card||!$card.length){return;}
+        $('.website-product-source.is-expanded').not($card).each(function(){closeWebsiteSourceCard($(this),true);});
+        const $button=$card.find('.website-source-expand').first();
+        const $detail=$card.find('[data-website-source-detail]').first();
         $card.addClass('is-expanded');
-        if($detail.length){
-            $detail.stop(true,true).removeClass('hidden').hide().slideDown(180,function(){$(this).removeAttr('style');});
-        }
-        const panelHtml='<section class="website-source-inline-panel" data-inline-host="'+escapeHtml(host)+'">'
-            +'<div class="website-source-inline-head"><div class="website-source-inline-head-copy"><strong>Scanned products</strong><span>'+escapeHtml(host)+'</span></div><button type="button" class="website-source-inline-close" aria-label="Close products">×</button></div>'
-            +'<div class="website-source-inline-toolbar"><div class="website-source-inline-search"><input type="search" class="website-inline-search" placeholder="Search title, URL or description"><button type="button" class="btn website-inline-search-button">Search</button></div><button type="button" class="btn ghost website-source-inline-add-toggle">+ Add URL</button></div>'
-            +'<form class="website-source-inline-add">'
-                +'<input type="hidden" name="_csrf" value="'+escapeHtml(csrf)+'"><input type="hidden" name="ajax" value="1"><input type="hidden" name="website_url" value="'+escapeHtml(website)+'">'
-                +'<div class="website-source-inline-add-grid"><label>Page URL<input type="url" name="page_url" required placeholder="'+escapeHtml(website)+'product/example"></label><label>Title<input type="text" name="title" maxlength="500" required></label><label class="wide">Description<textarea name="description" rows="2"></textarea></label><label class="wide">First image URL<input type="url" name="image_url"></label></div>'
-                +'<div><button type="submit" class="btn">Add URL</button></div>'
-            +'</form>'
-            +'<div class="website-source-inline-summary"><span><strong data-inline-count>0</strong> matching products</span><span>Search/add/delete applies only to '+escapeHtml(host)+'.</span></div>'
-            +'<div class="website-source-product-list-head"><span>Image</span><span>Title / Description</span><span>Page URL</span><span>Image</span><span>Indexed</span><span></span></div>'
-            +'<div class="website-source-product-grid"><div class="website-source-inline-empty">Loading products…</div></div>'
-        +'</section>';
-        $activePanel=$(panelHtml).hide();
-        rowEndCard($card).after($activePanel);
-        $activePanel.stop(true,true).slideDown(200);
-        loadInlineProducts(host,'');
+        $button.attr('aria-expanded','true');
+        if(!$detail.length){return;}
+        if(immediate){$detail.stop(true,true).removeClass('hidden').show().removeAttr('style');}
+        else{$detail.stop(true,true).removeClass('hidden').hide().slideDown(180,function(){$(this).removeAttr('style');});}
     }
 
-    function closeInlineSource(immediate){
-        const closingHost=activeHost;
-        if(closingHost){
-            const $card=sourceCard(closingHost);
-            $card.removeClass('is-expanded').find('.website-source-expand').attr('aria-expanded','false');
-            const $detail=$card.find('[data-website-source-detail]').first();
-            if($detail.length){
-                if(immediate){$detail.stop(true,true).hide().addClass('hidden').removeAttr('style');}
-                else{$detail.stop(true,true).slideUp(150,function(){$(this).addClass('hidden').removeAttr('style');});}
-            }
-        }
-        const $panel=$activePanel;
-        $activePanel=$();activeHost='';
-        if($panel.length){
-            if(immediate){$panel.stop(true,true).remove();}
-            else{$panel.stop(true,true).slideUp(160,function(){$(this).remove();});}
-        }
+    function toggleWebsiteSourceCard($card){
+        if(!$card||!$card.length){return;}
+        if($card.hasClass('is-expanded')){closeWebsiteSourceCard($card,false);return;}
+        ensureWebsiteSourceCardOpen($card,false);
     }
 
-    $(document).on('click','.website-source-expand',function(){openInlineSource($(this).closest('.website-product-source'));});
-    $(document).on('click','.website-source-inline-close',closeInlineSource);
+    function selectedProductsWebsite(){
+        if(!$activePanel.length){return '';}
+        const $option=$activePanel.find('.website-products-host-select option:selected').first();
+        return String($option.attr('data-website-url')||'').trim();
+    }
+
+    function activateProductsHost(host,loadNow){
+        if(!$activePanel.length){return;}
+        host=String(host||'').trim().toLowerCase();
+        activeHost=host;
+        const website=selectedProductsWebsite();
+        $activePanel.find('input[name="website_url"]').val(website);
+        $activePanel.find('[data-products-host-copy]').text(host?'Search/add/delete applies only to '+host+'.':'Save a website in Website Scan first.');
+        $activePanel.find('.website-source-inline-add-toggle').prop('disabled',!host);
+        if(!host){
+            $activePanel.find('[data-inline-count]').text('0');
+            $activePanel.find('.website-source-product-grid').html('<div class="website-source-inline-empty">No saved websites yet.</div>');
+            return;
+        }
+        if(loadNow!==false){loadInlineProducts(host,String($activePanel.find('.website-inline-search').val()||''));}
+    }
+
+    $(document).on('click','.website-source-expand',function(){toggleWebsiteSourceCard($(this).closest('.website-product-source'));});
+    $(document).on('change','.website-products-host-select',function(){
+        activateProductsHost(String($(this).val()||''),true);
+    });
+    $(document).on('click','[data-website-tool-toggle="website-tool-panel-4"]',function(){
+        const $toggle=$(this);
+        window.setTimeout(function(){
+            if($toggle.attr('aria-expanded')!=='true'||!$activePanel.length){return;}
+            activateProductsHost(String($activePanel.find('.website-products-host-select').val()||''),true);
+        },0);
+    });
     $(document).on('click','.website-source-inline-add-toggle',function(){
+        if(!$activePanel.length){return;}
         $activePanel.find('.website-source-inline-add').toggleClass('is-open');
     });
     $(document).on('click','.website-inline-search-button',function(){
@@ -14122,6 +14135,8 @@ $(document).on('click','.website-source-delete',function(event){
     });
     $(document).on('submit','.website-source-inline-add',function(event){
         event.preventDefault();const $form=$(this);const $submit=$form.find('button[type="submit"]');
+        if(!activeHost){showToast('Select a website first.',true);return;}
+        $form.find('input[name="website_url"]').val(selectedProductsWebsite());
         $submit.prop('disabled',true).text('Adding…');
         $.ajax({url:endpoints.add,method:'POST',dataType:'json',data:$form.serialize(),headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'}})
             .done(function(data){
@@ -14141,7 +14156,8 @@ $(document).on('click','.website-source-delete',function(event){
         $.ajax({url:endpoints.delete,method:'POST',dataType:'json',data:{_csrf:csrf,id:id},headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'}})
             .done(function(data){
                 if(!data||!data.ok){showToast((data&&data.message)||'Delete failed.',true);return;}
-                $activePanel.find('[data-inline-reference-id="'+id+'"]').remove();showToast('Website product deleted.',false);
+                showToast('Website product deleted.',false);
+                if(activeHost){loadInlineProducts(activeHost,String($activePanel.find('.website-inline-search').val()||''));}
             }).fail(function(xhr){showToast((xhr.responseJSON&&xhr.responseJSON.message)||'Delete failed.',true);$button.prop('disabled',false).removeClass('delete-armed').text('Delete');});
     });
 
@@ -14207,6 +14223,7 @@ $(document).on('click','.website-source-delete',function(event){
 })(window.jQuery);
 
 /* v0.2.36 — Website Library 1/2/3 top-level accordion. */
+/* v0.2.91 — the same accordion now also owns independent Scanned Products panel 4. */
 (function($){
     'use strict';
     const storageKey='cdspWebsiteToolPanel';
