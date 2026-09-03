@@ -19,7 +19,7 @@ $checks['version']=version_compare($version,'0.2.71','>=');
 $checks['menu_path_parser']=str_contains($header, "\$_SERVER['REQUEST_URI']") && str_contains($header, '$navActive');
 $checks['menu_active_markup']=str_contains($header, "? ' active' : ''") && str_contains($header, 'aria-current="page"');
 $checks['menu_active_css']=str_contains($css, '.app-nav-link.active') && str_contains($css, 'aria-current="page"');
-$checks['external_id_scoped']=str_contains($post, 'WHERE platform=? AND external_post_id=? AND sales_user_id=?') && str_contains($post, "'kind']='external_id'");
+$checks['external_id_global']=str_contains($post, 'WHERE platform=? AND external_post_id=?') && !str_contains($post, 'WHERE platform=? AND external_post_id=? AND sales_user_id=?') && str_contains($post, "'kind']='external_id'");
 $checks['url_scoped']=str_contains($post, 'WHERE sales_user_id=? AND platform=? AND canonical_url_hash=?') && str_contains($post, "'kind']='url'");
 $checks['title_scope_preserved']=str_contains($post, 'WHERE sales_user_id=? AND platform=? AND BINARY title=BINARY ?');
 $checks['description_not_duplicate']=!str_contains($js, "description:'Description duplicate'") && !str_contains($post, "'kind']='description'");

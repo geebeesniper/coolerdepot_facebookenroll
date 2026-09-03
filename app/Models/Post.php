@@ -32,19 +32,20 @@ class Post {
         $platform=strtolower(trim($platform));
         $hasStableAccount=\App\Services\MarketplaceAccount::hasStableIdentity($platformAccount);
 
-        // V0.2.71 restores hard listing-identity checks before title/image
-        // comparison. V0.2.54 intentionally allows a different Sales user to
-        // save the same listing, so every marketplace identity check remains
-        // scoped to this Sales user + this platform. Description is not a key.
+        // V0.2.94: a marketplace listing ID is the hard identity of a listing.
+        // It is GLOBAL across all internal Sales users, but remains namespaced by
+        // marketplace platform because Facebook/OfferUp/Craigslist ID formats can
+        // overlap. Account/Sales scoping applies only to softer duplicate signals
+        // such as title/image rules, never to the platform listing ID itself.
         if($eid!==null && trim($eid)!==''){
             $s=$pdo->prepare(
-                "SELECT id,title,canonical_url,platform FROM cdsp_sales_posts
-                 WHERE platform=? AND external_post_id=? AND sales_user_id=?
+                "SELECT id,title,canonical_url,platform,sales_user_id FROM cdsp_sales_posts
+                 WHERE platform=? AND external_post_id=?
                    AND deleted_at IS NULL LIMIT 1"
             );
-            $s->execute([$platform,trim($eid),$uid]);
+            $s->execute([$platform,trim($eid)]);
             if($r=$s->fetch()){
-                $r['reason']='This '.$platform.' Post ID has already been submitted by you.';
+                $r['reason']='This '.$platform.' Post ID has already been submitted in the system.';
                 $r['kind']='external_id';
                 return $r;
             }
