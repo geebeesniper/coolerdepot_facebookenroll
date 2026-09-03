@@ -13531,6 +13531,27 @@ $(document).on('click','.website-source-delete',function(event){
         if(!message){$m.addClass('hidden').removeClass('ok error').text('');return;}
         $m.removeClass('hidden ok error').addClass(type==='ok'?'ok':'error').text(message);
     }
+    const vqCollapseStorageKey='cdspSalesVerificationQueueCollapsed';
+    function vqSetCollapsed($panel,collapsed,persist){
+        collapsed=!!collapsed;
+        $panel.toggleClass('is-collapsed',collapsed);
+        const $toggle=$panel.find('[data-vq-collapse-toggle]').first();
+        $toggle.attr('aria-expanded',collapsed?'false':'true');
+        $toggle.attr('aria-label',collapsed?'Open Verification Queue':'Close Verification Queue');
+        $toggle.attr('title',collapsed?'Open Verification Queue':'Close Verification Queue');
+        if(persist){
+            try{window.localStorage.setItem(vqCollapseStorageKey,collapsed?'1':'0');}catch(error){}
+        }
+    }
+    function vqInitCollapseState(){
+        let collapsed=true;
+        try{
+            const saved=window.localStorage.getItem(vqCollapseStorageKey);
+            if(saved==='0')collapsed=false;
+            if(saved==='1')collapsed=true;
+        }catch(error){}
+        $('[data-verification-queue-panel]').each(function(){vqSetCollapsed($(this),collapsed,false);});
+    }
     function vqStatusLabel(status){
         const map={waiting:'queueWaiting',verifying:'queueVerifying',passed:'queuePassed',failed:'queueFailed',duplicate:'queueDuplicate',invalid:'queueInvalid'};
         return salesTr(map[status]||map.waiting);
@@ -13545,8 +13566,12 @@ $(document).on('click','.website-source-delete',function(event){
     }
     function vqRenderRow(item){
         const status=String(item.status||'waiting');
-        const $row=$('<div>').addClass('sales-vq-row').attr('data-vq-id',String(item.id||''));
-        $('<div>').addClass('sales-vq-platform').text(platformLabel(item.platform)||item.platform||'Marketplace').appendTo($row);
+        const $row=$('<article>').addClass('sales-vq-row sales-vq-card status-'+status).attr('data-vq-id',String(item.id||''));
+
+        const $top=$('<div>').addClass('sales-vq-card-top');
+        $('<span>').addClass('sales-vq-platform').text(platformLabel(item.platform)||item.platform||'Marketplace').appendTo($top);
+        $('<span>').addClass('sales-vq-status '+status).text(vqStatusLabel(status)).appendTo($top);
+        $top.appendTo($row);
 
         const $url=$('<div>').addClass('sales-vq-url');
         const parsed=vqValidUrl(item.canonical_url||item.submitted_url);
@@ -13555,16 +13580,24 @@ $(document).on('click','.website-source-delete',function(event){
         $url.appendTo($row);
 
         const $meta=$('<div>').addClass('sales-vq-meta');
-        if(item.result_title)$('<span>').addClass('sales-vq-title').text(item.result_title).appendTo($meta);
+        if(item.result_title)$('<strong>').addClass('sales-vq-title').text(item.result_title).appendTo($meta);
         const when=item.result_published_date||item.updated_at||item.queued_at||'';
         const account=String(item.result_platform_account_name||'').trim();
         const bits=[];
         if(item.external_post_id)bits.push('ID '+item.external_post_id);
         if(account)bits.push(account);
         if(when)bits.push(when);
-        $meta.append(document.createTextNode(bits.join(' · ')||'—')).appendTo($row);
+        $('<span>').addClass('sales-vq-meta-line').text(bits.join(' · ')||'—').appendTo($meta);
+        $meta.appendTo($row);
 
-        $('<span>').addClass('sales-vq-status '+status).text(vqStatusLabel(status)).appendTo($row);
+        if(status==='failed'||status==='duplicate'||status==='invalid'){
+            const $failure=$('<div>').addClass('sales-vq-failure'+(status==='duplicate'?' duplicate':''));
+            $('<strong>').text(item.failure_message||vqStatusLabel(status)).appendTo($failure);
+            $('<span>').addClass('sales-vq-not-counted').text(salesTr('queueNotCounted')).appendTo($failure);
+            $failure.appendTo($row);
+        }else if(status==='passed'){
+            $('<div>').addClass('sales-vq-failure passed-copy').text(salesTr('queuePassedHelp')).appendTo($row);
+        }
 
         const $actions=$('<div>').addClass('sales-vq-actions');
         if(status==='failed'||status==='duplicate'||status==='invalid'){
@@ -13581,18 +13614,8 @@ $(document).on('click','.website-source-delete',function(event){
             const dup=vqValidUrl(item.duplicate_url);
             if(dup)$('<a class="btn">').attr({href:dup.href,target:'_blank',rel:'noopener noreferrer'}).text('Open duplicate ↗').appendTo($actions);
         }
-        $actions.appendTo($row);
-
-        if(status==='failed'||status==='duplicate'||status==='invalid'){
-            const $failure=$('<div>').addClass('sales-vq-failure'+(status==='duplicate'?' duplicate':''));
-            $('<strong>').text(item.failure_message||vqStatusLabel(status)).appendTo($failure);
-            $failure.append(document.createTextNode(' '));
-            $('<span>').addClass('sales-vq-not-counted').text(salesTr('queueNotCounted')).appendTo($failure);
-            $failure.appendTo($row);
-        }else if(status==='passed'){
-            $('<div>').addClass('sales-vq-failure').css('border-left-color','#9ca3af').css('background','#f9fafb').css('color','#4b5563').text(salesTr('queuePassedHelp')).appendTo($row);
-        }
-        return$row;
+        if($actions.children().length)$actions.appendTo($row);
+        return $row;
     }
     function vqFilterMatches(item,filter){
         const status=String((item&&item.status)||'').toLowerCase();
@@ -13617,11 +13640,14 @@ $(document).on('click','.website-source-delete',function(event){
                 // Never turn a real queued record into an apparently empty queue
                 // because one optional display field failed to render.
                 if(window.console&&console.error)console.error('Verification Queue row render failed',error,item);
-                const $fallback=$('<div>').addClass('sales-vq-row').attr('data-vq-id',String((item&&item.id)||''));
-                $('<div>').addClass('sales-vq-platform').text(platformLabel(item&&item.platform)||(item&&item.platform)||'Marketplace').appendTo($fallback);
+                const fallbackStatus=String((item&&item.status)||'waiting');
+                const $fallback=$('<article>').addClass('sales-vq-row sales-vq-card status-'+fallbackStatus).attr('data-vq-id',String((item&&item.id)||''));
+                const $fallbackTop=$('<div>').addClass('sales-vq-card-top');
+                $('<span>').addClass('sales-vq-platform').text(platformLabel(item&&item.platform)||(item&&item.platform)||'Marketplace').appendTo($fallbackTop);
+                $('<span>').addClass('sales-vq-status '+fallbackStatus).text(vqStatusLabel(fallbackStatus)).appendTo($fallbackTop);
+                $fallbackTop.appendTo($fallback);
                 $('<div>').addClass('sales-vq-url').text(vqShortUrl((item&&item.canonical_url)||(item&&item.submitted_url)||'Queued listing')).appendTo($fallback);
                 $('<div>').addClass('sales-vq-meta').text('Queued item').appendTo($fallback);
-                $('<span>').addClass('sales-vq-status '+String((item&&item.status)||'waiting')).text(vqStatusLabel(String((item&&item.status)||'waiting'))).appendTo($fallback);
                 $fallback.appendTo($list);
             }
         });
@@ -13716,6 +13742,11 @@ $(document).on('click','.website-source-delete',function(event){
         .always(function(){$button.prop('disabled',false).text(salesTr('bulkSubmitPost'));});
     });
 
+    $(document).on('click','[data-verification-queue-panel] [data-vq-collapse-toggle]',function(){
+        const $panel=$(this).closest('[data-verification-queue-panel]');
+        vqSetCollapsed($panel,!$panel.hasClass('is-collapsed'),true);
+    });
+
     $(document).on('click','[data-verification-queue-panel] [data-vq-filter]',function(){
         const $button=$(this),$panel=$button.closest('[data-verification-queue-panel]');
         $panel.attr('data-vq-current-filter',String($button.data('vq-filter')||'all'));
@@ -13760,7 +13791,10 @@ $(document).on('click','.website-source-delete',function(event){
     });
 
     window.cdspRefreshVerificationQueue=function(){vqLoadAll(false);};
-    if($('[data-verification-queue-panel]').length)vqLoadAll(false);
+    if($('[data-verification-queue-panel]').length){
+        vqInitCollapseState();
+        vqLoadAll(false);
+    }
 })();
 
 });
