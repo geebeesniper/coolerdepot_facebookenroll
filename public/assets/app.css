@@ -16237,3 +16237,49 @@ button.website-history-control{
 #salesBulkSubmitModal .sales-bulk-submit-page textarea{
     min-height:220px;
 }
+
+/* V0.2.100 — keep the approved Submit Post slot and place Bulk Submit Post beside it. */
+.sales-portal-head-actions{
+    grid-template-columns:auto auto auto;
+}
+.sales-submit-cta-cluster{
+    margin-top:18px;
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:8px;
+    align-self:start;
+    white-space:nowrap;
+}
+.sales-submit-cta-cluster .sales-submit-cta{
+    margin-top:0;
+}
+@media(max-width:1000px){
+    .sales-portal-head-actions{
+        width:100%;
+        grid-template-columns:minmax(0,1fr);
+        gap:9px;
+    }
+    .sales-submit-cta-cluster{
+        margin-top:0;
+        justify-content:flex-start;
+    }
+}
+@media(max-width:760px){
+    .sales-submit-cta-cluster{
+        width:100%;
+        display:grid;
+        grid-template-columns:repeat(2,minmax(0,1fr));
+        gap:8px;
+    }
+    .sales-submit-cta-cluster .sales-submit-cta{
+        width:100%;
+        min-width:0;
+        max-width:none;
+    }
+}
+@media(max-width:480px){
+    .sales-submit-cta-cluster{
+        grid-template-columns:1fr;
+    }
+}
