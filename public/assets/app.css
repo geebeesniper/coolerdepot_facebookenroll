@@ -15765,3 +15765,151 @@ button.website-history-control:disabled{opacity:.38;cursor:default}
 .website-history-processing-row.is-active{background:#f8fbff}
 .website-history-processing-row.is-active .website-history-processing-message{font-style:italic;color:#475467}
 .website-history-processing-row.is-active .website-history-processing-status.is-running{font-weight:700}
+
+
+/* v0.2.87 — Help uses the application language source and a readable in-app guide layout. */
+.app-help-page.help-language-pending{
+    visibility:hidden;
+}
+.app-help-guide-layout{
+    grid-template-columns:minmax(190px,220px) minmax(0,1fr);
+    gap:18px;
+    align-items:start;
+    max-width:1280px;
+    margin:0 auto;
+}
+.app-help-guide-content{
+    display:grid;
+    gap:14px;
+    min-width:0;
+}
+.app-help-guide-content>.hero,
+.app-help-guide-content>.section{
+    margin:0;
+}
+.app-help-page .hero{
+    padding:20px;
+}
+.app-help-page .hero h1{
+    font-size:24px;
+    line-height:1.2;
+}
+.app-help-page .hero p{
+    margin:8px 0 0;
+    font-size:13px;
+    line-height:1.55;
+}
+.app-help-page .section{
+    padding:16px 18px;
+}
+.app-help-page .section h2{
+    margin:0 0 10px;
+    font-size:17px;
+    line-height:1.3;
+}
+.app-help-page .section h3{
+    margin:16px 0 8px;
+    font-size:14px;
+    line-height:1.35;
+}
+.app-help-page .section h4{
+    margin:0 0 7px;
+    font-size:13px;
+    line-height:1.35;
+}
+.app-help-page .section p,
+.app-help-page .step>span:not(.n),
+.app-help-page .card>span{
+    font-size:12px;
+    line-height:1.55;
+}
+.app-help-page .workflow,
+.app-help-page .cards{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:12px;
+    margin:10px 0;
+}
+.app-help-page .step{
+    display:grid;
+    grid-template-columns:auto minmax(0,1fr);
+    grid-template-areas:
+        "number title"
+        "copy copy";
+    column-gap:8px;
+    row-gap:7px;
+    align-content:start;
+    min-width:0;
+    padding:12px 13px;
+}
+.app-help-page .step .n{
+    grid-area:number;
+    margin:0;
+}
+.app-help-page .step>b{
+    grid-area:title;
+    display:block;
+    align-self:center;
+    min-width:0;
+    line-height:1.35;
+    overflow-wrap:anywhere;
+}
+.app-help-page .step>.en,
+.app-help-page .step>.zh,
+.app-help-page .step>.zh-tw,
+.app-help-page .step>.es{
+    grid-area:copy;
+    width:100%;
+    min-width:0;
+    line-height:1.5;
+    overflow-wrap:anywhere;
+}
+.app-help-page.help-lang-en .step>.en,
+.app-help-page.help-lang-zh-CN .step>.zh,
+.app-help-page.help-lang-zh-TW .step>.zh-tw,
+.app-help-page.help-lang-es .step>.es{
+    display:block!important;
+}
+.app-help-page .card{
+    min-width:0;
+    padding:13px 14px;
+}
+.app-help-page .card p{
+    margin:0;
+    font-size:12px;
+    line-height:1.55;
+    overflow-wrap:anywhere;
+}
+.app-help-page .callout{
+    font-size:12px;
+    line-height:1.55;
+}
+.app-help-page .ui,
+.app-help-page .screenmap{
+    min-width:0;
+    overflow:auto;
+}
+.app-help-page td,
+.app-help-page th{
+    line-height:1.45;
+}
+.app-help-page td{
+    font-size:11.5px;
+}
+.app-help-page .app-help-toc a{
+    overflow-wrap:anywhere;
+}
+@media(min-width:1360px){
+    .app-help-guide-layout{
+        grid-template-columns:220px minmax(0,1fr);
+    }
+}
+@media(max-width:900px){
+    .app-help-guide-layout{
+        grid-template-columns:1fr;
+        max-width:none;
+    }
+    .app-help-page .workflow,
+    .app-help-page .cards{
+        grid-template-columns:1fr;
+    }
+}
