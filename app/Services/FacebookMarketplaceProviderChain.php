@@ -66,6 +66,7 @@ private function fetchRegistry(
     }
 
     $attempts = [];
+    $unavailableAttempts = [];
     $chain = [];
     $firstCompleteWithoutPhoto = null;
 
@@ -83,6 +84,7 @@ private function fetchRegistry(
                 $userId,
                 $bypassCache
             );
+            $item = FacebookListingMetadata::normalizeItem($item);
 
             if (!$this->complete($item)) {
                 throw new \RuntimeException(
@@ -114,6 +116,14 @@ private function fetchRegistry(
             $attempts[] =
                 $label
                 . ': listing metadata was returned, but no image was returned.';
+        } catch (FacebookListingUnavailableException $e) {
+            \App\Core\Logger::warning(
+                'Facebook Marketplace provider explicitly reported the listing unavailable.',
+                ['event' => 'Registry provider listing unavailable', 'provider' => $label, 'reason' => $e->getMessage()],
+                'provider'
+            );
+            $attempts[] = $label . ': listing unavailable (' . $e->getMessage() . ')';
+            $unavailableAttempts[] = $label . ': ' . $e->getMessage();
         } catch (\Throwable $e) {
             \App\Core\Logger::exception(
                 $e,
@@ -131,6 +141,13 @@ private function fetchRegistry(
             implode(' | ', $attempts);
 
         return $firstCompleteWithoutPhoto;
+    }
+
+    if ($unavailableAttempts) {
+        throw new FacebookListingUnavailableException(
+            'Facebook Marketplace listing is unavailable or has been removed. '
+            . implode(' | ', $unavailableAttempts)
+        );
     }
 
     throw new \RuntimeException(
@@ -158,6 +175,7 @@ private function fetchLegacy(
     bool $requirePhoto = false
 ): array {
     $attempts = [];
+    $unavailableAttempts = [];
     $providers = [
         ['Bright Data', new BrightDataMarketplaceProvider()],
         ['Apify', new ApifyMarketplaceProvider()],
@@ -172,7 +190,7 @@ private function fetchLegacy(
         }
 
         try {
-            $item = $provider->fetch($url, $userId);
+            $item = FacebookListingMetadata::normalizeItem($provider->fetch($url, $userId));
 
             if (!$this->complete($item)) {
                 $attempts[] =
@@ -195,6 +213,14 @@ private function fetchLegacy(
 
             $attempts[] =
                 $name . ' returned metadata but no image.';
+        } catch (FacebookListingUnavailableException $e) {
+            \App\Core\Logger::warning(
+                'Facebook Marketplace legacy provider explicitly reported the listing unavailable.',
+                ['event' => 'Legacy provider listing unavailable', 'provider' => $name, 'reason' => $e->getMessage()],
+                'provider'
+            );
+            $attempts[] = $name . ': listing unavailable (' . $e->getMessage() . ')';
+            $unavailableAttempts[] = $name . ': ' . $e->getMessage();
         } catch (\Throwable $e) {
             \App\Core\Logger::exception(
                 $e,
@@ -212,6 +238,13 @@ private function fetchLegacy(
             implode(' | ', $attempts);
 
         return $firstCompleteWithoutPhoto;
+    }
+
+    if ($unavailableAttempts) {
+        throw new FacebookListingUnavailableException(
+            'Facebook Marketplace listing is unavailable or has been removed. '
+            . implode(' | ', $unavailableAttempts)
+        );
     }
 
     throw new \RuntimeException(implode(' | ', $attempts));
@@ -308,9 +341,8 @@ private function containsHttpsImage($value): bool
      */
     private function complete(array $item): bool
     {
-        return trim((string)($item['external_post_id'] ?? '')) !== ''
-            && trim((string)($item['title'] ?? '')) !== ''
-            && trim((string)($item['description'] ?? '')) !== ''
-            && trim((string)($item['published_raw'] ?? '')) !== '';
+        return FacebookListingMetadata::providerUsable(
+            FacebookListingMetadata::normalizeItem($item)
+        );
     }
 }

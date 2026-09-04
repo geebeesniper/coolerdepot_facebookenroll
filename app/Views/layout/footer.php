@@ -18,5 +18,21 @@ window.CD_APP_VERSION = <?= json_encode($config['app']['version']) ?>;
 </script>
 <script src="<?= \App\Core\Util::e($config['app']['base_path']) ?>/public/assets/app.js?v=<?= rawurlencode($config['app']['version']) ?>"></script>
 <script src="<?= \App\Core\Util::e($config['app']['base_path']) ?>/public/assets/sales-dashboard.js?v=<?= rawurlencode($config['app']['version']) ?>"></script>
+<script>
+/* v0.2.133 — reveal only after all previously registered app language-ready handlers have run. */
+(function(){
+    function revealTranslatedPage(){
+        var reveal=function(){document.documentElement.removeAttribute('data-cdsp-language-pending');};
+        if(window.requestAnimationFrame){window.requestAnimationFrame(reveal);}else{window.setTimeout(reveal,0);}
+    }
+    if(window.jQuery){
+        window.jQuery(function(){revealTranslatedPage();});
+    }else if(document.readyState==='loading'){
+        document.addEventListener('DOMContentLoaded',revealTranslatedPage,{once:true});
+    }else{
+        revealTranslatedPage();
+    }
+})();
+</script>
 </body>
 </html>

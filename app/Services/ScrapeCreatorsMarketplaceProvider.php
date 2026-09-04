@@ -100,22 +100,26 @@ class ScrapeCreatorsMarketplaceProvider
 
             $response = $this->request($query, $apiKey, $timeout);
             $json = json_decode($response['body'], true);
+            $providerMessage = $this->message($json, $response['body']);
+            if ($unavailable = FacebookListingMetadata::unavailableReason($json, $response['status'], $providerMessage)) {
+                throw new FacebookListingUnavailableException($unavailable);
+            }
 
             if ($response['status'] < 200 || $response['status'] >= 300) {
-                $message = $this->message($json, $response['body']);
+                $message = $providerMessage;
                 FetchJob::setStatus($jobId, 'failed', $response['status'], $message);
                 throw new \RuntimeException('ScrapeCreators request failed: ' . $message);
             }
 
             if (!is_array($json) || empty($json['success'])) {
-                $message = $this->message($json, $response['body']);
+                $message = $providerMessage;
                 FetchJob::setStatus($jobId, 'failed', $response['status'], $message);
                 throw new \RuntimeException('ScrapeCreators did not return a valid listing: ' . $message);
             }
 
             $normalized = $this->normalize($json, $url);
 
-            if (!$normalized['external_post_id'] || $normalized['title'] === '') {
+            if (!FacebookListingMetadata::providerUsable($normalized)) {
                 FetchJob::setStatus(
                     $jobId,
                     'failed',
@@ -190,7 +194,7 @@ class ScrapeCreatorsMarketplaceProvider
             ?? ''
         ));
 
-        return [
+        return FacebookListingMetadata::normalizeItem([
             'provider' => 'scrapecreators',
             'provider_job_id' => $id !== '' ? $id : null,
             'submitted_url' => $submittedUrl,
@@ -202,7 +206,7 @@ class ScrapeCreatorsMarketplaceProvider
             'published_raw' => $published !== '' ? $published : null,
             'listing_date_text' => $record['listing_date_text'] ?? null,
             'raw' => $record,
-        ];
+        ]);
     }
 
     /**

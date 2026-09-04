@@ -501,6 +501,157 @@ class Post {
 
 
     /**
+     * EN: Search active Sales posts by original marketplace information for the Admin Sales/Post Search.
+     * 中文：按原始平台帖子信息搜索有效 Sales 帖子，供 Admin 的 Sales/Post Search 使用。
+     *
+     * @param string $query Search text such as a marketplace URL, listing ID, title, or platform value. / 搜索文字，例如平台链接、帖子 ID、标题或平台名称。
+     * @param int $limit Maximum number of rows returned. / 最多返回的记录数。
+     *
+     * @return array Structured result rows ordered newest first. / 按最新优先返回的结构化结果。
+     */
+    public static function adminSearchOriginalPosts(string $query,int $limit=25):array{
+        $query=trim($query);
+        if($query===''){
+            return [];
+        }
+
+        $limit=max(1,min(50,$limit));
+        $like='%'.$query.'%';
+        $sql="SELECT
+                p.id,
+                p.sales_user_id,
+                p.platform,
+                p.canonical_url,
+                p.submitted_url,
+                p.resolved_url,
+                p.external_post_id,
+                p.platform_account_name,
+                p.platform_account_url,
+                p.title,
+                p.description,
+                p.published_at,
+                p.published_date,
+                p.fetched_image_url,
+                COALESCE(
+                    rh.decision,
+                    p.admin_review_status,
+                    r.decision
+                ) AS current_review_status,
+                u.display_name,
+                u.sales_id
+             FROM cdsp_sales_posts p
+             JOIN cdsp_users u
+               ON u.id=p.sales_user_id
+             LEFT JOIN cdsp_post_reviews r
+               ON r.post_id=p.id
+             LEFT JOIN (
+                SELECT h.post_id,h.decision,h.id AS history_id
+                FROM cdsp_post_review_history h
+                INNER JOIN (
+                    SELECT post_id,MAX(id) AS max_id
+                    FROM cdsp_post_review_history
+                    GROUP BY post_id
+                ) latest
+                  ON latest.max_id=h.id
+             ) rh
+               ON rh.post_id=p.id
+             WHERE p.deleted_at IS NULL
+               AND u.role='sales'
+               AND u.active=1
+               AND (
+                    p.canonical_url LIKE ?
+                 OR p.submitted_url LIKE ?
+                 OR p.resolved_url LIKE ?
+                 OR p.external_post_id LIKE ?
+                 OR p.platform LIKE ?
+                 OR p.platform_account_name LIKE ?
+                 OR p.platform_account_url LIKE ?
+                 OR p.title LIKE ?
+               )
+             ORDER BY p.published_at DESC,p.id DESC
+             LIMIT ".$limit;
+
+        $stmt=Database::connection()->prepare($sql);
+        $stmt->execute(array_fill(0,8,$like));
+        return $stmt->fetchAll();
+    }
+
+
+    /**
+     * EN: Search every active post owned by one Sales user, independent of the dashboard date range.
+     * 中文：在不受 Dashboard 日期范围限制的情况下，搜索指定 Sales 自己的全部有效 Post。
+     *
+     * @param int $salesUserId Authenticated Sales user identifier. / 当前登录 Sales 用户 ID。
+     * @param string $query Marketplace URL, listing ID, title, platform or account text. / Marketplace 链接、Listing ID、标题、平台或账号文字。
+     * @param int $limit Maximum number of rows returned. / 最多返回记录数。
+     *
+     * @return array Matching posts ordered newest first. / 按最新优先返回匹配 Post。
+     */
+    public static function salesSearchOriginalPosts(
+        int $salesUserId,
+        string $query,
+        int $limit=40
+    ):array{
+        $query=trim($query);
+        if($salesUserId<=0||$query===''){
+            return [];
+        }
+
+        $limit=max(1,min(60,$limit));
+        $like='%'.$query.'%';
+        $sql="SELECT
+                p.*,
+                COALESCE(
+                    rh.decision,
+                    p.admin_review_status,
+                    r.decision
+                ) AS current_review_status,
+                (
+                    SELECT d.status
+                    FROM cdsp_deletion_requests d
+                    WHERE d.post_id=p.id
+                    ORDER BY d.id DESC
+                    LIMIT 1
+                ) AS deletion_request_status
+             FROM cdsp_sales_posts p
+             LEFT JOIN cdsp_post_reviews r
+               ON r.post_id=p.id
+             LEFT JOIN (
+                SELECT h.post_id,h.decision,h.id AS history_id
+                FROM cdsp_post_review_history h
+                INNER JOIN (
+                    SELECT post_id,MAX(id) AS max_id
+                    FROM cdsp_post_review_history
+                    GROUP BY post_id
+                ) latest
+                  ON latest.max_id=h.id
+             ) rh
+               ON rh.post_id=p.id
+             WHERE p.sales_user_id=?
+               AND p.deleted_at IS NULL
+               AND (
+                    p.canonical_url LIKE ?
+                 OR p.submitted_url LIKE ?
+                 OR p.resolved_url LIKE ?
+                 OR p.external_post_id LIKE ?
+                 OR p.platform LIKE ?
+                 OR p.platform_account_name LIKE ?
+                 OR p.platform_account_url LIKE ?
+                 OR p.title LIKE ?
+               )
+             ORDER BY p.published_at DESC,p.id DESC
+             LIMIT ".$limit;
+
+        $stmt=Database::connection()->prepare($sql);
+        $params=[$salesUserId];
+        for($i=0;$i<8;$i++){
+            $params[]=$like;
+        }
+        $stmt->execute($params);
+        return $stmt->fetchAll();
+    }
+
+    /**
      * EN: Update the update fetched content data for post in the application database.
      * 中文：更新 post 的“update fetched content”数据，并访问应用数据库。
      *

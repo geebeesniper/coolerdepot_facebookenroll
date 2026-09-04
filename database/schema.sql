@@ -206,6 +206,37 @@ CREATE TABLE IF NOT EXISTS cdsp_post_review_comments (
    FOREIGN KEY(deleted_by) REFERENCES cdsp_users(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS cdsp_sales_daily_target_history (
+ id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+ sales_user_id INT UNSIGNED NOT NULL,
+ effective_date DATE NOT NULL,
+ daily_post_target SMALLINT UNSIGNED NOT NULL,
+ changed_by INT UNSIGNED NULL,
+ created_at DATETIME NOT NULL,
+ updated_at DATETIME NOT NULL,
+ PRIMARY KEY(id),
+ UNIQUE KEY uq_sales_daily_target_date(sales_user_id,effective_date),
+ KEY idx_sales_daily_target_lookup(sales_user_id,effective_date),
+ CONSTRAINT fk_sales_daily_target_user FOREIGN KEY(sales_user_id) REFERENCES cdsp_users(id),
+ CONSTRAINT fk_sales_daily_target_admin FOREIGN KEY(changed_by) REFERENCES cdsp_users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS cdsp_daily_sales_completions (
+ id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+ sales_user_id INT UNSIGNED NOT NULL,
+ work_date DATE NOT NULL,
+ admin_user_id INT UNSIGNED NOT NULL,
+ completed_at DATETIME NOT NULL,
+ created_at DATETIME NOT NULL,
+ updated_at DATETIME NOT NULL,
+ PRIMARY KEY(id),
+ UNIQUE KEY uq_daily_sales_completion(sales_user_id,work_date),
+ KEY idx_daily_sales_completion_date(work_date,sales_user_id),
+ CONSTRAINT fk_daily_sales_completion_sales FOREIGN KEY(sales_user_id) REFERENCES cdsp_users(id),
+ CONSTRAINT fk_daily_sales_completion_admin FOREIGN KEY(admin_user_id) REFERENCES cdsp_users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
 CREATE TABLE IF NOT EXISTS cdsp_daily_sales_reviews (
  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
  sales_user_id INT UNSIGNED NOT NULL,

@@ -155,4 +155,127 @@ final class SchemaCompatibility
             }
         }
     }
+    /**
+     * EN: Ensure V0.2.113 daily target history and daily completion tables exist for direct overlay upgrades.
+     * 中文：确保 V0.2.113 的每日目标历史与每日完成记录表可用于直接覆盖升级。
+     *
+     * @return void No value is returned. / 无返回值。
+     */
+    public static function ensureDailyWorkflowCompatibility(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $marker = $root . '/storage/.schema-v0.2.113-daily-workflow-ready';
+
+        if (is_file($marker)) {
+            return;
+        }
+
+        $pdo = null;
+        $lockAcquired = false;
+
+        try {
+            $pdo = Database::connection();
+            $driver = strtolower((string)$pdo->getAttribute(PDO::ATTR_DRIVER_NAME));
+
+            if ($driver !== 'mysql') {
+                return;
+            }
+
+            $lockStmt = $pdo->query("SELECT GET_LOCK('cdsp_schema_v0_2_113_daily_workflow', 10)");
+            $lockAcquired = (int)($lockStmt ? $lockStmt->fetchColumn() : 0) === 1;
+
+            if (!$lockAcquired) {
+                Logger::warning(
+                    'Daily workflow schema compatibility lock was not acquired; migration check will retry later.',
+                    ['migration' => 'v0.2.113_daily_workflow'],
+                    'database'
+                );
+                return;
+            }
+
+            $pdo->exec(
+                "CREATE TABLE IF NOT EXISTS cdsp_sales_daily_target_history (
+                    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    sales_user_id INT UNSIGNED NOT NULL,
+                    effective_date DATE NOT NULL,
+                    daily_post_target SMALLINT UNSIGNED NOT NULL,
+                    changed_by INT UNSIGNED NULL,
+                    created_at DATETIME NOT NULL,
+                    updated_at DATETIME NOT NULL,
+                    PRIMARY KEY(id),
+                    UNIQUE KEY uq_sales_daily_target_date(sales_user_id,effective_date),
+                    KEY idx_sales_daily_target_lookup(sales_user_id,effective_date),
+                    CONSTRAINT fk_sales_daily_target_user
+                        FOREIGN KEY(sales_user_id) REFERENCES cdsp_users(id),
+                    CONSTRAINT fk_sales_daily_target_admin
+                        FOREIGN KEY(changed_by) REFERENCES cdsp_users(id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+            );
+
+            $pdo->exec(
+                "CREATE TABLE IF NOT EXISTS cdsp_daily_sales_completions (
+                    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    sales_user_id INT UNSIGNED NOT NULL,
+                    work_date DATE NOT NULL,
+                    admin_user_id INT UNSIGNED NOT NULL,
+                    completed_at DATETIME NOT NULL,
+                    created_at DATETIME NOT NULL,
+                    updated_at DATETIME NOT NULL,
+                    PRIMARY KEY(id),
+                    UNIQUE KEY uq_daily_sales_completion(sales_user_id,work_date),
+                    KEY idx_daily_sales_completion_date(work_date,sales_user_id),
+                    CONSTRAINT fk_daily_sales_completion_sales
+                        FOREIGN KEY(sales_user_id) REFERENCES cdsp_users(id),
+                    CONSTRAINT fk_daily_sales_completion_admin
+                        FOREIGN KEY(admin_user_id) REFERENCES cdsp_users(id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+            );
+
+            // Existing installations have only the current target value. Seed one
+            // baseline row so future changes preserve the target that was active
+            // before the first V0.2.113 change without rewriting any Sales rows.
+            // 旧安装只有当前目标值；写入基准历史后，V0.2.113 之后的修改即可按日期还原。
+            $pdo->exec(
+                "INSERT IGNORE INTO cdsp_sales_daily_target_history(
+                    sales_user_id,effective_date,daily_post_target,changed_by,created_at,updated_at
+                 )
+                 SELECT
+                    id,'1970-01-01',COALESCE(NULLIF(daily_post_target,0),10),NULL,NOW(),NOW()
+                 FROM cdsp_users
+                 WHERE role='sales'"
+            );
+
+            @file_put_contents(
+                $marker,
+                "V0.2.113 daily workflow schema compatibility verified at " . date('c') . PHP_EOL,
+                LOCK_EX
+            );
+
+            Logger::info(
+                'Daily workflow direct-overlay schema compatibility verified.',
+                ['migration' => 'v0.2.113_daily_workflow'],
+                'database'
+            );
+        } catch (Throwable $e) {
+            Logger::exception(
+                $e,
+                'database',
+                [
+                    'event' => 'Daily workflow direct-overlay schema compatibility failed',
+                    'migration' => 'v0.2.113_daily_workflow',
+                ],
+                'error'
+            );
+        } finally {
+            if ($lockAcquired && $pdo instanceof PDO) {
+                try {
+                    $pdo->query("SELECT RELEASE_LOCK('cdsp_schema_v0_2_113_daily_workflow')");
+                } catch (Throwable $ignored) {
+                    // EN: MySQL releases named locks when the connection closes.
+                    // 中文：连接关闭时 MySQL 会自动释放命名锁。
+                }
+            }
+        }
+    }
+
 }

@@ -62,6 +62,15 @@ class SalesController extends Controller
         $posts=Post::forSalesPublishedRange((int)$u['id'],$from,$to,$platformFilter);
         $salesUser=User::find((int)$u['id']);
         $dailyTarget=max(1,(int)($salesUser['daily_post_target']??10));
+        $dailyTargets=User::dailyPostTargetsForRange(
+            (int)$u['id'],
+            $from,
+            $to,
+            $dailyTarget
+        );
+        if($dailyTargets){
+            $dailyTarget=(int)($dailyTargets[$to]??$dailyTarget);
+        }
 
         $this->render('sales/dashboard',[
             'user'=>$u,
@@ -73,6 +82,7 @@ class SalesController extends Controller
             'summary'=>$summary,
             'chartRows'=>$chartRows,
             'dailyTarget'=>$dailyTarget,
+            'dailyTargets'=>$dailyTargets,
             'posts'=>$posts,
         ]);
     }
@@ -115,6 +125,15 @@ class SalesController extends Controller
         $posts=Post::forSalesPublishedRange((int)$u['id'],$from,$to,$platformFilter);
         $salesUser=User::find((int)$u['id']);
         $dailyTarget=max(1,(int)($salesUser['daily_post_target']??10));
+        $dailyTargets=User::dailyPostTargetsForRange(
+            (int)$u['id'],
+            $from,
+            $to,
+            $dailyTarget
+        );
+        if($dailyTargets){
+            $dailyTarget=(int)($dailyTargets[$to]??$dailyTarget);
+        }
 
         ob_start();
         $this->renderPartial('sales/_post_range_section',[
@@ -142,8 +161,86 @@ class SalesController extends Controller
             'summary'=>$summary,
             'chart_rows'=>$chartRows,
             'daily_target'=>$dailyTarget,
+            'daily_targets'=>$dailyTargets,
             'channel'=>$activeChannel,
             'period'=>$rangePeriod,
+        ]);
+    }
+
+
+    /**
+     * EN: Search the authenticated Sales user's saved Marketplace posts across all dates.
+     * 中文：跨全部日期搜索当前登录 Sales 自己保存的 Marketplace Posts。
+     *
+     * @return void
+     */
+    public function postSearch():void
+    {
+        $u=Auth::requireRole('sales');
+        $query=trim((string)($_GET['q']??''));
+
+        if(strlen($query)>500){
+            $query=substr($query,0,500);
+        }
+
+        if(strlen($query)<2){
+            $this->json([
+                'ok'=>true,
+                'query'=>$query,
+                'matches'=>[],
+                'count'=>0,
+            ]);
+        }
+
+        if(session_status()===PHP_SESSION_ACTIVE){
+            session_write_close();
+        }
+
+        $rows=Post::salesSearchOriginalPosts((int)$u['id'],$query,40);
+        $matches=[];
+
+        foreach($rows as $row){
+            $originalUrl=trim((string)($row['canonical_url']??''));
+            if($originalUrl===''){
+                $originalUrl=trim((string)($row['resolved_url']??''));
+            }
+            if($originalUrl===''){
+                $originalUrl=trim((string)($row['submitted_url']??''));
+            }
+
+            $status=strtolower(trim((string)($row['current_review_status']??'')));
+            if(!in_array($status,['good','bad'],true)){
+                $status='unreviewed';
+            }
+
+            $matches[]=[
+                'post_id'=>(int)$row['id'],
+                'platform'=>(string)($row['platform']??''),
+                'title'=>(string)($row['title']??''),
+                'description'=>(string)($row['description']??''),
+                'original_url'=>$originalUrl,
+                'external_post_id'=>(string)($row['external_post_id']??''),
+                'published_at'=>(string)($row['published_at']??''),
+                'published_date'=>(string)($row['published_date']??''),
+                'published_display'=>($publishedTs=strtotime((string)($row['published_at']??$row['published_date']??'')))
+                    ?date('M j, Y · g:i A',$publishedTs)
+                    :(string)($row['published_date']??''),
+                'thumbnail_url'=>!empty($row['fetched_image_url'])
+                    ?(string)$row['fetched_image_url']
+                    :null,
+                'status'=>$status,
+                'platform_account_id'=>(string)($row['platform_account_id']??''),
+                'platform_account_name'=>(string)($row['platform_account_name']??''),
+                'platform_account_url'=>(string)($row['platform_account_url']??''),
+                'deletion_request_status'=>(string)($row['deletion_request_status']??''),
+            ];
+        }
+
+        $this->json([
+            'ok'=>true,
+            'query'=>$query,
+            'matches'=>$matches,
+            'count'=>count($matches),
         ]);
     }
 
@@ -226,11 +323,11 @@ private function salesPresetRange(
      */
     public function submitForm(): void
     {
-        $u=Auth::requireRole('sales');
+        Auth::requireRole('sales');
 
-        $this->render('sales/submit',[
-            'user'=>$u,
-        ]);
+        // V0.2.127: the single-item Submit Post UI was retired. Bulk Submit accepts
+        // one URL or many URLs and is now the only Sales submission entry point.
+        $this->redirect('/sales/bulk-submit');
     }
 
     /**

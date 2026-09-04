@@ -31,15 +31,19 @@ const appLanguageDictionary={
         settings:'Settings',
         help:'Help',
         signOut:'Sign out',
-        verificationControl:'Verification Control',
-        postVerificationLocks:'Post Verification Locks',
-        verificationLocksHelp:'One Sales user can run only one Marketplace verification at a time. Use Unlock only when a Sales verification is stuck.',
+        verificationControl:'Verification Recovery',
+        postVerificationLocks:'In Case: Manual Unlock',
+        verificationLocksHelp:'Verification locks recover automatically when a verification process disappears or reaches the safety timeout. Use Manual Unlock only as an in-case fallback.',
         verificationLocksActive:'{count} active',
         verificationLocksReadError:'Verification locks could not be read',
-        verificationLocksEmpty:'No Sales verification is currently locked.',
+        verificationLocksEmpty:'Automatic recovery is active. No Sales verification currently needs a manual unlock.',
         started:'Started',
-        unlock:'Unlock',
-        verificationUnlockWarning:'Unlock removes the verification gate so the Sales user can try again. It does not forcibly terminate a provider request already executing.',
+        unlock:'Manual Unlock',
+        verificationUnlockWarning:'Manual Unlock is only a fallback if automatic recovery does not resolve the problem. It allows a new verification to start without forcibly terminating an older provider request.',
+        verificationRecoveryTimeoutLabel:'Auto recovery timeout',
+        verificationRecoveryTimeoutHelp:'Only applies when a verification process still looks alive but is stuck. Dead or disconnected processes recover immediately. Allowed range: 5–60 minutes.',
+        minutes:'minutes',
+        saveRecoveryTimeout:'Save timeout',
         sales:'Sales',
         salesOrganization:'Sales Organization',
         locations:'Locations',
@@ -71,15 +75,19 @@ const appLanguageDictionary={
         settings:'设置',
         help:'帮助',
         signOut:'退出',
-        verificationControl:'验证控制',
-        postVerificationLocks:'Post 验证锁',
-        verificationLocksHelp:'每个 Sales 同时只允许执行一个 Marketplace 验证。仅在 Sales 验证卡住时使用“解锁”。',
+        verificationControl:'验证自动恢复',
+        postVerificationLocks:'兜底：手动解锁',
+        verificationLocksHelp:'验证锁会在验证进程消失或达到安全超时后自动恢复。只有自动恢复仍未解决问题时，才使用手动解锁作为兜底。',
         verificationLocksActive:'{count} 个活动锁',
         verificationLocksReadError:'无法读取验证锁',
-        verificationLocksEmpty:'当前没有 Sales 验证被锁定。',
+        verificationLocksEmpty:'自动恢复已启用，当前没有需要手动解锁的 Sales 验证。',
         started:'开始时间',
-        unlock:'解锁',
-        verificationUnlockWarning:'解锁后该 Sales 可以重新验证，但不会强制终止已经在执行中的 Provider 请求。',
+        unlock:'手动解锁',
+        verificationUnlockWarning:'手动解锁只用于自动恢复仍未解决问题的兜底情况。它允许重新开始验证，但不会强制终止仍在执行中的旧 Provider 请求。',
+        verificationRecoveryTimeoutLabel:'自动恢复等待时间',
+        verificationRecoveryTimeoutHelp:'只用于验证进程看起来仍在线但实际卡死的情况。进程死亡或断线仍会立即自动恢复。可设置范围：5–60 分钟。',
+        minutes:'分钟',
+        saveRecoveryTimeout:'保存等待时间',
         sales:'销售',
         salesOrganization:'销售组织',
         locations:'地点',
@@ -111,15 +119,19 @@ const appLanguageDictionary={
         settings:'設定',
         help:'幫助',
         signOut:'登出',
-        verificationControl:'驗證控制',
-        postVerificationLocks:'Post 驗證鎖',
-        verificationLocksHelp:'每個 Sales 同時只允許執行一個 Marketplace 驗證。僅在 Sales 驗證卡住時使用「解鎖」。',
+        verificationControl:'驗證自動恢復',
+        postVerificationLocks:'備用：手動解鎖',
+        verificationLocksHelp:'驗證鎖會在驗證程序消失或達到安全逾時後自動恢復。只有自動恢復仍未解決問題時，才使用手動解鎖作為備用。',
         verificationLocksActive:'{count} 個活動鎖',
         verificationLocksReadError:'無法讀取驗證鎖',
-        verificationLocksEmpty:'目前沒有 Sales 驗證被鎖定。',
+        verificationLocksEmpty:'自動恢復已啟用，目前沒有需要手動解鎖的 Sales 驗證。',
         started:'開始時間',
-        unlock:'解鎖',
-        verificationUnlockWarning:'解鎖後該 Sales 可以重新驗證，但不會強制終止已經在執行中的 Provider 請求。',
+        unlock:'手動解鎖',
+        verificationUnlockWarning:'手動解鎖只用於自動恢復仍未解決問題的備用情況。它允許重新開始驗證，但不會強制終止仍在執行中的舊 Provider 請求。',
+        verificationRecoveryTimeoutLabel:'自動恢復等待時間',
+        verificationRecoveryTimeoutHelp:'只用於驗證程序看起來仍在線但實際卡死的情況。程序死亡或斷線仍會立即自動恢復。可設定範圍：5–60 分鐘。',
+        minutes:'分鐘',
+        saveRecoveryTimeout:'儲存等待時間',
         sales:'銷售',
         salesOrganization:'銷售組織',
         locations:'地點',
@@ -151,15 +163,19 @@ const appLanguageDictionary={
         settings:'Configuración',
         help:'Ayuda',
         signOut:'Salir',
-        verificationControl:'Control de verificación',
-        postVerificationLocks:'Bloqueos de verificación de publicaciones',
-        verificationLocksHelp:'Cada usuario de ventas solo puede ejecutar una verificación de Marketplace a la vez. Usa Desbloquear solo si una verificación quedó atascada.',
+        verificationControl:'Recuperación de verificación',
+        postVerificationLocks:'En caso necesario: desbloqueo manual',
+        verificationLocksHelp:'Los bloqueos de verificación se recuperan automáticamente si el proceso desaparece o alcanza el tiempo de seguridad. Usa el desbloqueo manual solo como último recurso.',
         verificationLocksActive:'{count} activos',
         verificationLocksReadError:'No se pudieron leer los bloqueos de verificación',
-        verificationLocksEmpty:'No hay verificaciones de ventas bloqueadas actualmente.',
+        verificationLocksEmpty:'La recuperación automática está activa. Ninguna verificación necesita desbloqueo manual.',
         started:'Iniciado',
-        unlock:'Desbloquear',
-        verificationUnlockWarning:'Desbloquear elimina la barrera de verificación para que el usuario pueda intentarlo de nuevo. No finaliza a la fuerza una solicitud del proveedor que ya esté ejecutándose.',
+        unlock:'Desbloqueo manual',
+        verificationUnlockWarning:'El desbloqueo manual es solo un recurso de respaldo si la recuperación automática no resuelve el problema. Permite iniciar otra verificación sin finalizar a la fuerza una solicitud anterior.',
+        verificationRecoveryTimeoutLabel:'Tiempo de recuperación automática',
+        verificationRecoveryTimeoutHelp:'Solo se aplica cuando el proceso aún parece activo pero está bloqueado. Los procesos terminados o desconectados se recuperan de inmediato. Rango permitido: 5–60 minutos.',
+        minutes:'minutos',
+        saveRecoveryTimeout:'Guardar tiempo',
         sales:'Ventas',
         salesOrganization:'Organización de ventas',
         locations:'Ubicaciones',
@@ -182,7 +198,426 @@ const appLanguageDictionary={
         locationMissing:'No se encontró la ubicación.',
         locationError:'No se pudo guardar la ubicación.'
     }
+
 };
+
+/* v0.2.122 — Settings headings/primary controls use the same explicit i18n path as the proven global menu. */
+Object.assign(appLanguageDictionary.en,{
+    settingsAdministrator:'Administrator',settingsApiProviders:'API Providers',settingsProviderPriorityHelp:'Providers are tried from top to bottom. Drag them to change failover priority.',settingsAddProvider:'Add Provider',
+    settingsApplication:'Application',settingsApplicationSettings:'Application Settings',settingsApplicationHelp:'Set the display name and the Portal address used when login re-check fails.',settingsCompanyName:'Company name',settingsSaveName:'Save Name',settingsPortalFallbackUrl:'Portal fallback URL',settingsSaveUrl:'Save URL',settingsPortalHelp:'If session re-check fails, the browser redirects to this fixed http/https address.',
+    settingsProviderChain:'Facebook Marketplace Provider Chain',settingsProviderChainHelp:'Only providers that passed a real Marketplace test can be added. Disabled providers stay in the list but are skipped.',settingsRecentProviderJobs:'Recent Provider Jobs',settingsRecentProviderJobsHelp:'Test attempts and live failover attempts are logged here.',settingsDuplicateSources:'Duplicate Sources',settingsWebsiteLibrary:'Company Website Library',settingsWebsiteLibraryHelp:'Website Scan opens one detailed workspace. Scanned Products lives inside that workspace below Website Scan and opens or closes independently. URL CSV and Page / Sitemap Import remain separate tools.'
+});
+Object.assign(appLanguageDictionary['zh-CN'],{
+    settingsAdministrator:'管理员',settingsApiProviders:'API 服务提供商',settingsProviderPriorityHelp:'Provider 按从上到下的顺序尝试。拖动可调整故障切换优先级。',settingsAddProvider:'添加服务商',
+    settingsApplication:'应用',settingsApplicationSettings:'应用设置',settingsApplicationHelp:'设置显示名称，以及登录重新检查失败时使用的 Portal 地址。',settingsCompanyName:'公司名称',settingsSaveName:'保存名称',settingsPortalFallbackUrl:'Portal 备用 URL',settingsSaveUrl:'保存 URL',settingsPortalHelp:'如果 Session 重新检查失败，浏览器会跳转到这个固定的 http/https 地址。',
+    settingsProviderChain:'Facebook Marketplace 服务商链',settingsProviderChainHelp:'只有通过真实 Marketplace 测试的 Provider 才能加入。已禁用的 Provider 会保留在列表中，但运行时会跳过。',settingsRecentProviderJobs:'最近服务商任务',settingsRecentProviderJobsHelp:'测试请求和实时 Failover 请求都会记录在这里。',settingsDuplicateSources:'重复来源',settingsWebsiteLibrary:'公司网站资料库',settingsWebsiteLibraryHelp:'Website Scan 会打开一个独立的详细工作区。Scanned Products 位于 Website Scan 工作区内并可单独展开/收起。URL CSV 与 Page / Sitemap Import 仍是独立工具。'
+});
+Object.assign(appLanguageDictionary['zh-TW'],{
+    settingsAdministrator:'管理員',settingsApiProviders:'API 服務提供商',settingsProviderPriorityHelp:'Provider 依由上到下的順序嘗試。拖曳可調整故障切換優先順序。',settingsAddProvider:'新增服務商',
+    settingsApplication:'應用',settingsApplicationSettings:'應用設定',settingsApplicationHelp:'設定顯示名稱，以及登入重新檢查失敗時使用的 Portal 位址。',settingsCompanyName:'公司名稱',settingsSaveName:'儲存名稱',settingsPortalFallbackUrl:'Portal 備用 URL',settingsSaveUrl:'儲存 URL',settingsPortalHelp:'如果 Session 重新檢查失敗，瀏覽器會跳轉到這個固定的 http/https 位址。',
+    settingsProviderChain:'Facebook Marketplace 服務商鏈',settingsProviderChainHelp:'只有通過真實 Marketplace 測試的 Provider 才能加入。已停用的 Provider 會保留在清單中，但執行時會略過。',settingsRecentProviderJobs:'最近服務商任務',settingsRecentProviderJobsHelp:'測試請求和即時 Failover 請求都會記錄在這裡。',settingsDuplicateSources:'重複來源',settingsWebsiteLibrary:'公司網站資料庫',settingsWebsiteLibraryHelp:'Website Scan 會開啟一個獨立的詳細工作區。Scanned Products 位於 Website Scan 工作區內並可單獨展開/收合。URL CSV 與 Page / Sitemap Import 仍是獨立工具。'
+});
+Object.assign(appLanguageDictionary.es,{
+    settingsAdministrator:'Administrador',settingsApiProviders:'Proveedores API',settingsProviderPriorityHelp:'Los proveedores se prueban de arriba abajo. Arrástralos para cambiar la prioridad de failover.',settingsAddProvider:'Añadir proveedor',
+    settingsApplication:'Aplicación',settingsApplicationSettings:'Configuración de la aplicación',settingsApplicationHelp:'Configura el nombre mostrado y la dirección del Portal usada cuando falla la nueva comprobación de inicio de sesión.',settingsCompanyName:'Nombre de la empresa',settingsSaveName:'Guardar nombre',settingsPortalFallbackUrl:'URL alternativa del Portal',settingsSaveUrl:'Guardar URL',settingsPortalHelp:'Si falla la nueva comprobación de sesión, el navegador redirige a esta dirección http/https fija.',
+    settingsProviderChain:'Cadena de proveedores de Facebook Marketplace',settingsProviderChainHelp:'Solo se pueden añadir proveedores que hayan superado una prueba real de Marketplace. Los proveedores deshabilitados permanecen en la lista, pero se omiten.',settingsRecentProviderJobs:'Trabajos recientes de proveedores',settingsRecentProviderJobsHelp:'Aquí se registran los intentos de prueba y de failover en vivo.',settingsDuplicateSources:'Fuentes de duplicados',settingsWebsiteLibrary:'Biblioteca del sitio web de la empresa',settingsWebsiteLibraryHelp:'Website Scan abre un espacio de trabajo detallado. Scanned Products vive dentro de ese espacio y se abre o cierra de forma independiente. URL CSV y Page / Sitemap Import siguen siendo herramientas separadas.'
+});
+
+/* v0.2.121 — Settings page complete language follow.
+ * EN: Settings historically translated only the global menu and a few location/lock labels.
+ * This dictionary translates the remaining Settings UI without changing provider/scan behavior.
+ * 中文：Settings 过去只翻译了顶部菜单和少量地点/验证锁文本；这里补齐其余设置界面的语言联动，不改 Provider/扫描行为。
+ */
+const settingsPageTextDictionary={
+    'zh-CN':{
+        'Administrator':'管理员',
+        'API Providers':'API 服务提供商',
+        'Providers are tried from top to bottom. Drag them to change failover priority.':'Provider 按从上到下的顺序尝试。拖动可调整故障切换优先级。',
+        'Add Provider':'添加服务商',
+        '+ Add Provider':'+ 添加服务商',
+        'Provider Registry migration has not been enabled yet. Run the v0.1.12 provider registry migration before using this page.':'Provider Registry 迁移尚未启用。使用此页面前请先运行 v0.1.12 Provider Registry 迁移。',
+        'Application':'应用',
+        'Application Settings':'应用设置',
+        'Set the display name and the Portal address used when login re-check fails.':'设置显示名称，以及登录重新检查失败时使用的 Portal 地址。',
+        'Company name':'公司名称',
+        'Save Name':'保存名称',
+        'Portal fallback URL':'Portal 备用 URL',
+        'Save URL':'保存 URL',
+        'If session re-check fails, the browser redirects to this fixed http/https address.':'如果 Session 重新检查失败，浏览器会跳转到这个固定的 http/https 地址。',
+        'Facebook Marketplace Provider Chain':'Facebook Marketplace 服务商链',
+        'Only providers that passed a real Marketplace test can be added. Disabled providers stay in the list but are skipped.':'只有通过真实 Marketplace 测试的 Provider 才能加入。已禁用的 Provider 会保留在列表中，但运行时会跳过。',
+        'Priority':'优先级',
+        'Website ↗':'网站 ↗',
+        'Token:':'Token：',
+        'Stored':'已保存',
+        'None':'无',
+        'Last test:':'最近测试：',
+        'Tested':'已测试',
+        'Needs test':'需要测试',
+        'Enabled':'已启用',
+        'Disabled':'已禁用',
+        'Remove':'移除',
+        'No providers yet':'还没有 Provider',
+        'Click + Add Provider, test it, then add it to the chain.':'点击 + 添加 Provider，完成测试后再加入 Provider 链。',
+        'Recent Provider Jobs':'最近服务商任务',
+        'Test attempts and live failover attempts are logged here.':'测试请求和实时 Failover 请求都会记录在这里。',
+        'Live':'实时',
+        'Time':'时间',
+        'Last 1 Hour':'最近 1 小时',
+        'Last 24 Hours':'最近 24 小时',
+        'Last 7 Days':'最近 7 天',
+        'Last 30 Days':'最近 30 天',
+        'All Time':'全部时间',
+        'jobs':'个任务','providers':'个服务商','existing product URLs skipped':'个已存在产品 URL 已跳过','or':'或',', then':'，然后',
+        'User':'用户',
+        'Provider':'服务商',
+        'Item':'项目',
+        'Status':'状态',
+        'HTTP':'HTTP',
+        'Error':'错误',
+        'Ready':'就绪',
+        'Failed':'失败',
+        'Running':'运行中',
+        'Starting':'启动中',
+        'No provider jobs in this time range.':'这个时间范围内没有 Provider Job。',
+        'Previous':'上一页',
+        'Page':'第',
+        'of':'共',
+        'Next':'下一页',
+        'Close':'关闭',
+        'Enter the provider/API settings, run a real test, then Add Provider becomes available.':'填写 Provider/API 设置并执行真实测试，通过后才可以添加 Provider。',
+        'Provider Type':'服务商类型',
+        'Name':'名称',
+        'Website Link':'网站链接',
+        'API Endpoint':'API Endpoint',
+        'Token / API Key':'Token / API Key',
+        'Stored encrypted after the provider passes its test.':'Provider 测试通过后会加密保存。',
+        'Test Facebook Marketplace URL':'测试 Facebook Marketplace URL',
+        'The test must return ID, title, description, and a real listing date.':'测试结果必须返回 ID、标题、描述和真实 Listing 日期。',
+        'Marketplace Dataset ID':'Marketplace Dataset ID',
+        'Max Wait':'最长等待',
+        'Poll Every':'轮询间隔',
+        'sec':'秒',
+        'Request Method':'请求方法',
+        'Authentication':'身份验证',
+        'Bearer Token':'Bearer Token',
+        'Custom Header':'自定义 Header',
+        'Query Parameter':'Query 参数',
+        'No Authentication':'无需验证',
+        'Header / Query Name':'Header / Query 名称',
+        'Listing URL Input':'Listing URL 输入方式',
+        'JSON Body':'JSON Body',
+        'Listing URL Field Name':'Listing URL 字段名',
+        'JSON Field Mapping':'JSON 字段映射',
+        'Dot notation is supported, for example':'支持点号路径，例如',
+        'Item ID Path':'Item ID 路径',
+        'Title Path':'标题路径',
+        'Description Path':'描述路径',
+        'Listing Date Path':'Listing 日期路径',
+        'Canonical URL Path':'Canonical URL 路径',
+        'Test Provider':'测试服务商',
+        'Testing...':'测试中...',
+        'Test passed.':'测试通过。',
+        'Provider test failed.':'Provider 测试失败。',
+        'Listing date':'Listing 日期',
+        'Title':'标题',
+        'Description':'描述',
+        'Duplicate Sources':'重复来源',
+        'Company Website Library':'公司网站资料库',
+        'Website Scan opens one detailed workspace. Scanned Products lives inside that workspace below Website Scan and opens or closes independently. URL CSV and Page / Sitemap Import remain separate tools.':'Website Scan 会打开一个独立的详细工作区。Scanned Products 位于 Website Scan 工作区内并可单独展开/收起。URL CSV 与 Page / Sitemap Import 仍是独立工具。',
+        'references':'条 Reference',
+        'images pending':'张图片待索引',
+        'Website Scan':'网站扫描',
+        'Add websites, run scans and review each website\'s scan history.':'添加网站、运行扫描并查看每个网站的扫描历史。',
+        'website':'个网站',
+        'websites':'个网站',
+        'URL CSV':'URL CSV',
+        'Import a prepared CSV; the website is detected from its URLs automatically.':'导入准备好的 CSV；系统会根据其中的 URL 自动识别网站。',
+        'import record':'条导入记录',
+        'import records':'条导入记录',
+        'Page / Sitemap Import':'页面 / Sitemap 导入',
+        'Scan one page or sitemap; its website is detected automatically from the URL.':'扫描单个页面或 Sitemap；系统会根据 URL 自动识别网站。',
+        'scan/import record':'条扫描/导入记录',
+        'scan/import records':'条扫描/导入记录',
+        'The Website list belongs inside Step 1. Starting a scan saves a new website automatically.':'网站列表属于步骤 1。开始扫描时会自动保存新网站。',
+        'No website sources yet. Enter a URL above and click Scan Website.':'还没有网站来源。请在上方输入 URL，然后点击“网站扫描”。',
+        'Saved Websites':'已保存网站',
+        'Click a website card to open scan controls, live counters and scan history.':'点击网站卡片可打开扫描控制、实时计数和扫描历史。',
+        'Open Website ↗':'打开网站 ↗',
+        'Delete Website':'删除网站',
+        'History for this website only.':'这里只显示该网站的历史。',
+        'Product Scan History':'产品扫描历史',
+        'Scanned Products':'已扫描产品',
+        'Search, open, add or delete saved product URLs without opening an individual Website Scan card.':'无需打开单个 Website Scan 卡片，也可以搜索、打开、添加或删除已保存的产品 URL。',
+        'matching products':'个匹配产品',
+        'unique products':'个唯一产品',
+        'products ·':'个产品 ·',
+        'first images':'张首图',
+        'pages checked':'个页面已检查',
+        'Search':'搜索',
+        '+ Add URL':'+ 添加 URL',
+        'Add URL':'添加 URL',
+        'Website URL':'网站 URL',
+        'Page URL':'页面 URL',
+        'First image URL':'首图 URL',
+        'Action':'操作',
+        'Actions':'操作',
+        'Save':'保存',
+        'Delete':'删除',
+        'Image':'图片',
+        'Title / Description':'标题 / 描述',
+        'Indexed':'已索引',
+        'No saved websites':'还没有已保存网站',
+        'No saved websites yet.':'还没有已保存网站。',
+        'Open Scanned Products to load products.':'打开 Scanned Products 以加载产品。',
+        'CSV file':'CSV 文件',
+        'Import CSV':'导入 CSV',
+        'Download Sample CSV':'下载 CSV 示例',
+        'CSV Import History':'CSV 导入历史',
+        'Processed, saved and failed row counts are kept per run.':'每次运行都会保存处理、保存和失败的行数。',
+        'records':'条记录',
+        'Page / Sitemap URL':'页面 / Sitemap URL',
+        'Scan & Import':'扫描并导入',
+        'Scan & Import History':'扫描并导入历史',
+        'Every manual page/sitemap run is recorded with its source URL and result.':'每次手动页面/Sitemap 运行都会记录来源 URL 和结果。',
+        'Started':'开始时间',
+        'Website':'网站',
+        'Processed':'已处理',
+        'Saved':'已保存',
+        'Details':'详情',
+        'No CSV import history yet.':'还没有 CSV 导入历史。',
+        'No Page / Sitemap import history yet.':'还没有 Page / Sitemap 导入历史。',
+        'No scan history yet.':'还没有扫描历史。',
+        'Scan Website':'扫描网站',
+        'Run':'运行',
+        'total':'总计',
+        'product reference':'条产品 Reference',
+        'fingerprints':'个指纹',
+        'images':'张图片',
+        'active':'个活动锁',
+        'Enter a page or sitemap URL; its website is detected automatically. History stays below.':'输入页面或 Sitemap URL；系统会自动识别网站，历史记录保留在下方。',
+        'Upload a CSV; its URL column determines the website automatically. Import history stays below.':'上传 CSV；系统会根据 URL 列自动识别网站，导入历史保留在下方。',
+        'Search/add/delete applies only to':'搜索/添加/删除只作用于',
+        'Save a website in Website Scan first.':'请先在 Website Scan 中保存一个网站。',
+        'No description':'无描述',
+        'Image found':'已找到图片',
+        'No image':'无图片',
+        'Loading products…':'正在加载产品…',
+        'Could not load products.':'无法加载产品。',
+        'No matching scanned products for this website.':'这个网站没有匹配的已扫描产品。',
+        'Pause this scan':'暂停此扫描',
+        'Continue this scan':'继续此扫描',
+        'Scan stopped':'扫描已停止',
+        'Scan completed':'扫描完成',
+        'Scan failed':'扫描失败',
+        'Scan status':'扫描状态',
+        'Starting scan':'正在启动扫描',
+        'Processing log':'处理日志',
+        'The run is being created now.':'正在创建本次运行。',
+        'Each scanned URL is recorded here as it finishes.':'每个扫描 URL 完成后都会记录在这里。',
+        'Preparing next URL…':'正在准备下一个 URL…',
+        'Now':'现在',
+        'Scanning':'扫描中',
+        'Request in progress…':'请求处理中…',
+        'No per-URL records yet.':'还没有逐 URL 记录。',
+        'Processing log could not be loaded.':'无法加载处理日志。',
+        'No per-URL processing records were stored for this older scan.':'这个较早的扫描没有保存逐 URL 处理记录。',
+        'No per-URL processing records were stored for this scan.':'本次扫描没有保存逐 URL 处理记录。',
+        'Enter a company website first.':'请先输入公司网站。',
+        'Enter a valid HTTPS website URL.':'请输入有效的 HTTPS 网站 URL。',
+        'Company website scanning requires https://.':'公司网站扫描要求使用 https://。',
+        'Select a website first.':'请先选择一个网站。',
+        'Website URL added.':'网站 URL 已添加。',
+        'Location name':'地点名称'
+    },
+    'zh-TW':{
+        'Administrator':'管理員',
+        'API Providers':'API 服務提供商',
+        'Providers are tried from top to bottom. Drag them to change failover priority.':'Provider 依由上到下的順序嘗試。拖曳可調整故障切換優先順序。',
+        'Add Provider':'新增服務商',
+        '+ Add Provider':'+ 新增服務商',
+        'Provider Registry migration has not been enabled yet. Run the v0.1.12 provider registry migration before using this page.':'Provider Registry 遷移尚未啟用。使用此頁面前請先執行 v0.1.12 Provider Registry 遷移。',
+        'Application':'應用',
+        'Application Settings':'應用設定',
+        'Set the display name and the Portal address used when login re-check fails.':'設定顯示名稱，以及登入重新檢查失敗時使用的 Portal 位址。',
+        'Company name':'公司名稱',
+        'Save Name':'儲存名稱',
+        'Portal fallback URL':'Portal 備用 URL',
+        'Save URL':'儲存 URL',
+        'If session re-check fails, the browser redirects to this fixed http/https address.':'如果 Session 重新檢查失敗，瀏覽器會跳轉到這個固定的 http/https 位址。',
+        'Facebook Marketplace Provider Chain':'Facebook Marketplace 服務商鏈',
+        'Only providers that passed a real Marketplace test can be added. Disabled providers stay in the list but are skipped.':'只有通過真實 Marketplace 測試的 Provider 才能加入。已停用的 Provider 會保留在清單中，但執行時會略過。',
+        'Priority':'優先順序','Website ↗':'網站 ↗','Token:':'Token：','Stored':'已儲存','None':'無','Last test:':'最近測試：','Tested':'已測試','Needs test':'需要測試','Enabled':'已啟用','Disabled':'已停用','Remove':'移除',
+        'No providers yet':'尚無 Provider','Click + Add Provider, test it, then add it to the chain.':'點擊 + 新增 Provider，完成測試後再加入 Provider 鏈。',
+        'Recent Provider Jobs':'最近服務商任務','Test attempts and live failover attempts are logged here.':'測試請求和即時 Failover 請求都會記錄在這裡。','Live':'即時','Time':'時間','Last 1 Hour':'最近 1 小時','Last 24 Hours':'最近 24 小時','Last 7 Days':'最近 7 天','Last 30 Days':'最近 30 天','All Time':'全部時間','jobs':'個任務','providers':'個服務商','existing product URLs skipped':'個已存在產品 URL 已略過','or':'或',', then':'，然後','User':'使用者','Provider':'服務商','Item':'項目','Status':'狀態','HTTP':'HTTP','Error':'錯誤','Ready':'就緒','Failed':'失敗','Running':'執行中','Starting':'啟動中','No provider jobs in this time range.':'這個時間範圍內沒有 Provider Job。','Previous':'上一頁','Page':'第','of':'共','Next':'下一頁','Close':'關閉',
+        'Enter the provider/API settings, run a real test, then Add Provider becomes available.':'填寫 Provider/API 設定並執行真實測試，通過後才可以新增 Provider。','Provider Type':'服務商類型','Name':'名稱','Website Link':'網站連結','API Endpoint':'API Endpoint','Token / API Key':'Token / API Key','Stored encrypted after the provider passes its test.':'Provider 測試通過後會加密儲存。','Test Facebook Marketplace URL':'測試 Facebook Marketplace URL','The test must return ID, title, description, and a real listing date.':'測試結果必須回傳 ID、標題、描述和真實 Listing 日期。','Marketplace Dataset ID':'Marketplace Dataset ID','Max Wait':'最長等待','Poll Every':'輪詢間隔','sec':'秒','Request Method':'請求方式','Authentication':'身分驗證','Bearer Token':'Bearer Token','Custom Header':'自訂 Header','Query Parameter':'Query 參數','No Authentication':'無需驗證','Header / Query Name':'Header / Query 名稱','Listing URL Input':'Listing URL 輸入方式','JSON Body':'JSON Body','Listing URL Field Name':'Listing URL 欄位名','JSON Field Mapping':'JSON 欄位映射','Dot notation is supported, for example':'支援點號路徑，例如','Item ID Path':'Item ID 路徑','Title Path':'標題路徑','Description Path':'描述路徑','Listing Date Path':'Listing 日期路徑','Canonical URL Path':'Canonical URL 路徑','Test Provider':'測試服務商','Testing...':'測試中...','Test passed.':'測試通過。','Provider test failed.':'Provider 測試失敗。','Listing date':'Listing 日期','Title':'標題','Description':'描述',
+        'Duplicate Sources':'重複來源','Company Website Library':'公司網站資料庫','Website Scan opens one detailed workspace. Scanned Products lives inside that workspace below Website Scan and opens or closes independently. URL CSV and Page / Sitemap Import remain separate tools.':'Website Scan 會開啟一個獨立的詳細工作區。Scanned Products 位於 Website Scan 工作區內並可單獨展開/收合。URL CSV 與 Page / Sitemap Import 仍是獨立工具。','references':'筆 Reference','images pending':'張圖片待索引','Website Scan':'網站掃描','Add websites, run scans and review each website\'s scan history.':'新增網站、執行掃描並查看每個網站的掃描歷史。','website':'個網站','websites':'個網站','URL CSV':'URL CSV','Import a prepared CSV; the website is detected from its URLs automatically.':'匯入準備好的 CSV；系統會根據其中的 URL 自動辨識網站。','import record':'筆匯入記錄','import records':'筆匯入記錄','Page / Sitemap Import':'頁面 / Sitemap 匯入','Scan one page or sitemap; its website is detected automatically from the URL.':'掃描單一頁面或 Sitemap；系統會根據 URL 自動辨識網站。','scan/import record':'筆掃描/匯入記錄','scan/import records':'筆掃描/匯入記錄','The Website list belongs inside Step 1. Starting a scan saves a new website automatically.':'網站清單屬於步驟 1。開始掃描時會自動儲存新網站。','No website sources yet. Enter a URL above and click Scan Website.':'尚無網站來源。請在上方輸入 URL，然後點擊「網站掃描」。','Saved Websites':'已儲存網站','Click a website card to open scan controls, live counters and scan history.':'點擊網站卡片可開啟掃描控制、即時計數與掃描歷史。','Open Website ↗':'開啟網站 ↗','Delete Website':'刪除網站','History for this website only.':'這裡只顯示該網站的歷史。','Product Scan History':'產品掃描歷史','Scanned Products':'已掃描產品','Search, open, add or delete saved product URLs without opening an individual Website Scan card.':'不需開啟單一 Website Scan 卡片，也可以搜尋、開啟、新增或刪除已儲存的產品 URL。','matching products':'個符合產品','unique products':'個唯一產品','products ·':'個產品 ·','first images':'張首圖','pages checked':'個頁面已檢查','Search':'搜尋','+ Add URL':'+ 新增 URL','Add URL':'新增 URL','Website URL':'網站 URL','Page URL':'頁面 URL','First image URL':'首圖 URL','Action':'操作','Actions':'操作','Save':'儲存','Delete':'刪除','Image':'圖片','Title / Description':'標題 / 描述','Indexed':'已索引','No saved websites':'尚無已儲存網站','No saved websites yet.':'尚無已儲存網站。','Open Scanned Products to load products.':'開啟 Scanned Products 以載入產品。','CSV file':'CSV 檔案','Import CSV':'匯入 CSV','Download Sample CSV':'下載 CSV 範例','CSV Import History':'CSV 匯入歷史','Processed, saved and failed row counts are kept per run.':'每次執行都會保存處理、儲存與失敗的列數。','records':'筆記錄','Page / Sitemap URL':'頁面 / Sitemap URL','Scan & Import':'掃描並匯入','Scan & Import History':'掃描並匯入歷史','Every manual page/sitemap run is recorded with its source URL and result.':'每次手動頁面/Sitemap 執行都會記錄來源 URL 與結果。','Started':'開始時間','Website':'網站','Processed':'已處理','Saved':'已儲存','Details':'詳情','No CSV import history yet.':'尚無 CSV 匯入歷史。','No Page / Sitemap import history yet.':'尚無 Page / Sitemap 匯入歷史。','No scan history yet.':'尚無掃描歷史。','Scan Website':'掃描網站','Run':'執行','total':'總計','product reference':'筆產品 Reference','fingerprints':'個指紋','images':'張圖片','active':'個活動鎖','Enter a page or sitemap URL; its website is detected automatically. History stays below.':'輸入頁面或 Sitemap URL；系統會自動辨識網站，歷史記錄保留在下方。','Upload a CSV; its URL column determines the website automatically. Import history stays below.':'上傳 CSV；系統會根據 URL 欄自動辨識網站，匯入歷史保留在下方。','Search/add/delete applies only to':'搜尋/新增/刪除只作用於','Save a website in Website Scan first.':'請先在 Website Scan 中儲存一個網站。','No description':'無描述','Image found':'已找到圖片','No image':'無圖片','Loading products…':'正在載入產品…','Could not load products.':'無法載入產品。','No matching scanned products for this website.':'這個網站沒有符合的已掃描產品。','Pause this scan':'暫停此掃描','Continue this scan':'繼續此掃描','Scan stopped':'掃描已停止','Scan completed':'掃描完成','Scan failed':'掃描失敗','Scan status':'掃描狀態','Starting scan':'正在啟動掃描','Processing log':'處理日誌','The run is being created now.':'正在建立本次執行。','Each scanned URL is recorded here as it finishes.':'每個掃描 URL 完成後都會記錄在這裡。','Preparing next URL…':'正在準備下一個 URL…','Now':'現在','Scanning':'掃描中','Request in progress…':'請求處理中…','No per-URL records yet.':'尚無逐 URL 記錄。','Processing log could not be loaded.':'無法載入處理日誌。','No per-URL processing records were stored for this older scan.':'這個較早的掃描沒有保存逐 URL 處理記錄。','No per-URL processing records were stored for this scan.':'本次掃描沒有保存逐 URL 處理記錄。','Enter a company website first.':'請先輸入公司網站。','Enter a valid HTTPS website URL.':'請輸入有效的 HTTPS 網站 URL。','Company website scanning requires https://.':'公司網站掃描要求使用 https://。','Select a website first.':'請先選擇一個網站。','Website URL added.':'網站 URL 已新增。','Location name':'地點名稱'
+    },
+    es:{
+        'Administrator':'Administrador','API Providers':'Proveedores API','Providers are tried from top to bottom. Drag them to change failover priority.':'Los proveedores se prueban de arriba hacia abajo. Arrástralos para cambiar la prioridad de conmutación por error.','Add Provider':'Añadir proveedor','+ Add Provider':'+ Añadir proveedor','Provider Registry migration has not been enabled yet. Run the v0.1.12 provider registry migration before using this page.':'La migración del registro de proveedores aún no está habilitada. Ejecuta la migración v0.1.12 antes de usar esta página.','Application':'Aplicación','Application Settings':'Configuración de la aplicación','Set the display name and the Portal address used when login re-check fails.':'Configura el nombre mostrado y la dirección del Portal usada cuando falla la nueva comprobación de inicio de sesión.','Company name':'Nombre de la empresa','Save Name':'Guardar nombre','Portal fallback URL':'URL alternativa del Portal','Save URL':'Guardar URL','If session re-check fails, the browser redirects to this fixed http/https address.':'Si falla la nueva comprobación de la sesión, el navegador redirige a esta dirección http/https fija.','Facebook Marketplace Provider Chain':'Cadena de proveedores de Facebook Marketplace','Only providers that passed a real Marketplace test can be added. Disabled providers stay in the list but are skipped.':'Solo se pueden añadir proveedores que hayan superado una prueba real de Marketplace. Los deshabilitados permanecen en la lista, pero se omiten.','Priority':'Prioridad','Website ↗':'Sitio web ↗','Token:':'Token:','Stored':'Guardado','None':'Ninguno','Last test:':'Última prueba:','Tested':'Probado','Needs test':'Necesita prueba','Enabled':'Habilitado','Disabled':'Deshabilitado','Remove':'Quitar','No providers yet':'Aún no hay proveedores','Click + Add Provider, test it, then add it to the chain.':'Haz clic en + Añadir proveedor, pruébalo y luego añádelo a la cadena.','Recent Provider Jobs':'Trabajos recientes de proveedores','Test attempts and live failover attempts are logged here.':'Aquí se registran los intentos de prueba y los intentos reales de failover.','Live':'En vivo','Time':'Hora','Last 1 Hour':'Última hora','Last 24 Hours':'Últimas 24 horas','Last 7 Days':'Últimos 7 días','Last 30 Days':'Últimos 30 días','All Time':'Todo el tiempo','jobs':'trabajos','providers':'proveedores','existing product URLs skipped':'URL de productos existentes omitidas','or':'o',', then':', luego','User':'Usuario','Provider':'Proveedor','Item':'Elemento','Status':'Estado','HTTP':'HTTP','Error':'Error','Ready':'Listo','Failed':'Fallido','Running':'En ejecución','Starting':'Iniciando','No provider jobs in this time range.':'No hay trabajos de proveedores en este intervalo.','Previous':'Anterior','Page':'Página','of':'de','Next':'Siguiente','Close':'Cerrar','Enter the provider/API settings, run a real test, then Add Provider becomes available.':'Introduce la configuración del proveedor/API, ejecuta una prueba real y después se habilitará Añadir proveedor.','Provider Type':'Tipo de proveedor','Name':'Nombre','Website Link':'Enlace del sitio web','API Endpoint':'Endpoint API','Token / API Key':'Token / Clave API','Stored encrypted after the provider passes its test.':'Se guarda cifrado después de que el proveedor supera la prueba.','Test Facebook Marketplace URL':'URL de Facebook Marketplace para prueba','The test must return ID, title, description, and a real listing date.':'La prueba debe devolver ID, título, descripción y una fecha real del anuncio.','Marketplace Dataset ID':'ID del dataset de Marketplace','Max Wait':'Espera máxima','Poll Every':'Consultar cada','sec':'s','Request Method':'Método de solicitud','Authentication':'Autenticación','Bearer Token':'Token Bearer','Custom Header':'Header personalizado','Query Parameter':'Parámetro de consulta','No Authentication':'Sin autenticación','Header / Query Name':'Nombre de Header / Query','Listing URL Input':'Entrada de URL del anuncio','JSON Body':'Cuerpo JSON','Listing URL Field Name':'Nombre del campo URL del anuncio','JSON Field Mapping':'Mapeo de campos JSON','Dot notation is supported, for example':'Se admite notación con puntos, por ejemplo','Item ID Path':'Ruta del ID','Title Path':'Ruta del título','Description Path':'Ruta de la descripción','Listing Date Path':'Ruta de la fecha del anuncio','Canonical URL Path':'Ruta de la URL canónica','Test Provider':'Probar proveedor','Testing...':'Probando...','Test passed.':'Prueba superada.','Provider test failed.':'Falló la prueba del proveedor.','Listing date':'Fecha del anuncio','Title':'Título','Description':'Descripción','Duplicate Sources':'Fuentes de duplicados','Company Website Library':'Biblioteca del sitio web de la empresa','Website Scan opens one detailed workspace. Scanned Products lives inside that workspace below Website Scan and opens or closes independently. URL CSV and Page / Sitemap Import remain separate tools.':'Website Scan abre un espacio de trabajo detallado. Scanned Products vive dentro de ese espacio y se abre o cierra de forma independiente. URL CSV y Page / Sitemap Import siguen siendo herramientas separadas.','references':'referencias','images pending':'imágenes pendientes','Website Scan':'Escaneo del sitio web','Add websites, run scans and review each website\'s scan history.':'Añade sitios web, ejecuta escaneos y revisa el historial de cada sitio.','website':'sitio web','websites':'sitios web','URL CSV':'CSV de URL','Import a prepared CSV; the website is detected from its URLs automatically.':'Importa un CSV preparado; el sitio web se detecta automáticamente a partir de sus URL.','import record':'registro de importación','import records':'registros de importación','Page / Sitemap Import':'Importación de página / Sitemap','Scan one page or sitemap; its website is detected automatically from the URL.':'Escanea una página o sitemap; el sitio web se detecta automáticamente a partir de la URL.','scan/import record':'registro de escaneo/importación','scan/import records':'registros de escaneo/importación','The Website list belongs inside Step 1. Starting a scan saves a new website automatically.':'La lista de sitios pertenece al Paso 1. Al iniciar un escaneo se guarda automáticamente un sitio nuevo.','No website sources yet. Enter a URL above and click Scan Website.':'Aún no hay fuentes web. Introduce una URL arriba y pulsa Escanear sitio web.','Saved Websites':'Sitios guardados','Click a website card to open scan controls, live counters and scan history.':'Haz clic en una tarjeta de sitio para abrir controles, contadores en vivo e historial de escaneo.','Open Website ↗':'Abrir sitio ↗','Delete Website':'Eliminar sitio','History for this website only.':'Historial solo para este sitio.','Product Scan History':'Historial de escaneo de productos','Scanned Products':'Productos escaneados','Search, open, add or delete saved product URLs without opening an individual Website Scan card.':'Busca, abre, añade o elimina URL de productos guardadas sin abrir una tarjeta individual de Website Scan.','matching products':'productos coincidentes','unique products':'productos únicos','products ·':'productos ·','first images':'primeras imágenes','pages checked':'páginas comprobadas','Search':'Buscar','+ Add URL':'+ Añadir URL','Add URL':'Añadir URL','Website URL':'URL del sitio','Page URL':'URL de la página','First image URL':'URL de la primera imagen','Action':'Acción','Actions':'Acciones','Save':'Guardar','Delete':'Eliminar','Image':'Imagen','Title / Description':'Título / Descripción','Indexed':'Indexado','No saved websites':'No hay sitios guardados','No saved websites yet.':'Aún no hay sitios guardados.','Open Scanned Products to load products.':'Abre Scanned Products para cargar productos.','CSV file':'Archivo CSV','Import CSV':'Importar CSV','Download Sample CSV':'Descargar CSV de ejemplo','CSV Import History':'Historial de importación CSV','Processed, saved and failed row counts are kept per run.':'Se conservan los recuentos de filas procesadas, guardadas y fallidas por ejecución.','records':'registros','Page / Sitemap URL':'URL de página / Sitemap','Scan & Import':'Escanear e importar','Scan & Import History':'Historial de escaneo e importación','Every manual page/sitemap run is recorded with its source URL and result.':'Cada ejecución manual de página/sitemap se registra con su URL de origen y resultado.','Started':'Iniciado','Website':'Sitio web','Processed':'Procesado','Saved':'Guardado','Details':'Detalles','No CSV import history yet.':'Aún no hay historial de importación CSV.','No Page / Sitemap import history yet.':'Aún no hay historial de importación de página/Sitemap.','No scan history yet.':'Aún no hay historial de escaneo.','Scan Website':'Escanear sitio web','Run':'Ejecutar','total':'total','product reference':'referencia de producto','fingerprints':'huellas','images':'imágenes','active':'activos','Enter a page or sitemap URL; its website is detected automatically. History stays below.':'Introduce una URL de página o sitemap; el sitio se detecta automáticamente. El historial queda abajo.','Upload a CSV; its URL column determines the website automatically. Import history stays below.':'Sube un CSV; su columna URL determina automáticamente el sitio. El historial de importación queda abajo.','Search/add/delete applies only to':'Buscar/añadir/eliminar se aplica solo a','Save a website in Website Scan first.':'Guarda primero un sitio en Website Scan.','No description':'Sin descripción','Image found':'Imagen encontrada','No image':'Sin imagen','Loading products…':'Cargando productos…','Could not load products.':'No se pudieron cargar los productos.','No matching scanned products for this website.':'No hay productos escaneados coincidentes para este sitio.','Pause this scan':'Pausar este escaneo','Continue this scan':'Continuar este escaneo','Scan stopped':'Escaneo detenido','Scan completed':'Escaneo completado','Scan failed':'Escaneo fallido','Scan status':'Estado del escaneo','Starting scan':'Iniciando escaneo','Processing log':'Registro de procesamiento','The run is being created now.':'La ejecución se está creando ahora.','Each scanned URL is recorded here as it finishes.':'Cada URL escaneada se registra aquí al terminar.','Preparing next URL…':'Preparando la siguiente URL…','Now':'Ahora','Scanning':'Escaneando','Request in progress…':'Solicitud en curso…','No per-URL records yet.':'Aún no hay registros por URL.','Processing log could not be loaded.':'No se pudo cargar el registro de procesamiento.','No per-URL processing records were stored for this older scan.':'No se guardaron registros por URL para este escaneo anterior.','No per-URL processing records were stored for this scan.':'No se guardaron registros por URL para este escaneo.','Enter a company website first.':'Introduce primero el sitio web de la empresa.','Enter a valid HTTPS website URL.':'Introduce una URL HTTPS válida.','Company website scanning requires https://.':'El escaneo del sitio requiere https://.','Select a website first.':'Selecciona primero un sitio.','Website URL added.':'URL del sitio añadida.','Location name':'Nombre de ubicación'
+    }
+};
+
+/* v0.2.122 — exact Settings strings that were still able to remain in English. */
+Object.assign(settingsPageTextDictionary['zh-CN'],{
+    'Custom JSON API':'自定义 JSON API','Drag to reorder':'拖动重新排序','Drag to change priority':'拖动调整优先级',
+    'Provider jobs time range':'Provider 任务时间范围','Close Website Scan':'关闭网站扫描','Search title, URL or description':'搜索标题、URL 或描述',
+    'Close URL CSV':'关闭 URL CSV','Close Page / Sitemap Import':'关闭页面 / Sitemap 导入','Click to view processing log.':'点击查看处理日志。',
+    'No additional details recorded.':'没有记录更多详情。','Click this row to load the per-URL processing log.':'点击此行加载逐 URL 处理日志。',
+    'Result':'结果','Updated':'更新时间','Completed':'已完成','Paused':'已暂停','Stopped':'已停止'
+});
+Object.assign(settingsPageTextDictionary['zh-TW'],{
+    'Custom JSON API':'自訂 JSON API','Drag to reorder':'拖曳重新排序','Drag to change priority':'拖曳調整優先順序',
+    'Provider jobs time range':'Provider 任務時間範圍','Close Website Scan':'關閉網站掃描','Search title, URL or description':'搜尋標題、URL 或描述',
+    'Close URL CSV':'關閉 URL CSV','Close Page / Sitemap Import':'關閉頁面 / Sitemap 匯入','Click to view processing log.':'點擊查看處理記錄。',
+    'No additional details recorded.':'沒有記錄更多詳情。','Click this row to load the per-URL processing log.':'點擊此列載入逐 URL 處理記錄。',
+    'Result':'結果','Updated':'更新時間','Completed':'已完成','Paused':'已暫停','Stopped':'已停止'
+});
+Object.assign(settingsPageTextDictionary.es,{
+    'Custom JSON API':'API JSON personalizada','Drag to reorder':'Arrastrar para reordenar','Drag to change priority':'Arrastrar para cambiar la prioridad',
+    'Provider jobs time range':'Rango de tiempo de trabajos del proveedor','Close Website Scan':'Cerrar escaneo del sitio web','Search title, URL or description':'Buscar título, URL o descripción',
+    'Close URL CSV':'Cerrar CSV de URL','Close Page / Sitemap Import':'Cerrar importación de página / Sitemap','Click to view processing log.':'Haz clic para ver el registro de procesamiento.',
+    'No additional details recorded.':'No se registraron más detalles.','Click this row to load the per-URL processing log.':'Haz clic en esta fila para cargar el registro por URL.',
+    'Result':'Resultado','Updated':'Actualizado','Completed':'Completado','Paused':'Pausado','Stopped':'Detenido'
+});
+
+const settingsPageOriginalText=new WeakMap();
+const settingsPageOriginalAttributes=new WeakMap();
+let settingsPageLanguageApplying=false;
+let settingsPageMutationTimer=null;
+let settingsPageMutationObserver=null;
+
+function settingsPageTranslateCountPhrase(base,lang){
+    const match=String(base||'').match(/^(\d+)\s+(providers|jobs|records|references|websites|images|fingerprints|active)$/i);
+    if(!match || lang==='en') return '';
+    const count=match[1],unit=match[2].toLowerCase();
+    if(lang==='zh-CN'){
+        const units={providers:'个 Provider',jobs:'个任务',records:'条记录',references:'条 Reference',websites:'个网站',images:'张图片',fingerprints:'个指纹',active:'个活动锁'};
+        return count+' '+(units[unit]||unit);
+    }
+    if(lang==='zh-TW'){
+        const units={providers:'個 Provider',jobs:'個任務',records:'筆記錄',references:'筆 Reference',websites:'個網站',images:'張圖片',fingerprints:'個指紋',active:'個活動鎖'};
+        return count+' '+(units[unit]||unit);
+    }
+    if(lang==='es'){
+        const units={providers:'proveedores',jobs:'trabajos',records:'registros',references:'referencias',websites:'sitios web',images:'imágenes',fingerprints:'huellas',active:'activos'};
+        return count+' '+(units[unit]||unit);
+    }
+    return '';
+}
+
+function settingsPageTranslateDynamicPhrase(normalized,lang,dictionary){
+    if(!normalized || lang==='en') return '';
+    let match=normalized.match(/^Token:\s*(Stored|None)$/i);
+    if(match) return (dictionary['Token:']||'Token:')+' '+(dictionary[match[1]]||match[1]);
+    match=normalized.match(/^Last test:\s*(.+)$/i);
+    if(match) return (dictionary['Last test:']||'Last test:')+' '+match[1];
+    match=normalized.match(/^Updated\s+(.+)$/i);
+    if(match) return (dictionary['Updated']||'Updated')+' '+match[1];
+    match=normalized.match(/^(\d+)\s+products\s+·\s+(\d+)\s+images$/i);
+    if(match){
+        if(lang==='zh-CN') return match[1]+' 个产品 · '+match[2]+' 张图片';
+        if(lang==='zh-TW') return match[1]+' 個產品 · '+match[2]+' 張圖片';
+        if(lang==='es') return match[1]+' productos · '+match[2]+' imágenes';
+    }
+    const unitPatterns={
+        'product reference':['条产品 Reference','筆產品 Reference','referencias de producto'],
+        'product references':['条产品 Reference','筆產品 Reference','referencias de producto'],
+        'matching products':['个匹配产品','個符合產品','productos coincidentes'],
+        'unique products':['个唯一产品','個唯一產品','productos únicos'],
+        'first images':['张首图','張首圖','primeras imágenes'],
+        'pages checked':['个页面已检查','個頁面已檢查','páginas comprobadas'],
+        'import record':['条导入记录','筆匯入記錄','registro de importación'],
+        'import records':['条导入记录','筆匯入記錄','registros de importación'],
+        'scan/import record':['条扫描/导入记录','筆掃描/匯入記錄','registro de escaneo/importación'],
+        'scan/import records':['条扫描/导入记录','筆掃描/匯入記錄','registros de escaneo/importación']
+    };
+    match=normalized.match(/^(\d+)\s+(.+)$/);
+    if(match && unitPatterns[match[2]]){
+        const idx=lang==='zh-CN'?0:(lang==='zh-TW'?1:2);
+        return match[1]+' '+unitPatterns[match[2]][idx];
+    }
+    return '';
+}
+
+function settingsPageTranslateText(base,lang){
+    const raw=String(base==null?'':base);
+    const normalized=raw.replace(/\s+/g,' ').trim();
+    if(!normalized || lang==='en') return raw;
+    const dictionary=settingsPageTextDictionary[lang]||{};
+    let translated=dictionary[normalized]||settingsPageTranslateCountPhrase(normalized,lang)||settingsPageTranslateDynamicPhrase(normalized,lang,dictionary)||'';
+    if(!translated){
+        const pageMatch=normalized.match(/^Page\s+(\d+)\s+of\s+(\d+)$/i);
+        if(pageMatch){
+            if(lang==='zh-CN') translated='第 '+pageMatch[1]+' 页，共 '+pageMatch[2]+' 页';
+            else if(lang==='zh-TW') translated='第 '+pageMatch[1]+' 頁，共 '+pageMatch[2]+' 頁';
+            else if(lang==='es') translated='Página '+pageMatch[1]+' de '+pageMatch[2];
+        }
+    }
+    if(!translated) return raw;
+    const leading=(raw.match(/^\s*/)||[''])[0];
+    const trailing=(raw.match(/\s*$/)||[''])[0];
+    return leading+translated+trailing;
+}
+
+function settingsPageTranslateAttribute(element,name,lang){
+    if(!element || !element.hasAttribute(name)) return;
+    let originals=settingsPageOriginalAttributes.get(element);
+    if(!originals){ originals={}; settingsPageOriginalAttributes.set(element,originals); }
+    if(!(name in originals)) originals[name]=element.getAttribute(name)||'';
+    const translated=settingsPageTranslateText(originals[name],lang);
+    if(element.getAttribute(name)!==translated) element.setAttribute(name,translated);
+}
+
+function applySettingsPageLanguage(){
+    if(settingsPageLanguageApplying || !document.getElementById('providerAddOpen')) return;
+    const root=document.querySelector('main.container')||document.querySelector('main');
+    if(!root) return;
+    settingsPageLanguageApplying=true;
+    try{
+        const lang=currentAppLanguage();
+        /* v0.2.122: do not depend on NodeFilter/TreeWalker for Settings translation.
+         * Walk direct text-node children of every element instead. This keeps the
+         * proven data-app-i18n path intact and also covers legacy Settings markup.
+         */
+        const elements=[root].concat(Array.from(root.querySelectorAll('*')));
+        elements.forEach(function(parent){
+            if(!parent || !parent.childNodes) return;
+            if(parent.matches && parent.matches('script,style,pre,code,[data-app-i18n],[data-app-i18n-count],[data-nav-i18n]')) return;
+            if(parent.closest && parent.closest('[data-app-i18n],[data-app-i18n-count],[data-nav-i18n]')) return;
+            Array.from(parent.childNodes).forEach(function(node){
+                if(!node || node.nodeType!==3) return;
+                try{
+                    if(!settingsPageOriginalText.has(node)) settingsPageOriginalText.set(node,node.nodeValue||'');
+                    const original=settingsPageOriginalText.get(node)||'';
+                    const translated=settingsPageTranslateText(original,lang);
+                    if(node.nodeValue!==translated) node.nodeValue=translated;
+                }catch(_error){
+                    /* One unusual node must never stop the rest of Settings from translating. */
+                }
+            });
+        });
+        root.querySelectorAll('[placeholder],[title],[aria-label]').forEach(function(element){
+            ['placeholder','title','aria-label'].forEach(function(name){
+                try{ settingsPageTranslateAttribute(element,name,lang); }catch(_error){}
+            });
+        });
+    }finally{
+        settingsPageLanguageApplying=false;
+    }
+}
+
+function startSettingsPageLanguageObserver(){
+    if(settingsPageMutationObserver || !document.getElementById('providerAddOpen')) return;
+    const root=document.querySelector('main.container');
+    if(!root || typeof MutationObserver==='undefined') return;
+    settingsPageMutationObserver=new MutationObserver(function(){
+        if(settingsPageLanguageApplying) return;
+        window.clearTimeout(settingsPageMutationTimer);
+        settingsPageMutationTimer=window.setTimeout(applySettingsPageLanguage,0);
+    });
+    settingsPageMutationObserver.observe(root,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['placeholder','title','aria-label']});
+}
 
 /**
  * EN: Perform the current app language behavior used by the application UI.
@@ -237,9 +672,11 @@ function applyGlobalMenuLanguage(){
     });
 
     document.documentElement.lang=lang;
+    applySettingsPageLanguage();
 }
 
 applyGlobalMenuLanguage();
+startSettingsPageLanguageObserver();
 
 $('#appLanguageSwitch').on(
     'click',
@@ -686,6 +1123,14 @@ const salesI18n={
         greeting:'Hi, {name}',
         dashboardTitle:'My Sales Activity',
         dashboardSubtitle:'Review your verified Marketplace posts and Admin review status.',
+        salesPostSearchLabel:'Post Search',
+        salesPostSearchPlaceholder:'Search original Post link, Post ID, title or platform',
+        salesPostSearchHelp:'Search all of your saved Posts across every date.',
+        salesPostSearchMatches:'Search results',
+        salesPostSearching:'Searching Posts',
+        salesPostSearchEmpty:'No matching Posts found.',
+        salesPostSearchFailed:'Could not search Posts.',
+        salesPostSearchClear:'Clear Post Search',
         activityChart:'Posting Activity',
         dailyProgress:'Daily Post Progress',
         targetLine:'Daily target',
@@ -813,6 +1258,7 @@ const salesI18n={
         queueErrorInvalidUrl:'Invalid URL',
         queueErrorTimeout:'System Timeout',
         queueErrorProvider:'Provider Error',
+        queueErrorUnavailable:'Unavailable',
         queueErrorDate:'Date Not Verified',
         queueErrorTitleCheck:'Title Not Verified',
         queueErrorManual:'Manual Verification Required',
@@ -830,6 +1276,7 @@ const salesI18n={
         queueHistory:'History',
         queueViewPost:'View Post',
         queueSaveReverify:'Save & Re-verify',
+        queueEditUrlHelp:'Edit the original listing URL below. Platform and Post ID are detected automatically from the URL.',
         queueNotCounted:'This submission was not counted as a post.',
         queuePassedHelp:'Verified and saved as a counted Post.',
         reasonPlaceholder:'Why should this post be removed?'
@@ -838,6 +1285,14 @@ const salesI18n={
         greeting:'你好，{name}',
         dashboardTitle:'我的销售活动',
         dashboardSubtitle:'查看已验证的 Marketplace 帖子以及管理员审核状态。',
+        salesPostSearchLabel:'Post 搜索',
+        salesPostSearchPlaceholder:'搜索原帖链接、Post ID、标题或平台',
+        salesPostSearchHelp:'搜索你自己所有日期中已保存的 Posts。',
+        salesPostSearchMatches:'搜索结果',
+        salesPostSearching:'正在搜索 Posts',
+        salesPostSearchEmpty:'没有找到匹配的 Posts。',
+        salesPostSearchFailed:'无法搜索 Posts。',
+        salesPostSearchClear:'清除 Post 搜索',
         activityChart:'发帖活动',
         dailyProgress:'每日发帖进度',
         targetLine:'每日目标',
@@ -974,6 +1429,7 @@ const salesI18n={
         queueErrorInvalidUrl:'无效 URL',
         queueErrorTimeout:'系统超时',
         queueErrorProvider:'Provider 错误',
+        queueErrorUnavailable:'帖子不可用',
         queueErrorDate:'日期未验证',
         queueErrorTitleCheck:'标题未验证',
         queueErrorManual:'需要手动验证',
@@ -991,6 +1447,7 @@ const salesI18n={
         queueHistory:'历史',
         queueViewPost:'查看 Post',
         queueSaveReverify:'保存并重新验证',
+        queueEditUrlHelp:'请在下面修改原始帖子链接。平台和 Post ID 会根据链接自动识别。',
         queueNotCounted:'此记录未计入 Post 数量。',
         queuePassedHelp:'验证通过，已自动保存并计入 Post。',
         reasonPlaceholder:'为什么要删除这个帖子？'
@@ -999,6 +1456,14 @@ const salesI18n={
         greeting:'你好，{name}',
         dashboardTitle:'我的銷售活動',
         dashboardSubtitle:'查看已驗證的 Marketplace 貼文以及管理員審核狀態。',
+        salesPostSearchLabel:'Post 搜尋',
+        salesPostSearchPlaceholder:'搜尋原貼連結、Post ID、標題或平台',
+        salesPostSearchHelp:'搜尋你自己所有日期中已儲存的 Posts。',
+        salesPostSearchMatches:'搜尋結果',
+        salesPostSearching:'正在搜尋 Posts',
+        salesPostSearchEmpty:'沒有找到匹配的 Posts。',
+        salesPostSearchFailed:'無法搜尋 Posts。',
+        salesPostSearchClear:'清除 Post 搜尋',
         activityChart:'發文活動',
         dailyProgress:'每日發文進度',
         targetLine:'每日目標',
@@ -1119,6 +1584,7 @@ const salesI18n={
         queueErrorInvalidUrl:'無效 URL',
         queueErrorTimeout:'系統逾時',
         queueErrorProvider:'Provider 錯誤',
+        queueErrorUnavailable:'貼文不可用',
         queueErrorDate:'日期未驗證',
         queueErrorTitleCheck:'標題未驗證',
         queueErrorManual:'需要手動驗證',
@@ -1136,6 +1602,7 @@ const salesI18n={
         queueHistory:'歷史',
         queueViewPost:'查看 Post',
         queueSaveReverify:'儲存並重新驗證',
+        queueEditUrlHelp:'請在下面修改原始貼文連結。平台和 Post ID 會根據連結自動識別。',
         queueNotCounted:'此記錄未計入 Post 數量。',
         queuePassedHelp:'驗證通過，已自動儲存並計入 Post。',
         reasonPlaceholder:'為什麼要刪除這篇貼文？'
@@ -1144,6 +1611,14 @@ const salesI18n={
         greeting:'Hola, {name}',
         dashboardTitle:'Mi actividad de ventas',
         dashboardSubtitle:'Revisa tus publicaciones verificadas y el estado de revisión del administrador.',
+        salesPostSearchLabel:'Buscar publicaciones',
+        salesPostSearchPlaceholder:'Busca enlace original, ID, título o plataforma',
+        salesPostSearchHelp:'Busca todas tus publicaciones guardadas sin límite de fecha.',
+        salesPostSearchMatches:'Resultados de búsqueda',
+        salesPostSearching:'Buscando publicaciones',
+        salesPostSearchEmpty:'No se encontraron publicaciones.',
+        salesPostSearchFailed:'No se pudieron buscar las publicaciones.',
+        salesPostSearchClear:'Limpiar búsqueda',
         activityChart:'Actividad de publicaciones',
         dailyProgress:'Progreso diario de publicaciones',
         targetLine:'Meta diaria',
@@ -1270,6 +1745,7 @@ const salesI18n={
         queueErrorInvalidUrl:'URL no válida',
         queueErrorTimeout:'Tiempo de espera agotado',
         queueErrorProvider:'Error del proveedor',
+        queueErrorUnavailable:'No disponible',
         queueErrorDate:'Fecha no verificada',
         queueErrorTitleCheck:'Título no verificado',
         queueErrorManual:'Verificación manual requerida',
@@ -1287,6 +1763,7 @@ const salesI18n={
         queueHistory:'Historial',
         queueViewPost:'Ver publicación',
         queueSaveReverify:'Guardar y verificar de nuevo',
+        queueEditUrlHelp:'Edita abajo la URL original. La plataforma y el Post ID se detectan automáticamente desde la URL.',
         queueNotCounted:'Este envío no se contó como Post.',
         queuePassedHelp:'Verificado, guardado y contado como Post.',
         reasonPlaceholder:'¿Por qué se debe eliminar esta publicación?'
@@ -1350,6 +1827,17 @@ function applySalesLanguage(){
 
         $(this).text(salesTr(key));
     });
+
+    $('[data-sales-i18n-placeholder]').each(function(){
+        const key=String($(this).attr('data-sales-i18n-placeholder')||'');
+        if(key){
+            $(this).attr('placeholder',salesTr(key));
+        }
+    });
+
+    $('#salesPostSearchClear')
+        .attr('aria-label',salesTr('salesPostSearchClear'))
+        .attr('title',salesTr('salesPostSearchClear'));
 
     $('[data-sales-placeholder="reason"]').attr(
         'placeholder',
@@ -1922,6 +2410,15 @@ const $salesPostDetailModal=$('#salesPostDetailModal');
 const $salesPostDetailImageButton=$('#salesPostDetailImageButton');
 const $salesImageLightbox=$('#salesImageLightbox');
 const $salesChartTooltip=$('#salesChartTooltip');
+const $salesPostSearchPanel=$('#salesPostSearchPanel');
+const $salesPostSearchInput=$('#salesPostSearchInput');
+const $salesPostSearchClear=$('#salesPostSearchClear');
+const $salesPostSearchResults=$('#salesPostSearchResults');
+let salesSelfPostSearchRequest=null;
+let salesSelfPostSearchTimer=0;
+let salesSelfPostSearchSeq=0;
+let salesSelfPostSearchRows=[];
+let salesSelfPostSearchQuery='';
 
 /*
  * Keep the fixed-position hover card outside the chart panel. The chart card
@@ -2190,9 +2687,13 @@ function aggregateSalesChartDate(date,platform){
  * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function buildSalesChartTooltipHtml(data){
+    const dayTarget=Math.max(
+        1,
+        parseInt(data.daily_target,10)||salesChartDailyTarget||10
+    );
     const missing=Math.max(
         0,
-        salesChartDailyTarget-data.post_count
+        dayTarget-data.post_count
     );
 
     return (
@@ -2219,7 +2720,7 @@ function buildSalesChartTooltipHtml(data){
         +'</span>'
         +'<span>'
             +escapeHtml(salesTr('targetLine'))
-            +': <b>'+salesChartDailyTarget+'</b>'
+            +': <b>'+dayTarget+'</b>'
         +'</span>'
     );
 }
@@ -2909,7 +3410,11 @@ function showSalesChartTooltip($day,event,mode){
         unreviewed_count:parseInt(
             $day.attr('data-chart-unreviewed'),
             10
-        )||0
+        )||0,
+        daily_target:parseInt(
+            $day.attr('data-chart-target'),
+            10
+        )||salesChartDailyTarget
     };
 
     $salesChartTooltip
@@ -4023,6 +4528,277 @@ function closeSalesPostDetail(){
         $('#salesPostDeleteRequestForm').addClass('hidden').removeAttr('style');
     });
 }
+
+
+/**
+ * EN: Toggle Sales all-date Post Search mode without changing the selected dashboard date range.
+ * 中文：切换 Sales 全历史 Post 搜索模式，同时保持当前 Dashboard 日期范围不变。
+ */
+function setSalesSelfPostSearchActive(active){
+    if(!$salesPostSearchPanel.length){
+        return;
+    }
+
+    $salesPostSearchPanel.attr(
+        'data-search-active',
+        active?'1':'0'
+    );
+
+    $salesPostSearchClear.toggleClass(
+        'hidden',
+        !active
+    );
+
+    if(!active){
+        $salesPostSearchResults
+            .empty()
+            .addClass('hidden');
+    }
+}
+
+/**
+ * EN: Render only the Posts matched by Sales all-date search.
+ * 中文：仅渲染 Sales 全历史搜索真正命中的 Posts。
+ */
+function salesPostSearchPlatformIcon(platform){
+    platform=String(platform||'').toLowerCase();
+    if(platform==='facebook'){
+        return '<span class="platform-logo platform-logo-facebook" title="Facebook" aria-label="Facebook">'
+            +'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.8 21v-8h2.7l.4-3.1h-3.1v-2c0-.9.3-1.5 1.6-1.5H17V3.6c-.3 0-1.3-.1-2.5-.1-2.5 0-4.2 1.5-4.2 4.3v2.1H7.5V13h2.8v8h3.5Z"/></svg></span>';
+    }
+    if(platform==='instagram'){
+        return '<span class="platform-logo platform-logo-instagram" title="Instagram" aria-label="Instagram">'
+            +'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="4.5" width="15" height="15" rx="4"/><circle cx="12" cy="12" r="3.4"/><circle cx="17.2" cy="6.8" r="1"/></svg></span>';
+    }
+    if(platform==='offerup'){
+        return '<span class="platform-logo platform-logo-offerup" title="OfferUp" aria-label="OfferUp">'
+            +'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="12" r="5.2"/><circle cx="16" cy="12" r="5.2"/><path d="M7.8 8.7v6.6M16.2 8.7v6.6"/></svg></span>';
+    }
+    if(platform==='craigslist'){
+        return '<span class="platform-logo platform-logo-craigslist" title="Craigslist" aria-label="Craigslist">'
+            +'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 4v16M12 12l-5.2 4M12 12l5.2 4"/></svg></span>';
+    }
+    return '<span class="platform-logo platform-logo-generic">'
+        +'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4V5Zm2 2v10h12V7H6Z"/></svg></span>';
+}
+
+function salesPostSearchDisplayDate(row){
+    const explicit=String(row&&row.published_display||'').trim();
+    if(explicit){
+        return explicit;
+    }
+    const raw=String(
+        row&&(row.published_at||row.published_date)||''
+    ).trim();
+    return raw||'—';
+}
+
+/**
+ * EN: Render Sales all-date Post Search with the exact same Post-card visual
+ * language as the normal Sales Post grid. There is no intermediate result row.
+ * 中文：Sales 全历史 Post 搜索直接使用正常 Post Grid 的卡片样式渲染，
+ * 不再显示中间的“Search results”文字列表。
+ */
+function renderSalesSelfPostSearchResults(rows,query){
+    if(!$salesPostSearchResults.length){
+        return;
+    }
+
+    rows=Array.isArray(rows)?rows:[];
+    salesSelfPostSearchRows=rows;
+    salesSelfPostSearchQuery=String(query||'');
+
+    if(!rows.length){
+        $salesPostSearchResults
+            .removeClass('hidden')
+            .html(
+                '<div class="sales-post-search-empty">'
+                +escapeHtml(salesTr('salesPostSearchEmpty'))
+                +'</div>'
+            );
+        return;
+    }
+
+    const cards=rows.map(function(row){
+        const platform=String(row.platform||'').toLowerCase();
+        const title=String(row.title||'').trim()||'Post details';
+        const description=String(row.description||'').trim();
+        const published=String(row.published_at||row.published_date||'');
+        const displayDate=salesPostSearchDisplayDate(row);
+        const status=String(row.status||'unreviewed').toLowerCase();
+        const normalizedStatus=['good','bad'].includes(status)?status:'unreviewed';
+        const statusClass=normalizedStatus==='good'
+            ?' review-good'
+            :normalizedStatus==='bad'
+                ?' review-bad'
+                :'';
+        const statusLabel=salesPostStatusLabel(normalizedStatus);
+        const image=String(row.thumbnail_url||'').trim();
+        const icon=salesPostSearchPlatformIcon(platform);
+
+        return (
+            '<article class="sales-self-post-card sales-post-search-card'+statusClass+'"'
+            +' data-sales-post-id="'+escapeHtml(String(row.post_id||''))+'"'
+            +' data-sales-post-platform="'+escapeHtml(platform)+'"'
+            +' data-sales-post-title="'+escapeHtml(title)+'"'
+            +' data-sales-post-description="'+escapeHtml(description)+'"'
+            +' data-sales-post-published="'+escapeHtml(published)+'"'
+            +' data-sales-post-date="'+escapeHtml(String(row.published_date||''))+'"'
+            +' data-sales-post-url="'+escapeHtml(String(row.original_url||''))+'"'
+            +' data-sales-post-image="'+escapeHtml(image)+'"'
+            +' data-sales-post-status="'+escapeHtml(normalizedStatus)+'"'
+            +' data-sales-post-external-id="'+escapeHtml(String(row.external_post_id||''))+'"'
+            +' data-sales-post-account-id="'+escapeHtml(String(row.platform_account_id||''))+'"'
+            +' data-sales-post-account-name="'+escapeHtml(String(row.platform_account_name||''))+'"'
+            +' data-sales-post-account-url="'+escapeHtml(String(row.platform_account_url||''))+'"'
+            +' data-sales-post-delete-status="'+escapeHtml(String(row.deletion_request_status||''))+'"'
+            +' role="button" tabindex="0" aria-label="View post details: '+escapeHtml(title)+'">'
+                +'<div class="sales-self-post-media">'
+                    +(image
+                        ?'<img src="'+escapeHtml(image)+'" loading="lazy" alt="">'
+                        :'<div class="sales-self-post-placeholder">'+icon+'<span>'
+                            +escapeHtml(platformLabel(platform)||platform||'Marketplace')
+                            +'</span></div>')
+                    +'<span class="sales-self-post-platform">'+icon+'</span>'
+                +'</div>'
+                +'<div class="sales-self-post-body">'
+                    +'<div class="sales-self-post-date"><span data-sales-i18n="postDate">'
+                        +escapeHtml(salesTr('postDate'))
+                        +'</span> · '+escapeHtml(displayDate)+'</div>'
+                    +'<h3>'+escapeHtml(title)+'</h3>'
+                    +'<p>'+escapeHtml(description||salesTr('noDescription'))+'</p>'
+                +'</div>'
+                +'<div class="sales-self-post-footer">'
+                    +'<button type="button" class="sales-view-details" data-view-sales-post>'
+                        +'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5c5.5 0 9.5 5.2 9.5 7s-4 7-9.5 7S2.5 13.8 2.5 12 6.5 5 12 5Zm0 2C8.3 7 5.3 10.2 4.6 12c.7 1.8 3.7 5 7.4 5s6.7-3.2 7.4-5C18.7 10.2 15.7 7 12 7Zm0 2.2a2.8 2.8 0 1 1 0 5.6 2.8 2.8 0 0 1 0-5.6Z"/></svg>'
+                        +'<span data-sales-i18n="viewDetails">'+escapeHtml(salesTr('viewDetails'))+'</span>'
+                    +'</button>'
+                    +'<span class="sales-self-post-status'
+                        +(normalizedStatus!=='unreviewed'?' '+escapeHtml(normalizedStatus):'')+'">'
+                        +escapeHtml(statusLabel)
+                    +'</span>'
+                +'</div>'
+            +'</article>'
+        );
+    }).join('');
+
+    $salesPostSearchResults
+        .removeClass('hidden')
+        .html(
+            '<div class="sales-post-card-grid sales-post-search-card-grid">'
+            +cards
+            +'</div>'
+        );
+}
+
+/**
+ * EN: Query the authenticated Sales user's saved Posts across all dates.
+ * 中文：跨全部日期查询当前 Sales 自己保存的 Posts。
+ */
+function searchSalesPostsAcrossAllDates(query){
+    query=String(query||'').trim();
+
+    if(!$salesPostSearchPanel.length){
+        return;
+    }
+
+    if(query.length<2){
+        salesSelfPostSearchRows=[];
+        salesSelfPostSearchQuery='';
+        if(salesSelfPostSearchRequest&&salesSelfPostSearchRequest.readyState!==4){
+            salesSelfPostSearchRequest.abort();
+        }
+        setSalesSelfPostSearchActive(false);
+        return;
+    }
+
+    const endpoint=String(
+        $('#salesPortalDashboard').attr('data-post-search-url')||''
+    );
+
+    if(!endpoint){
+        return;
+    }
+
+    setSalesSelfPostSearchActive(true);
+    $salesPostSearchResults
+        .removeClass('hidden')
+        .html(
+            '<div class="sales-post-search-empty">'
+            +escapeHtml(salesTr('salesPostSearching'))+'…'
+            +'</div>'
+        );
+
+    if(salesSelfPostSearchRequest&&salesSelfPostSearchRequest.readyState!==4){
+        salesSelfPostSearchRequest.abort();
+    }
+
+    const seq=++salesSelfPostSearchSeq;
+    salesSelfPostSearchRequest=$.ajax({
+        url:endpoint,
+        method:'GET',
+        dataType:'json',
+        cache:false,
+        timeout:15000,
+        data:{q:query}
+    })
+    .done(function(resp){
+        if(seq!==salesSelfPostSearchSeq){
+            return;
+        }
+        if(!resp||!resp.ok){
+            throw new Error('Sales Post Search returned an invalid response.');
+        }
+        renderSalesSelfPostSearchResults(resp.matches||[],query);
+    })
+    .fail(function(xhr,status){
+        if(status==='abort'||seq!==salesSelfPostSearchSeq){
+            return;
+        }
+        salesSelfPostSearchRows=[];
+        salesSelfPostSearchQuery=query;
+        $salesPostSearchResults
+            .removeClass('hidden')
+            .html(
+                '<div class="sales-post-search-empty error">'
+                +escapeHtml(
+                    (xhr.responseJSON&&xhr.responseJSON.message)
+                    ||salesTr('salesPostSearchFailed')
+                )
+                +'</div>'
+            );
+    });
+}
+
+if($salesPostSearchInput.length){
+    $salesPostSearchInput.on('input',function(){
+        const query=String($(this).val()||'');
+        window.clearTimeout(salesSelfPostSearchTimer);
+        salesSelfPostSearchTimer=window.setTimeout(function(){
+            searchSalesPostsAcrossAllDates(query);
+        },220);
+    });
+}
+
+$salesPostSearchClear.on('click',function(){
+    window.clearTimeout(salesSelfPostSearchTimer);
+    $salesPostSearchInput.val('').trigger('focus');
+    salesSelfPostSearchRows=[];
+    salesSelfPostSearchQuery='';
+    setSalesSelfPostSearchActive(false);
+});
+
+$(document).on('cdsp:language-changed.sales-post-search',function(){
+    if(
+        $salesPostSearchPanel.attr('data-search-active')==='1'
+        &&salesSelfPostSearchQuery
+    ){
+        renderSalesSelfPostSearchResults(
+            salesSelfPostSearchRows,
+            salesSelfPostSearchQuery
+        );
+    }
+});
 
 /**
  * EN: Open or show the open sales image lightbox behavior used by the application UI.
@@ -5446,7 +6222,7 @@ $('#inspectForm').on('submit',function(e){
 
         const code=String(d.failure_code||'');
         const fetchFailed=[
-            'FETCH_FAILED','FACEBOOK_PROVIDER_FAILED','TITLE_NOT_VERIFIABLE'
+            'FETCH_FAILED','FACEBOOK_PROVIDER_FAILED','LISTING_UNAVAILABLE','TITLE_NOT_VERIFIABLE'
         ].indexOf(code)!==-1;
         const earlyBlocked=[
             'PLATFORM_INVALID','URL_INVALID'
@@ -7126,9 +7902,12 @@ $('[data-html-note]').each(function(){
     const progressUrl = $live.data('progress-url');
     const updatesUrl = $live.data('updates-url');
     const salesPostsUrl = $live.data('sales-posts-url');
+    const postSearchUrl = $live.data('post-search-url');
     const postReviewUrl = $live.data('post-review-url');
     const salesReviewSaveUrl = $live.data('sales-review-save-url');
     const salesReviewHistoryDeleteUrl = $live.data('sales-review-history-delete-url');
+    const dailyStatusUrl = $live.data('daily-status-url');
+    const dailyCompleteUrl = $live.data('daily-complete-url');
     const reviewSaveUrl = $live.data('review-save-url');
     const getContentUrl = $live.data('get-content-url');
     const editorImageUrl = $live.data('editor-image-url');
@@ -7140,10 +7919,15 @@ $('[data-html-note]').each(function(){
     const csrf = $('#adminDashboardCsrf').val();
 
     const $salesDirectorySearch=$('#salesCardSearch');
+    const $salesPostSearchResults=$('#adminSalesPostSearchResults');
     const $salesLocationFilter=$('#salesLocationFilter');
     const $salesDirectoryEmpty=$('#salesDirectoryFilterEmpty');
     const selectedLocationFilters=new Set();
     let salesDirectoryExpandedControlsReady=false;
+    let salesPostSearchRequest=null;
+    let salesPostSearchTimer=null;
+    let salesPostSearchSalesIds=new Set();
+    let salesPostSearchMatches=[];
 
     /**
      * EN: Normalize Sales directory text for case-insensitive search matching.
@@ -7182,11 +7966,16 @@ $('[data-html-note]').each(function(){
             const locationId=String(
                 parseInt($card.attr('data-location-id'),10)||0
             );
+            const salesId=String(
+                parseInt($card.attr('data-sales-id'),10)||0
+            );
             const haystack=normalizeSalesDirectoryText([
                 $card.attr('data-sales-name'),
                 $card.attr('data-sales-number')
             ].filter(Boolean).join(' '));
-            const matchesSearch=!query||haystack.includes(query);
+            const matchesSearch=!query
+                ||haystack.includes(query)
+                ||salesPostSearchSalesIds.has(salesId);
             const matchesLocation=selectedLocationFilters.size===0
                 ||selectedLocationFilters.has(locationId);
             const show=matchesSearch&&matchesLocation;
@@ -7291,8 +8080,321 @@ $('[data-html-note]').each(function(){
             .text(total);
     }
 
-    $salesDirectorySearch.on('input',function(){
+    /**
+     * EN: Render Post-origin matches beneath Sales/Post Search. Each row identifies
+     * the Sales owner and opens the exact existing Post Review popup when clicked.
+     * 中文：在 Sales/Post Search 下方渲染原帖匹配；每行显示 Sales 归属，点击后
+     * 直接打开系统现有的该条精确 Post Review 弹窗。
+     *
+     * @param {Array|*} matches Post search matches. / Post 搜索匹配结果。
+     * @param {string} query Current normalized query. / 当前标准化搜索文字。
+     * @returns {void} No value is returned. / 无返回值。
+     */
+    function renderSalesPostSearchResults(matches,query){
+        matches=Array.isArray(matches)?matches:[];
+        salesPostSearchMatches=matches.slice();
+        salesPostSearchSalesIds=new Set(
+            matches.map(function(row){
+                return String(parseInt(row.sales_user_id,10)||0);
+            }).filter(function(id){return id!=='0';})
+        );
         applySalesDirectoryFilters();
+
+        if(!query||query.length<2){
+            $salesPostSearchResults.addClass('hidden').empty();
+            return;
+        }
+
+        if(!matches.length){
+            let directSalesMatch=false;
+            $grid.find('.sales-progress-card').each(function(){
+                const haystack=normalizeSalesDirectoryText([
+                    $(this).attr('data-sales-name'),
+                    $(this).attr('data-sales-number')
+                ].filter(Boolean).join(' '));
+                if(haystack.includes(normalizeSalesDirectoryText(query))){
+                    directSalesMatch=true;
+                    return false;
+                }
+            });
+
+            if(directSalesMatch){
+                $salesPostSearchResults.addClass('hidden').empty();
+                return;
+            }
+
+            $salesPostSearchResults
+                .removeClass('hidden')
+                .html(
+                    '<div class="admin-sales-post-search-empty">'
+                    +escapeHtml(tr('noPostSearchMatch'))
+                    +'</div>'
+                );
+            return;
+        }
+
+        const rows=matches.map(function(row){
+            const owner=String(row.sales_name||'Sales');
+            const salesNumber=String(row.sales_id||'');
+            const platform=String(row.platform||'Post');
+            const title=String(row.title||'').trim()||tr('noTitle');
+            const date=String(row.published_date||'');
+            const url=String(row.original_url||'').trim();
+            const externalId=String(row.external_post_id||'').trim();
+            const original=url||externalId||platform;
+
+            return (
+                '<button type="button" class="admin-sales-post-search-result"'
+                +' data-post-search-post-id="'+escapeHtml(row.post_id)+'"'
+                +' data-post-search-sales-id="'+escapeHtml(row.sales_user_id)+'">'
+                    +'<span class="admin-sales-post-search-owner">'
+                        +'<b>'+escapeHtml(owner)+'</b>'
+                        +(salesNumber?'<small>#'+escapeHtml(salesNumber)+'</small>':'')
+                    +'</span>'
+                    +'<span class="admin-sales-post-search-post">'
+                        +'<span><b>'+escapeHtml(platform)+'</b>'
+                        +(date?' · '+escapeHtml(date):'')+'</span>'
+                        +'<strong>'+escapeHtml(title)+'</strong>'
+                        +'<small title="'+escapeHtml(original)+'">'
+                            +escapeHtml(original)
+                        +'</small>'
+                    +'</span>'
+                +'</button>'
+            );
+        }).join('');
+
+        $salesPostSearchResults
+            .removeClass('hidden')
+            .html(
+                '<div class="admin-sales-post-search-head">'
+                    +escapeHtml(tr('postSearchMatches'))
+                    +' · '+matches.length
+                +'</div>'
+                +rows
+            );
+    }
+
+
+    /**
+     * EN: Convert one Sales/Post Search response row into the existing Post Grid
+     * card shape. Search expansion intentionally keeps only matched posts.
+     * 中文：把一条 Sales/Post Search 返回记录转换成现有 Post Grid 卡片数据；
+     * 搜索展开时只保留本次真正命中的 Post。
+     *
+     * @param {Object|*} row Search result row. / 搜索结果记录。
+     * @returns {Object} Post Grid item. / Post Grid 项目。
+     */
+    function salesPostSearchMatchToPost(row){
+        row=row&&typeof row==='object'?row:{};
+        return {
+            id:parseInt(row.post_id,10)||0,
+            platform:String(row.platform||'Post'),
+            title:String(row.title||''),
+            description:String(row.description||''),
+            thumbnail_url:row.thumbnail_url||null,
+            published_at:String(row.published_at||''),
+            published_date:String(row.published_date||''),
+            status:['good','bad'].includes(String(row.status||'').toLowerCase())
+                ?String(row.status).toLowerCase()
+                :null
+        };
+    }
+
+    /**
+     * EN: Expand only the posts matched by the active Sales/Post Search for one
+     * Sales owner. This never falls back to the owner's full date-range Post Grid.
+     * 中文：只展开当前 Sales/Post Search 对某位 Sales 真正命中的 Post；
+     * 不再回退成该 Sales 当前日期范围内的全部 Post。
+     *
+     * @param {*} $card Matching Sales card. / 匹配的 Sales 卡片。
+     * @param {Array|*} matches Search matches to display. / 要显示的搜索匹配。
+     * @returns {void} No value is returned. / 无返回值。
+     */
+    function openSalesPostSearchMatches($card,matches){
+        const salesId=parseInt($card&&$card.attr?$card.attr('data-sales-id'):0,10)||0;
+        const rows=(Array.isArray(matches)?matches:[]).filter(function(row){
+            return (parseInt(row.sales_user_id,10)||0)===salesId
+                &&(parseInt(row.post_id,10)||0)>0;
+        });
+
+        if(!salesId||!rows.length||$card.hasClass('sales-directory-hidden')){
+            return;
+        }
+
+        if(expandedRequest&&expandedRequest.readyState!==4){
+            expandedRequest.abort();
+        }
+
+        dailyReviewOnlyMode=false;
+        expandedSalesId=salesId;
+
+        $grid
+            .find('.sales-progress-card')
+            .removeClass('expanded')
+            .attr('aria-expanded','false');
+
+        $card
+            .addClass('expanded')
+            .attr('aria-expanded','true');
+
+        placeExpandedAfterCardRow($card);
+        $expanded.removeClass('hidden');
+        $expandedList.empty();
+        $expandedLoading.addClass('hidden');
+        $expandedReview.addClass('hidden');
+        currentSalesPeriodReview=null;
+        adminExpandedChannel='all';
+        $('#adminSalesPlatformFilter [data-admin-sales-platform]')
+            .removeClass('active')
+            .attr('aria-pressed','false')
+            .filter('[data-admin-sales-platform="all"]')
+            .addClass('active')
+            .attr('aria-pressed','true');
+
+        const first=rows[0]||{};
+        const postItems=rows.map(salesPostSearchMatchToPost).filter(function(post){
+            return post.id>0;
+        });
+        currentExpandedData={
+            search_only:true,
+            sales:{
+                id:salesId,
+                name:String($card.attr('data-sales-name')||first.sales_name||'Sales'),
+                sales_id:String($card.attr('data-sales-number')||first.sales_id||'')
+            },
+            period:'search',
+            preset:'search',
+            period_label:tr('postSearchMatches'),
+            review:null,
+            posts:postItems,
+            count:postItems.length,
+            chart_rows:[],
+            daily_target:Math.max(1,parseInt($card.attr('data-daily-target'),10)||10),
+            daily_targets:{}
+        };
+
+        renderPostGrid(currentExpandedData);
+        $salesPostSearchResults.addClass('hidden');
+
+        const panel=$expanded.get(0);
+        if(panel&&typeof panel.scrollIntoView==='function'){
+            panel.scrollIntoView({behavior:'smooth',block:'nearest'});
+        }
+    }
+
+    /**
+     * EN: Query the server for original marketplace Post information without
+     * changing the existing Sales-name / Sales-ID filtering behavior.
+     * 中文：向服务器搜索原始平台 Post 信息，同时保留现有姓名 / Sales ID 筛选行为。
+     *
+     * @param {string} query Raw Sales/Post Search text. / Sales/Post Search 原始搜索文字。
+     * @returns {void} No value is returned. / 无返回值。
+     */
+    function searchOriginalSalesPosts(query){
+        query=String(query||'').trim();
+
+        if(salesPostSearchRequest&&salesPostSearchRequest.readyState!==4){
+            salesPostSearchRequest.abort();
+        }
+
+        if(!postSearchUrl||query.length<2){
+            salesPostSearchSalesIds=new Set();
+            salesPostSearchMatches=[];
+            renderSalesPostSearchResults([],query);
+            return;
+        }
+
+        $salesPostSearchResults
+            .removeClass('hidden')
+            .html(
+                '<div class="admin-sales-post-search-empty">'
+                +escapeHtml(tr('searchingPosts'))+'…</div>'
+            );
+
+        salesPostSearchRequest=$.ajax({
+            url:postSearchUrl,
+            method:'GET',
+            dataType:'json',
+            cache:false,
+            data:{q:query,_:Date.now()}
+        })
+        .done(function(data){
+            const activeQuery=String($salesDirectorySearch.val()||'').trim();
+            if(activeQuery!==query){
+                return;
+            }
+            renderSalesPostSearchResults(
+                data&&data.ok&&Array.isArray(data.matches)?data.matches:[],
+                query
+            );
+        })
+        .fail(function(xhr,status){
+            if(status==='abort'){
+                return;
+            }
+            salesPostSearchSalesIds=new Set();
+            salesPostSearchMatches=[];
+            applySalesDirectoryFilters();
+            $salesPostSearchResults
+                .removeClass('hidden')
+                .html(
+                    '<div class="admin-sales-post-search-empty">'
+                    +escapeHtml(tr('postSearchFailed'))
+                    +'</div>'
+                );
+        });
+    }
+
+    $salesDirectorySearch.on('input',function(){
+        const query=String($(this).val()||'').trim();
+        salesPostSearchSalesIds=new Set();
+        salesPostSearchMatches=[];
+        if(currentExpandedData&&currentExpandedData.search_only){
+            closeExpandedPosts();
+        }
+        applySalesDirectoryFilters();
+
+        if(salesPostSearchTimer){
+            window.clearTimeout(salesPostSearchTimer);
+        }
+        salesPostSearchTimer=window.setTimeout(function(){
+            searchOriginalSalesPosts(query);
+        },220);
+    });
+
+    $salesPostSearchResults.on('click','[data-post-search-post-id]',function(event){
+        event.preventDefault();
+        event.stopPropagation();
+        const postId=parseInt($(this).attr('data-post-search-post-id'),10)||0;
+        const salesId=parseInt($(this).attr('data-post-search-sales-id'),10)||0;
+        if(!postId||!salesId){
+            return;
+        }
+
+        const match=salesPostSearchMatches.find(function(row){
+            return (parseInt(row.post_id,10)||0)===postId;
+        });
+        const $card=$grid.find(
+            '.sales-progress-card[data-sales-id="'+salesId+'"]'
+        ).first();
+        if(!match||!$card.length){
+            return;
+        }
+
+        openSalesPostSearchMatches($card,[match]);
+    });
+
+    $(document).on('click.adminSalesPostSearch',function(event){
+        if($(event.target).closest('#salesCardSearch,#adminSalesPostSearchResults').length){
+            return;
+        }
+        $salesPostSearchResults.addClass('hidden');
+    });
+
+    $salesDirectorySearch.on('focus',function(){
+        if($salesPostSearchResults.children().length){
+            $salesPostSearchResults.removeClass('hidden');
+        }
     });
 
     $salesLocationFilter.on('click','[data-location-filter]',function(){
@@ -7341,7 +8443,15 @@ const dashboardI18n={
         issues:'Bad',
         issue:'Bad',
         unreviewed:'Unreviewed',
-        dailyReview:'Daily Sales Review',
+        dailyReview:'Daily Review',
+        markComplete:'Mark as Complete',
+        unmarkComplete:'Unmark Complete',
+        completed:'Completed',
+        dailyActivityCalendar:'Daily Activity Calendar',
+        selectDailyReviewDate:'Select a date to jump to that day and open Daily Review.',
+        selectDailyCompleteDate:'Select a date to jump to that day, then mark it complete.',
+        complete:'Complete',
+        incomplete:'Incomplete',
         weeklyReview:'Weekly Sales Review',
         monthlyReview:'Monthly Sales Review',
         dailyTarget:'Daily Target',
@@ -7400,8 +8510,12 @@ const dashboardI18n={
         noDescriptionReturned:'No description returned.',
         contentFetched:'Content fetched.',
         addReviewForPeriod:'Add a management review for this Sales period.',
-        salesSearch:'Sales Search',
-        salesSearchPlaceholder:'Search name or Sales ID',
+        salesSearch:'Sales / Post Search',
+        salesSearchPlaceholder:'Search name, Sales ID or original Post link',
+        postSearchMatches:'Post matches',
+        searchingPosts:'Searching Posts',
+        noPostSearchMatch:'No original Post matches found.',
+        postSearchFailed:'Could not search original Posts.',
         location:'Location',
         allLocations:'All',
         unassigned:'Unassigned',
@@ -7435,7 +8549,15 @@ const dashboardI18n={
         issues:'不合格',
         issue:'不合格',
         unreviewed:'未审核',
-        dailyReview:'每日销售评估',
+        dailyReview:'每日评估',
+        markComplete:'标记完成',
+        unmarkComplete:'取消完成标记',
+        completed:'已完成',
+        dailyActivityCalendar:'每日活动日历',
+        selectDailyReviewDate:'选择日期跳转到当天并打开每日评估。',
+        selectDailyCompleteDate:'选择日期跳转到当天，然后标记完成。',
+        complete:'完成',
+        incomplete:'未完成',
         weeklyReview:'每周销售评估',
         monthlyReview:'每月销售评估',
         dailyTarget:'每日目标',
@@ -7494,8 +8616,12 @@ const dashboardI18n={
         noDescriptionReturned:'未返回描述。',
         contentFetched:'内容已获取。',
         addReviewForPeriod:'为该销售周期添加管理评语。',
-        salesSearch:'搜索 Sales',
-        salesSearchPlaceholder:'搜索姓名或 Sales ID',
+        salesSearch:'Sales / Post 搜索',
+        salesSearchPlaceholder:'搜索姓名、Sales ID 或原帖链接',
+        postSearchMatches:'Post 匹配',
+        searchingPosts:'正在搜索 Post',
+        noPostSearchMatch:'没有找到匹配的原帖。',
+        postSearchFailed:'无法搜索原帖。',
         location:'地点',
         allLocations:'全部',
         unassigned:'未分配',
@@ -7529,7 +8655,15 @@ const dashboardI18n={
         issues:'不合格',
         issue:'不合格',
         unreviewed:'未審核',
-        dailyReview:'每日銷售評估',
+        dailyReview:'每日評估',
+        markComplete:'標記完成',
+        unmarkComplete:'取消完成標記',
+        completed:'已完成',
+        dailyActivityCalendar:'每日活動日曆',
+        selectDailyReviewDate:'選擇日期跳轉到當天並打開每日評估。',
+        selectDailyCompleteDate:'選擇日期跳轉到當天，然後標記完成。',
+        complete:'完成',
+        incomplete:'未完成',
         weeklyReview:'每週銷售評估',
         monthlyReview:'每月銷售評估',
         dailyTarget:'每日目標',
@@ -7588,8 +8722,12 @@ const dashboardI18n={
         noDescriptionReturned:'未回傳描述。',
         contentFetched:'內容已取得。',
         addReviewForPeriod:'為此銷售週期新增管理評語。',
-        salesSearch:'搜尋 Sales',
-        salesSearchPlaceholder:'搜尋姓名或 Sales ID',
+        salesSearch:'Sales / Post 搜尋',
+        salesSearchPlaceholder:'搜尋姓名、Sales ID 或原貼連結',
+        postSearchMatches:'Post 匹配',
+        searchingPosts:'正在搜尋 Post',
+        noPostSearchMatch:'沒有找到匹配的原貼。',
+        postSearchFailed:'無法搜尋原貼。',
         location:'地點',
         allLocations:'全部',
         unassigned:'未分配',
@@ -7623,7 +8761,15 @@ const dashboardI18n={
         issues:'Malo',
         issue:'Malo',
         unreviewed:'Sin revisar',
-        dailyReview:'Evaluación diaria de ventas',
+        dailyReview:'Revisión diaria',
+        markComplete:'Marcar como completado',
+        unmarkComplete:'Quitar completado',
+        completed:'Completado',
+        dailyActivityCalendar:'Calendario de actividad diaria',
+        selectDailyReviewDate:'Selecciona una fecha para ir a ese día y abrir la revisión diaria.',
+        selectDailyCompleteDate:'Selecciona una fecha para ir a ese día y marcarlo como completado.',
+        complete:'Completo',
+        incomplete:'Incompleto',
         weeklyReview:'Evaluación semanal de ventas',
         monthlyReview:'Evaluación mensual de ventas',
         dailyTarget:'Meta diaria',
@@ -7682,8 +8828,12 @@ const dashboardI18n={
         noDescriptionReturned:'No se devolvió descripción.',
         contentFetched:'Contenido obtenido.',
         addReviewForPeriod:'Añade una revisión de gestión para este período de ventas.',
-        salesSearch:'Buscar ventas',
-        salesSearchPlaceholder:'Buscar nombre o ID de ventas',
+        salesSearch:'Buscar ventas / publicaciones',
+        salesSearchPlaceholder:'Buscar nombre, ID de ventas o enlace original',
+        postSearchMatches:'Coincidencias de publicaciones',
+        searchingPosts:'Buscando publicaciones',
+        noPostSearchMatch:'No se encontraron publicaciones originales.',
+        postSearchFailed:'No se pudieron buscar publicaciones originales.',
         location:'Ubicación',
         allLocations:'Todas',
         unassigned:'Sin asignar',
@@ -7775,6 +8925,11 @@ function translateSalesCard($card){
     $card.find('[data-card-unreviewed-label]').text(tr('unreviewed'));
     $card.find('[data-new-posts-label]').text(tr('newPostBadge'));
     $card.find('[data-card-daily-review-label]').text(tr('dailyReview'));
+    $card.find('[data-card-daily-complete-label]').text(
+        $card.attr('data-effective-complete')==='1'
+            ?tr('complete')
+            :tr('incomplete')
+    );
     $card.find('[data-card-daily-target-label]').text(tr('dailyTarget'));
     $card.find('[data-card-save-label]').text(tr('save'));
     $card.find('[data-card-view-posts-label]').text(tr('viewPosts'));
@@ -7937,6 +9092,15 @@ function applyDashboardLanguage(){
     });
 
     document.documentElement.lang=dashboardLanguage;
+
+    if(
+        typeof renderDailyWorkflowCalendar==='function'
+        &&$dailyWorkflowCalendarBackdrop
+        &&$dailyWorkflowCalendarBackdrop.length
+        &&!$dailyWorkflowCalendarBackdrop.hasClass('hidden')
+    ){
+        renderDailyWorkflowCalendar();
+    }
 }
 
 
@@ -7965,7 +9129,7 @@ function applyDashboardLanguage(){
     let expandedSalesId = 0;
     let expandedRequest = null;
     let currentExpandedData = null;
-    // v0.2.73: Daily Sales Review can load its review data without opening
+    // v0.2.73: Daily Review can load its review data without opening
     // the expanded Post Grid. Keep this state separate from normal card expansion.
     let dailyReviewOnlyMode = false;
     let adminExpandedChannel = 'all';
@@ -7991,14 +9155,31 @@ function applyDashboardLanguage(){
     const $adminSalesActivity = $('#adminSalesActivityChartPanel');
     const $adminSalesChartBars = $('#adminSalesChartBars');
     const $adminSalesChartCanvas = $('#adminSalesChartCanvas');
+    const $adminSalesChartReviewLine = $('#adminSalesChartReviewLine');
     const $adminSalesChartScroll = $('#adminSalesChartScroll');
     const $adminSalesChartYAxis = $('#adminSalesChartYAxis');
+    const $adminSalesChartRatingAxis = $('#adminSalesChartRatingAxis');
+    const $adminSalesChartRatingAxisTicks = $('#adminSalesChartRatingAxisTicks');
     const $adminRangeBar = $('#adminDashboardRangeBar');
     const $adminRangeAnchor = $('#adminDashboardRangeAnchor');
     const $adminStickyRange = $('#adminDashboardStickyRange');
     const $adminStickyFrom = $('#dashboardStickyFrom');
     const $adminStickyTo = $('#dashboardStickyTo');
     const $adminStickyBackToday = $('#dashboardStickyBackToday');
+    const $dailyWorkflowCalendarBackdrop = $('#dailyWorkflowCalendarBackdrop');
+    const $dailyWorkflowCalendarSales = $('#dailyWorkflowCalendarSales');
+    const $dailyWorkflowCalendarTitle = $('#dailyWorkflowCalendarTitle');
+    const $dailyWorkflowCalendarMonth = $('#dailyWorkflowCalendarMonth');
+    const $dailyWorkflowCalendarGrid = $('#dailyWorkflowCalendarGrid');
+    const $dailyWorkflowCalendarPrev = $('#dailyWorkflowCalendarPrev');
+    const $dailyWorkflowCalendarNext = $('#dailyWorkflowCalendarNext');
+    const $dailyWorkflowCalendarHelp = $('#dailyWorkflowCalendarHelp');
+    let dailyWorkflowCalendarRequest = null;
+    let dailyWorkflowCalendarSalesId = 0;
+    let dailyWorkflowCalendarMode = 'review';
+    let dailyWorkflowCalendarSelectedDate = '';
+    let dailyWorkflowCalendarMonth = '';
+    let dailyWorkflowCalendarDays = {};
 
     /*
      * v0.1.95: the normal Admin activity header never becomes fixed. A separate
@@ -8028,7 +9209,7 @@ function applyDashboardLanguage(){
 
         $adminStickyTo
             .val(String($to.val()||currentTo||''))
-            .attr('min',String($to.attr('min')||''))
+            .removeAttr('min')
             .attr('max',String($to.attr('max')||''));
 
         $('#dashboardStickyPeriodSwitch [data-admin-sticky-preset]').each(function(){
@@ -8276,8 +9457,14 @@ function platformLogoHtml(platform){
      *
      * @returns {void} No value is returned. / 无返回值。
      */
-    function renderAdminSalesChartAxis(cap,target,plotHeight){
+    function renderAdminSalesChartAxis(cap,targets,plotHeight){
         const step=salesChartTickStep(cap);
+        const targetSet=new Set(
+            (Array.isArray(targets)?targets:[targets])
+                .map(function(value){
+                    return String(Math.max(1,parseInt(value,10)||0));
+                })
+        );
         const values=[];
         for(let value=0;value<=cap+0.0001;value+=step){
             values.push(Number(value.toFixed(4)));
@@ -8297,12 +9484,29 @@ function platformLogoHtml(platform){
             const label=Number.isInteger(value)
                 ?String(value)
                 :String(Number(value.toFixed(1)));
-            const cls=Math.abs(value-target)<0.0001?' target':'';
+            const cls=targetSet.has(String(Math.round(value)))?' target':'';
             ticks+='<span class="sales-chart-y-tick'+cls+'" style="top:'+top+'px">'+escapeHtml(label)+'</span>';
             grid+='<span class="sales-chart-grid-line'+cls+'" style="top:'+top+'px"></span>';
         });
         $('#adminSalesChartYAxisTicks').html(ticks);
         $('#adminSalesChartGridLines').html(grid);
+    }
+
+    /**
+     * EN: Render the independent 1–5 Daily Review rating axis on the right.
+     * 中文：在右侧渲染独立的 1–5 星 Daily Review 评分坐标轴。
+     *
+     * @param {number} plotHeight Height of the plotting area. / 绘图区高度。
+     * @returns {void} No value is returned. / 无返回值。
+     */
+    function renderAdminSalesRatingAxis(plotHeight){
+        let html='';
+        for(let rating=5;rating>=1;rating-=1){
+            const top=plotHeight*(1-((rating-1)/4));
+            html+='<span class="sales-chart-rating-tick" style="top:'+top+'px">'
+                +rating+'<i aria-hidden="true">★</i></span>';
+        }
+        $adminSalesChartRatingAxisTicks.html(html);
     }
 
     /**
@@ -8322,17 +9526,52 @@ function platformLogoHtml(platform){
         const from=String(data.from||currentFrom||currentDate);
         const to=String(data.to||currentTo||currentDate);
         const dates=salesDateRange(from,to);
-        const target=Math.max(1,parseInt(data.daily_target,10)||10);
-        const cap=Math.max(target,target*1.2);
+        const fallbackTarget=Math.max(1,parseInt(data.daily_target,10)||10);
+        const dailyTargets=(data.daily_targets&&typeof data.daily_targets==='object')
+            ?data.daily_targets
+            :{};
+        const dailyRatings=(data.daily_ratings&&typeof data.daily_ratings==='object')
+            ?data.daily_ratings
+            :{};
+        const targetForDate=function(date){
+            return Math.max(1,parseInt(dailyTargets[date],10)||fallbackTarget);
+        };
+        const dayTargets=dates.map(targetForDate);
+        const maxTarget=dayTargets.length
+            ?Math.max.apply(null,dayTargets)
+            :fallbackTarget;
+        const minTarget=dayTargets.length
+            ?Math.min.apply(null,dayTargets)
+            :fallbackTarget;
+        let maxPosts=0;
+        dates.forEach(function(date){
+            maxPosts=Math.max(
+                maxPosts,
+                Math.max(
+                    0,
+                    parseInt(
+                        adminSalesActivityAggregate(data,date,adminExpandedChannel).post_count,
+                        10
+                    )||0
+                )
+            );
+        });
+        // Left axis is intentionally independent from Daily Review ratings.
+        // Its ceiling is exactly the higher of: highest target × 120%, or
+        // highest visible post count + 1. The 1–5 rating uses its own right axis.
+        const cap=Math.max(1,maxTarget*1.2,maxPosts+1);
         const chartHeight=280;
         const xAxisHeight=32;
         const plotHeight=chartHeight-xAxisHeight;
 
         // The shared tooltip reads this target. Admin and Sales dashboards are
         // separate pages, so this safely keeps the displayed Missing value exact.
-        salesChartDailyTarget=target;
+        salesChartDailyTarget=fallbackTarget;
 
-        $('#adminSalesChartTargetCopy,#adminSalesChartTargetLineValue').text(target);
+        const targetSummary=minTarget===maxTarget
+            ?String(maxTarget)
+            :String(minTarget)+'–'+String(maxTarget);
+        $('#adminSalesChartTargetCopy,#adminSalesChartTargetLineValue').text(targetSummary);
         $('#adminSalesChartPeriodTitle').text(
             currentPreset==='single'
                 ?'1 Day Posting Activity'
@@ -8352,11 +9591,16 @@ function platformLogoHtml(platform){
             '--sales-x-axis-height':xAxisHeight+'px'
         });
         $adminSalesChartYAxis.css('height',chartHeight+'px');
-        renderAdminSalesChartAxis(cap,target,plotHeight);
-        $('#adminSalesChartTargetLine').css(
-            'top',
-            (plotHeight*(1-(target/cap)))+'px'
+        $adminSalesChartRatingAxis.css('height',chartHeight+'px');
+        renderAdminSalesChartAxis(
+            cap,
+            Array.from(new Set(dayTargets)),
+            plotHeight
         );
+        renderAdminSalesRatingAxis(plotHeight);
+        $('#adminSalesChartTargetLine')
+            .addClass('hidden')
+            .removeAttr('style');
 
         const availableWidth=Math.max(
             320,
@@ -8388,13 +9632,36 @@ function platformLogoHtml(platform){
         else{barWidth=Math.min(34,Math.max(12,slotWidth*.58));}
 
         let html='';
-        dates.forEach(function(date){
+        const reviewTrendPoints=[];
+        dates.forEach(function(date,dateIndex){
             const raw=adminSalesActivityAggregate(
                 data,
                 date,
                 adminExpandedChannel
             );
             const actual=Math.max(0,parseInt(raw.post_count,10)||0);
+            const dayTarget=targetForDate(date);
+            const dailyRating=Math.max(0,Math.min(5,parseInt(dailyRatings[date],10)||0));
+            if(dailyRating>0){
+                const plotPadding=5;
+                const reviewX=plotPadding+((dateIndex+.5)*Math.max(1,canvasWidth-(plotPadding*2))/dayCount);
+                const rawReviewY=plotHeight*(1-((dailyRating-1)/4));
+                reviewTrendPoints.push({
+                    date:date,
+                    rating:dailyRating,
+                    x:reviewX,
+                    y:Math.max(3,Math.min(plotHeight-3,rawReviewY))
+                });
+            }
+            const targetTop=plotHeight*(1-(dayTarget/cap));
+            const targetIndex=dateIndex;
+            const previousTarget=targetIndex>0
+                ?targetForDate(dates[targetIndex-1])
+                :null;
+            const showTargetLabel=
+                targetIndex===0
+                ||targetIndex===dates.length-1
+                ||previousTarget!==dayTarget;
             const good=Math.min(actual,Math.max(0,parseInt(raw.good_count,10)||0));
             const bad=Math.min(Math.max(0,actual-good),Math.max(0,parseInt(raw.bad_count,10)||0));
             const unreviewed=Math.max(0,actual-good-bad);
@@ -8403,7 +9670,7 @@ function platformLogoHtml(platform){
             const goodH=(good*scale/cap)*100;
             const badH=(bad*scale/cap)*100;
             const unreviewedH=(unreviewed*scale/cap)*100;
-            const missing=Math.max(0,target-actual);
+            const missing=Math.max(0,dayTarget-actual);
 
             html+='<div class="sales-chart-day" tabindex="0"'
                 +' data-chart-date="'+escapeHtml(date)+'"'
@@ -8411,14 +9678,18 @@ function platformLogoHtml(platform){
                 +' data-chart-good="'+good+'"'
                 +' data-chart-bad="'+bad+'"'
                 +' data-chart-unreviewed="'+unreviewed+'"'
-                +' data-chart-missing="'+missing+'">'
+                +' data-chart-missing="'+missing+'"'
+                +' data-chart-target="'+dayTarget+'"'
+                +' data-chart-rating="'+dailyRating+'">'
                 +'<div class="sales-chart-day-plot">'
+                    +'<span class="sales-chart-day-target" style="top:'+targetTop+'px">'
+                        +(showTargetLabel?'<span>Daily target '+dayTarget+'</span>':'')
+                    +'</span>'
                     +'<div class="sales-chart-stack">'
                         +'<span class="sales-chart-segment good" style="height:'+goodH+'%"></span>'
                         +'<span class="sales-chart-segment bad" style="height:'+badH+'%"></span>'
                         +'<span class="sales-chart-segment unreviewed" style="height:'+unreviewedH+'%"></span>'
                     +'</div>'
-                    +(actual>cap?'<span class="sales-chart-over-cap">120%+</span>':'')
                 +'</div>'
                 +'<span class="sales-chart-x-label">'+escapeHtml(salesShortDate(date))+'</span>'
             +'</div>';
@@ -8430,9 +9701,30 @@ function platformLogoHtml(platform){
             'grid-auto-columns':'unset',
             '--sales-chart-bar-width':Math.round(barWidth)+'px'
         });
+
+        let reviewTrendSvg='';
+        if(reviewTrendPoints.length>1){
+            const path=reviewTrendPoints.map(function(point,index){
+                return (index===0?'M':'L')+point.x.toFixed(2)+' '+point.y.toFixed(2);
+            }).join(' ');
+            reviewTrendSvg+='<path class="sales-chart-review-trend-path" d="'+path+'"></path>';
+        }
+        reviewTrendPoints.forEach(function(point){
+            reviewTrendSvg+=
+                '<g class="sales-chart-review-trend-point">'
+                +'<text class="sales-chart-review-trend-star" x="'+point.x.toFixed(2)+'" y="'+point.y.toFixed(2)+'" text-anchor="middle" dominant-baseline="central">★</text>'
+                +'<title>'+escapeHtml(salesShortDate(point.date))+' · Daily Review '+point.rating+'/5</title>'
+                +'</g>';
+        });
+        $adminSalesChartReviewLine
+            .attr('viewBox','0 0 '+Math.round(canvasWidth)+' '+plotHeight)
+            .attr('width',Math.round(canvasWidth))
+            .attr('height',plotHeight)
+            .html(reviewTrendSvg);
+
         $adminSalesChartCanvas.css('width',Math.round(canvasWidth)+'px');
         $adminSalesActivity
-            .attr('data-daily-target',target)
+            .attr('data-daily-target',fallbackTarget)
             .attr('data-range-days',dayCount)
             .toggleClass('sales-chart-single-day',dayCount===1)
             .toggleClass('sales-chart-short-range',dayCount<=7)
@@ -8596,7 +9888,7 @@ function platformLogoHtml(platform){
 
         $to
             .val(currentTo)
-            .attr('min',currentFrom)
+            .removeAttr('min')
             .attr('max',today||'');
         if(typeof syncAdminStickyRangeControls==='function'){
             syncAdminStickyRangeControls();
@@ -8688,6 +9980,251 @@ function platformLogoHtml(platform){
         return {from:iso(fromDate),to:iso(toDate)};
     }
 
+    /**
+     * EN: Parse one dashboard ISO date at local noon so timezone offsets cannot shift the day.
+     * 中文：把 Dashboard 的 ISO 日期按本地中午解析，避免时区偏移把日期挪到前一天/后一天。
+     *
+     * @param {*} value ISO date value. / ISO 日期值。
+     * @returns {Date|null} Parsed local date or null. / 本地日期对象，失败时返回 null。
+     */
+    function dailyWorkflowParseDate(value){
+        const match=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if(!match){
+            return null;
+        }
+        const date=new Date(
+            Number(match[1]),
+            Number(match[2])-1,
+            Number(match[3]),
+            12,0,0
+        );
+        return Number.isNaN(date.getTime())?null:date;
+    }
+
+    /**
+     * EN: Format a compact date shown beside the Daily Review / Complete action.
+     * 中文：格式化 Daily Review / Complete 旁边显示的短日期。
+     *
+     * @param {*} value ISO date value. / ISO 日期值。
+     * @returns {string} Localized short date label. / 本地化短日期标签。
+     */
+    function dailyActionDateLabel(value){
+        const date=dailyWorkflowParseDate(value);
+        if(!date){
+            return String(value||'');
+        }
+        return date.toLocaleDateString(dashboardLocale(),{
+            month:'short',
+            day:'numeric'
+        });
+    }
+
+    /**
+     * EN: Convert a date to the YYYY-MM month key used by the Daily Activity Calendar endpoint.
+     * 中文：把日期转换成 Daily Activity Calendar 接口使用的 YYYY-MM 月份键。
+     *
+     * @param {*} value ISO date value. / ISO 日期值。
+     * @returns {string} Month key or empty string. / 月份键，失败时为空。
+     */
+    function dailyWorkflowMonthKey(value){
+        const match=String(value||'').match(/^(\d{4})-(\d{2})/);
+        return match?match[1]+'-'+match[2]:'';
+    }
+
+    /**
+     * EN: Shift one YYYY-MM month key by the requested number of months.
+     * 中文：把 YYYY-MM 月份键前后移动指定月数。
+     *
+     * @param {string} month Month key. / 月份键。
+     * @param {number} delta Month offset. / 月份偏移量。
+     * @returns {string} Shifted month key. / 移动后的月份键。
+     */
+    function dailyWorkflowShiftMonth(month,delta){
+        const match=String(month||'').match(/^(\d{4})-(\d{2})$/);
+        if(!match){
+            return '';
+        }
+        const date=new Date(Number(match[1]),Number(match[2])-1+delta,1,12,0,0);
+        return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0');
+    }
+
+    /**
+     * EN: Close the shared Daily Review / Complete history calendar.
+     * 中文：关闭 Daily Review / Complete 共用的历史日历。
+     *
+     * @returns {void} No value is returned. / 无返回值。
+     */
+    function closeDailyWorkflowCalendar(){
+        if(dailyWorkflowCalendarRequest&&dailyWorkflowCalendarRequest.readyState!==4){
+            dailyWorkflowCalendarRequest.abort();
+        }
+        $dailyWorkflowCalendarBackdrop
+            .addClass('hidden')
+            .attr('aria-hidden','true');
+    }
+
+    /**
+     * EN: Render one month with separate Reviewed and Complete dots.
+     * 中文：渲染一个月，并用独立圆点显示 Reviewed 与 Complete 状态。
+     *
+     * @returns {void} No value is returned. / 无返回值。
+     */
+    function renderDailyWorkflowCalendar(){
+        const match=String(dailyWorkflowCalendarMonth||'').match(/^(\d{4})-(\d{2})$/);
+        if(!match){
+            return;
+        }
+        const year=Number(match[1]);
+        const monthIndex=Number(match[2])-1;
+        const first=new Date(year,monthIndex,1,12,0,0);
+        const lastDay=new Date(year,monthIndex+1,0,12,0,0).getDate();
+        const todayDate=dailyWorkflowParseDate(today)||new Date();
+        const todayIso=today
+            ||todayDate.getFullYear()+'-'+String(todayDate.getMonth()+1).padStart(2,'0')+'-'+String(todayDate.getDate()).padStart(2,'0');
+        const todayMonth=dailyWorkflowMonthKey(todayIso);
+        const html=[];
+
+        for(let blank=0;blank<first.getDay();blank+=1){
+            html.push('<span class="daily-workflow-calendar-blank" aria-hidden="true"></span>');
+        }
+
+        for(let day=1;day<=lastDay;day+=1){
+            const date=dailyWorkflowCalendarMonth+'-'+String(day).padStart(2,'0');
+            const status=dailyWorkflowCalendarDays[date]||{};
+            const future=Boolean(todayIso&&date>todayIso);
+            const selected=date===dailyWorkflowCalendarSelectedDate;
+            const dots=[];
+            const reviewRating=Math.max(0,Math.min(5,parseInt(status.rating,10)||0));
+            const dayAria=[date];
+            if(status.reviewed){
+                const reviewedTitle=tr('reviewed')+(reviewRating>0?' · '+reviewRating+'/5':'');
+                dots.push('<i class="reviewed" title="'+escapeHtml(reviewedTitle)+'"></i>');
+                dayAria.push(reviewedTitle);
+            }
+            if(status.completed){
+                dots.push('<i class="completed" title="'+escapeHtml(tr('complete'))+'"></i>');
+                dayAria.push(tr('complete'));
+            }
+            html.push(
+                '<button type="button" class="daily-workflow-calendar-day'
+                +(selected?' is-selected':'')
+                +(future?' is-future':'')
+                +'" data-daily-workflow-date="'+escapeHtml(date)+'"'
+                +(future?' disabled':'')
+                +' aria-label="'+escapeHtml(dayAria.join(' · '))+'">'
+                +'<span>'+day+'</span>'
+                +(dots.length?'<span class="daily-workflow-calendar-day-dots">'+dots.join('')+'</span>':'')
+                +'</button>'
+            );
+        }
+
+        $dailyWorkflowCalendarGrid.html(html.join(''));
+        $dailyWorkflowCalendarMonth.text(
+            first.toLocaleDateString(dashboardLocale(),{
+                month:'long',
+                year:'numeric'
+            })
+        );
+        $('.daily-workflow-weekdays span').each(function(index){
+            const reference=new Date(2026,7,2+index,12,0,0);
+            $(this).text(
+                reference.toLocaleDateString(dashboardLocale(),{weekday:'short'})
+            );
+        });
+        $dailyWorkflowCalendarTitle.text(tr('dailyActivityCalendar'));
+        $dailyWorkflowCalendarHelp.text(
+            dailyWorkflowCalendarMode==='complete'
+                ?tr('selectDailyCompleteDate')
+                :tr('selectDailyReviewDate')
+        );
+        $dailyWorkflowCalendarNext.prop(
+            'disabled',
+            Boolean(todayMonth&&dailyWorkflowCalendarMonth>=todayMonth)
+        );
+    }
+
+    /**
+     * EN: Load Reviewed / Complete status for the currently visible calendar month.
+     * 中文：加载当前日历月份的 Reviewed / Complete 状态。
+     *
+     * @returns {void} No value is returned. / 无返回值。
+     */
+    function loadDailyWorkflowCalendarMonth(){
+        if(!dailyStatusUrl||!dailyWorkflowCalendarSalesId||!dailyWorkflowCalendarMonth){
+            return;
+        }
+        if(dailyWorkflowCalendarRequest&&dailyWorkflowCalendarRequest.readyState!==4){
+            dailyWorkflowCalendarRequest.abort();
+        }
+
+        $dailyWorkflowCalendarGrid.html(
+            '<div class="daily-workflow-calendar-loading">'+escapeHtml(tr('loading'))+'…</div>'
+        );
+        dailyWorkflowCalendarRequest=$.ajax({
+            url:dailyStatusUrl,
+            method:'GET',
+            dataType:'json',
+            cache:false,
+            data:{
+                sales_id:dailyWorkflowCalendarSalesId,
+                month:dailyWorkflowCalendarMonth,
+                _:Date.now()
+            }
+        })
+        .done(function(data){
+            if(!data||!data.ok){
+                return;
+            }
+            dailyWorkflowCalendarDays=(
+                data.days&&typeof data.days==='object'
+            )?data.days:{};
+            renderDailyWorkflowCalendar();
+        })
+        .fail(function(xhr,status){
+            if(status==='abort'){
+                return;
+            }
+            const data=xhr.responseJSON||{};
+            $dailyWorkflowCalendarGrid.html(
+                '<div class="daily-workflow-calendar-loading">'
+                +escapeHtml(data.message||'Could not load daily activity.')
+                +'</div>'
+            );
+        });
+    }
+
+    /**
+     * EN: Open the shared history calendar from a Sales card action date.
+     * 中文：从 Sales Card 的日期按钮打开共用历史日历。
+     *
+     * @param {*} $card Sales card. / Sales 卡片。
+     * @param {string} mode review or complete. / review 或 complete 模式。
+     * @param {string} date Selected ISO date. / 当前选择的 ISO 日期。
+     * @returns {void} No value is returned. / 无返回值。
+     */
+    function openDailyWorkflowCalendar($card,mode,date){
+        const salesId=parseInt($card.attr('data-sales-id'),10)||0;
+        const selected=String(date||$card.attr('data-completion-date')||currentTo||currentDate||today||'');
+        const month=dailyWorkflowMonthKey(selected)||dailyWorkflowMonthKey(today);
+        if(!salesId||!month){
+            return;
+        }
+
+        dailyWorkflowCalendarSalesId=salesId;
+        dailyWorkflowCalendarMode=mode==='complete'?'complete':'review';
+        dailyWorkflowCalendarSelectedDate=selected;
+        dailyWorkflowCalendarMonth=month;
+        dailyWorkflowCalendarDays={};
+        $dailyWorkflowCalendarSales.text(
+            String($card.attr('data-sales-name')||'Sales')
+        );
+        $dailyWorkflowCalendarBackdrop
+            .removeClass('hidden')
+            .attr('aria-hidden','false');
+        renderDailyWorkflowCalendar();
+        loadDailyWorkflowCalendarMonth();
+    }
+
 /**
  * EN: Update the update review progress segments behavior used by the application UI.
  * 中文：更新application UI 使用的“update review progress segments”行为。
@@ -8746,6 +10283,12 @@ function updateReviewProgressSegments(
  */
 function syncExpandedSalesCardFromTiles(){
     if(!expandedSalesId){
+        return;
+    }
+
+    // Search-only expansion is a filtered view, not the Sales period total.
+    // Never overwrite the Sales card's real Good/Bad/Unreviewed counts from it.
+    if(currentExpandedData&&currentExpandedData.search_only){
         return;
     }
 
@@ -8826,11 +10369,23 @@ function syncExpandedSalesCardFromTiles(){
             100,
             parseInt(row.percent, 10) || 0
         );
-        const met = !!row.target_met;
+        const manualCompleted=Boolean(row.completed);
+        const completionTargetMet=Boolean(row.completion_target_met);
+        const effectiveComplete=manualCompleted||completionTargetMet;
+        const actualPeriodTargetMet=Object.prototype.hasOwnProperty.call(
+            row,
+            'actual_target_met'
+        )
+            ?Boolean(row.actual_target_met)
+            :Boolean(row.target_met)&&!manualCompleted;
+        const met=Boolean(row.target_met);
 
         $card
             .attr('data-post-count', count)
             .attr('data-daily-target', dailyTarget)
+            .attr('data-actual-target-met',actualPeriodTargetMet?'1':'0')
+            .attr('data-completion-target-met',completionTargetMet?'1':'0')
+            .attr('data-effective-complete',effectiveComplete?'1':'0')
             .toggleClass('target-met', met);
 
         if(Object.prototype.hasOwnProperty.call(row,'location_id')){
@@ -8903,17 +10458,48 @@ function syncExpandedSalesCardFromTiles(){
             .find('[data-target-badge]')
             .toggleClass('hidden', !met);
 
+        const actionDate=String(
+            row.completion_date
+            ||currentTo
+            ||currentDate
+            ||today
+            ||''
+        );
+        const $dailyReviewGroup=$card.find('[data-daily-review-group]');
+        const $dailyCompleteGroup=$card.find('[data-daily-complete-group]');
+        const $dailyComplete=$card.find('[data-daily-complete]');
+
+        // EN: Daily Review is a one-day action. Mark as Complete always targets
+        // the selected range's last day, so multi-day/date-range views stay actionable.
+        // 中文：Daily Review 只属于单日；Mark as Complete 始终对应当前范围最后一天，
+        // 因此 3-Day、Week、Month、Custom Range 都可以标记最后一天。
+        $card
+            .attr('data-completion-date',actionDate)
+            // Manual completion is reversible until the real target is met.
+            .attr('data-completed',manualCompleted?'1':'0')
+            .attr('data-completion-target-met',completionTargetMet?'1':'0')
+            .attr('data-effective-complete',effectiveComplete?'1':'0');
+        // Daily Review stays available in every range. It opens a one-day
+        // review for the range's last day, and the date inside the review editor
+        // can be changed to any historical day.
+        $dailyReviewGroup.removeClass('hidden');
+        $dailyCompleteGroup.removeClass('hidden');
+        $dailyComplete
+            .toggleClass('is-completed',effectiveComplete)
+            .prop('disabled',completionTargetMet)
+            .attr('aria-disabled',completionTargetMet?'true':'false')
+            .attr(
+                'title',
+                completionTargetMet
+                    ?'Target met; cannot set Incomplete'
+                    :''
+            );
+        $card.find('[data-card-daily-complete-label]').text(
+            effectiveComplete?tr('complete'):tr('incomplete')
+        );
+
+        // Translate only after the new completion attributes are in place.
         translateSalesCard($card);
-
-        const $dailyReview = $card.find('[data-daily-review]');
-
-        // Daily Sales Review belongs only to the one-day preset. Preset is
-        // the authoritative UI state, so 3-Day never inherits this action.
-        if(currentPreset==='single'){
-            $dailyReview.removeClass('hidden');
-        }else{
-            $dailyReview.addClass('hidden');
-        }
 
         $card.removeClass('period-updated');
         void $card.get(0).offsetWidth;
@@ -9451,63 +11037,11 @@ $periodReviewHistory.on('click','[data-person-review-history-delete]',function()
  * @returns {void} No value is returned. / 无返回值。
  */
 function renderSalesPeriodReview(review){
+    // v0.2.117: Daily Review is modal-only. Keep the loaded review object for
+    // editor workflows, but never render a persistent review panel under the
+    // activity chart / Post Grid.
     currentSalesPeriodReview=review||null;
-
-    if(!review){
-        $expandedReview.addClass('hidden');
-        return;
-    }
-
-    const exists=Boolean(review.exists);
-    const label=
-        review.period==='week'
-            ?tr('weeklyReview')
-            :review.period==='month'
-                ?tr('monthlyReview')
-                :tr('dailyReview');
-    const note=String(review.note||'');
-    const rating=parseInt(review.rating,10)||0;
-
-    $expandedReviewLabel.text(label);
-    $expandedReviewState.text(
-        exists
-            ?tr('saved')
-            :tr('noReviewYet')
-    );
-
-    $expandedReviewRating
-        .toggleClass('hidden',rating<1)
-        .text(rating?salesRatingStars(rating)+' '+rating+'/5':'');
-
-    $expandedReviewNote
-        .toggleClass('empty',!note.trim())
-        .html(
-            note.trim()
-                ?note
-                :escapeHtml(tr('addManagementReview'))
-        );
-
-    $expandedReviewMeta.text(
-        exists
-            ?[
-                review.admin_name
-                    ?tr('reviewedBy',{name:review.admin_name})
-                    :tr('reviewed'),
-                review.reviewed_at
-                    ?commentDateLabel(review.reviewed_at)
-                    :'',
-                periodReviewDateLabel(review)
-            ].filter(Boolean).join(' · ')
-            :periodReviewDateLabel(review)
-    );
-
-    $expandedReviewEdit.text(
-        exists
-            ?tr('editReview')
-            :tr('addReview')
-    );
-
-    $expandedReview.removeClass('hidden');
+    $expandedReview.addClass('hidden');
 }
 
 /**
@@ -9535,8 +11069,8 @@ function openSalesPeriodReviewEditor(){
     );
 
     $('#salesPeriodReviewSalesId').val(expandedSalesId);
-    $('#salesPeriodReviewDate').val(currentDate);
-    $('#salesPeriodReviewPeriod').val(currentPeriod);
+    $('#salesPeriodReviewDate').val(review.from||currentDate);
+    $('#salesPeriodReviewPeriod').val(review.period||'day');
 
     $('#salesPeriodReviewModalEyebrow').text(
         review.period==='week'
@@ -9557,6 +11091,11 @@ function openSalesPeriodReviewEditor(){
     $('#salesPeriodReviewModalSubtitle').text(
         review.period_label||''
     );
+    $('#salesPeriodReviewDateTrigger')
+        .toggleClass('hidden',review.period!=='day')
+        .attr('aria-label',review.period==='day'
+            ?'Change Daily Review date: '+String(review.period_label||review.from||'')
+            :'');
 
     showDeletedSalesReviewHistory=false;
     resetSalesReviewHistoryDeleteArm();
@@ -9619,6 +11158,7 @@ function closeSalesPeriodReviewEditor(){
  * @returns {*} Result produced by this function; the concrete type depends on the execution path. / 本函数生成的结果；具体类型取决于执行路径。
  */
 function renderPostGrid(data){
+    const searchOnly=Boolean(data&&data.search_only);
     const allPosts=Array.isArray(data.posts)
         ?data.posts
         :[];
@@ -9628,8 +11168,15 @@ function renderPostGrid(data){
             return String(post.platform||'').toLowerCase()===adminExpandedChannel;
         });
 
-    renderSalesPeriodReview(data.review||null);
-    renderAdminSalesActivity(data);
+    if(searchOnly){
+        currentSalesPeriodReview=null;
+        $expandedReview.addClass('hidden');
+        $adminSalesActivity.addClass('hidden');
+        currentExpandedData=data;
+    }else{
+        renderSalesPeriodReview(data.review||null);
+        renderAdminSalesActivity(data);
+    }
 
     $expandedTitle.text(
         data.sales.name
@@ -9640,11 +11187,13 @@ function renderPostGrid(data){
     );
 
     $expandedSubtitle.text(
-        data.period_label
-        +' · #'
-        +data.sales.sales_id
-        +' · '
-        +tr('chronological')
+        searchOnly
+            ?tr('postSearchMatches')+' · #'+data.sales.sales_id
+            :data.period_label
+                +' · #'
+                +data.sales.sales_id
+                +' · '
+                +tr('chronological')
     );
 
     $expandedList.addClass(
@@ -9846,13 +11395,21 @@ function renderPostGrid(data){
      * not expand/render the employee Post Grid, so the review button behaves as
      * an isolated modal action.
      * 中文：仅加载单日 Sales Review；不会展开或渲染员工 Post Grid，避免点击
-     * Daily Sales Review 时同时打开 Post 详细区域。
+     * Daily Review 时同时打开 Post 详细区域。
      *
      * @param {*} $card Selected Sales progress card. / 当前 Sales 进度卡片。
      * @returns {void} No value is returned. / 无返回值。
      */
-    function openDailyReviewOnly($card){
+    function openDailyReviewOnly($card,requestedDate){
         const salesId=parseInt($card.attr('data-sales-id'),10)||0;
+        const reviewDate=String(
+            requestedDate
+            ||$card.attr('data-completion-date')
+            ||currentTo
+            ||currentDate
+            ||today
+            ||''
+        );
 
         if(!salesId){
             return;
@@ -9875,10 +11432,13 @@ function renderPostGrid(data){
             method:'GET',
             dataType:'json',
             cache:false,
-            data:adminAjaxRangeData({
+            data:{
                 sales_id:salesId,
+                date:reviewDate,
+                period:'day',
+                preset:'single',
                 _:Date.now()
-            })
+            }
         })
         .done(function(data){
             if(
@@ -9943,6 +11503,17 @@ function renderPostGrid(data){
 
         if(!salesId){
             return;
+        }
+
+        const activePostSearchQuery=String($salesDirectorySearch.val()||'').trim();
+        if(activePostSearchQuery&&salesPostSearchMatches.length){
+            const matchedRows=salesPostSearchMatches.filter(function(row){
+                return (parseInt(row.sales_user_id,10)||0)===salesId;
+            });
+            if(matchedRows.length){
+                openSalesPostSearchMatches($card,matchedRows);
+                return;
+            }
         }
 
         if(expandedSalesId === salesId){
@@ -10244,6 +11815,17 @@ $('#appLanguageSwitch').on(
     }
 );
 
+    // v0.2.120: Settings/header language changes must immediately translate
+    // the Dashboard range controls as well, including preset buttons and From/To.
+    $(document).on('cdsp:language-changed.cdspAdminDashboard',function(_event,lang){
+        lang=String(lang||currentAppLanguage()||'en');
+        if(!dashboardI18n[lang]){
+            lang='en';
+        }
+        dashboardLanguage=lang;
+        applyDashboardLanguage();
+    });
+
     $('#dashboardPeriodSwitch').on(
         'click',
         '[data-admin-preset]',
@@ -10303,27 +11885,94 @@ $('#appLanguageSwitch').on(
             $from.val(from);
         }
 
+        /*
+         * v0.2.120 — To is a movable historical anchor.
+         * EN: When To is picked inside the currently loaded range, keep From
+         *     where it is and turn the selection into Custom. When To is picked
+         *     outside the current range, keep the active preset and move the
+         *     whole preset window so it ends on the newly selected To date.
+         *     From intentionally keeps the legacy behavior: editing it always
+         *     creates a Custom range.
+         * 中文：To 是可以自由选择历史日期的锚点。若新 To 落在当前范围内，
+         *     保持 From 不动并切换为 Custom；若新 To 落在当前范围外，则保留
+         *     当前 1 Day / 3 Days / Weekly / Monthly 预设，并把整个范围平移到
+         *     新 To。From 保持原逻辑：手动修改 From 一律进入 Custom。
+         */
+        if(changed==='to'){
+            const loadedFrom=String(currentFrom||from);
+            const loadedTo=String(currentTo||to);
+            const preset=String(currentPreset||'custom');
+            const insideLoadedRange=(
+                /^\d{4}-\d{2}-\d{2}$/.test(loadedFrom)
+                &&/^\d{4}-\d{2}-\d{2}$/.test(loadedTo)
+                &&to>=loadedFrom
+                &&to<=loadedTo
+            );
+
+            if(insideLoadedRange){
+                from=loadedFrom;
+                $from.val(from);
+                currentPreset='custom';
+                $from.attr('max',to);
+                $to.removeAttr('min').attr('max',today||'');
+                loadProgress({from:from,to:to,preset:'custom'});
+                return;
+            }
+
+            if(preset!=='custom'){
+                const shifted=adminPresetRange(preset,to);
+                if(!shifted){
+                    return;
+                }
+                $from.val(shifted.from).attr('max',shifted.to);
+                $to.val(shifted.to).removeAttr('min').attr('max',today||'');
+                currentPreset=preset;
+
+                if(preset==='single'){
+                    loadProgress({date:shifted.to,period:'day',preset:'single'});
+                }else{
+                    loadProgress({from:shifted.from,to:shifted.to,preset:preset});
+                }
+                return;
+            }
+
+            // Custom has no fixed named length. Preserve its current day span
+            // when To moves outside the loaded Custom range.
+            const oldFrom=dailyWorkflowParseDate(loadedFrom);
+            const oldTo=dailyWorkflowParseDate(loadedTo);
+            const newTo=dailyWorkflowParseDate(to);
+            if(oldFrom&&oldTo&&newTo){
+                const spanDays=Math.max(0,Math.round((oldTo-oldFrom)/86400000));
+                const newFrom=new Date(newTo);
+                newFrom.setDate(newFrom.getDate()-spanDays);
+                const iso=function(date){
+                    return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');
+                };
+                from=iso(newFrom);
+                $from.val(from);
+            }else if(to<from){
+                from=to;
+                $from.val(from);
+            }
+
+            currentPreset='custom';
+            $from.attr('max',to);
+            $to.removeAttr('min').attr('max',today||'');
+            loadProgress({from:from,to:to,preset:'custom'});
+            return;
+        }
+
+        // Existing From behavior: editing From always creates Custom.
         if(changed==='from'&&from>to){
             to=from;
             $to.val(to);
-        }else if(changed==='to'&&to<from){
-            from=to;
-            $from.val(from);
         }else if(from>to){
             from=to;
             $from.val(from);
         }
 
-        $from.attr(
-            'max',
-            today&&to>today
-                ?today
-                :to
-        );
-
-        $to
-            .attr('min',from)
-            .attr('max',today||'');
+        $from.attr('max',to);
+        $to.removeAttr('min').attr('max',today||'');
 
         currentPreset='custom';
         loadProgress({
@@ -10368,12 +12017,268 @@ $('#appLanguageSwitch').on(
         $('#dashboardBackToday').trigger('click');
     });
 
+    $grid.on('click','[data-daily-complete]',function(event){
+        event.preventDefault();
+        event.stopImmediatePropagation();
+
+        const $button=$(this);
+        const $card=$button.closest('.sales-progress-card');
+        const salesId=parseInt($card.attr('data-sales-id'),10)||0;
+        const date=String(
+            $card.attr('data-completion-date')
+            ||currentTo
+            ||currentDate
+            ||today
+            ||''
+        );
+
+        if(!dailyCompleteUrl||!salesId||!date||$button.attr('aria-busy')==='true'){
+            return;
+        }
+
+        // EN: A day that objectively met its real Daily Target is locked Complete.
+        // 中文：真实达到当日 Daily Target 的日期锁定为 Complete，不能改回 Incomplete。
+        if($card.attr('data-completion-target-met')==='1'){
+            return;
+        }
+
+        const nextCompleted=$card.attr('data-completed')!=='1';
+        $button.prop('disabled',true).attr('aria-busy','true');
+        setTargetMessage($card,'',false);
+
+        $.ajax({
+            url:dailyCompleteUrl,
+            method:'POST',
+            dataType:'json',
+            data:{
+                _csrf:csrf,
+                sales_user_id:salesId,
+                date:date,
+                completed:nextCompleted?'1':'0'
+            }
+        })
+        .done(function(data){
+            if(!data||!data.ok){
+                $button.prop('disabled',false).removeAttr('aria-busy');
+                setTargetMessage(
+                    $card,
+                    (data&&data.message)||'Could not mark the daily task complete.',
+                    true
+                );
+                return;
+            }
+
+            const manualCompleted=Boolean(data.completed);
+            const targetLocked=Boolean(data.actual_target_met||data.locked);
+            const effectiveComplete=Object.prototype.hasOwnProperty.call(
+                data,
+                'effective_completed'
+            )
+                ?Boolean(data.effective_completed)
+                :(manualCompleted||targetLocked);
+
+            if(targetLocked&&currentFrom===date&&currentTo===date){
+                $card.attr('data-actual-target-met','1');
+            }
+            const actualPeriodTargetMet=$card.attr('data-actual-target-met')==='1';
+            const targetMet=actualPeriodTargetMet||manualCompleted;
+
+            $card
+                .attr('data-completed',manualCompleted?'1':'0')
+                .attr('data-completion-target-met',targetLocked?'1':'0')
+                .attr('data-effective-complete',effectiveComplete?'1':'0')
+                .toggleClass('target-met',targetMet);
+            $card.find('[data-target-badge]').toggleClass('hidden',!targetMet);
+
+            $button
+                .toggleClass('is-completed',effectiveComplete)
+                .prop('disabled',targetLocked)
+                .attr('aria-disabled',targetLocked?'true':'false')
+                .attr(
+                    'title',
+                    targetLocked
+                        ?'Target met; cannot set Incomplete'
+                        :''
+                )
+                .removeAttr('aria-busy');
+            $card.find('[data-card-daily-complete-label]').text(
+                effectiveComplete?tr('complete'):tr('incomplete')
+            );
+            setTargetMessage(
+                $card,
+                data.message||(effectiveComplete?tr('complete'):tr('incomplete')),
+                false
+            );
+
+            if(dailyWorkflowMonthKey(date)===dailyWorkflowCalendarMonth){
+                if(!dailyWorkflowCalendarDays[date]){
+                    dailyWorkflowCalendarDays[date]={
+                        reviewed:false,
+                        completed:false
+                    };
+                }
+                dailyWorkflowCalendarDays[date].completed=effectiveComplete;
+            }
+        })
+        .fail(function(xhr){
+            const data=xhr.responseJSON||{};
+            const targetLocked=Boolean(data.actual_target_met||data.locked);
+
+            if(targetLocked){
+                if(currentFrom===date&&currentTo===date){
+                    $card.attr('data-actual-target-met','1');
+                }
+                const targetMet=
+                    $card.attr('data-actual-target-met')==='1'
+                    ||$card.attr('data-completed')==='1';
+                $card
+                    .attr('data-completion-target-met','1')
+                    .attr('data-effective-complete','1')
+                    .toggleClass('target-met',targetMet);
+                $card.find('[data-target-badge]').toggleClass('hidden',!targetMet);
+                $button
+                    .addClass('is-completed')
+                    .prop('disabled',true)
+                    .attr('aria-disabled','true')
+                    .attr('title','Target met; cannot set Incomplete')
+                    .removeAttr('aria-busy');
+                $card.find('[data-card-daily-complete-label]').text(tr('complete'));
+                setTargetMessage(
+                    $card,
+                    data.message||'Target met; this day is Complete.',
+                    false
+                );
+                return;
+            }
+
+            $button.prop('disabled',false).removeAttr('aria-busy');
+            setTargetMessage(
+                $card,
+                data.message||'Could not update the daily completion status.',
+                true
+            );
+        });
+    });
+
     $grid.on('click','[data-daily-review]',function(event){
         event.preventDefault();
         // This button owns the click completely. Do not allow the Sales card or
         // any other delegated click handler to treat it as a Post/Grid click.
         event.stopImmediatePropagation();
-        openDailyReviewOnly($(this).closest('.sales-progress-card'));
+        const $card=$(this).closest('.sales-progress-card');
+        openDailyReviewOnly(
+            $card,
+            String($card.attr('data-completion-date')||currentTo||currentDate||'')
+        );
+    });
+
+    $('#salesPeriodReviewDateTrigger').on('click',function(event){
+        event.preventDefault();
+        if(!currentSalesPeriodReview||currentSalesPeriodReview.period!=='day'||!expandedSalesId){
+            return;
+        }
+        const $card=$grid.find(
+            '.sales-progress-card[data-sales-id="'+expandedSalesId+'"]'
+        ).first();
+        if(!$card.length){
+            return;
+        }
+        openDailyWorkflowCalendar(
+            $card,
+            'review',
+            String(currentSalesPeriodReview.from||currentDate||today||'')
+        );
+    });
+
+    $('#dailyWorkflowCalendarClose').on('click',function(){
+        closeDailyWorkflowCalendar();
+    });
+
+    $dailyWorkflowCalendarBackdrop.on('click',function(event){
+        if(event.target===this){
+            closeDailyWorkflowCalendar();
+        }
+    });
+
+    $dailyWorkflowCalendarPrev.on('click',function(){
+        const month=dailyWorkflowShiftMonth(dailyWorkflowCalendarMonth,-1);
+        if(!month){
+            return;
+        }
+        dailyWorkflowCalendarMonth=month;
+        dailyWorkflowCalendarDays={};
+        renderDailyWorkflowCalendar();
+        loadDailyWorkflowCalendarMonth();
+    });
+
+    $dailyWorkflowCalendarNext.on('click',function(){
+        if($(this).prop('disabled')){
+            return;
+        }
+        const month=dailyWorkflowShiftMonth(dailyWorkflowCalendarMonth,1);
+        if(!month){
+            return;
+        }
+        dailyWorkflowCalendarMonth=month;
+        dailyWorkflowCalendarDays={};
+        renderDailyWorkflowCalendar();
+        loadDailyWorkflowCalendarMonth();
+    });
+
+    $dailyWorkflowCalendarGrid.on('click','[data-daily-workflow-date]',function(){
+        const date=String($(this).attr('data-daily-workflow-date')||'');
+        const salesId=dailyWorkflowCalendarSalesId;
+        const mode=dailyWorkflowCalendarMode;
+        if(!date||!salesId||(today&&date>today)){
+            return;
+        }
+
+        dailyWorkflowCalendarSelectedDate=date;
+        closeDailyWorkflowCalendar();
+
+        // If the calendar was opened from the Daily Review editor, hide the
+        // current editor while the requested day is loading. loadProgress()
+        // will clear stale card/review state before reopening the selected date.
+        if(mode==='review'&&!$periodReviewModal.hasClass('hidden')){
+            $periodReviewModal
+                .addClass('hidden')
+                .attr('aria-hidden','true');
+        }
+
+        // EN: Calendar selection changes the dashboard itself to 1-Day first;
+        // the requested action is performed only after that day's card is current.
+        // 中文：从日历选日期时，先把 Dashboard 切到该日的 1-Day；
+        // 等当天卡片加载完成以后才进入对应 Review / Complete 操作。
+        loadProgress({
+            date:date,
+            period:'day',
+            preset:'single'
+        }).done(function(data){
+            if(!data||!data.ok){
+                return;
+            }
+            const $card=$grid.find(
+                '.sales-progress-card[data-sales-id="'+salesId+'"]'
+            ).first();
+            if(!$card.length){
+                return;
+            }
+            const card=$card.get(0);
+            if(card&&typeof card.scrollIntoView==='function'){
+                card.scrollIntoView({behavior:'smooth',block:'center'});
+            }
+            if(mode==='review'){
+                openDailyReviewOnly($card,date);
+            }else{
+                $card.find('[data-daily-complete]').first().trigger('focus');
+            }
+        });
+    });
+
+    $(document).on('keydown.dailyWorkflowCalendar',function(event){
+        if(event.key==='Escape'&&!$dailyWorkflowCalendarBackdrop.hasClass('hidden')){
+            closeDailyWorkflowCalendar();
+        }
     });
 
     $grid.on('click', '[data-card-toggle]', function(event){
@@ -10580,6 +12485,23 @@ $periodReviewForm.on('submit',function(event){
         renderSalesPeriodReview(data.review);
         renderSalesReviewHistory((data.review&&data.review.history)||[]);
         renderCurrentPersonReviewAttachments((data.review&&data.review.attachments)||[]);
+
+        if(
+            data.review
+            &&data.review.period==='day'
+            &&currentExpandedData
+            &&!currentExpandedData.search_only
+        ){
+            const reviewDate=String(data.review.from||'');
+            if(reviewDate){
+                currentExpandedData.daily_ratings=
+                    (currentExpandedData.daily_ratings&&typeof currentExpandedData.daily_ratings==='object')
+                        ?currentExpandedData.daily_ratings
+                        :{};
+                currentExpandedData.daily_ratings[reviewDate]=parseInt(data.review.rating,10)||0;
+                renderAdminSalesActivity(currentExpandedData);
+            }
+        }
         $periodReviewImages.val('');
         updatePersonReviewFileSelection();
 
@@ -11524,6 +13446,25 @@ function syncDecisionVisualState(decision){
      *
      * @returns {void} No value is returned. / 无返回值。
      */
+    function resetReviewModalViewport(focusDialog){
+        const scrollEl=$modal.find('.review-modal-scroll').get(0);
+        if(scrollEl){
+            scrollEl.scrollTop=0;
+            scrollEl.scrollLeft=0;
+        }
+
+        if(focusDialog){
+            const dialog=$modal.find('.review-modal').get(0);
+            if(dialog){
+                try{
+                    dialog.focus({preventScroll:true});
+                }catch(_error){
+                    dialog.focus();
+                }
+            }
+        }
+    }
+
     function resetReviewModal(){
         $modalMessage
             .removeClass('error warning')
@@ -11586,6 +13527,7 @@ function syncDecisionVisualState(decision){
             photos:[]
         });
         setModalEditorHtml('');
+        resetReviewModalViewport(false);
     }
 
     /**
@@ -11631,6 +13573,7 @@ function syncDecisionVisualState(decision){
             .removeClass('hidden')
             .attr('aria-hidden', 'false');
         $('body').addClass('review-modal-open');
+        resetReviewModalViewport(true);
         $modalForm.addClass('hidden');
         $modalLoading.removeClass('hidden');
 
@@ -11787,6 +13730,11 @@ function syncDecisionVisualState(decision){
             if(activePostId === postId){
                 $modalLoading.addClass('hidden');
                 $modalForm.removeClass('hidden');
+                window.requestAnimationFrame(function(){
+                    if(activePostId===postId){
+                        resetReviewModalViewport(true);
+                    }
+                });
             }
         });
     }
@@ -12435,51 +14383,14 @@ $modalForm.on('submit', function(event){
      * @returns {void} No value is returned. / 无返回值。
      */
     function redrawAfterDailyTargetSave($card, dailyTarget){
-        const count = parseInt(
-            $card.attr('data-post-count'),
-            10
-        ) || 0;
-        const periodTarget = dailyTarget * currentPeriodDays;
-        const percent = Math.min(
-            100,
-            Math.round((count / periodTarget) * 100)
-        );
-        const met = count >= periodTarget;
-
-        $card
-            .attr('data-daily-target', dailyTarget)
-            .toggleClass('target-met', met);
-
-        $card.find('[data-daily-target-label]').text(dailyTarget);
-        $card.find('[data-progress-target]').text(periodTarget);
-        const goodCount=parseInt(
-            $card.find('[data-good-count]').text(),
-            10
-        )||0;
-        const badCount=parseInt(
-            $card.find('[data-bad-count]').text(),
-            10
-        )||0;
-        const unreviewedCount=parseInt(
-            $card.find('[data-unreviewed-count]').text(),
-            10
-        )||0;
-
-        updateReviewProgressSegments(
-            $card,
-            count,
-            periodTarget,
-            goodCount,
-            badCount,
-            unreviewedCount
-        );
-        $card
-            .find('.sales-progress-track')
-            .attr('aria-valuemax', periodTarget)
-            .attr('aria-valuenow', count);
-        $card
-            .find('[data-target-badge]')
-            .toggleClass('hidden', !met);
+        // EN: Target history is date-specific, so never recalculate a range as
+        // current target × days in the browser. Reload the authoritative range.
+        // 中文：Target 已按日期保存历史，前端不能再用“当前 Target × 天数”重算；
+        // 保存后重新读取当前范围，才能正确处理历史日期与中途改 Target。
+        if($card&&$card.length){
+            $card.find('[data-target-input]').val(dailyTarget);
+        }
+        reloadCurrentProgress();
     }
 
 
@@ -12848,6 +14759,13 @@ $('#salesPersonSettingsSave').on('click',function(){
         }
     });
 
+    // Apply persisted Settings language immediately; do not wait for the
+    // first AJAX progress response before translating the range toolbar.
+    dashboardLanguage=currentAppLanguage();
+    if(!dashboardI18n[dashboardLanguage]){
+        dashboardLanguage='en';
+    }
+    applyDashboardLanguage();
     syncAdminRangeInputs();
     updateBackToday();
     const initialProgressRequest=reloadCurrentProgress({initial:true});
@@ -13612,6 +15530,21 @@ $(document).on('click','.website-source-delete',function(event){
         }catch(error){}
         $('[data-verification-queue-panel]').each(function(){vqSetCollapsed($(this),collapsed,false);});
     }
+    // v0.2.135: A newly submitted background verification must be visible.
+    // If Sales had intentionally collapsed the Queue, reopen it after a new
+    // submission is accepted and switch that reopened panel to All so the new
+    // Waiting / Verifying row cannot be hidden behind an old status filter.
+    // Panels that were already open keep their current filter unchanged.
+    function vqRevealAfterSubmission(){
+        $('[data-verification-queue-panel]').each(function(){
+            const $panel=$(this);
+            if(!$panel.hasClass('is-collapsed'))return;
+            $panel.attr('data-vq-current-filter','all');
+            $panel.find('[data-vq-filter]').removeClass('active');
+            $panel.find('[data-vq-filter="all"]').addClass('active');
+            vqSetCollapsed($panel,false,true);
+        });
+    }
     function vqStatusLabel(status){
         const map={waiting:'queueWaiting',verifying:'queueVerifying',passed:'queuePassed',failed:'queueFailed',duplicate:'queueDuplicate',invalid:'queueInvalid'};
         return salesTr(map[status]||map.waiting);
@@ -13638,6 +15571,7 @@ $(document).on('click','.website-source-delete',function(event){
         }
         if(status==='invalid'||code==='INVALID_URL'||code==='URL_INVALID'||code==='PLATFORM_INVALID')return result('invalid-url','queueErrorInvalidUrl');
         if(code.includes('TIMEOUT')||message.includes('timeout')||message.includes('timed out'))return result('timeout','queueErrorTimeout');
+        if(code==='LISTING_UNAVAILABLE')return result('unavailable','queueErrorUnavailable');
         if(code==='FACEBOOK_PROVIDER_FAILED'||code==='FETCH_FAILED')return result('provider','queueErrorProvider');
         if(code==='DATE_NOT_VERIFIABLE'||code==='FUTURE_DATE')return result('date','queueErrorDate');
         if(code==='TITLE_NOT_VERIFIABLE')return result('title-check','queueErrorTitleCheck');
@@ -13656,6 +15590,33 @@ $(document).on('click','.website-source-delete',function(event){
             if(text.length>74)text=text.slice(0,70)+'…';
             return text;
         }catch(error){return String(raw||'').slice(0,74);}
+    }
+    function vqExternalIdFromUrl(raw,platform){
+        const url=String(raw||'').trim();
+        let match=null;
+        if(platform==='facebook'){
+            match=url.match(/facebook\.com\/marketplace\/item\/(\d+)/i);
+            return match&&match[1]?match[1]:'';
+        }
+        if(platform==='offerup'){
+            match=url.match(/offerup\.(?:com|co)\/item\/detail\/([a-z0-9-]+)/i);
+            return match&&match[1]?match[1]:'';
+        }
+        if(platform==='craigslist'){
+            match=url.match(/\/(\d{8,})\.html(?:[?#]|$)/i);
+            return match&&match[1]?match[1]:'';
+        }
+        return '';
+    }
+    function vqRefreshEditPreview($edit){
+        if(!$edit||!$edit.length)return;
+        const raw=String($edit.find('[data-vq-edit-url]').val()||'').trim();
+        const platform=detectPlatform(raw);
+        const normalized=platform?normalizePostUrl(raw,platform):raw;
+        const externalId=platform?vqExternalIdFromUrl(normalized,platform):'';
+        $edit.find('[data-vq-edit-platform]').text(platform?platformLabel(platform):'—');
+        $edit.find('[data-vq-edit-post-id]').text(externalId||'—');
+        $edit.toggleClass('has-unsupported-url',!!raw&&!platform);
     }
     function vqRenderRow(item){
         const status=String(item.status||'waiting').toLowerCase();
@@ -13901,6 +15862,7 @@ $(document).on('click','.website-source-delete',function(event){
     }
     function vqShowAcceptedItem(item,counts){
         if(!item||!item.id)return;
+        vqRevealAfterSubmission();
         $('[data-verification-queue-panel]').each(function(){
             const $panel=$(this);
             if(counts&&typeof counts==='object'){
@@ -13994,6 +15956,7 @@ $(document).on('click','.website-source-delete',function(event){
             // the Verification Queue on the Dashboard shows queued/error results.
             $('#salesBulkResult').removeClass('hidden').text(resp.message||'Bulk Submit complete.');
             $('#salesBulkUrls').val('');
+            vqRevealAfterSubmission();
             vqLoadAll(false);
             closeSalesBulkSubmitModal();
         }).fail(function(xhr){$('#salesBulkResult').removeClass('hidden').text((xhr.responseJSON&&xhr.responseJSON.message)||'Bulk Submit failed.');})
@@ -14058,20 +16021,54 @@ $(document).on('click','.website-source-delete',function(event){
             $button.prop('disabled',true);vqPost('/api/verification-queue/delete',{id:id},$panel);return;
         }
         if(action==='edit'){
-            if($row.find('.sales-vq-edit').length){$row.find('.sales-vq-edit').remove();return;}
-            const current=$row.find('.sales-vq-url a').attr('href')||'';
+            // v0.2.124: edit mode must expose a full-width editable URL field.
+            // The old 3-column grid let the two buttons squeeze the URL input to
+            // nearly zero width on queue cards, making Edit & Re-verify look like
+            // an immediate Save action. Platform/Post ID remain derived from URL.
+            const existing=$row.find('.sales-vq-edit');
+            if(existing.length){existing.remove();$row.removeClass('is-editing');return;}
+            const item=$row.data('vqItem')||{};
+            const current=String(item.submitted_url||item.canonical_url||$row.find('.sales-vq-url a').attr('href')||'').trim();
             const $edit=$('<div>').addClass('sales-vq-edit');
-            $('<input type="url">').val(current).attr('data-vq-edit-url','1').appendTo($edit);
-            $('<button type="button" class="btn primary">').attr('data-vq-edit-save','1').text(salesTr('queueSaveReverify')).appendTo($edit);
-            $('<button type="button" class="btn">').attr('data-vq-edit-cancel','1').text(salesTr('cancel')).appendTo($edit);
-            $edit.appendTo($row);$edit.find('input').trigger('focus');return;
+            const $field=$('<div>').addClass('sales-vq-edit-field').appendTo($edit);
+            $('<label>').addClass('sales-vq-edit-label').attr('for','vq-edit-url-'+String(id)).text(salesTr('originalUrl')).appendTo($field);
+            $('<input type="url">')
+                .attr({id:'vq-edit-url-'+String(id),'data-vq-edit-url':'1',autocomplete:'off',spellcheck:'false'})
+                .val(current)
+                .appendTo($field);
+            $('<span>').addClass('sales-vq-edit-help').text(salesTr('queueEditUrlHelp')).appendTo($field);
+
+            const $preview=$('<div>').addClass('sales-vq-edit-preview').attr('aria-live','polite').appendTo($edit);
+            const $platformPreview=$('<span>').appendTo($preview);
+            $('<b>').text(salesTr('platform')+':').appendTo($platformPreview);
+            $('<em>').attr('data-vq-edit-platform','1').text('—').appendTo($platformPreview);
+            const $idPreview=$('<span>').appendTo($preview);
+            $('<b>').text(salesTr('postId')+':').appendTo($idPreview);
+            $('<em>').attr('data-vq-edit-post-id','1').text('—').appendTo($idPreview);
+
+            const $editActions=$('<div>').addClass('sales-vq-edit-actions').appendTo($edit);
+            $('<button type="button" class="btn primary">').attr('data-vq-edit-save','1').text(salesTr('queueSaveReverify')).appendTo($editActions);
+            $('<button type="button" class="btn">').attr('data-vq-edit-cancel','1').text(salesTr('cancel')).appendTo($editActions);
+            $row.addClass('is-editing');
+            $edit.appendTo($row);
+            vqRefreshEditPreview($edit);
+            $edit.find('[data-vq-edit-url]').trigger('focus').trigger('select');
+            return;
         }
     });
-    $(document).on('click','[data-vq-edit-cancel]',function(){$(this).closest('.sales-vq-edit').remove();});
+    $(document).on('input change','[data-vq-edit-url]',function(){vqRefreshEditPreview($(this).closest('.sales-vq-edit'));});
+    $(document).on('click','[data-vq-edit-cancel]',function(){
+        const $row=$(this).closest('.sales-vq-row');
+        $(this).closest('.sales-vq-edit').remove();
+        $row.removeClass('is-editing');
+    });
     $(document).on('click','[data-vq-edit-save]',function(){
-        const $edit=$(this).closest('.sales-vq-edit'),$row=$edit.closest('.sales-vq-row'),id=Number($row.data('vq-id')||0),url=String($edit.find('[data-vq-edit-url]').val()||'').trim(),$panel=$row.closest('[data-verification-queue-panel]');
-        if(!url){vqMessage($panel,'Enter a listing URL.','error');return;}
-        $(this).prop('disabled',true);vqPost('/api/verification-queue/update',{id:id,url:url},$panel);
+        const $button=$(this),$edit=$button.closest('.sales-vq-edit'),$row=$edit.closest('.sales-vq-row'),id=Number($row.data('vq-id')||0),url=String($edit.find('[data-vq-edit-url]').val()||'').trim(),$panel=$row.closest('[data-verification-queue-panel]');
+        if(!url){vqMessage($panel,'Enter a listing URL.','error');$edit.find('[data-vq-edit-url]').trigger('focus');return;}
+        const platform=detectPlatform(url);
+        if(!platform){vqMessage($panel,salesTr('unsupportedUrl'),'error');$edit.find('[data-vq-edit-url]').trigger('focus');return;}
+        $button.prop('disabled',true);
+        vqPost('/api/verification-queue/update',{id:id,url:url},$panel).fail(function(){$button.prop('disabled',false);});
     });
 
     window.cdspRefreshVerificationQueue=function(){vqLoadAll(false);};

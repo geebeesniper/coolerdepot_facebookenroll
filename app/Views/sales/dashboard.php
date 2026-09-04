@@ -52,8 +52,21 @@ for (
 }
 
 $chartTarget=max(1,(int)$dailyTarget);
-$chartCap=max(1,$chartTarget*1.2);
-$chartTargetPercent=min(100,($chartTarget/$chartCap)*100);
+$chartTargets=is_array($dailyTargets??null)?$dailyTargets:[];
+foreach($chartDates as $chartDate){
+    if(!isset($chartTargets[$chartDate])){
+        $chartTargets[$chartDate]=$chartTarget;
+    }else{
+        $chartTargets[$chartDate]=max(1,(int)$chartTargets[$chartDate]);
+    }
+}
+$chartMaxTarget=$chartTargets?max($chartTargets):$chartTarget;
+$chartMaxPosts=0;
+foreach($chartByDate as $chartDayRow){
+    $chartMaxPosts=max($chartMaxPosts,(int)($chartDayRow['post_count']??0));
+}
+$chartCap=max(1,$chartMaxTarget*1.2,$chartMaxPosts+1);
+$chartUniqueTargets=array_values(array_unique(array_map('intval',$chartTargets)));
 $chartInitialWidth=max(100,count($chartDates)*30);
 
 /*
@@ -111,9 +124,6 @@ if(
     $chartTicks[]=$chartCap;
 }
 
-$chartTargetTop=
-    $chartPlotHeight
-    *(1-($chartTarget/$chartCap));
 ?>
 
 <div
@@ -124,6 +134,7 @@ $chartTargetTop=
     data-today="<?= Util::e($today) ?>"
     data-range-period="<?= Util::e($rangePeriod ?? 'custom') ?>"
     data-channel="<?= Util::e($activeChannel ?? 'all') ?>"
+    data-post-search-url="<?= Util::e($config['app']['base_path']) ?>/sales/post-search"
 ></div>
 
 <div class="page-head sales-portal-head">
@@ -251,28 +262,46 @@ $chartTargetTop=
             ></span>
         </form>
 
-        <div class="sales-submit-cta-cluster" data-sales-cta-cluster>
-            <button
-                class="btn primary sales-submit-cta sales-bulk-submit-cta"
-                type="button"
-                data-open-sales-bulk-submit
-                data-bulk-fallback-url="<?= Util::e($config['app']['base_path']) ?>/sales/bulk-submit"
-            >
-                <span class="sales-submit-plus">+</span>
-                <span data-sales-i18n="bulkSubmitPost">Bulk Submit Post</span>
-            </button>
-
-            <button
-                class="btn primary sales-submit-cta"
-                type="button"
-                data-open-sales-submit
-            >
-                <span class="sales-submit-plus">+</span>
-                <span data-sales-i18n="submitPost">Submit Post</span>
-            </button>
-        </div>
     </div>
 </div>
+
+<section class="sales-post-search-panel" id="salesPostSearchPanel" data-search-active="0">
+    <div class="sales-post-search-field">
+        <div class="sales-post-search-heading">
+            <label for="salesPostSearchInput" data-sales-i18n="salesPostSearchLabel">Post Search</label>
+            <span class="sales-post-search-help" data-sales-i18n="salesPostSearchHelp">Search all of your saved Posts across every date.</span>
+        </div>
+        <div class="sales-post-search-input-row">
+            <input
+                type="search"
+                id="salesPostSearchInput"
+                autocomplete="off"
+                maxlength="500"
+                placeholder="Search original Post link, Post ID, title or platform"
+                data-sales-i18n-placeholder="salesPostSearchPlaceholder"
+            >
+            <button
+                type="button"
+                class="sales-post-search-clear hidden"
+                id="salesPostSearchClear"
+                aria-label="Clear Post Search"
+                title="Clear Post Search"
+            >×</button>
+        </div>
+    </div>
+    <div class="sales-submit-cta-cluster sales-post-search-submit" data-sales-cta-cluster>
+        <button
+            class="btn primary sales-submit-cta sales-bulk-submit-cta"
+            type="button"
+            data-open-sales-bulk-submit
+            data-bulk-fallback-url="<?= Util::e($config['app']['base_path']) ?>/sales/bulk-submit"
+        >
+            <span class="sales-submit-plus">+</span>
+            <span data-sales-i18n="bulkSubmitPost">Bulk Submit Post</span>
+        </button>
+    </div>
+    <div class="sales-post-search-results hidden" id="salesPostSearchResults" aria-live="polite"></div>
+</section>
 
 <?php require __DIR__ . '/_verification_queue.php'; ?>
 
@@ -393,7 +422,7 @@ $chartTargetTop=
                         *(1-((float)$tick/$chartCap));
                     ?>
                     <span
-                        class="sales-chart-y-tick<?= abs((float)$tick-$chartTarget)<0.0001 ? ' target' : '' ?>"
+                        class="sales-chart-y-tick<?= in_array((int)round((float)$tick),$chartUniqueTargets,true) ? ' target' : '' ?>"
                         style="top:<?= round($tickTop,4) ?>px"
                     >
                         <?= Util::e(
@@ -435,16 +464,16 @@ $chartTargetTop=
                             *(1-((float)$tick/$chartCap));
                         ?>
                         <span
-                            class="sales-chart-grid-line<?= abs((float)$tick-$chartTarget)<0.0001 ? ' target' : '' ?>"
+                            class="sales-chart-grid-line<?= in_array((int)round((float)$tick),$chartUniqueTargets,true) ? ' target' : '' ?>"
                             style="top:<?= round($tickTop,4) ?>px"
                         ></span>
                     <?php endforeach; ?>
                 </div>
 
                 <div
-                    class="sales-chart-target-line"
+                    class="sales-chart-target-line hidden"
                     id="salesChartTargetLine"
-                    style="top:<?= round($chartTargetTop,4) ?>px"
+                    aria-hidden="true"
                 >
                     <span>
                         <span data-sales-i18n="targetLine">Daily target</span>
@@ -462,6 +491,7 @@ $chartTargetTop=
                         --sales-chart-gap:3px;
                     "
                 >
+                    <?php $previousDayTarget=null; $lastChartDate=$chartDates ? $chartDates[count($chartDates)-1] : ''; ?>
                     <?php foreach ($chartDates as $chartDate): ?>
                         <?php
                         $chartRow=$chartByDate[$chartDate] ?? [
@@ -472,6 +502,11 @@ $chartTargetTop=
                         ];
 
                         $actual=(int)$chartRow['post_count'];
+                        $dayTarget=max(1,(int)($chartTargets[$chartDate]??$chartTarget));
+                        $dayTargetTop=$chartPlotHeight*(1-($dayTarget/$chartCap));
+                        $showTargetLabel=$previousDayTarget===null
+                            ||$previousDayTarget!==$dayTarget
+                            ||$chartDate===$lastChartDate;
                         $scale=$actual>$chartCap
                             ?$chartCap/$actual
                             :1;
@@ -485,13 +520,7 @@ $chartTargetTop=
                             (min($actual,$chartCap)/$chartCap)*100
                         );
 
-                        $missing=max(0,$chartTarget-$actual);
-                        $missingH=(
-                            $actual>0
-                            &&$missing>0
-                        )
-                            ?max(0,$chartTargetPercent-$actualH)
-                            :0;
+                        $missing=max(0,$dayTarget-$actual);
 
                         $labelDate=DateTimeImmutable::createFromFormat(
                             'Y-m-d',
@@ -507,8 +536,18 @@ $chartTargetTop=
                             data-chart-bad="<?= (int)$chartRow['bad_count'] ?>"
                             data-chart-unreviewed="<?= (int)$chartRow['unreviewed_count'] ?>"
                             data-chart-missing="<?= $missing ?>"
+                            data-chart-target="<?= $dayTarget ?>"
                         >
                             <div class="sales-chart-day-plot">
+                                <span
+                                    class="sales-chart-day-target"
+                                    style="top:<?= round($dayTargetTop,4) ?>px"
+                                    aria-label="Daily target <?= $dayTarget ?>"
+                                >
+                                    <?php if($showTargetLabel): ?>
+                                        <span>Daily target <?= $dayTarget ?></span>
+                                    <?php endif; ?>
+                                </span>
 
                                 <div class="sales-chart-stack">
                                     <span
@@ -525,9 +564,6 @@ $chartTargetTop=
                                     ></span>
                                 </div>
 
-                                <?php if ($actual>$chartCap): ?>
-                                    <span class="sales-chart-over-cap">120%+</span>
-                                <?php endif; ?>
                             </div>
 
                             <span class="sales-chart-x-label">
@@ -538,6 +574,7 @@ $chartTargetTop=
                                 ) ?>
                             </span>
                         </div>
+                        <?php $previousDayTarget=$dayTarget; ?>
                     <?php endforeach; ?>
                 </div>
             </div>
@@ -556,6 +593,7 @@ $chartTargetTop=
         'from'=>$from,
         'to'=>$to,
         'daily_target'=>(int)$dailyTarget,
+        'daily_targets'=>$chartTargets,
         'rows'=>$chartRows,
     ],
     JSON_UNESCAPED_SLASHES
@@ -570,21 +608,6 @@ $chartTargetTop=
     <div id="dailyPosts" class="sales-range-post-wrap" data-from="<?= Util::e($from) ?>" data-to="<?= Util::e($to) ?>">
         <?php require __DIR__ . '/_post_range_section.php'; ?>
     </div>
-</div>
-
-<div class="sales-submit-modal-backdrop hidden" id="salesSubmitModal" aria-hidden="true">
-    <section class="sales-submit-modal" role="dialog" aria-modal="true" aria-labelledby="salesSubmitModalTitle">
-        <div class="sales-submit-modal-head">
-            <div>
-                <div class="eyebrow">New Post</div>
-                <h2 id="salesSubmitModalTitle" data-sales-i18n="submitTitle">Submit Marketplace Post</h2>
-            </div>
-            <button type="button" class="icon-close" id="salesSubmitModalClose" aria-label="Close submit post" title="Close">×</button>
-        </div>
-        <div class="sales-submit-modal-scroll">
-            <?php require __DIR__ . '/_submit_form.php'; ?>
-        </div>
-    </section>
 </div>
 
 <div class="sales-submit-modal-backdrop hidden" id="salesBulkSubmitModal" aria-hidden="true">

@@ -175,6 +175,107 @@ class User
     }
 
     /**
+     * EN: Record the daily post target that applies from one work date forward.
+     * 中文：记录从指定工作日期开始生效的每日发帖目标。
+     *
+     * @param int $userId Application Sales user identifier. / Sales 用户 ID。
+     * @param int $target Daily post target. / 每日发帖目标。
+     * @param string $effectiveDate Effective work date in Y-m-d format. / 生效工作日期（Y-m-d）。
+     * @param ?int $changedBy Admin user that changed the target, when available. / 修改目标的 Admin 用户（如有）。
+     * @return void No value is returned. / 无返回值。
+     */
+    public static function recordDailyPostTarget(
+        int $userId,
+        int $target,
+        string $effectiveDate,
+        ?int $changedBy = null
+    ): void {
+        $target = max(1, min(999, $target));
+
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $effectiveDate)) {
+            throw new \InvalidArgumentException('Invalid daily target effective date.');
+        }
+
+        $s = Database::connection()->prepare(
+            "INSERT INTO cdsp_sales_daily_target_history(
+                sales_user_id,effective_date,daily_post_target,changed_by,created_at,updated_at
+             ) VALUES(?,?,?,?,NOW(),NOW())
+             ON DUPLICATE KEY UPDATE
+                daily_post_target=VALUES(daily_post_target),
+                changed_by=VALUES(changed_by),
+                updated_at=NOW()"
+        );
+        $s->execute([$userId, $effectiveDate, $target, $changedBy]);
+    }
+
+    /**
+     * EN: Resolve the actual daily target for every date in a requested range.
+     * 中文：按请求日期范围解析每天实际生效的 Daily Target。
+     *
+     * @param int $userId Application Sales user identifier. / Sales 用户 ID。
+     * @param string $from Inclusive range start in Y-m-d format. / 日期范围开始（含）。
+     * @param string $to Inclusive range end in Y-m-d format. / 日期范围结束（含）。
+     * @param ?int $fallbackTarget Fallback target when no history row exists. / 无历史记录时的兜底目标。
+     * @return array<string,int> Date-keyed target values. / 以日期为键的目标值。
+     */
+    public static function dailyPostTargetsForRange(
+        int $userId,
+        string $from,
+        string $to,
+        ?int $fallbackTarget = null
+    ): array {
+        if (
+            !preg_match('/^\d{4}-\d{2}-\d{2}$/', $from)
+            || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $to)
+            || $from > $to
+        ) {
+            return [];
+        }
+
+        if ($fallbackTarget === null) {
+            $user = self::find($userId);
+            $fallbackTarget = max(1, (int)($user['daily_post_target'] ?? 10));
+        }
+        $fallbackTarget = max(1, min(999, (int)$fallbackTarget));
+
+        $s = Database::connection()->prepare(
+            "SELECT effective_date,daily_post_target
+             FROM cdsp_sales_daily_target_history
+             WHERE sales_user_id=?
+               AND effective_date<=?
+             ORDER BY effective_date ASC,id ASC"
+        );
+        $s->execute([$userId, $to]);
+        $history = $s->fetchAll();
+
+        $cursor = 0;
+        $activeTarget = $fallbackTarget;
+        $count = count($history);
+        $result = [];
+        $start = new \DateTimeImmutable($from . ' 12:00:00');
+        $end = new \DateTimeImmutable($to . ' 12:00:00');
+
+        for ($day = $start; $day <= $end; $day = $day->modify('+1 day')) {
+            $date = $day->format('Y-m-d');
+
+            while (
+                $cursor < $count
+                && (string)$history[$cursor]['effective_date'] <= $date
+            ) {
+                $activeTarget = max(
+                    1,
+                    min(999, (int)($history[$cursor]['daily_post_target'] ?? $activeTarget))
+                );
+                $cursor++;
+            }
+
+            $result[$date] = $activeTarget;
+        }
+
+        return $result;
+    }
+
+    /**
      * EN: Retrieve the all for api data for user in the application database.
      * 中文：读取 user 的“all for api”数据，并访问应用数据库。
      *

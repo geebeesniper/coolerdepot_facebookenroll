@@ -68,6 +68,9 @@ class RegistryBrightDataMarketplaceProvider
 
         if (!$bypassCache) {
             $cached = FetchJob::recentReady('facebook', $externalId, 10, $providerKey);
+            if ($cached) {
+                $cached = FacebookListingMetadata::normalizeItem($cached);
+            }
             if ($cached && $this->complete($cached)) {
                 $cached['_provider_cache'] = true;
                 return $cached;
@@ -144,11 +147,18 @@ class RegistryBrightDataMarketplaceProvider
                         );
                     }
 
+                    if ($unavailable = FacebookListingMetadata::unavailableReason($data, $download['status'])) {
+                        throw new FacebookListingUnavailableException($unavailable);
+                    }
+
                     $record = $this->firstRecord($data);
                     if (!$record) {
                         throw new \RuntimeException(
                             'Bright Data returned no valid Marketplace listing.'
                         );
+                    }
+                    if ($unavailable = FacebookListingMetadata::unavailableReason($record, $download['status'])) {
+                        throw new FacebookListingUnavailableException($unavailable);
                     }
 
                     $result = $this->normalize($record, $url, $snapshotId);
@@ -204,10 +214,9 @@ class RegistryBrightDataMarketplaceProvider
      */
     private function complete(array $item): bool
     {
-        return trim((string)($item['external_post_id'] ?? '')) !== ''
-            && trim((string)($item['title'] ?? '')) !== ''
-            && trim((string)($item['description'] ?? '')) !== ''
-            && trim((string)($item['published_raw'] ?? '')) !== '';
+        return FacebookListingMetadata::providerUsable(
+            FacebookListingMetadata::normalizeItem($item)
+        );
     }
 
     /**
@@ -250,7 +259,7 @@ class RegistryBrightDataMarketplaceProvider
             'facebook'
         ) ?: $submittedUrl;
 
-        return [
+        return FacebookListingMetadata::normalizeItem([
             'provider' => 'brightdata',
             'provider_profile_id' => (int)($this->profile['id'] ?? 0),
             'provider_name' => (string)($this->profile['name'] ?? 'Bright Data'),
@@ -263,7 +272,7 @@ class RegistryBrightDataMarketplaceProvider
             'description' => trim((string)($record['description'] ?? '')),
             'published_raw' => $published,
             'raw' => $record,
-        ];
+        ]);
     }
 
     /**

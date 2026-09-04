@@ -114,5 +114,6 @@ if (!$isStatelessApiRequest && session_status() !== PHP_SESSION_ACTIVE) {
  * 此检查可重复执行，仅在首次需要时扩展该 ENUM，不删除或重写业务数据。
  */
 \App\Core\SchemaCompatibility::ensureDirectOverlayCompatibility();
+\App\Core\SchemaCompatibility::ensureDailyWorkflowCompatibility();
 
 return $config;

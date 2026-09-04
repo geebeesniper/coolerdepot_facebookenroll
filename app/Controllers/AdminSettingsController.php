@@ -87,6 +87,9 @@ class AdminSettingsController extends Controller
         }
         $inspectionLocks = [];
         $inspectionLockError = null;
+        $inspectionRecoveryMinutes = InspectionProcessLock::recoveryMinutes();
+        $inspectionRecoveryMinMinutes = InspectionProcessLock::minRecoveryMinutes();
+        $inspectionRecoveryMaxMinutes = InspectionProcessLock::maxRecoveryMinutes();
         try {
             $inspectionLocks = InspectionProcessLock::activeLocks();
         } catch (\Throwable $e) {
@@ -130,7 +133,10 @@ class AdminSettingsController extends Controller
             'websiteQuery',
             'websiteReferences',
             'inspectionLocks',
-            'inspectionLockError'
+            'inspectionLockError',
+            'inspectionRecoveryMinutes',
+            'inspectionRecoveryMinMinutes',
+            'inspectionRecoveryMaxMinutes'
         ));
     }
 
@@ -731,8 +737,60 @@ class AdminSettingsController extends Controller
     }
 
     /**
-     * EN: Force-clear one Sales Marketplace verification gate from Admin Settings.
-     * 中文：从 Admin Settings 手动清除指定 Sales 的 Marketplace 验证锁。
+     * EN: Save the Admin-selected hard safety timeout for connected-but-stuck verification locks.
+     * 中文：保存 Admin 为“连接仍存活但卡死”的验证锁设置的硬性安全超时。
+     *
+     * @return void No value is returned. / 无返回值。
+     */
+    public function saveInspectionRecovery(): void
+    {
+        $admin = Auth::requireRole('admin');
+        Csrf::verify($_POST['_csrf'] ?? null);
+
+        $raw = trim((string)($_POST['recovery_minutes'] ?? ''));
+        $min = InspectionProcessLock::minRecoveryMinutes();
+        $max = InspectionProcessLock::maxRecoveryMinutes();
+
+        if ($raw === '' || !preg_match('/^\d+$/', $raw)) {
+            $_SESSION['flash_error'] = 'Verification recovery timeout must be a whole number of minutes.';
+            $this->redirect('/admin/settings#verification-locks');
+        }
+
+        $minutes = (int)$raw;
+        if ($minutes < $min || $minutes > $max) {
+            $_SESSION['flash_error'] = 'Verification recovery timeout must be between ' . $min . ' and ' . $max . ' minutes.';
+            $this->redirect('/admin/settings#verification-locks');
+        }
+
+        try {
+            InspectionProcessLock::setRecoveryMinutes($minutes, (int)$admin['id']);
+            \App\Core\Logger::log(
+                'info',
+                'Verification recovery timeout updated',
+                [
+                    'event' => 'admin_inspection_recovery_timeout_updated',
+                    'minutes' => $minutes,
+                    'admin_user_id' => (int)$admin['id'],
+                ],
+                'admin-settings'
+            );
+            $_SESSION['flash_success'] = 'Verification recovery timeout updated to ' . $minutes . ' minutes.';
+        } catch (\Throwable $e) {
+            \App\Core\Logger::exception(
+                $e,
+                'admin-settings',
+                ['event' => 'Verification recovery timeout update failed'],
+                'warning'
+            );
+            $_SESSION['flash_error'] = 'Verification recovery timeout could not be updated.';
+        }
+
+        $this->redirect('/admin/settings#verification-locks');
+    }
+
+    /**
+     * EN: Force-clear one Sales Marketplace verification gate from Admin Settings as an in-case fallback.
+     * 中文：仅在自动恢复未解决问题时，从 Admin Settings 手动清除指定 Sales 的 Marketplace 验证锁作为兜底。
      *
      * @return void No value is returned. / 无返回值。
      */
@@ -761,7 +819,7 @@ class AdminSettingsController extends Controller
                 'admin-settings'
             );
             $_SESSION['flash_success'] = $released
-                ? 'Sales verification lock cleared.'
+                ? 'Sales verification lock manually cleared.'
                 : 'No active verification lock was found for that Sales user.';
         } catch (\Throwable $e) {
             \App\Core\Logger::exception(

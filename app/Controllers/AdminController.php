@@ -223,6 +223,15 @@ class AdminController extends Controller{
             1,
             (int)($salesUser['daily_post_target']??10)
         );
+        $dailyTargets=User::dailyPostTargetsForRange(
+            $salesUserId,
+            (string)$periodInfo['from'],
+            (string)$periodInfo['to'],
+            $dailyTarget
+        );
+        if($dailyTargets){
+            $dailyTarget=(int)($dailyTargets[(string)$periodInfo['to']]??$dailyTarget);
+        }
 
         $items=[];
 
@@ -272,6 +281,76 @@ class AdminController extends Controller{
             'count'=>count($items),
             'chart_rows'=>$chartRows,
             'daily_target'=>$dailyTarget,
+            'daily_targets'=>$dailyTargets,
+            'daily_ratings'=>$this->dashboardDailyRatingsForRange(
+                $salesUserId,
+                (string)$periodInfo['from'],
+                (string)$periodInfo['to']
+            ),
+        ]);
+    }
+
+    /**
+     * EN: Search original marketplace Post information from the Admin Sales/Post Search and return exact Post matches.
+     * 中文：从 Admin 的 Sales/Post Search 搜索原始平台帖子信息，并返回精确可打开的 Post 匹配结果。
+     *
+     * @return void No value is returned. / 无返回值。
+     */
+    public function dashboardPostSearch():void{
+        Auth::requireRole('admin');
+
+        $query=trim((string)($_GET['q']??''));
+        if(strlen($query)>500){
+            $query=substr($query,0,500);
+        }
+
+        if(strlen($query)<2){
+            $this->json([
+                'ok'=>true,
+                'query'=>$query,
+                'matches'=>[],
+                'count'=>0,
+            ]);
+        }
+
+        if(session_status()===PHP_SESSION_ACTIVE){
+            session_write_close();
+        }
+
+        $rows=Post::adminSearchOriginalPosts($query,25);
+        $matches=[];
+        foreach($rows as $row){
+            $matches[]=[
+                'post_id'=>(int)$row['id'],
+                'sales_user_id'=>(int)$row['sales_user_id'],
+                'sales_name'=>(string)$row['display_name'],
+                'sales_id'=>(string)$row['sales_id'],
+                'platform'=>ucfirst((string)$row['platform']),
+                'title'=>(string)($row['title']??''),
+                'description'=>(string)($row['description']??''),
+                'original_url'=>(string)($row['canonical_url']??$row['submitted_url']??''),
+                'external_post_id'=>(string)($row['external_post_id']??''),
+                'published_at'=>(string)($row['published_at']??''),
+                'published_date'=>(string)($row['published_date']??''),
+                'thumbnail_url'=>!empty($row['fetched_image_url'])
+                    ?(string)$row['fetched_image_url']
+                    :null,
+                'status'=>in_array(
+                    (string)($row['current_review_status']??''),
+                    ['good','bad'],
+                    true
+                )
+                    ?(string)$row['current_review_status']
+                    :null,
+            ];
+        }
+
+        header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+        $this->json([
+            'ok'=>true,
+            'query'=>$query,
+            'matches'=>$matches,
+            'count'=>count($matches),
         ]);
     }
 
@@ -578,6 +657,194 @@ class AdminController extends Controller{
             'deleted_by_name'=>(string)($row['deleted_by_name']??$admin['display_name']??'Administrator'),
             'review'=>$review,
             'message'=>'Sales Review history entry marked as deleted.',
+        ]);
+    }
+
+    /**
+     * EN: Return one month of Daily Review and task-completion status for the selected Sales user.
+     * 中文：返回指定 Sales 某个月的 Daily Review 与每日任务完成状态。
+     *
+     * @return void No value is returned. / 无返回值。
+     */
+    public function dashboardDailyStatus():void{
+        Auth::requireRole('admin');
+
+        $salesUserId=(int)($_GET['sales_id']??0);
+        $month=trim((string)($_GET['month']??date('Y-m')));
+
+        if($salesUserId<1){
+            $this->json(['ok'=>false,'message'=>'Sales user is required.'],422);
+        }
+        if(!preg_match('/^\d{4}-\d{2}$/',$month)){
+            $this->json(['ok'=>false,'message'=>'Invalid calendar month.'],422);
+        }
+
+        $salesUser=User::find($salesUserId);
+        if(!$salesUser||($salesUser['role']??'')!=='sales'||!(int)($salesUser['active']??0)){
+            $this->json(['ok'=>false,'message'=>'Sales user was not found.'],404);
+        }
+
+        $start=$month.'-01';
+        $startDate=\DateTimeImmutable::createFromFormat('!Y-m-d',$start);
+        if(!$startDate){
+            $this->json(['ok'=>false,'message'=>'Invalid calendar month.'],422);
+        }
+        $end=$startDate->modify('last day of this month')->format('Y-m-d');
+        $pdo=Database::connection();
+        $days=[];
+
+        // EN: The Review and Complete buttons share one Daily Activity Calendar.
+        // Use the exact same Daily Review source as the chart so a visible Reviewed
+        // day and its 1–5 rating can never drift apart.
+        // 中文：Daily Review 与 Complete 共用同一个 Daily Activity Calendar。
+        // 日历与图表读取同一份 Daily Review 状态，避免“有 Reviewed 蓝点却没有评分折线”。
+        foreach($this->dashboardDailyReviewStatesForRange($salesUserId,$start,$end) as $date=>$state){
+            $days[(string)$date]=[
+                'reviewed'=>true,
+                'completed'=>false,
+                'rating'=>(int)($state['rating']??0),
+            ];
+        }
+
+        $completions=$pdo->prepare(
+            "SELECT work_date,completed_at
+             FROM cdsp_daily_sales_completions
+             WHERE sales_user_id=?
+               AND work_date BETWEEN ? AND ?"
+        );
+        $completions->execute([$salesUserId,$start,$end]);
+        foreach($completions->fetchAll() as $row){
+            $date=(string)$row['work_date'];
+            if(!isset($days[$date])){
+                $days[$date]=['reviewed'=>false,'completed'=>false,'rating'=>0];
+            }
+            $days[$date]['completed']=true;
+            $days[$date]['manual_completed']=true;
+            $days[$date]['completed_at']=(string)$row['completed_at'];
+        }
+
+        // EN: Calendar completion is the same effective Complete state used by
+        // the Sales card: an Admin manual Complete OR real posts >= that day's
+        // saved Daily Target. This keeps the shared calendar honest.
+        // 中文：日历中的 Complete 与 Sales Card 使用同一“最终完成”规则：
+        // Admin 手动 Complete，或真实 Post 数达到当日实际 Daily Target，任一成立都显示绿色完成点。
+        $fallbackTarget=max(1,(int)($salesUser['daily_post_target']??10));
+        $dailyTargets=User::dailyPostTargetsForRange(
+            $salesUserId,
+            $start,
+            $end,
+            $fallbackTarget
+        );
+        $postCounts=$pdo->prepare(
+            "SELECT published_date AS work_date,COUNT(*) AS post_count
+             FROM cdsp_sales_posts
+             WHERE sales_user_id=?
+               AND deleted_at IS NULL
+               AND published_date BETWEEN ? AND ?
+             GROUP BY published_date"
+        );
+        $postCounts->execute([$salesUserId,$start,$end]);
+        foreach($postCounts->fetchAll() as $row){
+            $date=(string)$row['work_date'];
+            $target=max(1,(int)($dailyTargets[$date]??$fallbackTarget));
+            if((int)($row['post_count']??0)<$target){
+                continue;
+            }
+            if(!isset($days[$date])){
+                $days[$date]=['reviewed'=>false,'completed'=>false,'rating'=>0];
+            }
+            $days[$date]['completed']=true;
+            $days[$date]['actual_target_met']=true;
+            $days[$date]['locked']=true;
+        }
+
+        ksort($days);
+
+        $this->json([
+            'ok'=>true,
+            'sales_id'=>$salesUserId,
+            'sales_name'=>(string)$salesUser['display_name'],
+            'month'=>$month,
+            'days'=>$days,
+        ]);
+    }
+
+    /**
+     * EN: Mark one Sales work date complete from the Admin dashboard.
+     * 中文：从 Admin Dashboard 将某个 Sales 工作日标记为完成。
+     *
+     * @return void No value is returned. / 无返回值。
+     */
+    public function dashboardMarkDailyComplete():void{
+        $admin=Auth::requireRole('admin');
+        $this->verifyAjaxCsrf();
+
+        $salesUserId=(int)($_POST['sales_user_id']??0);
+        $date=$this->validDashboardDate((string)($_POST['date']??date('Y-m-d')));
+        $completed=(string)($_POST['completed']??'1')!=='0';
+
+        if($salesUserId<1){
+            $this->json(['ok'=>false,'message'=>'Sales user is required.'],422);
+        }
+
+        $salesUser=User::find($salesUserId);
+        if(!$salesUser||($salesUser['role']??'')!=='sales'||!(int)($salesUser['active']??0)){
+            $this->json(['ok'=>false,'message'=>'Sales user was not found.'],404);
+        }
+
+        $actualTargetMet=$this->dailyTargetActuallyMet($salesUserId,$date);
+
+        // EN: Once the real post count has reached that date's saved Daily Target,
+        //     the day is objectively complete and cannot be forced to Incomplete.
+        // 中文：当真实发帖数已经达到该日保存的 Daily Target 后，该日客观完成，禁止人为改回 Incomplete。
+        if(!$completed && $actualTargetMet){
+            $this->json([
+                'ok'=>false,
+                'sales_id'=>$salesUserId,
+                'date'=>$date,
+                'completed'=>true,
+                'effective_completed'=>true,
+                'actual_target_met'=>true,
+                'locked'=>true,
+                'message'=>'Target already met. This day cannot be set to Incomplete.',
+            ],409);
+        }
+
+        $pdo=Database::connection();
+        if($completed){
+            $q=$pdo->prepare(
+                "INSERT INTO cdsp_daily_sales_completions(
+                    sales_user_id,work_date,admin_user_id,completed_at,created_at,updated_at
+                 ) VALUES(?,?,?,NOW(),NOW(),NOW())
+                 ON DUPLICATE KEY UPDATE
+                    admin_user_id=VALUES(admin_user_id),
+                    completed_at=completed_at,
+                    updated_at=NOW()"
+            );
+            $q->execute([$salesUserId,$date,(int)$admin['id']]);
+        }else{
+            $q=$pdo->prepare(
+                "DELETE FROM cdsp_daily_sales_completions
+                 WHERE sales_user_id=? AND work_date=?"
+            );
+            $q->execute([$salesUserId,$date]);
+        }
+
+        $effectiveCompleted=$completed || $actualTargetMet;
+        $this->json([
+            'ok'=>true,
+            'sales_id'=>$salesUserId,
+            'date'=>$date,
+            // `completed` remains the reversible Admin manual flag.
+            'completed'=>$completed,
+            'effective_completed'=>$effectiveCompleted,
+            'actual_target_met'=>$actualTargetMet,
+            'locked'=>$actualTargetMet,
+            // A manual Complete also turns on the existing Target met UI signal.
+            'target_met'=>$effectiveCompleted,
+            'message'=>$completed
+                ?'Complete.'
+                :'Incomplete.',
         ]);
     }
 
@@ -1251,7 +1518,16 @@ public function dashboardDeleteAttachment():void{
             }
         }
 
+        $previousTarget=max(1,(int)($salesUser['daily_post_target']??10));
         User::setSalesSettings($salesUserId,$target,$locationId);
+        if($target!==$previousTarget){
+            User::recordDailyPostTarget(
+                $salesUserId,
+                $target,
+                date('Y-m-d'),
+                (int)$admin['id']
+            );
+        }
         $updated=User::find($salesUserId) ?: $salesUser;
         $locationCounts=Location::allWithSalesCounts();
 
@@ -1474,6 +1750,116 @@ private function extractMarketplacePhotos(array $raw):array{
 }
 
 /**
+ * EN: Return the authoritative Daily Review state for every date in a range.
+ * The latest non-deleted unified Review history row wins. Legacy rows from
+ * cdsp_daily_sales_reviews are used only when that date has never had unified
+ * Review history, so deleting unified history never makes an old legacy review
+ * reappear.
+ * 中文：返回日期范围内每天权威的 Daily Review 状态。优先使用最新且未删除的统一
+ * Review history；只有某天从未产生统一 history 时才兼容旧 daily review 数据，
+ * 因此删除统一 history 后不会让旧记录错误复活。
+ *
+ * @param int $salesUserId Application Sales user identifier. / Sales 用户 ID。
+ * @param string $from Range start date. / 范围开始日期。
+ * @param string $to Range end date. / 范围结束日期。
+ *
+ * @return array<string,array{reviewed:bool,rating:int}> Date-to-review-state map. / 日期到 Review 状态映射。
+ */
+private function dashboardDailyReviewStatesForRange(
+    int $salesUserId,
+    string $from,
+    string $to
+):array{
+    $pdo=Database::connection();
+    $states=[];
+    $historyDates=[];
+
+    $allHistory=$pdo->prepare(
+        "SELECT DISTINCT period_start AS work_date
+         FROM cdsp_sales_review_history
+         WHERE sales_user_id=?
+           AND period_type='day'
+           AND period_start BETWEEN ? AND ?"
+    );
+    $allHistory->execute([$salesUserId,$from,$to]);
+    foreach($allHistory->fetchAll() as $row){
+        $historyDates[(string)$row['work_date']]=true;
+    }
+
+    $active=$pdo->prepare(
+        "SELECT h.period_start AS work_date,h.rating
+         FROM cdsp_sales_review_history h
+         INNER JOIN (
+            SELECT sales_user_id,period_start,MAX(id) AS max_id
+            FROM cdsp_sales_review_history
+            WHERE sales_user_id=?
+              AND period_type='day'
+              AND deleted_at IS NULL
+              AND period_start BETWEEN ? AND ?
+            GROUP BY sales_user_id,period_start
+         ) latest ON latest.max_id=h.id
+         ORDER BY h.period_start ASC"
+    );
+    $active->execute([$salesUserId,$from,$to]);
+    foreach($active->fetchAll() as $row){
+        $rating=(int)($row['rating']??0);
+        $states[(string)$row['work_date']]=[
+            'reviewed'=>true,
+            'rating'=>($rating>=1&&$rating<=5)?$rating:0,
+        ];
+    }
+
+    // Backwards compatibility for Daily Reviews saved before unified history.
+    $legacy=$pdo->prepare(
+        "SELECT work_date,rating
+         FROM cdsp_daily_sales_reviews
+         WHERE sales_user_id=?
+           AND work_date BETWEEN ? AND ?
+         ORDER BY work_date ASC"
+    );
+    $legacy->execute([$salesUserId,$from,$to]);
+    foreach($legacy->fetchAll() as $row){
+        $date=(string)$row['work_date'];
+        if(isset($historyDates[$date])||isset($states[$date])){
+            continue;
+        }
+        $rating=(int)($row['rating']??0);
+        $states[$date]=[
+            'reviewed'=>true,
+            'rating'=>($rating>=1&&$rating<=5)?$rating:0,
+        ];
+    }
+
+    ksort($states);
+    return $states;
+}
+
+/**
+ * EN: Return the latest active 1–5 Daily Review rating for every date in a range.
+ * 中文：返回日期范围内每天最新且未删除的 1–5 星 Daily Review 评分。
+ *
+ * @param int $salesUserId Application Sales user identifier. / Sales 用户 ID。
+ * @param string $from Range start date. / 范围开始日期。
+ * @param string $to Range end date. / 范围结束日期。
+ *
+ * @return array<string,int> Date-to-rating map. / 日期到评分的映射。
+ */
+private function dashboardDailyRatingsForRange(
+    int $salesUserId,
+    string $from,
+    string $to
+):array{
+    $ratings=[];
+    foreach($this->dashboardDailyReviewStatesForRange($salesUserId,$from,$to) as $date=>$state){
+        $rating=(int)($state['rating']??0);
+        if($rating>=1&&$rating<=5){
+            $ratings[(string)$date]=$rating;
+        }
+    }
+    return $ratings;
+}
+
+/**
  * EN: Perform the dashboard sales review data operation.
  * 中文：执行“dashboard sales review data”操作。
  *
@@ -1521,7 +1907,7 @@ private function dashboardSalesReviewData(
     $label=match($period){
         'week'=>'Weekly Sales Review',
         'month'=>'Monthly Sales Review',
-        default=>'Sales Review',
+        default=>'Daily Review',
     };
 
     return [
@@ -1779,6 +2165,60 @@ private function dashboardSalesReviewData(
     }
 
     /**
+     * EN: Check whether one Sales work date has been marked complete.
+     * 中文：检查某个 Sales 工作日期是否已经被标记为完成。
+     *
+     * @param int $salesUserId Application Sales user identifier. / Sales 用户 ID。
+     * @param string $date Work date in Y-m-d format. / 工作日期（Y-m-d）。
+     * @return bool True when the date is complete. / 日期已完成时返回 true。
+     */
+    private function dailyCompletionExists(int $salesUserId,string $date):bool{
+        $q=Database::connection()->prepare(
+            "SELECT 1
+             FROM cdsp_daily_sales_completions
+             WHERE sales_user_id=? AND work_date=?
+             LIMIT 1"
+        );
+        $q->execute([$salesUserId,$date]);
+        return (bool)$q->fetchColumn();
+    }
+
+    /**
+     * EN: Check whether one Sales work date has objectively met its saved Daily Target.
+     *     This is independent from the Admin manual Complete flag and is used to prevent
+     *     a genuinely target-met day from being forced back to Incomplete.
+     * 中文：检查某个 Sales 工作日是否已按当日真实 Daily Target 客观达标。
+     *     此状态独立于 Admin 手动 Complete 标记，用来防止真正达标的日期被人为改回 Incomplete。
+     */
+    private function dailyTargetActuallyMet(int $salesUserId,string $date):bool{
+        $salesUser=User::find($salesUserId);
+        if(!$salesUser){
+            return false;
+        }
+
+        $fallbackTarget=max(1,(int)($salesUser['daily_post_target']??10));
+        $targetMap=User::dailyPostTargetsForRange(
+            $salesUserId,
+            $date,
+            $date,
+            $fallbackTarget
+        );
+        $target=max(1,(int)($targetMap[$date]??$fallbackTarget));
+
+        $q=Database::connection()->prepare(
+            "SELECT COUNT(*)
+             FROM cdsp_sales_posts
+             WHERE sales_user_id=?
+               AND deleted_at IS NULL
+               AND published_date=?"
+        );
+        $q->execute([$salesUserId,$date]);
+        $postCount=(int)$q->fetchColumn();
+
+        return $postCount >= $target;
+    }
+
+    /**
      * EN: Perform the valid dashboard date operation.
      * 中文：执行“valid dashboard date”操作。
      *
@@ -1923,15 +2363,54 @@ private function dashboardSalesReviewData(
         $period=(string)$periodInfo['period'];
         $from=(string)$periodInfo['from'];
 
+        // EN: Completion always targets the range's last day. Fetch that day's
+        //     post counts once so progress polling does not add per-Sales count queries.
+        // 中文：Complete 始终对应范围最后一天；一次性读取该日发帖数，避免轮询时为每个 Sales 追加查询。
+        $completionPostCounts=[];
+        foreach (Post::adminSalesProgress(
+            (string)$periodInfo['to'],
+            (string)$periodInfo['to']
+        ) as $completionRow) {
+            $completionPostCounts[(int)$completionRow['sales_user_id']]=
+                (int)($completionRow['post_count']??0);
+        }
+
         foreach ($rows as &$row) {
-            $dailyTarget=max(1,(int)($row['daily_target']??10));
-            $periodTarget=$dailyTarget*$days;
+            $fallbackTarget=max(1,(int)($row['daily_target']??10));
+            $targetMap=User::dailyPostTargetsForRange(
+                (int)$row['sales_user_id'],
+                (string)$periodInfo['from'],
+                (string)$periodInfo['to'],
+                $fallbackTarget
+            );
+            $dailyTarget=max(
+                1,
+                (int)($targetMap[(string)$periodInfo['to']]??$fallbackTarget)
+            );
+            $periodTarget=$targetMap
+                ?array_sum($targetMap)
+                :$dailyTarget*$days;
             $postCount=(int)($row['post_count']??0);
             $good=(int)($row['good_count']??0);
             $bad=(int)($row['bad_count']??0);
 
             $row['daily_target']=$dailyTarget;
+            $row['daily_target_max']=$targetMap
+                ?max($targetMap)
+                :$dailyTarget;
             $row['period_target']=$periodTarget;
+            $row['completion_date']=(string)$periodInfo['to'];
+            $manualCompleted=$this->dailyCompletionExists(
+                (int)$row['sales_user_id'],
+                (string)$periodInfo['to']
+            );
+            $completionTargetMet=(int)(
+                $completionPostCounts[(int)$row['sales_user_id']]??0
+            ) >= $dailyTarget;
+            $actualPeriodTargetMet=$postCount >= $periodTarget;
+            $row['completed']=$manualCompleted;
+            $row['completion_target_met']=$completionTargetMet;
+            $row['actual_target_met']=$actualPeriodTargetMet;
             $row['unreviewed_count']=max(
                 0,
                 $postCount-$good-$bad
@@ -1944,7 +2423,10 @@ private function dashboardSalesReviewData(
                     )
                 )
                 : 0;
-            $row['target_met']=$postCount >= $periodTarget;
+            // EN: Target met is the effective completion signal shown on the card.
+            //     Real post progress always counts; an Admin manual Complete also counts.
+            // 中文：Target met 是卡片显示的最终完成信号：真实发帖达标或 Admin 手动 Complete 均显示。
+            $row['target_met']=$actualPeriodTargetMet || $manualCompleted;
 
             if ($period==='day') {
                 $row['view_url']=

@@ -61,6 +61,9 @@ class RegistryScrapeCreatorsMarketplaceProvider
 
         if (!$bypassCache) {
             $cached = FetchJob::recentReady('facebook', $externalId, 10, $providerKey);
+            if ($cached) {
+                $cached = FacebookListingMetadata::normalizeItem($cached);
+            }
             if ($cached && $this->complete($cached)) {
                 $cached['_provider_cache'] = true;
                 return $cached;
@@ -104,11 +107,14 @@ class RegistryScrapeCreatorsMarketplaceProvider
             }
 
             $data = json_decode((string)$raw, true);
+            $providerMessage = $this->message($data, (string)$raw);
+            if ($unavailable = FacebookListingMetadata::unavailableReason($data, $status, $providerMessage)) {
+                throw new FacebookListingUnavailableException($unavailable);
+            }
 
             if ($status < 200 || $status >= 300 || !is_array($data) || empty($data['success'])) {
                 throw new \RuntimeException(
-                    'ScrapeCreators request failed: '
-                    . $this->message($data, (string)$raw)
+                    'ScrapeCreators request failed: ' . $providerMessage
                 );
             }
 
@@ -160,10 +166,9 @@ class RegistryScrapeCreatorsMarketplaceProvider
      */
     private function complete(array $item): bool
     {
-        return trim((string)($item['external_post_id'] ?? '')) !== ''
-            && trim((string)($item['title'] ?? '')) !== ''
-            && trim((string)($item['description'] ?? '')) !== ''
-            && trim((string)($item['published_raw'] ?? '')) !== '';
+        return FacebookListingMetadata::providerUsable(
+            FacebookListingMetadata::normalizeItem($item)
+        );
     }
 
     /**
@@ -186,7 +191,7 @@ class RegistryScrapeCreatorsMarketplaceProvider
             'facebook'
         ) ?: $submittedUrl;
 
-        return [
+        return FacebookListingMetadata::normalizeItem([
             'provider' => 'scrapecreators',
             'provider_profile_id' => (int)($this->profile['id'] ?? 0),
             'provider_name' => (string)($this->profile['name'] ?? 'ScrapeCreators'),
@@ -205,7 +210,7 @@ class RegistryScrapeCreatorsMarketplaceProvider
                 ?? ''
             )) ?: null,
             'raw' => $record,
-        ];
+        ]);
     }
 
     /**

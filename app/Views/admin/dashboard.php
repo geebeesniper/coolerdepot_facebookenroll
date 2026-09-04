@@ -34,9 +34,12 @@ $adminPresetNames = [
     data-updates-url="<?= Util::e($base) ?>/admin/dashboard/updates"
     data-progress-url="<?= Util::e($base) ?>/admin/dashboard/progress"
     data-sales-posts-url="<?= Util::e($base) ?>/admin/dashboard/sales-posts"
+    data-post-search-url="<?= Util::e($base) ?>/admin/dashboard/post-search"
     data-post-review-url="<?= Util::e($base) ?>/admin/dashboard/post-review"
     data-sales-review-save-url="<?= Util::e($base) ?>/admin/dashboard/sales-review/save"
     data-sales-review-history-delete-url="<?= Util::e($base) ?>/admin/dashboard/sales-review/history/delete"
+    data-daily-status-url="<?= Util::e($base) ?>/admin/dashboard/daily-status"
+    data-daily-complete-url="<?= Util::e($base) ?>/admin/dashboard/daily-complete"
     data-review-save-url="<?= Util::e($base) ?>/admin/post/review"
     data-get-content-url="<?= Util::e($base) ?>/admin/dashboard/get-content"
     data-editor-image-url="<?= Util::e($base) ?>/admin/dashboard/editor-image"
@@ -107,10 +110,18 @@ $adminPresetNames = [
                             'month'=>'Monthly',
                             'custom'=>'Custom',
                         ] as $presetKey=>$presetLabel): ?>
+                            <?php $presetI18nKey=[
+                                'single'=>'oneDay',
+                                'day'=>'threeDays',
+                                'week'=>'weekly',
+                                'month'=>'monthly',
+                                'custom'=>'custom',
+                            ][$presetKey]; ?>
                             <button
                                 type="button"
                                 class="sales-period-button<?= $adminPreset===$presetKey?' active':'' ?>"
                                 data-admin-preset="<?= Util::e($presetKey) ?>"
+                                data-dashboard-i18n="<?= Util::e($presetI18nKey) ?>"
                                 aria-pressed="<?= $adminPreset===$presetKey?'true':'false' ?>"
                             ><?= Util::e($presetLabel) ?></button>
                         <?php endforeach; ?>
@@ -152,7 +163,6 @@ $adminPresetNames = [
                                     name="to"
                                     id="dashboardToInput"
                                     value="<?= Util::e((string)$periodInfo['to']) ?>"
-                                    min="<?= Util::e((string)$periodInfo['from']) ?>"
                                     max="<?= Util::e($today) ?>"
                                 >
                             </div>
@@ -185,10 +195,18 @@ $adminPresetNames = [
                 'month'=>'Monthly',
                 'custom'=>'Custom',
             ] as $presetKey=>$presetLabel): ?>
+                <?php $presetI18nKey=[
+                    'single'=>'oneDay',
+                    'day'=>'threeDays',
+                    'week'=>'weekly',
+                    'month'=>'monthly',
+                    'custom'=>'custom',
+                ][$presetKey]; ?>
                 <button
                     type="button"
                     class="sales-period-button<?= $adminPreset===$presetKey?' active':'' ?>"
                     data-admin-sticky-preset="<?= Util::e($presetKey) ?>"
+                    data-dashboard-i18n="<?= Util::e($presetI18nKey) ?>"
                     aria-pressed="<?= $adminPreset===$presetKey?'true':'false' ?>"
                 ><?= Util::e($presetLabel) ?></button>
             <?php endforeach; ?>
@@ -211,7 +229,6 @@ $adminPresetNames = [
                     type="date"
                     id="dashboardStickyTo"
                     value="<?= Util::e((string)$periodInfo['to']) ?>"
-                    min="<?= Util::e((string)$periodInfo['from']) ?>"
                     max="<?= Util::e($today) ?>"
                 >
             </div>
@@ -230,14 +247,19 @@ $adminPresetNames = [
 <section class="admin-sales-progress-section">
                 <div class="admin-sales-directory-tools" id="adminSalesDirectoryTools">
                     <label class="admin-sales-search-field" for="salesCardSearch">
-                        <span data-dashboard-i18n="salesSearch">Sales Search</span>
+                        <span data-dashboard-i18n="salesSearch">Sales / Post Search</span>
                         <input
                             type="search"
                             id="salesCardSearch"
                             autocomplete="off"
-                            placeholder="Search name or Sales ID"
+                            placeholder="Search name, Sales ID or original Post link"
                             data-dashboard-i18n-placeholder="salesSearchPlaceholder"
                         >
+                        <div
+                            class="admin-sales-post-search-results hidden"
+                            id="adminSalesPostSearchResults"
+                            aria-live="polite"
+                        ></div>
                     </label>
 
                     <div class="admin-sales-location-filter-wrap">
@@ -327,6 +349,11 @@ $adminPresetNames = [
                 data-location-name="<?= Util::e((string)($row['location_name'] ?? '')) ?>"
                 data-post-count="<?= (int)$row['post_count'] ?>"
                 data-daily-target="<?= (int)$row['daily_target'] ?>"
+                data-completion-date="<?= Util::e((string)($row['completion_date'] ?? $periodInfo['to'])) ?>"
+                data-completed="<?= !empty($row['completed']) ? '1' : '0' ?>"
+                data-actual-target-met="<?= !empty($row['actual_target_met']) ? '1' : '0' ?>"
+                data-completion-target-met="<?= !empty($row['completion_target_met']) ? '1' : '0' ?>"
+                data-effective-complete="<?= (!empty($row['completed']) || !empty($row['completion_target_met'])) ? '1' : '0' ?>"
                 data-card-toggle
                 role="button"
                 tabindex="0"
@@ -467,15 +494,34 @@ $adminPresetNames = [
                         class="sales-card-admin-actions"
                         data-card-control
                     >
-                        <button
-                            type="button"
-                            class="sales-daily-review<?= $adminPreset === 'single' ? '' : ' hidden' ?>"
-                            data-daily-review
-                        >
-                            <span data-card-daily-review-label>
-                                Daily Sales Review
-                            </span>
-                        </button>
+                        <div class="sales-daily-workflow" data-daily-workflow>
+                            <div
+                                class="sales-daily-task-group sales-daily-review-group"
+                                data-daily-review-group
+                            >
+                                <button
+                                    type="button"
+                                    class="sales-daily-review"
+                                    data-daily-review
+                                >
+                                    <span data-card-daily-review-label>Daily Review</span>
+                                </button>
+                            </div>
+
+                            <div
+                                class="sales-daily-task-group sales-daily-complete-group"
+                                data-daily-complete-group
+                            >
+                                <button
+                                    type="button"
+                                    class="sales-daily-complete<?= (!empty($row['completed']) || !empty($row['completion_target_met'])) ? ' is-completed' : '' ?>"
+                                    data-daily-complete
+                                    <?= !empty($row['completion_target_met']) ? 'disabled aria-disabled="true" title="Target met; cannot set Incomplete"' : '' ?>
+                                >
+                                    <span data-card-daily-complete-label><?= (!empty($row['completed']) || !empty($row['completion_target_met'])) ? 'Complete' : 'Incomplete' ?></span>
+                                </button>
+                            </div>
+                        </div>
 
                         <button
                             type="button"
@@ -688,6 +734,7 @@ $adminPresetNames = [
                 <span><i class="good"></i> Good</span>
                 <span><i class="bad"></i> Bad</span>
                 <span><i class="unreviewed"></i> Unreviewed</span>
+                <span class="admin-daily-rating-legend"><i aria-hidden="true"></i> <b data-dashboard-i18n="dailyReview">Daily Review</b></span>
             </div>
 
             <div class="sales-chart-shell">
@@ -708,6 +755,13 @@ $adminPresetNames = [
                         >
                             <span>Daily target <b id="adminSalesChartTargetLineValue">10</b></span>
                         </div>
+                        <svg
+                            class="sales-chart-review-line"
+                            id="adminSalesChartReviewLine"
+                            aria-label="Daily Review rating trend"
+                            role="img"
+                            preserveAspectRatio="none"
+                        ></svg>
                         <div
                             class="sales-chart-bars"
                             id="adminSalesChartBars"
@@ -715,57 +769,12 @@ $adminPresetNames = [
                         ></div>
                     </div>
                 </div>
+
+                <div class="sales-chart-rating-axis" id="adminSalesChartRatingAxis" aria-label="Daily Review rating from 1 to 5 stars">
+                    <div class="sales-chart-rating-axis-ticks" id="adminSalesChartRatingAxisTicks"></div>
+                </div>
             </div>
         </section>
-
-<section
-    class="sales-period-review hidden"
-    id="salesExpandedReview"
->
-    <div class="sales-period-review-top">
-        <div>
-            <span
-                class="sales-period-review-label"
-                id="salesExpandedReviewLabel"
-            >
-                Sales Review
-            </span>
-
-            <strong
-                class="sales-period-review-state"
-                id="salesExpandedReviewState"
-            >
-                No review yet
-            </strong>
-        </div>
-
-        <button
-            type="button"
-            class="sales-period-review-edit"
-            id="salesExpandedReviewEdit"
-        >
-            Add Review
-        </button>
-    </div>
-
-    <div
-        class="sales-period-review-rating hidden"
-        id="salesExpandedReviewRating"
-        aria-label="Current rating"
-    ></div>
-
-    <div
-        class="sales-period-review-note empty"
-        id="salesExpandedReviewNote"
-    >
-        Add a management review for this Sales period.
-    </div>
-
-    <div
-        class="sales-period-review-meta"
-        id="salesExpandedReviewMeta"
-    ></div>
-</section>
 
         <div
             class="sales-expanded-loading hidden"
@@ -806,7 +815,15 @@ $adminPresetNames = [
                 <h2 id="salesPeriodReviewModalTitle">
                     Sales Review
                 </h2>
-                <p id="salesPeriodReviewModalSubtitle"></p>
+                <button
+                    type="button"
+                    class="sales-period-review-date-trigger"
+                    id="salesPeriodReviewDateTrigger"
+                    aria-label="Change Daily Review date"
+                >
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h2v2h6V2h2v2h1a3 3 0 0 1 3 3v11a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h1V2Zm11 7H6v9a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V9Z"/></svg>
+                    <span id="salesPeriodReviewModalSubtitle"></span>
+                </button>
                 <p class="sales-review-purpose">
                     This Sales Review rates the employee for the selected period. Post Review stays separate and is measured only by each post's Good/Bad decision.
                 </p>
@@ -981,6 +998,7 @@ $adminPresetNames = [
         role="dialog"
         aria-modal="true"
         aria-labelledby="dashboardReviewModalTitle"
+        tabindex="-1"
     >
         <div class="review-modal-head">
             <div>
@@ -1320,6 +1338,41 @@ $adminPresetNames = [
     </section>
 </div>
 
+
+<div
+    class="daily-workflow-calendar-backdrop hidden"
+    id="dailyWorkflowCalendarBackdrop"
+    aria-hidden="true"
+>
+    <section
+        class="daily-workflow-calendar-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="dailyWorkflowCalendarTitle"
+    >
+        <div class="daily-workflow-calendar-head">
+            <div>
+                <span class="eyebrow" id="dailyWorkflowCalendarSales"></span>
+                <h3 id="dailyWorkflowCalendarTitle">Daily Activity Calendar</h3>
+            </div>
+            <button type="button" class="icon-close" id="dailyWorkflowCalendarClose" aria-label="Close calendar">×</button>
+        </div>
+        <div class="daily-workflow-calendar-toolbar">
+            <button type="button" class="daily-workflow-month-nav" id="dailyWorkflowCalendarPrev" aria-label="Previous month">‹</button>
+            <strong id="dailyWorkflowCalendarMonth"></strong>
+            <button type="button" class="daily-workflow-month-nav" id="dailyWorkflowCalendarNext" aria-label="Next month">›</button>
+        </div>
+        <div class="daily-workflow-weekdays" aria-hidden="true">
+            <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+        </div>
+        <div class="daily-workflow-calendar-grid" id="dailyWorkflowCalendarGrid"></div>
+        <div class="daily-workflow-calendar-legend">
+            <span><i class="reviewed"></i> <b data-dashboard-i18n="reviewed">Reviewed</b></span>
+            <span><i class="completed"></i> <b data-dashboard-i18n="complete">Complete</b></span>
+        </div>
+        <p class="daily-workflow-calendar-help" id="dailyWorkflowCalendarHelp">Select a date to jump to that day.</p>
+    </section>
+</div>
 
 <div
     class="comment-delete-popover hidden"

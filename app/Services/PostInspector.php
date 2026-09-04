@@ -568,6 +568,21 @@ class PostInspector
                 $submitted,
                 $uid
             );
+        } catch (FacebookListingUnavailableException $e) {
+            return $this->fail(
+                $uid,
+                'facebook',
+                $submitted,
+                'LISTING_UNAVAILABLE',
+                'Facebook Marketplace listing is unavailable or has been removed.',
+                $submitted,
+                $submitted,
+                $eid,
+                [
+                    'provider' => 'facebook_provider_chain',
+                    'unavailable_reason' => $e->getMessage(),
+                ]
+            );
         } catch (\Throwable $e) {
             return $this->fail(
                 $uid,
@@ -584,6 +599,8 @@ class PostInspector
                 ]
             );
         }
+
+        $item = FacebookListingMetadata::normalizeItem($item);
 
         $canonical = (string)($item['canonical_url'] ?? $submitted);
 
@@ -604,6 +621,9 @@ class PostInspector
         $title = trim((string)($item['title'] ?? ''));
         $desc = trim((string)($item['description'] ?? ''));
         $publishedRaw = trim((string)($item['published_raw'] ?? ''));
+        $publishedAt = trim((string)($item['published_at'] ?? ''));
+        $publishedDate = trim((string)($item['published_date'] ?? ''));
+        $publishedSource = trim((string)($item['published_source'] ?? ''));
 
         $platformAccount = MarketplaceAccount::safeFromProviderResult('facebook', $item, ['operation' => 'verify_listing']);
 
@@ -622,13 +642,21 @@ class PostInspector
                 ?? $item['provider_name']
                 ?? null,
             'provider_record' => $item['raw'] ?? [],
+            // V0.2.125: raw is diagnostics only. Verification below uses only the strict normalized date fields.
+            'published_raw' => $publishedRaw !== '' ? $publishedRaw : null,
+            'published_at_normalized' => $publishedAt !== '' ? $publishedAt : null,
+            'published_date_normalized' => $publishedDate !== '' ? $publishedDate : null,
+            'published_source' => $publishedSource !== '' ? $publishedSource : null,
+            'provider_fetched_at' => $item['fetched_at'] ?? null,
             'images' => array_slice(ImageFingerprint::urls($item), 0, 1),
         ];
         if ($platformAccount !== null) {
             $raw['platform_account'] = $platformAccount;
         }
 
-        if ($publishedRaw === '') {
+        // V0.2.125: Facebook verification never consumes provider-specific date text directly.
+        // It must first become strict YYYY-MM-DD (and ISO UTC published_at when exact time is known).
+        if ($publishedDate === '') {
             return $this->fail(
                 $uid,
                 'facebook',
@@ -654,7 +682,7 @@ class PostInspector
             $eid ?: null,
             $title,
             $desc,
-            $publishedRaw,
+            $publishedAt !== '' ? $publishedAt : $publishedDate,
             $raw
         );
     }

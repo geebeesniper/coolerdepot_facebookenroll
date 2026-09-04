@@ -60,6 +60,9 @@ class GenericJsonMarketplaceProvider
 
         if (!$bypassCache) {
             $cached = FetchJob::recentReady('facebook', $externalId, 10, $providerKey);
+            if ($cached) {
+                $cached = FacebookListingMetadata::normalizeItem($cached);
+            }
             if ($cached && $this->complete($cached)) {
                 $cached['_provider_cache'] = true;
                 return $cached;
@@ -81,11 +84,14 @@ class GenericJsonMarketplaceProvider
             if (!is_array($data)) {
                 throw new \RuntimeException('Custom API did not return valid JSON.');
             }
+            if ($unavailable = FacebookListingMetadata::unavailableReason($data, $response['status'])) {
+                throw new FacebookListingUnavailableException($unavailable);
+            }
 
             $result = $this->normalize($data, $url, $config);
             if (!$this->complete($result)) {
                 throw new \RuntimeException(
-                    'Custom API mapping did not produce ID, title, description, and listing date.'
+                    'Custom API mapping did not identify a usable Marketplace listing.'
                 );
             }
 
@@ -219,7 +225,7 @@ class GenericJsonMarketplaceProvider
         $canonical = PlatformUrl::normalize($mappedUrl, 'facebook')
             ?: $submittedUrl;
 
-        return [
+        return FacebookListingMetadata::normalizeItem([
             'provider' => 'generic_json',
             'provider_profile_id' => (int)($this->profile['id'] ?? 0),
             'provider_name' => (string)($this->profile['name'] ?? 'Custom JSON API'),
@@ -232,7 +238,7 @@ class GenericJsonMarketplaceProvider
             'description' => $description,
             'published_raw' => $published !== '' ? $published : null,
             'raw' => $data,
-        ];
+        ]);
     }
 
     /**
@@ -290,9 +296,8 @@ class GenericJsonMarketplaceProvider
      */
     private function complete(array $item): bool
     {
-        return trim((string)($item['external_post_id'] ?? '')) !== ''
-            && trim((string)($item['title'] ?? '')) !== ''
-            && trim((string)($item['description'] ?? '')) !== ''
-            && trim((string)($item['published_raw'] ?? '')) !== '';
+        return FacebookListingMetadata::providerUsable(
+            FacebookListingMetadata::normalizeItem($item)
+        );
     }
 }

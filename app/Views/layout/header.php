@@ -89,6 +89,27 @@ if ($u && ($u['role'] ?? '') === 'admin') {
 <html lang="en">
 <head>
     <meta charset="utf-8">
+    <!-- v0.2.133 — prevent a saved non-English language from flashing the English server defaults before app i18n runs. -->
+    <script>
+    (function(){
+        var lang='en';
+        try{
+            lang=String(window.localStorage.getItem('cdsp-admin-language')||'en');
+        }catch(error){}
+        if(['en','zh-CN','zh-TW','es'].indexOf(lang)===-1){lang='en';}
+        document.documentElement.lang=lang;
+        document.documentElement.setAttribute('data-cdsp-initial-language',lang);
+        if(lang!=='en'){
+            document.documentElement.setAttribute('data-cdsp-language-pending','1');
+            window.setTimeout(function(){
+                document.documentElement.removeAttribute('data-cdsp-language-pending');
+            },2000);
+        }
+    })();
+    </script>
+    <style>
+        html[data-cdsp-language-pending="1"] body{visibility:hidden!important;}
+    </style>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="cdsp-csrf" content="<?= Util::e(Csrf::token()) ?>">
     <meta name="cdsp-request-id" content="<?= Util::e(Logger::requestId()) ?>">
@@ -265,15 +286,6 @@ if ($u && ($u['role'] ?? '') === 'admin') {
                     data-nav-i18n="dashboard"
                 >
                     Dashboard
-                </a>
-                <a
-                    class="app-nav-link<?= $navActive['submit'] ? ' active' : '' ?>"
-                    href="<?= Util::e($base) ?>/sales/submit"
-                    <?= $navActive['submit'] ? 'aria-current="page"' : '' ?>
-                    data-nav-i18n="submit"
-                    data-open-sales-submit
-                >
-                    Submit
                 </a>
                 <a
                     class="app-nav-link<?= $navActive['bulk_submit'] ? ' active' : '' ?>"

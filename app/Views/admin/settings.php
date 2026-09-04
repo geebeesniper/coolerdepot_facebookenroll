@@ -15,16 +15,16 @@ use App\Services\MarketplaceProviderDraft;
 
 <div class="page-head provider-page-head">
     <div>
-        <div class="eyebrow">Administrator</div>
-        <h1>API Providers</h1>
-        <p>
+        <div class="eyebrow" data-app-i18n="settingsAdministrator">Administrator</div>
+        <h1 data-app-i18n="settingsApiProviders">API Providers</h1>
+        <p data-app-i18n="settingsProviderPriorityHelp">
             Providers are tried from top to bottom. Drag them to change failover priority.
         </p>
     </div>
 
     <button type="button" class="btn primary provider-add-open" id="providerAddOpen">
         <span class="provider-plus">+</span>
-        Add Provider
+        <span data-app-i18n="settingsAddProvider">Add Provider</span>
     </button>
 </div>
 
@@ -40,16 +40,16 @@ use App\Services\MarketplaceProviderDraft;
 <section class="panel settings-card" id="application-settings">
     <div class="panel-head settings-section-head">
         <div>
-            <div class="eyebrow">Application</div>
-            <h2>Application Settings</h2>
-            <p class="settings-subtitle">Set the display name and the Portal address used when login re-check fails.</p>
+            <div class="eyebrow" data-app-i18n="settingsApplication">Application</div>
+            <h2 data-app-i18n="settingsApplicationSettings">Application Settings</h2>
+            <p class="settings-subtitle" data-app-i18n="settingsApplicationHelp">Set the display name and the Portal address used when login re-check fails.</p>
         </div>
     </div>
     <div class="application-settings-stack">
         <form method="post" class="application-setting-form" action="<?= Util::e($config['app']['base_path']) ?>/admin/settings/brand">
             <input type="hidden" name="_csrf" value="<?= Util::e(Csrf::token()) ?>">
             <input type="hidden" name="setting_scope" value="company_name">
-            <label class="application-setting-label" for="applicationCompanyName">Company name</label>
+            <label class="application-setting-label" for="applicationCompanyName" data-app-i18n="settingsCompanyName">Company name</label>
             <div class="application-setting-control-row">
                 <input
                     id="applicationCompanyName"
@@ -60,14 +60,14 @@ use App\Services\MarketplaceProviderDraft;
                     value="<?= Util::e((string)$companyName) ?>"
                     placeholder="CoolerDepot"
                 >
-                <button class="btn primary application-setting-save" type="submit">Save Name</button>
+                <button class="btn primary application-setting-save" type="submit" data-app-i18n="settingsSaveName">Save Name</button>
             </div>
         </form>
 
         <form method="post" class="application-setting-form" action="<?= Util::e($config['app']['base_path']) ?>/admin/settings/brand">
             <input type="hidden" name="_csrf" value="<?= Util::e(Csrf::token()) ?>">
             <input type="hidden" name="setting_scope" value="portal_url">
-            <label class="application-setting-label" for="applicationPortalFallbackUrl">Portal fallback URL</label>
+            <label class="application-setting-label" for="applicationPortalFallbackUrl" data-app-i18n="settingsPortalFallbackUrl">Portal fallback URL</label>
             <div class="application-setting-control-row">
                 <input
                     id="applicationPortalFallbackUrl"
@@ -78,9 +78,9 @@ use App\Services\MarketplaceProviderDraft;
                     placeholder="https://portal.example.com/login"
                     autocomplete="url"
                 >
-                <button class="btn primary application-setting-save" type="submit">Save URL</button>
+                <button class="btn primary application-setting-save" type="submit" data-app-i18n="settingsSaveUrl">Save URL</button>
             </div>
-            <small class="settings-field-help application-setting-help">If session re-check fails, the browser redirects to this fixed http/https address.</small>
+            <small class="settings-field-help application-setting-help" data-app-i18n="settingsPortalHelp">If session re-check fails, the browser redirects to this fixed http/https address.</small>
         </form>
     </div>
 </section>
@@ -201,10 +201,10 @@ $locationNoticeKey = [
 <section class="panel settings-card verification-locks-panel" id="verification-locks">
     <div class="panel-head settings-section-head">
         <div>
-            <div class="eyebrow" data-app-i18n="verificationControl">Verification Control</div>
-            <h2 data-app-i18n="postVerificationLocks">Post Verification Locks</h2>
+            <div class="eyebrow" data-app-i18n="verificationControl">Verification Recovery</div>
+            <h2 data-app-i18n="postVerificationLocks">In Case: Manual Unlock</h2>
             <p class="settings-subtitle" data-app-i18n="verificationLocksHelp">
-                One Sales user can run only one Marketplace verification at a time. Use Unlock only when a Sales verification is stuck.
+                Verification locks recover automatically when a verification process disappears or reaches the safety timeout. Use Manual Unlock only as an in-case fallback.
             </p>
         </div>
         <span class="provider-count"
@@ -212,10 +212,38 @@ $locationNoticeKey = [
               data-i18n-count="<?= count($inspectionLocks ?? []) ?>"><?= count($inspectionLocks ?? []) ?> active</span>
     </div>
 
+    <form
+        method="post"
+        class="verification-recovery-setting"
+        action="<?= Util::e($config['app']['base_path']) ?>/admin/settings/verification-recovery"
+    >
+        <input type="hidden" name="_csrf" value="<?= Util::e(Csrf::token()) ?>">
+        <div class="verification-recovery-setting-copy">
+            <label for="verificationRecoveryMinutes" data-app-i18n="verificationRecoveryTimeoutLabel">Auto recovery timeout</label>
+            <small data-app-i18n="verificationRecoveryTimeoutHelp">Only applies when a verification process still looks alive but is stuck. Dead or disconnected processes recover immediately. Allowed range: 5–60 minutes.</small>
+        </div>
+        <div class="verification-recovery-setting-controls">
+            <input
+                id="verificationRecoveryMinutes"
+                name="recovery_minutes"
+                type="number"
+                min="<?= (int)($inspectionRecoveryMinMinutes ?? 5) ?>"
+                max="<?= (int)($inspectionRecoveryMaxMinutes ?? 60) ?>"
+                step="1"
+                inputmode="numeric"
+                value="<?= (int)($inspectionRecoveryMinutes ?? 5) ?>"
+                aria-label="Verification recovery timeout in minutes"
+                required
+            >
+            <span data-app-i18n="minutes">minutes</span>
+            <button class="btn primary" type="submit" data-app-i18n="saveRecoveryTimeout">Save timeout</button>
+        </div>
+    </form>
+
     <?php if (!empty($inspectionLockError)): ?>
         <div class="banner bad"><span data-app-i18n="verificationLocksReadError">Verification locks could not be read</span>: <?= Util::e((string)$inspectionLockError) ?></div>
     <?php elseif (empty($inspectionLocks)): ?>
-        <div class="verification-lock-empty" data-app-i18n="verificationLocksEmpty">No Sales verification is currently locked.</div>
+        <div class="verification-lock-empty" data-app-i18n="verificationLocksEmpty">Automatic recovery is active. No Sales verification currently needs a manual unlock.</div>
     <?php else: ?>
         <div class="verification-lock-list">
             <?php foreach ($inspectionLocks as $lock): ?>
@@ -231,13 +259,13 @@ $locationNoticeKey = [
                     <form method="post" action="<?= Util::e($config['app']['base_path']) ?>/admin/inspection-lock/unlock">
                         <input type="hidden" name="_csrf" value="<?= Util::e(Csrf::token()) ?>">
                         <input type="hidden" name="sales_user_id" value="<?= (int)$lock['sales_user_id'] ?>">
-                        <button class="btn badbtn" type="submit" data-app-i18n="unlock">Unlock</button>
+                        <button class="btn badbtn" type="submit" data-app-i18n="unlock">Manual Unlock</button>
                     </form>
                 </div>
             <?php endforeach; ?>
         </div>
         <p class="settings-subtitle verification-lock-warning" data-app-i18n="verificationUnlockWarning">
-            Unlock removes the verification gate so the Sales user can try again. It does not forcibly terminate a provider request already executing.
+            Manual Unlock is only a fallback if automatic recovery does not resolve the problem. It allows a new verification to start without forcibly terminating an older provider request.
         </p>
     <?php endif; ?>
 </section>
@@ -246,10 +274,9 @@ $locationNoticeKey = [
 <section class="panel provider-manager">
     <div class="panel-head">
         <div>
-            <h2>Facebook Marketplace Provider Chain</h2>
-            <p class="settings-subtitle">
-                Only providers that passed a real Marketplace test can be added.
-                Disabled providers stay in the list but are skipped.
+            <h2 data-app-i18n="settingsProviderChain">Facebook Marketplace Provider Chain</h2>
+            <p class="settings-subtitle" data-app-i18n="settingsProviderChainHelp">
+                Only providers that passed a real Marketplace test can be added. Disabled providers stay in the list but are skipped.
             </p>
         </div>
         <span class="provider-count"><?= count($providers) ?> providers</span>
@@ -372,8 +399,8 @@ $locationNoticeKey = [
 >
     <div class="panel-head provider-jobs-head">
         <div>
-            <h2>Recent Provider Jobs</h2>
-            <p class="settings-subtitle">
+            <h2 data-app-i18n="settingsRecentProviderJobs">Recent Provider Jobs</h2>
+            <p class="settings-subtitle" data-app-i18n="settingsRecentProviderJobsHelp">
                 Test attempts and live failover attempts are logged here.
             </p>
         </div>
@@ -877,9 +904,9 @@ $renderWebsiteHistory = static function(
     data-csrf="<?= Util::e(Csrf::token()) ?>">
     <div class="panel-head settings-section-head">
         <div>
-            <div class="eyebrow">Duplicate Sources</div>
-            <h2>Company Website Library</h2>
-            <p class="settings-subtitle">Website Scan opens one detailed workspace. Scanned Products lives inside that workspace below Website Scan and opens or closes independently. URL CSV and Page / Sitemap Import remain separate tools.</p>
+            <div class="eyebrow" data-app-i18n="settingsDuplicateSources">Duplicate Sources</div>
+            <h2 data-app-i18n="settingsWebsiteLibrary">Company Website Library</h2>
+            <p class="settings-subtitle" data-app-i18n="settingsWebsiteLibraryHelp">Website Scan opens one detailed workspace. Scanned Products lives inside that workspace below Website Scan and opens or closes independently. URL CSV and Page / Sitemap Import remain separate tools.</p>
         </div>
         <?php if (!empty($websiteStats['library_ready'])): ?>
             <div class="website-library-stats">

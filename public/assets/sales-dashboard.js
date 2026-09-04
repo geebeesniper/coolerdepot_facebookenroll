@@ -153,6 +153,11 @@
                 'salesChartTargetLineValue'
             );
 
+        const targetCopy=
+            document.getElementById(
+                'salesChartTargetCopy'
+            );
+
         const chartTitle=
             document.getElementById(
                 'salesChartPeriodTitle'
@@ -225,6 +230,7 @@
                 )||'all'
             ).toLowerCase(),
             target:10,
+            targets:{},
             rows:[],
             requestSeq:0,
             controller:null,
@@ -756,6 +762,20 @@
         }
 
         /**
+         * EN: Resolve the date-effective Daily Target for one chart day.
+         * 中文：解析某个图表日期当天实际生效的 Daily Target。
+         *
+         * @param {string|*} date Date value used by the calculation or filter. / 计算或筛选使用的日期值。
+         * @returns {number} Effective Daily Target for the date. / 当天生效的 Daily Target。
+         */
+        function dailyTargetForDate(date){
+            const raw=state.targets&&Object.prototype.hasOwnProperty.call(state.targets,date)
+                ?state.targets[date]
+                :state.target;
+            return Math.max(1,parseInt(raw,10)||state.target||10);
+        }
+
+        /**
          * EN: Perform the tick step behavior used by the sales dashboard.
          * 中文：执行sales dashboard 使用的“tick step”行为。
          *
@@ -823,9 +843,15 @@
          *
          * @returns {void} No value is returned. / 无返回值。
          */
-        function renderAxis(cap,target){
+        function renderAxis(cap,targets){
             const step=
                 tickStep(cap);
+            const targetSet=new Set(
+                (Array.isArray(targets)?targets:[targets])
+                    .map(function(value){
+                        return String(Math.max(1,parseInt(value,10)||0));
+                    })
+            );
 
             const values=[];
 
@@ -886,9 +912,7 @@
                     tickHtml+=
                         '<span'
                         +' class="sales-chart-y-tick'
-                        +(Math.abs(
-                            value-target
-                        )<0.0001
+                        +(targetSet.has(String(Math.round(value)))
                             ?' target'
                             :'')
                         +'"'
@@ -901,9 +925,7 @@
                     gridHtml+=
                         '<span'
                         +' class="sales-chart-grid-line'
-                        +(Math.abs(
-                            value-target
-                        )<0.0001
+                        +(targetSet.has(String(Math.round(value)))
                             ?' target'
                             :'')
                         +'"'
@@ -949,22 +971,29 @@
                 state.to
             );
 
-            const target=Math.max(
-                1,
-                parseInt(
-                    state.target,
-                    10
-                )||10
-            );
-
+            const dayTargets=dates.map(dailyTargetForDate);
+            const maxTarget=dayTargets.length
+                ?Math.max.apply(null,dayTargets)
+                :Math.max(1,parseInt(state.target,10)||10);
+            const minTarget=dayTargets.length
+                ?Math.min.apply(null,dayTargets)
+                :maxTarget;
+            let maxPosts=0;
+            dates.forEach(function(date){
+                maxPosts=Math.max(
+                    maxPosts,
+                    Math.max(0,parseInt(aggregate(date).post_count,10)||0)
+                );
+            });
             const cap=Math.max(
-                target,
-                target*1.2
+                1,
+                maxTarget*1.2,
+                maxPosts+1
             );
 
             // Ignore duplicate layout notifications without interrupting growth.
             const renderKey=JSON.stringify([
-                state.from,state.to,state.channel,target,state.rows,
+                state.from,state.to,state.channel,dayTargets,state.rows,
                 chartScroll?chartScroll.clientWidth:chartPanel?chartPanel.clientWidth:720
             ]);
             setPeriod(state.period);
@@ -974,20 +1003,23 @@
 
             renderAxis(
                 cap,
-                target
+                Array.from(new Set(dayTargets))
             );
 
+            const targetSummary=minTarget===maxTarget
+                ?String(maxTarget)
+                :String(minTarget)+'–'+String(maxTarget);
+
             if(targetValue){
-                targetValue.textContent=
-                    String(target);
+                targetValue.textContent=targetSummary;
+            }
+            if(targetCopy){
+                targetCopy.textContent=targetSummary;
             }
 
             if(targetLine){
-                targetLine.style.top=
-                    (
-                        plotHeight
-                        *(1-(target/cap))
-                    )+'px';
+                targetLine.classList.add('hidden');
+                targetLine.removeAttribute('style');
             }
 
             if(!dates.length){
@@ -1078,6 +1110,16 @@
                         10
                     )||0
                 );
+                const dayTarget=dailyTargetForDate(date);
+                const targetTop=plotHeight*(1-(dayTarget/cap));
+                const targetIndex=dates.indexOf(date);
+                const previousTarget=targetIndex>0
+                    ?dailyTargetForDate(dates[targetIndex-1])
+                    :null;
+                const showTargetLabel=
+                    targetIndex===0
+                    ||targetIndex===dates.length-1
+                    ||previousTarget!==dayTarget;
 
                 const good=Math.min(
                     actual,
@@ -1148,9 +1190,19 @@
                     +'"'
                     +' data-chart-unreviewed="'
                     +unreviewed
+                    +'"'
+                    +' data-chart-target="'
+                    +dayTarget
                     +'">'
                     +'<div'
                     +' class="sales-chart-day-plot">'
+                    +'<span class="sales-chart-day-target" style="top:'
+                    +targetTop
+                    +'px">'
+                    +(showTargetLabel
+                        ?'<span>Daily target '+dayTarget+'</span>'
+                        :'')
+                    +'</span>'
                     +'<div'
                     +' class="sales-chart-stack">'
                     +'<div class="sales-chart-stack-fill'
@@ -1476,6 +1528,9 @@
                     10
                 )||state.target
             );
+            state.targets=(data.daily_targets&&typeof data.daily_targets==='object')
+                ?data.daily_targets
+                :{};
 
             state.rows=Array.isArray(
                 data.chart_rows
@@ -2454,8 +2509,11 @@
                     +'<span>Missing: <b>'
                     +Math.max(
                         0,
-                        state.target-total
+                        (parseInt(day.getAttribute('data-chart-target'),10)||state.target)-total
                     )
+                    +'</b></span>'
+                    +'<span>Daily target: <b>'
+                    +(parseInt(day.getAttribute('data-chart-target'),10)||state.target)
                     +'</b></span>';
 
                 tooltip.classList.remove('hidden');
@@ -2843,6 +2901,9 @@
                         10
                     )||10
                 );
+                state.targets=(initial.daily_targets&&typeof initial.daily_targets==='object')
+                    ?initial.daily_targets
+                    :{};
 
                 state.rows=Array.isArray(
                     initial.rows
@@ -2851,6 +2912,7 @@
                     :[];
             }catch(error){
                 state.target=10;
+                state.targets={};
                 state.rows=[];
             }
         }

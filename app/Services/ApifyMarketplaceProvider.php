@@ -120,6 +120,10 @@ class ApifyMarketplaceProvider
                 );
             }
 
+            if ($unavailable = FacebookListingMetadata::unavailableReason($json, $response['status'])) {
+                throw new FacebookListingUnavailableException($unavailable);
+            }
+
             $record = $this->findListing($json, $externalId);
 
             if (!$record) {
@@ -135,11 +139,13 @@ class ApifyMarketplaceProvider
                 );
             }
 
+            if ($unavailable = FacebookListingMetadata::unavailableReason($record, $response['status'])) {
+                throw new FacebookListingUnavailableException($unavailable);
+            }
+
             $normalized = $this->normalize($record, $url, $externalId);
 
-            if (!$normalized['external_post_id']
-                || $normalized['title'] === ''
-                || !$normalized['published_raw']) {
+            if (!FacebookListingMetadata::providerUsable($normalized)) {
                 FetchJob::setStatus(
                     $jobId,
                     'failed',
@@ -346,7 +352,7 @@ class ApifyMarketplaceProvider
             ?? ''
         ));
 
-        return [
+        return FacebookListingMetadata::normalizeItem([
             'provider' => 'apify',
             'provider_job_id' => $id !== '' ? $id : null,
             'submitted_url' => $submittedUrl,
@@ -357,7 +363,7 @@ class ApifyMarketplaceProvider
             'description' => $description,
             'published_raw' => $published !== '' ? $published : null,
             'raw' => $record,
-        ];
+        ]);
     }
 
     /**

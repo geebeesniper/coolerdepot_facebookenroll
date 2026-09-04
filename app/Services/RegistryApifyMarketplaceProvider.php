@@ -61,6 +61,9 @@ class RegistryApifyMarketplaceProvider
 
         if (!$bypassCache) {
             $cached = FetchJob::recentReady('facebook', $externalId, 10, $providerKey);
+            if ($cached) {
+                $cached = FacebookListingMetadata::normalizeItem($cached);
+            }
             if ($cached && $this->complete($cached)) {
                 $cached['_provider_cache'] = true;
                 return $cached;
@@ -119,9 +122,16 @@ class RegistryApifyMarketplaceProvider
                 );
             }
 
+            if ($unavailable = FacebookListingMetadata::unavailableReason($data, $status)) {
+                throw new FacebookListingUnavailableException($unavailable);
+            }
+
             $record = $this->findRecord($data, $externalId);
             if (!$record) {
                 throw new \RuntimeException('Apify returned no matching listing.');
+            }
+            if ($unavailable = FacebookListingMetadata::unavailableReason($record, $status)) {
+                throw new FacebookListingUnavailableException($unavailable);
             }
 
             $result = $this->normalize($record, $url, $externalId);
@@ -170,10 +180,9 @@ class RegistryApifyMarketplaceProvider
      */
     private function complete(array $item): bool
     {
-        return trim((string)($item['external_post_id'] ?? '')) !== ''
-            && trim((string)($item['title'] ?? '')) !== ''
-            && trim((string)($item['description'] ?? '')) !== ''
-            && trim((string)($item['published_raw'] ?? '')) !== '';
+        return FacebookListingMetadata::providerUsable(
+            FacebookListingMetadata::normalizeItem($item)
+        );
     }
 
     /**
@@ -265,7 +274,7 @@ class RegistryApifyMarketplaceProvider
             ?? ''
         );
 
-        return [
+        return FacebookListingMetadata::normalizeItem([
             'provider' => 'apify',
             'provider_profile_id' => (int)($this->profile['id'] ?? 0),
             'provider_name' => (string)($this->profile['name'] ?? 'Apify'),
@@ -278,7 +287,7 @@ class RegistryApifyMarketplaceProvider
             'description' => $description,
             'published_raw' => $publishedRaw !== '' ? $publishedRaw : null,
             'raw' => $record,
-        ];
+        ]);
     }
 
     /**

@@ -93,6 +93,9 @@ class BrightDataMarketplaceProvider
             'brightdata'
         );
 
+        if ($cached) {
+            $cached = FacebookListingMetadata::normalizeItem($cached);
+        }
         if ($cached && $this->complete($cached)) {
             $cached['_provider_cache'] = true;
             return $cached;
@@ -402,6 +405,10 @@ class BrightDataMarketplaceProvider
                         );
                     }
 
+                    if ($unavailable = FacebookListingMetadata::unavailableReason($downloadData, $download['status'])) {
+                        throw new FacebookListingUnavailableException($unavailable);
+                    }
+
                     $record = $this->firstRecord($downloadData);
 
                     if (!$record) {
@@ -415,6 +422,10 @@ class BrightDataMarketplaceProvider
                         throw new \RuntimeException(
                             'no valid Marketplace listing was returned.'
                         );
+                    }
+
+                    if ($unavailable = FacebookListingMetadata::unavailableReason($record, $download['status'])) {
+                        throw new FacebookListingUnavailableException($unavailable);
                     }
 
                     $normalized = $this->normalize(
@@ -521,10 +532,9 @@ class BrightDataMarketplaceProvider
      */
     private function complete(array $item): bool
     {
-        return trim((string)($item['external_post_id'] ?? '')) !== ''
-            && trim((string)($item['title'] ?? '')) !== ''
-            && trim((string)($item['description'] ?? '')) !== ''
-            && trim((string)($item['published_raw'] ?? '')) !== '';
+        return FacebookListingMetadata::providerUsable(
+            FacebookListingMetadata::normalizeItem($item)
+        );
     }
 
     /**
@@ -608,7 +618,7 @@ class BrightDataMarketplaceProvider
             }
         }
 
-        return [
+        return FacebookListingMetadata::normalizeItem([
             'provider' => 'brightdata',
             'provider_job_id' => $snapshotId,
             'credential_slot' => $credentialSlot,
@@ -621,7 +631,7 @@ class BrightDataMarketplaceProvider
             'description' => $description,
             'published_raw' => $publishedRaw,
             'raw' => $record,
-        ];
+        ]);
     }
 
     /**

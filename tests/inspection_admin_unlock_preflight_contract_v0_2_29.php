@@ -22,8 +22,8 @@ $checks = [
     'Admin unlock route exists' => strpos($routes, "'/admin/inspection-lock/unlock'") !== false,
     'Admin unlock is CSRF protected' => strpos($settingsController, 'function unlockInspection') !== false
         && strpos($settingsController, "Csrf::verify(\$_POST['_csrf'] ?? null)") !== false,
-    'Settings shows active verification locks' => strpos($settingsView, 'Post Verification Locks') !== false
-        && strpos($settingsView, '>Unlock<') !== false,
+    'Settings shows active verification locks' => strpos($settingsView, 'id="verification-locks"') !== false
+        && strpos($settingsView, 'data-app-i18n="unlock"') !== false,
     'Duplicate preflight runs before full inspection' => $preflightPos !== false && $inspectPos !== false && $preflightPos < $inspectPos,
     'Preflight failure skips expensive steps' => strpos($js, "['fetch','date','final'].forEach") !== false
         && strpos($js, "'Duplicate check failed. Verification was not started.'") !== false,
